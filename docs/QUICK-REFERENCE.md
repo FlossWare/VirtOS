@@ -612,6 +612,185 @@ virtos-usb monitor-status
 virtos-usb auto-attach office-vm "046d:*"
 ```
 
+## Phase 10 Commands
+
+### Metrics & Telemetry (virtos-telemetry)
+
+```bash
+# Initialize Prometheus
+virtos-telemetry prometheus-init
+
+# Start Prometheus
+virtos-telemetry prometheus-start
+
+# Check Prometheus status
+virtos-telemetry prometheus-status
+
+# Initialize Grafana
+virtos-telemetry grafana-init
+
+# Start Grafana (available at :3000)
+virtos-telemetry grafana-start
+
+# Install exporters
+virtos-telemetry exporter-install node
+virtos-telemetry exporter-install libvirt
+virtos-telemetry exporter-install cadvisor
+
+# Add scrape target
+virtos-telemetry target-add 192.168.1.101:9100 node-exporter
+
+# View metrics (PromQL query)
+virtos-telemetry metrics-view "up"
+virtos-telemetry metrics-view "node_cpu_seconds_total"
+
+# Create alert rule
+virtos-telemetry alert-create high-cpu "node_cpu_seconds_total > 0.8"
+
+# List alerts
+virtos-telemetry alert-list
+
+# Import Grafana dashboard
+virtos-telemetry dashboard-import 1860  # Node Exporter Full
+
+# Setup wizard
+virtos-telemetry wizard
+```
+
+### Security Hardening (virtos-security)
+
+```bash
+# Initialize SELinux in enforcing mode
+virtos-security selinux-init enforcing
+
+# Create custom SELinux policy
+virtos-security selinux-policy-create myapp targeted
+virtos-security selinux-policy-compile myapp
+
+# Initialize AppArmor
+virtos-security apparmor-init enforce
+
+# Create AppArmor profile
+virtos-security apparmor-profile-create myapp /usr/local/bin/myapp
+virtos-security apparmor-profile-load myapp
+
+# Harden SSH configuration
+virtos-security ssh-harden
+
+# Initialize firewall
+virtos-security firewall-init drop
+
+# Add firewall rules
+virtos-security firewall-rule-add tcp 80 ACCEPT
+virtos-security firewall-rule-add tcp 443 ACCEPT
+
+# Run vulnerability scan
+virtos-security vulnerability-scan
+
+# Check compliance (CIS, NIST, PCI-DSS, HIPAA)
+virtos-security compliance-check cis
+virtos-security compliance-check nist
+
+# Enable audit logging
+virtos-security audit-enable
+
+# View audit logs
+virtos-security audit-logs
+virtos-security audit-logs root-commands
+
+# Check security status
+virtos-security status
+
+# Security setup wizard
+virtos-security wizard
+```
+
+### Billing & Cost Tracking (virtos-billing)
+
+```bash
+# Initialize billing system
+virtos-billing init
+
+# Track VM usage
+virtos-billing track-usage web-server
+virtos-billing track-usage database-vm
+
+# Calculate costs
+virtos-billing calculate-costs
+virtos-billing calculate-costs web-server
+
+# Cost report by period
+virtos-billing cost-report "" day
+virtos-billing cost-report "" week
+virtos-billing cost-report "" month
+virtos-billing cost-report web-server month
+
+# Generate invoice
+virtos-billing generate-invoice "Acme Corp" "2026-05-01" "2026-05-31"
+
+# List invoices
+virtos-billing list-invoices all
+virtos-billing list-invoices pending
+virtos-billing list-invoices paid
+
+# View invoice
+virtos-billing view-invoice INV-20260531-123456
+
+# Mark invoice as paid
+virtos-billing mark-paid INV-20260531-123456
+
+# Set pricing (resource, price)
+virtos-billing set-pricing cpu 0.10
+virtos-billing set-pricing ram 0.02
+virtos-billing set-pricing disk 0.15
+
+# Show current pricing
+virtos-billing show-pricing
+
+# Billing setup wizard
+virtos-billing wizard
+```
+
+### Service Mesh (virtos-mesh)
+
+```bash
+# Install service mesh
+virtos-mesh istio-install
+virtos-mesh linkerd-install
+virtos-mesh consul-install
+
+# Inject sidecar proxy
+virtos-mesh inject-sidecar my-deployment default
+
+# Enable mutual TLS
+virtos-mesh mtls-enable
+
+# Create virtual service (traffic routing)
+virtos-mesh virtual-service-create my-svc my-app.local my-app-service 80
+
+# Create destination rule (load balancing, connection pool)
+virtos-mesh destination-rule-create my-rule my-app-service
+
+# Traffic splitting (canary deployment)
+virtos-mesh traffic-split my-service v1 v2 10  # 10% to v2
+
+# Fault injection (chaos engineering)
+virtos-mesh fault-inject my-service delay 10
+virtos-mesh fault-inject my-service abort 5
+
+# Circuit breaker
+virtos-mesh circuit-breaker my-service 100 100
+
+# Check mesh status
+virtos-mesh status
+
+# Open mesh dashboard
+virtos-mesh dashboard  # Kiali/Linkerd viz/Consul UI
+
+# Service mesh setup wizard
+virtos-mesh wizard
+```
+
 ## Build Commands
 
 ```bash

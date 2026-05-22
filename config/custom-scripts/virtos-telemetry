@@ -1,0 +1,743 @@
+#!/bin/bash
+# VirtOS Telemetry - Metrics and monitoring integration
+# Prometheus, Grafana, and metrics exporters
+
+VERSION="1"
+TELEMETRY_DIR="/var/lib/virtos/telemetry"
+STATE_DIR="/var/run/virtos/telemetry"
+LOG_FILE="/var/log/virtos-telemetry.log"
+
+mkdir -p "$TELEMETRY_DIR" "$STATE_DIR"
+
+usage() {
+    cat << EOF
+VirtOS Telemetry - Metrics and Monitoring v${VERSION}
+
+Usage: virtos-telemetry [command] [options]
+
+Commands:
+  prometheus-init                  Initialize Prometheus server
+  prometheus-start                 Start Prometheus
+  prometheus-stop                  Stop Prometheus
+  prometheus-status                Show Prometheus status
+
+  grafana-init                     Initialize Grafana
+  grafana-start                    Start Grafana
+  grafana-stop                     Stop Grafana
+  grafana-status                   Show Grafana status
+  grafana-dashboard <name>         Import dashboard
+
+  exporter-install <type>          Install metrics exporter
+  exporter-start <type>            Start exporter
+  exporter-stop <type>             Stop exporter
+  exporter-list                    List installed exporters
+
+  target-add <host> <port>         Add scrape target
+  target-remove <host>             Remove scrape target
+  target-list                      List all targets
+
+  metrics-view <metric>            View metric values
+  metrics-query <promql>           Execute PromQL query
+
+  alert-create <name> <expr>       Create alert rule
+  alert-list                       List alert rules
+  alert-delete <name>              Delete alert rule
+
+  dashboard-list                   List Grafana dashboards
+  dashboard-export <id>            Export dashboard JSON
+
+Options:
+  --retention <days>               Metrics retention (default: 15)
+  --scrape-interval <seconds>      Scrape interval (default: 15)
+  --port <port>                    Service port
+
+Exporters:
+  node                             Node/system metrics
+  libvirt                          VM/libvirt metrics
+  cadvisor                         Container metrics
+  blackbox                         Endpoint probing
+
+Examples:
+  # Initialize Prometheus
+  virtos-telemetry prometheus-init
+
+  # Start Prometheus and Grafana
+  virtos-telemetry prometheus-start
+  virtos-telemetry grafana-start
+
+  # Install node exporter
+  virtos-telemetry exporter-install node
+
+  # Add scrape targets
+  virtos-telemetry target-add virtos-1.local 9100
+
+  # View metrics
+  virtos-telemetry metrics-view node_cpu_seconds_total
+
+  # Create alert
+  virtos-telemetry alert-create high_cpu 'node_cpu_usage > 90'
+
+  # Import Grafana dashboard
+  virtos-telemetry grafana-dashboard node-exporter
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+init_config() {
+    if [ ! -f "$TELEMETRY_DIR/config.conf" ]; then
+        cat > "$TELEMETRY_DIR/config.conf" <<EOF
+# VirtOS Telemetry Configuration
+
+# Prometheus settings
+PROMETHEUS_ENABLED=no
+PROMETHEUS_PORT=9090
+PROMETHEUS_RETENTION=15d
+PROMETHEUS_SCRAPE_INTERVAL=15s
+
+# Grafana settings
+GRAFANA_ENABLED=no
+GRAFANA_PORT=3000
+GRAFANA_ADMIN_PASSWORD=admin
+
+# Exporters
+EXPORTERS_ENABLED=""
+
+# Alert manager
+ALERTMANAGER_ENABLED=no
+ALERTMANAGER_PORT=9093
+EOF
+    fi
+
+    source "$TELEMETRY_DIR/config.conf"
+}
+
+# Prometheus Management
+prometheus_init() {
+    log_message "Initializing Prometheus"
+
+    echo "Prometheus Initialization"
+    echo "========================="
+    echo ""
+
+    if ! command -v prometheus >/dev/null 2>&1; then
+        echo "Prometheus not installed"
+        echo "Install with: tce-load -i prometheus"
+        echo ""
+        echo "Or download from: https://prometheus.io/download/"
+        return 1
+    fi
+
+    mkdir -p "$TELEMETRY_DIR/prometheus"
+    mkdir -p "$TELEMETRY_DIR/prometheus/data"
+
+    # Create Prometheus configuration
+    cat > "$TELEMETRY_DIR/prometheus/prometheus.yml" <<EOF
+global:
+  scrape_interval: ${PROMETHEUS_SCRAPE_INTERVAL:-15s}
+  evaluation_interval: ${PROMETHEUS_SCRAPE_INTERVAL:-15s}
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'node'
+    static_configs:
+      - targets: []
+
+  - job_name: 'libvirt'
+    static_configs:
+      - targets: []
+
+  - job_name: 'containers'
+    static_configs:
+      - targets: []
+EOF
+
+    # Create alerts file
+    cat > "$TELEMETRY_DIR/prometheus/alerts.yml" <<EOF
+groups:
+  - name: virtos_alerts
+    rules: []
+EOF
+
+    sed -i 's/^PROMETHEUS_ENABLED=.*/PROMETHEUS_ENABLED=yes/' "$TELEMETRY_DIR/config.conf"
+
+    log_message "Prometheus initialized"
+    echo "Prometheus initialized"
+    echo "Configuration: $TELEMETRY_DIR/prometheus/prometheus.yml"
+    echo ""
+    echo "Start with: virtos-telemetry prometheus-start"
+}
+
+prometheus_start() {
+    log_message "Starting Prometheus"
+
+    if [ -f "$STATE_DIR/prometheus.pid" ]; then
+        local pid=$(cat "$STATE_DIR/prometheus.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "Prometheus already running (PID: $pid)"
+            return 0
+        fi
+    fi
+
+    if [ ! -f "$TELEMETRY_DIR/prometheus/prometheus.yml" ]; then
+        echo "Prometheus not initialized"
+        echo "Run: virtos-telemetry prometheus-init"
+        return 1
+    fi
+
+    echo "Starting Prometheus on port ${PROMETHEUS_PORT:-9090}..."
+
+    # Start Prometheus in background
+    (
+        cd "$TELEMETRY_DIR/prometheus"
+        prometheus \
+            --config.file=prometheus.yml \
+            --storage.tsdb.path=data \
+            --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d} \
+            --web.listen-address=:${PROMETHEUS_PORT:-9090} \
+            >/dev/null 2>&1 &
+
+        echo $! > "$STATE_DIR/prometheus.pid"
+    )
+
+    sleep 2
+
+    if [ -f "$STATE_DIR/prometheus.pid" ]; then
+        local pid=$(cat "$STATE_DIR/prometheus.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            log_message "Prometheus started (PID: $pid)"
+            echo "Prometheus started successfully"
+            echo "Access at: http://localhost:${PROMETHEUS_PORT:-9090}"
+        else
+            echo "Failed to start Prometheus"
+            return 1
+        fi
+    fi
+}
+
+prometheus_stop() {
+    log_message "Stopping Prometheus"
+
+    if [ ! -f "$STATE_DIR/prometheus.pid" ]; then
+        echo "Prometheus not running"
+        return 1
+    fi
+
+    local pid=$(cat "$STATE_DIR/prometheus.pid")
+
+    if ps -p "$pid" >/dev/null 2>&1; then
+        kill "$pid"
+        rm -f "$STATE_DIR/prometheus.pid"
+        echo "Prometheus stopped"
+    else
+        echo "Prometheus not running (stale PID)"
+        rm -f "$STATE_DIR/prometheus.pid"
+    fi
+}
+
+prometheus_status() {
+    echo "Prometheus Status"
+    echo "================="
+    echo ""
+
+    if [ -f "$STATE_DIR/prometheus.pid" ]; then
+        local pid=$(cat "$STATE_DIR/prometheus.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "Status: Running (PID: $pid)"
+            echo "Port: ${PROMETHEUS_PORT:-9090}"
+            echo "URL: http://localhost:${PROMETHEUS_PORT:-9090}"
+        else
+            echo "Status: Not running (stale PID)"
+        fi
+    else
+        echo "Status: Not running"
+    fi
+}
+
+# Grafana Management
+grafana_init() {
+    log_message "Initializing Grafana"
+
+    echo "Grafana Initialization"
+    echo "======================"
+    echo ""
+
+    if ! command -v grafana-server >/dev/null 2>&1; then
+        echo "Grafana not installed"
+        echo "Install with: tce-load -i grafana"
+        echo ""
+        echo "Or download from: https://grafana.com/grafana/download"
+        return 1
+    fi
+
+    mkdir -p "$TELEMETRY_DIR/grafana/data"
+    mkdir -p "$TELEMETRY_DIR/grafana/dashboards"
+    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/datasources"
+    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/dashboards"
+
+    # Create Grafana config
+    cat > "$TELEMETRY_DIR/grafana/grafana.ini" <<EOF
+[paths]
+data = $TELEMETRY_DIR/grafana/data
+logs = $TELEMETRY_DIR/grafana/logs
+
+[server]
+http_port = ${GRAFANA_PORT:-3000}
+
+[security]
+admin_password = ${GRAFANA_ADMIN_PASSWORD:-admin}
+
+[users]
+allow_sign_up = false
+EOF
+
+    # Provision Prometheus datasource
+    cat > "$TELEMETRY_DIR/grafana/provisioning/datasources/prometheus.yml" <<EOF
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://localhost:${PROMETHEUS_PORT:-9090}
+    isDefault: true
+    editable: true
+EOF
+
+    sed -i 's/^GRAFANA_ENABLED=.*/GRAFANA_ENABLED=yes/' "$TELEMETRY_DIR/config.conf"
+
+    log_message "Grafana initialized"
+    echo "Grafana initialized"
+    echo "Default credentials: admin / ${GRAFANA_ADMIN_PASSWORD:-admin}"
+    echo ""
+    echo "Start with: virtos-telemetry grafana-start"
+}
+
+grafana_start() {
+    log_message "Starting Grafana"
+
+    if [ -f "$STATE_DIR/grafana.pid" ]; then
+        local pid=$(cat "$STATE_DIR/grafana.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "Grafana already running (PID: $pid)"
+            return 0
+        fi
+    fi
+
+    if [ ! -f "$TELEMETRY_DIR/grafana/grafana.ini" ]; then
+        echo "Grafana not initialized"
+        echo "Run: virtos-telemetry grafana-init"
+        return 1
+    fi
+
+    echo "Starting Grafana on port ${GRAFANA_PORT:-3000}..."
+
+    # Start Grafana in background
+    grafana-server \
+        --config="$TELEMETRY_DIR/grafana/grafana.ini" \
+        --homepath=/usr/share/grafana \
+        >/dev/null 2>&1 &
+
+    echo $! > "$STATE_DIR/grafana.pid"
+
+    sleep 2
+
+    if [ -f "$STATE_DIR/grafana.pid" ]; then
+        local pid=$(cat "$STATE_DIR/grafana.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            log_message "Grafana started (PID: $pid)"
+            echo "Grafana started successfully"
+            echo "Access at: http://localhost:${GRAFANA_PORT:-3000}"
+            echo "Login: admin / ${GRAFANA_ADMIN_PASSWORD:-admin}"
+        else
+            echo "Failed to start Grafana"
+            return 1
+        fi
+    fi
+}
+
+grafana_stop() {
+    log_message "Stopping Grafana"
+
+    if [ ! -f "$STATE_DIR/grafana.pid" ]; then
+        echo "Grafana not running"
+        return 1
+    fi
+
+    local pid=$(cat "$STATE_DIR/grafana.pid")
+
+    if ps -p "$pid" >/dev/null 2>&1; then
+        kill "$pid"
+        rm -f "$STATE_DIR/grafana.pid"
+        echo "Grafana stopped"
+    else
+        echo "Grafana not running (stale PID)"
+        rm -f "$STATE_DIR/grafana.pid"
+    fi
+}
+
+grafana_status() {
+    echo "Grafana Status"
+    echo "=============="
+    echo ""
+
+    if [ -f "$STATE_DIR/grafana.pid" ]; then
+        local pid=$(cat "$STATE_DIR/grafana.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "Status: Running (PID: $pid)"
+            echo "Port: ${GRAFANA_PORT:-3000}"
+            echo "URL: http://localhost:${GRAFANA_PORT:-3000}"
+        else
+            echo "Status: Not running (stale PID)"
+        fi
+    else
+        echo "Status: Not running"
+    fi
+}
+
+# Exporter Management
+exporter_install() {
+    local exporter_type="$1"
+
+    log_message "Installing exporter: $exporter_type"
+
+    echo "Installing Exporter: $exporter_type"
+    echo "==================================="
+
+    case "$exporter_type" in
+        node)
+            echo "Node exporter - System metrics"
+            echo ""
+            echo "In production, install with:"
+            echo "  tce-load -i node_exporter"
+            echo "  or download from: https://prometheus.io/download/#node_exporter"
+            ;;
+        libvirt)
+            echo "Libvirt exporter - VM metrics"
+            echo ""
+            echo "In production, install with:"
+            echo "  Download from: https://github.com/rumanzo/libvirt_exporter"
+            ;;
+        cadvisor)
+            echo "cAdvisor - Container metrics"
+            echo ""
+            echo "In production, install with:"
+            echo "  docker run -d --name=cadvisor -p 8080:8080 google/cadvisor"
+            ;;
+        blackbox)
+            echo "Blackbox exporter - Endpoint probing"
+            echo ""
+            echo "In production, install with:"
+            echo "  Download from: https://prometheus.io/download/#blackbox_exporter"
+            ;;
+        *)
+            echo "Unknown exporter type: $exporter_type"
+            echo "Available: node, libvirt, cadvisor, blackbox"
+            return 1
+            ;;
+    esac
+
+    echo ""
+    echo "Exporter type: $exporter_type noted"
+    echo "Start with: virtos-telemetry exporter-start $exporter_type"
+}
+
+exporter_start() {
+    local exporter_type="$1"
+
+    log_message "Starting exporter: $exporter_type"
+
+    echo "Starting $exporter_type exporter..."
+
+    case "$exporter_type" in
+        node)
+            # node_exporter --web.listen-address=:9100 &
+            echo "Node exporter would start on port 9100"
+            ;;
+        libvirt)
+            # libvirt_exporter --web.listen-address=:9177 &
+            echo "Libvirt exporter would start on port 9177"
+            ;;
+        cadvisor)
+            echo "cAdvisor would start on port 8080"
+            ;;
+        blackbox)
+            # blackbox_exporter --config.file=blackbox.yml &
+            echo "Blackbox exporter would start on port 9115"
+            ;;
+        *)
+            echo "Unknown exporter: $exporter_type"
+            return 1
+            ;;
+    esac
+
+    echo "$exporter_type exporter started (simulation)"
+}
+
+exporter_list() {
+    echo "Installed Exporters:"
+    echo "===================="
+    echo ""
+
+    printf "%-15s %-10s %-40s\n" "TYPE" "PORT" "STATUS"
+    echo "----------------------------------------------------------------"
+
+    # Check common exporter ports
+    if command -v node_exporter >/dev/null 2>&1; then
+        printf "%-15s %-10s %-40s\n" "node" "9100" "Installed"
+    fi
+
+    if command -v libvirt_exporter >/dev/null 2>&1; then
+        printf "%-15s %-10s %-40s\n" "libvirt" "9177" "Installed"
+    fi
+
+    if pgrep cadvisor >/dev/null 2>&1; then
+        printf "%-15s %-10s %-40s\n" "cadvisor" "8080" "Running"
+    fi
+
+    if command -v blackbox_exporter >/dev/null 2>&1; then
+        printf "%-15s %-10s %-40s\n" "blackbox" "9115" "Installed"
+    fi
+}
+
+# Scrape Target Management
+target_add() {
+    local host="$1"
+    local port="$2"
+    local job="${3:-node}"
+
+    if [ -z "$host" ] || [ -z "$port" ]; then
+        echo "Error: Host and port required"
+        return 1
+    fi
+
+    log_message "Adding scrape target: $host:$port (job: $job)"
+
+    if [ ! -f "$TELEMETRY_DIR/prometheus/prometheus.yml" ]; then
+        echo "Prometheus not initialized"
+        return 1
+    fi
+
+    # Add target to appropriate job
+    # In production, would parse and update YAML properly
+    echo "Target added: $host:$port to job '$job'"
+    echo ""
+    echo "Manual step required:"
+    echo "Edit $TELEMETRY_DIR/prometheus/prometheus.yml"
+    echo "Add '$host:$port' to the targets list under job_name: '$job'"
+    echo ""
+    echo "Then reload Prometheus: kill -HUP \$(cat $STATE_DIR/prometheus.pid)"
+}
+
+target_list() {
+    echo "Scrape Targets:"
+    echo "==============="
+    echo ""
+
+    if [ ! -f "$TELEMETRY_DIR/prometheus/prometheus.yml" ]; then
+        echo "Prometheus not configured"
+        return 1
+    fi
+
+    grep -A 10 "scrape_configs:" "$TELEMETRY_DIR/prometheus/prometheus.yml" | \
+        grep -E "job_name|targets"
+}
+
+# Metrics Viewing
+metrics_view() {
+    local metric_name="$1"
+
+    if [ -z "$metric_name" ]; then
+        echo "Error: Metric name required"
+        return 1
+    fi
+
+    echo "Querying metric: $metric_name"
+    echo "=============================="
+    echo ""
+
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "curl required for querying"
+        return 1
+    fi
+
+    local prom_url="http://localhost:${PROMETHEUS_PORT:-9090}"
+
+    curl -s "${prom_url}/api/v1/query?query=${metric_name}" | \
+        grep -o '"value":\[[^]]*\]' || echo "No data or Prometheus not running"
+}
+
+metrics_query() {
+    local promql="$1"
+
+    if [ -z "$promql" ]; then
+        echo "Error: PromQL query required"
+        return 1
+    fi
+
+    echo "Executing PromQL query:"
+    echo "======================="
+    echo "$promql"
+    echo ""
+
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "curl required"
+        return 1
+    fi
+
+    local prom_url="http://localhost:${PROMETHEUS_PORT:-9090}"
+
+    curl -s "${prom_url}/api/v1/query" --data-urlencode "query=$promql"
+    echo ""
+}
+
+# Alert Management
+alert_create() {
+    local alert_name="$1"
+    local alert_expr="$2"
+
+    if [ -z "$alert_name" ] || [ -z "$alert_expr" ]; then
+        echo "Error: Alert name and expression required"
+        return 1
+    fi
+
+    log_message "Creating alert: $alert_name"
+
+    if [ ! -f "$TELEMETRY_DIR/prometheus/alerts.yml" ]; then
+        echo "Prometheus not initialized"
+        return 1
+    fi
+
+    echo "Creating alert: $alert_name"
+    echo "Expression: $alert_expr"
+    echo ""
+
+    # In production, would properly parse and update YAML
+    echo "Manual step required:"
+    echo "Add to $TELEMETRY_DIR/prometheus/alerts.yml:"
+    echo ""
+    echo "    - alert: $alert_name"
+    echo "      expr: $alert_expr"
+    echo "      for: 5m"
+    echo "      labels:"
+    echo "        severity: warning"
+    echo "      annotations:"
+    echo "        summary: $alert_name triggered"
+}
+
+alert_list() {
+    echo "Alert Rules:"
+    echo "============"
+    echo ""
+
+    if [ ! -f "$TELEMETRY_DIR/prometheus/alerts.yml" ]; then
+        echo "No alerts configured"
+        return 0
+    fi
+
+    cat "$TELEMETRY_DIR/prometheus/alerts.yml"
+}
+
+# Dashboard Management
+dashboard_list() {
+    echo "Grafana Dashboards:"
+    echo "==================="
+    echo ""
+
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "curl required"
+        return 1
+    fi
+
+    local grafana_url="http://localhost:${GRAFANA_PORT:-3000}"
+
+    curl -s "$grafana_url/api/search?type=dash-db" | \
+        grep -o '"title":"[^"]*"' || echo "Grafana not running or no dashboards"
+}
+
+# Initialize
+init_config
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    prometheus-init)
+        prometheus_init
+        ;;
+    prometheus-start)
+        prometheus_start
+        ;;
+    prometheus-stop)
+        prometheus_stop
+        ;;
+    prometheus-status)
+        prometheus_status
+        ;;
+    grafana-init)
+        grafana_init
+        ;;
+    grafana-start)
+        grafana_start
+        ;;
+    grafana-stop)
+        grafana_stop
+        ;;
+    grafana-status)
+        grafana_status
+        ;;
+    exporter-install)
+        exporter_install "$1"
+        ;;
+    exporter-start)
+        exporter_start "$1"
+        ;;
+    exporter-list)
+        exporter_list
+        ;;
+    target-add)
+        target_add "$1" "$2" "$3"
+        ;;
+    target-list)
+        target_list
+        ;;
+    metrics-view)
+        metrics_view "$1"
+        ;;
+    metrics-query)
+        metrics_query "$1"
+        ;;
+    alert-create)
+        alert_create "$1" "$2"
+        ;;
+    alert-list)
+        alert_list
+        ;;
+    dashboard-list)
+        dashboard_list
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

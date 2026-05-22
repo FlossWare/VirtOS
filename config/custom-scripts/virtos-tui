@@ -139,7 +139,7 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 39 76 26 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 43 76 30 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
         3 "VM Backups & Restore" \
@@ -166,6 +166,10 @@ main_menu() {
         24 "Network Virtualization" \
         25 "GPU Passthrough" \
         26 "USB Devices" \
+        27 "Metrics & Telemetry" \
+        28 "Security Hardening" \
+        29 "Billing & Cost Tracking" \
+        30 "Service Mesh" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -198,6 +202,10 @@ main_menu() {
         24) network_virtualization_menu ;;
         25) gpu_passthrough_menu ;;
         26) usb_devices_menu ;;
+        27) telemetry_menu ;;
+        28) security_menu ;;
+        29) billing_menu ;;
+        30) mesh_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -2927,6 +2935,803 @@ usb_devices_menu() {
     esac
 }
 
+#==============================================================================
+# Phase 10 Menus (Metrics, Security, Billing, Service Mesh)
+#==============================================================================
+
+telemetry_menu() {
+    if ! command -v virtos-telemetry >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-telemetry not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Metrics & Telemetry" \
+        --menu "Select option:" 24 76 16 \
+        1 "Initialize Prometheus" \
+        2 "Start Prometheus" \
+        3 "Stop Prometheus" \
+        4 "Prometheus Status" \
+        5 "Initialize Grafana" \
+        6 "Start Grafana" \
+        7 "Stop Grafana" \
+        8 "Grafana Status" \
+        9 "Install Exporter" \
+        10 "Add Scrape Target" \
+        11 "View Metrics" \
+        12 "Create Alert Rule" \
+        13 "List Alerts" \
+        14 "Dashboard List" \
+        15 "Import Dashboard" \
+        16 "Run Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-telemetry prometheus-init 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Prometheus Init" --programbox 15 76
+            telemetry_menu
+            ;;
+        2)
+            virtos-telemetry prometheus-start 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Start Prometheus" --programbox 12 76
+            telemetry_menu
+            ;;
+        3)
+            virtos-telemetry prometheus-stop 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Stop Prometheus" --msgbox 12 76
+            telemetry_menu
+            ;;
+        4)
+            virtos-telemetry prometheus-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Prometheus Status" --programbox 15 76
+            telemetry_menu
+            ;;
+        5)
+            virtos-telemetry grafana-init 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Grafana Init" --programbox 15 76
+            telemetry_menu
+            ;;
+        6)
+            virtos-telemetry grafana-start 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Start Grafana" --programbox 12 76
+            telemetry_menu
+            ;;
+        7)
+            virtos-telemetry grafana-stop 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Stop Grafana" --msgbox 12 76
+            telemetry_menu
+            ;;
+        8)
+            virtos-telemetry grafana-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Grafana Status" --programbox 15 76
+            telemetry_menu
+            ;;
+        9)
+            $DIALOG $DIALOG_OPTS \
+                --title "Exporter Type" \
+                --menu "Choose exporter:" 12 60 4 \
+                1 "node" \
+                2 "libvirt" \
+                3 "cadvisor" \
+                4 "blackbox" \
+                2> $TEMP_FILE
+            EXP_CHOICE=$(cat $TEMP_FILE)
+            case $EXP_CHOICE in
+                1) EXPORTER="node" ;;
+                2) EXPORTER="libvirt" ;;
+                3) EXPORTER="cadvisor" ;;
+                4) EXPORTER="blackbox" ;;
+                *) telemetry_menu; return ;;
+            esac
+            if [ -n "$EXPORTER" ]; then
+                virtos-telemetry exporter-install "$EXPORTER" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Install Exporter" --programbox 20 76
+            fi
+            telemetry_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "Add Scrape Target" \
+                --inputbox "Enter target (host:port):" 10 60 \
+                2> $TEMP_FILE
+            TARGET=$(cat $TEMP_FILE)
+            if [ -n "$TARGET" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Job Name" \
+                    --inputbox "Enter job name:" 10 60 \
+                    2> $TEMP_FILE
+                JOB=$(cat $TEMP_FILE)
+                if [ -n "$JOB" ]; then
+                    virtos-telemetry target-add "$TARGET" "$JOB" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+                fi
+            fi
+            telemetry_menu
+            ;;
+        11)
+            $DIALOG $DIALOG_OPTS \
+                --title "PromQL Query" \
+                --inputbox "Enter PromQL query (e.g., up):" 10 70 \
+                2> $TEMP_FILE
+            QUERY=$(cat $TEMP_FILE)
+            if [ -n "$QUERY" ]; then
+                virtos-telemetry metrics-view "$QUERY" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Metrics" --programbox 20 76
+            fi
+            telemetry_menu
+            ;;
+        12)
+            $DIALOG $DIALOG_OPTS \
+                --title "Alert Name" \
+                --inputbox "Enter alert name:" 10 60 \
+                2> $TEMP_FILE
+            ALERT_NAME=$(cat $TEMP_FILE)
+            if [ -n "$ALERT_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Alert Expression" \
+                    --inputbox "Enter PromQL expression:" 10 70 \
+                    2> $TEMP_FILE
+                EXPR=$(cat $TEMP_FILE)
+                if [ -n "$EXPR" ]; then
+                    virtos-telemetry alert-create "$ALERT_NAME" "$EXPR" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+                fi
+            fi
+            telemetry_menu
+            ;;
+        13)
+            virtos-telemetry alert-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Alerts" --programbox 20 76
+            telemetry_menu
+            ;;
+        14)
+            virtos-telemetry dashboard-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Dashboards" --programbox 20 76
+            telemetry_menu
+            ;;
+        15)
+            $DIALOG $DIALOG_OPTS \
+                --title "Dashboard URL or ID" \
+                --inputbox "Enter Grafana.com dashboard ID or URL:" 10 70 \
+                2> $TEMP_FILE
+            DASHBOARD=$(cat $TEMP_FILE)
+            if [ -n "$DASHBOARD" ]; then
+                virtos-telemetry dashboard-import "$DASHBOARD" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            telemetry_menu
+            ;;
+        16)
+            virtos-telemetry wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Telemetry Wizard" --programbox 25 80
+            telemetry_menu
+            ;;
+        0) main_menu ;;
+        *) telemetry_menu ;;
+    esac
+}
+
+security_menu() {
+    if ! command -v virtos-security >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-security not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Security Hardening" \
+        --menu "Select option:" 24 76 16 \
+        1 "Initialize SELinux" \
+        2 "Create SELinux Policy" \
+        3 "Compile SELinux Policy" \
+        4 "Initialize AppArmor" \
+        5 "Create AppArmor Profile" \
+        6 "Load AppArmor Profile" \
+        7 "Harden SSH" \
+        8 "Initialize Firewall" \
+        9 "Add Firewall Rule" \
+        10 "Run Vulnerability Scan" \
+        11 "Compliance Check" \
+        12 "Enable Audit Logging" \
+        13 "View Audit Logs" \
+        14 "Security Status" \
+        15 "Security Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "SELinux Mode" \
+                --menu "Choose mode:" 12 60 3 \
+                1 "Enforcing" \
+                2 "Permissive" \
+                3 "Disabled" \
+                2> $TEMP_FILE
+            MODE_CHOICE=$(cat $TEMP_FILE)
+            case $MODE_CHOICE in
+                1) MODE="enforcing" ;;
+                2) MODE="permissive" ;;
+                3) MODE="disabled" ;;
+                *) security_menu; return ;;
+            esac
+            if [ -n "$MODE" ]; then
+                virtos-security selinux-init "$MODE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "SELinux Init" --programbox 15 76
+            fi
+            security_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Policy Name" \
+                --inputbox "Enter policy name:" 10 60 \
+                2> $TEMP_FILE
+            POLICY=$(cat $TEMP_FILE)
+            if [ -n "$POLICY" ]; then
+                virtos-security selinux-policy-create "$POLICY" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+            fi
+            security_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Policy Name" \
+                --inputbox "Enter policy name to compile:" 10 60 \
+                2> $TEMP_FILE
+            POLICY=$(cat $TEMP_FILE)
+            if [ -n "$POLICY" ]; then
+                virtos-security selinux-policy-compile "$POLICY" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            security_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "AppArmor Mode" \
+                --menu "Choose mode:" 12 60 2 \
+                1 "Enforce" \
+                2 "Complain" \
+                2> $TEMP_FILE
+            MODE_CHOICE=$(cat $TEMP_FILE)
+            case $MODE_CHOICE in
+                1) MODE="enforce" ;;
+                2) MODE="complain" ;;
+                *) security_menu; return ;;
+            esac
+            if [ -n "$MODE" ]; then
+                virtos-security apparmor-init "$MODE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "AppArmor Init" --programbox 15 76
+            fi
+            security_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Profile Name" \
+                --inputbox "Enter profile name:" 10 60 \
+                2> $TEMP_FILE
+            PROFILE=$(cat $TEMP_FILE)
+            if [ -n "$PROFILE" ]; then
+                virtos-security apparmor-profile-create "$PROFILE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+            fi
+            security_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Profile Name" \
+                --inputbox "Enter profile name to load:" 10 60 \
+                2> $TEMP_FILE
+            PROFILE=$(cat $TEMP_FILE)
+            if [ -n "$PROFILE" ]; then
+                virtos-security apparmor-profile-load "$PROFILE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            security_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "SSH Hardening" \
+                --yesno "This will apply SSH hardening settings.\n\nContinue?" 10 50
+            if [ $? -eq 0 ]; then
+                virtos-security ssh-harden 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            security_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Default Policy" \
+                --menu "Choose default policy:" 12 60 3 \
+                1 "Drop (recommended)" \
+                2 "Reject" \
+                3 "Accept" \
+                2> $TEMP_FILE
+            POLICY_CHOICE=$(cat $TEMP_FILE)
+            case $POLICY_CHOICE in
+                1) POLICY="drop" ;;
+                2) POLICY="reject" ;;
+                3) POLICY="accept" ;;
+                *) security_menu; return ;;
+            esac
+            if [ -n "$POLICY" ]; then
+                virtos-security firewall-init "$POLICY" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Firewall Init" --programbox 15 76
+            fi
+            security_menu
+            ;;
+        9)
+            $DIALOG $DIALOG_OPTS \
+                --title "Protocol" \
+                --menu "Choose protocol:" 12 60 2 \
+                1 "TCP" \
+                2 "UDP" \
+                2> $TEMP_FILE
+            PROTO_CHOICE=$(cat $TEMP_FILE)
+            case $PROTO_CHOICE in
+                1) PROTO="tcp" ;;
+                2) PROTO="udp" ;;
+                *) security_menu; return ;;
+            esac
+            if [ -n "$PROTO" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Port Number" \
+                    --inputbox "Enter port number:" 10 60 \
+                    2> $TEMP_FILE
+                PORT=$(cat $TEMP_FILE)
+                if [ -n "$PORT" ]; then
+                    virtos-security firewall-rule-add "$PROTO" "$PORT" ACCEPT 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+                fi
+            fi
+            security_menu
+            ;;
+        10)
+            virtos-security vulnerability-scan 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Vulnerability Scan" --programbox 25 100
+            security_menu
+            ;;
+        11)
+            $DIALOG $DIALOG_OPTS \
+                --title "Compliance Framework" \
+                --menu "Choose framework:" 14 60 4 \
+                1 "CIS Benchmarks" \
+                2 "NIST 800-53" \
+                3 "PCI-DSS" \
+                4 "HIPAA" \
+                2> $TEMP_FILE
+            FRAMEWORK_CHOICE=$(cat $TEMP_FILE)
+            case $FRAMEWORK_CHOICE in
+                1) FRAMEWORK="cis" ;;
+                2) FRAMEWORK="nist" ;;
+                3) FRAMEWORK="pci-dss" ;;
+                4) FRAMEWORK="hipaa" ;;
+                *) security_menu; return ;;
+            esac
+            if [ -n "$FRAMEWORK" ]; then
+                virtos-security compliance-check "$FRAMEWORK" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Compliance Check" --programbox 25 100
+            fi
+            security_menu
+            ;;
+        12)
+            virtos-security audit-enable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Enable Audit Logging" --programbox 15 76
+            security_menu
+            ;;
+        13)
+            $DIALOG $DIALOG_OPTS \
+                --title "Audit Filter" \
+                --inputbox "Enter filter (optional, e.g., root-commands):" 10 70 \
+                2> $TEMP_FILE
+            FILTER=$(cat $TEMP_FILE)
+            virtos-security audit-logs "$FILTER" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Audit Logs" --programbox 25 100
+            security_menu
+            ;;
+        14)
+            virtos-security status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Security Status" --programbox 25 76
+            security_menu
+            ;;
+        15)
+            virtos-security wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Security Wizard" --programbox 25 80
+            security_menu
+            ;;
+        0) main_menu ;;
+        *) security_menu ;;
+    esac
+}
+
+billing_menu() {
+    if ! command -v virtos-billing >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-billing not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Billing & Cost Tracking" \
+        --menu "Select option:" 22 76 14 \
+        1 "Initialize Billing" \
+        2 "Track VM Usage" \
+        3 "Calculate Costs" \
+        4 "Cost Report" \
+        5 "Generate Invoice" \
+        6 "List Invoices" \
+        7 "View Invoice" \
+        8 "Mark Invoice Paid" \
+        9 "Set Pricing" \
+        10 "Show Pricing" \
+        11 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-billing init 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Initialize Billing" --programbox 15 76
+            billing_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Track Usage" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                virtos-billing track-usage "$VM_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            billing_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Calculate Costs" \
+                --inputbox "Enter VM name (optional):" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            virtos-billing calculate-costs "$VM_NAME" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Costs" --msgbox 12 76
+            billing_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Report Period" \
+                --menu "Choose period:" 14 60 4 \
+                1 "Day" \
+                2 "Week" \
+                3 "Month" \
+                4 "Year" \
+                2> $TEMP_FILE
+            PERIOD_CHOICE=$(cat $TEMP_FILE)
+            case $PERIOD_CHOICE in
+                1) PERIOD="day" ;;
+                2) PERIOD="week" ;;
+                3) PERIOD="month" ;;
+                4) PERIOD="year" ;;
+                *) billing_menu; return ;;
+            esac
+            if [ -n "$PERIOD" ]; then
+                virtos-billing cost-report "" "$PERIOD" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Cost Report" --programbox 25 100
+            fi
+            billing_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Customer Name" \
+                --inputbox "Enter customer name:" 10 60 \
+                2> $TEMP_FILE
+            CUSTOMER=$(cat $TEMP_FILE)
+            if [ -n "$CUSTOMER" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Period Start" \
+                    --inputbox "Enter start date (YYYY-MM-DD):" 10 60 \
+                    2> $TEMP_FILE
+                START=$(cat $TEMP_FILE)
+                if [ -n "$START" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Period End" \
+                        --inputbox "Enter end date (YYYY-MM-DD):" 10 60 \
+                        2> $TEMP_FILE
+                    END=$(cat $TEMP_FILE)
+                    if [ -n "$END" ]; then
+                        INVOICE=$(virtos-billing generate-invoice "$CUSTOMER" "$START" "$END" 2>&1)
+                        $DIALOG $DIALOG_OPTS --msgbox "Invoice generated:\n$INVOICE" 10 60
+                    fi
+                fi
+            fi
+            billing_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Invoice Status" \
+                --menu "Filter by status:" 12 60 3 \
+                1 "All" \
+                2 "Pending" \
+                3 "Paid" \
+                2> $TEMP_FILE
+            STATUS_CHOICE=$(cat $TEMP_FILE)
+            case $STATUS_CHOICE in
+                1) STATUS="all" ;;
+                2) STATUS="pending" ;;
+                3) STATUS="paid" ;;
+                *) billing_menu; return ;;
+            esac
+            if [ -n "$STATUS" ]; then
+                virtos-billing list-invoices "$STATUS" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Invoices" --programbox 25 100
+            fi
+            billing_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Invoice Number" \
+                --inputbox "Enter invoice number:" 10 60 \
+                2> $TEMP_FILE
+            INVOICE=$(cat $TEMP_FILE)
+            if [ -n "$INVOICE" ]; then
+                virtos-billing view-invoice "$INVOICE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Invoice" --programbox 30 100
+            fi
+            billing_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Invoice Number" \
+                --inputbox "Enter invoice number:" 10 60 \
+                2> $TEMP_FILE
+            INVOICE=$(cat $TEMP_FILE)
+            if [ -n "$INVOICE" ]; then
+                virtos-billing mark-paid "$INVOICE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+            fi
+            billing_menu
+            ;;
+        9)
+            $DIALOG $DIALOG_OPTS \
+                --title "Resource Type" \
+                --menu "Choose resource:" 14 60 4 \
+                1 "CPU" \
+                2 "RAM" \
+                3 "Disk" \
+                4 "Network" \
+                2> $TEMP_FILE
+            RESOURCE_CHOICE=$(cat $TEMP_FILE)
+            case $RESOURCE_CHOICE in
+                1) RESOURCE="cpu" ;;
+                2) RESOURCE="ram" ;;
+                3) RESOURCE="disk" ;;
+                4) RESOURCE="network" ;;
+                *) billing_menu; return ;;
+            esac
+            if [ -n "$RESOURCE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Price" \
+                    --inputbox "Enter price:" 10 60 \
+                    2> $TEMP_FILE
+                PRICE=$(cat $TEMP_FILE)
+                if [ -n "$PRICE" ]; then
+                    virtos-billing set-pricing "$RESOURCE" "$PRICE" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+                fi
+            fi
+            billing_menu
+            ;;
+        10)
+            virtos-billing show-pricing 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Pricing" --programbox 15 76
+            billing_menu
+            ;;
+        11)
+            virtos-billing wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Billing Wizard" --programbox 25 80
+            billing_menu
+            ;;
+        0) main_menu ;;
+        *) billing_menu ;;
+    esac
+}
+
+mesh_menu() {
+    if ! command -v virtos-mesh >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-mesh not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Service Mesh" \
+        --menu "Select option:" 22 76 14 \
+        1 "Install Istio" \
+        2 "Install Linkerd" \
+        3 "Install Consul Connect" \
+        4 "Inject Sidecar" \
+        5 "Enable mTLS" \
+        6 "Create Virtual Service" \
+        7 "Create Destination Rule" \
+        8 "Traffic Split" \
+        9 "Fault Injection" \
+        10 "Circuit Breaker" \
+        11 "Mesh Status" \
+        12 "Open Dashboard" \
+        13 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-mesh istio-install 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Install Istio" --programbox 25 100
+            mesh_menu
+            ;;
+        2)
+            virtos-mesh linkerd-install 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Install Linkerd" --programbox 25 100
+            mesh_menu
+            ;;
+        3)
+            virtos-mesh consul-install 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Install Consul" --programbox 25 100
+            mesh_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Deployment Name" \
+                --inputbox "Enter deployment name:" 10 60 \
+                2> $TEMP_FILE
+            DEPLOYMENT=$(cat $TEMP_FILE)
+            if [ -n "$DEPLOYMENT" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Namespace" \
+                    --inputbox "Enter namespace [default]:" 10 60 \
+                    2> $TEMP_FILE
+                NAMESPACE=$(cat $TEMP_FILE)
+                NAMESPACE="${NAMESPACE:-default}"
+                virtos-mesh inject-sidecar "$DEPLOYMENT" "$NAMESPACE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            mesh_menu
+            ;;
+        5)
+            virtos-mesh mtls-enable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Enable mTLS" --programbox 12 76
+            mesh_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Virtual Service Name" \
+                --inputbox "Enter name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Host" \
+                    --inputbox "Enter host:" 10 60 \
+                    2> $TEMP_FILE
+                HOST=$(cat $TEMP_FILE)
+                if [ -n "$HOST" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Service" \
+                        --inputbox "Enter service:" 10 60 \
+                        2> $TEMP_FILE
+                    SERVICE=$(cat $TEMP_FILE)
+                    if [ -n "$SERVICE" ]; then
+                        virtos-mesh virtual-service-create "$NAME" "$HOST" "$SERVICE" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                    fi
+                fi
+            fi
+            mesh_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Destination Rule Name" \
+                --inputbox "Enter name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Host" \
+                    --inputbox "Enter host:" 10 60 \
+                    2> $TEMP_FILE
+                HOST=$(cat $TEMP_FILE)
+                if [ -n "$HOST" ]; then
+                    virtos-mesh destination-rule-create "$NAME" "$HOST" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            mesh_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Service Name" \
+                --inputbox "Enter service name:" 10 60 \
+                2> $TEMP_FILE
+            SERVICE=$(cat $TEMP_FILE)
+            if [ -n "$SERVICE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Version B Weight" \
+                    --inputbox "Enter percentage for version B (0-100):" 10 60 \
+                    2> $TEMP_FILE
+                WEIGHT=$(cat $TEMP_FILE)
+                if [ -n "$WEIGHT" ]; then
+                    virtos-mesh traffic-split "$SERVICE" v1 v2 "$WEIGHT" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            mesh_menu
+            ;;
+        9)
+            $DIALOG $DIALOG_OPTS \
+                --title "Service Name" \
+                --inputbox "Enter service name:" 10 60 \
+                2> $TEMP_FILE
+            SERVICE=$(cat $TEMP_FILE)
+            if [ -n "$SERVICE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Fault Type" \
+                    --menu "Choose fault type:" 12 60 2 \
+                    1 "Delay" \
+                    2 "Abort" \
+                    2> $TEMP_FILE
+                FAULT_CHOICE=$(cat $TEMP_FILE)
+                case $FAULT_CHOICE in
+                    1) FAULT="delay" ;;
+                    2) FAULT="abort" ;;
+                    *) mesh_menu; return ;;
+                esac
+                if [ -n "$FAULT" ]; then
+                    virtos-mesh fault-inject "$SERVICE" "$FAULT" 10 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            mesh_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "Service Name" \
+                --inputbox "Enter service name:" 10 60 \
+                2> $TEMP_FILE
+            SERVICE=$(cat $TEMP_FILE)
+            if [ -n "$SERVICE" ]; then
+                virtos-mesh circuit-breaker "$SERVICE" 100 100 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            mesh_menu
+            ;;
+        11)
+            virtos-mesh status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Service Mesh Status" --programbox 25 100
+            mesh_menu
+            ;;
+        12)
+            $DIALOG $DIALOG_OPTS --msgbox "Opening mesh dashboard...\nCheck terminal for details." 8 50
+            virtos-mesh dashboard 2>&1 &
+            mesh_menu
+            ;;
+        13)
+            virtos-mesh wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Service Mesh Wizard" --programbox 25 80
+            mesh_menu
+            ;;
+        0) main_menu ;;
+        *) mesh_menu ;;
+    esac
+}
+
 settings_menu() {
     $DIALOG $DIALOG_OPTS \
         --title "Settings" \
@@ -2996,9 +3801,14 @@ settings_menu() {
             command -v virtos-network >/dev/null && INFO="${INFO}  ✓ virtos-network\n"
             command -v virtos-gpu >/dev/null && INFO="${INFO}  ✓ virtos-gpu\n"
             command -v virtos-usb >/dev/null && INFO="${INFO}  ✓ virtos-usb\n"
+            INFO="${INFO}\nPhase 10 Tools:\n"
+            command -v virtos-telemetry >/dev/null && INFO="${INFO}  ✓ virtos-telemetry\n"
+            command -v virtos-security >/dev/null && INFO="${INFO}  ✓ virtos-security\n"
+            command -v virtos-billing >/dev/null && INFO="${INFO}  ✓ virtos-billing\n"
+            command -v virtos-mesh >/dev/null && INFO="${INFO}  ✓ virtos-mesh\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
-                --msgbox "$INFO" 32 50
+                --msgbox "$INFO" 36 50
             settings_menu
             ;;
         4)

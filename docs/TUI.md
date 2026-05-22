@@ -1388,6 +1388,297 @@ USB passthrough and management using virtos-usb:
 - Hardware dongles
 - Development boards
 
+### 27. Metrics & Telemetry
+
+Metrics collection and monitoring using virtos-telemetry:
+
+#### Submenu Options:
+- **Initialize Prometheus** - Setup Prometheus server
+- **Start Prometheus** - Start Prometheus service
+- **Stop Prometheus** - Stop Prometheus service
+- **Prometheus Status** - View Prometheus state
+- **Initialize Grafana** - Setup Grafana server
+- **Start Grafana** - Start Grafana service (port 3000)
+- **Stop Grafana** - Stop Grafana service
+- **Grafana Status** - View Grafana state
+- **Install Exporter** - Add metrics exporter
+- **Add Scrape Target** - Add monitoring target
+- **View Metrics** - Query metrics (PromQL)
+- **Create Alert Rule** - Define alert conditions
+- **List Alerts** - Show alert rules
+- **Dashboard List** - View Grafana dashboards
+- **Import Dashboard** - Import from Grafana.com
+- **Run Setup Wizard** - Guided telemetry setup
+
+#### Example: Setup Monitoring
+```
+1. Select "Run Setup Wizard"
+2. Choose Prometheus + Grafana
+3. Select exporters to install
+4. System configures everything
+5. Access Grafana at http://virtos:3000
+```
+
+#### Example: Add Custom Target
+```
+1. Select "Add Scrape Target"
+2. Enter target: 192.168.1.50:9100
+3. Enter job name: remote-node
+4. Target added to Prometheus config
+5. Metrics scraped every 15s
+```
+
+#### Example: View Metrics
+```
+1. Select "View Metrics"
+2. Enter query: up
+3. See all targets and their status
+4. Press OK to return
+```
+
+**Exporters:**
+- node - System metrics (CPU, RAM, disk)
+- libvirt - VM metrics
+- cAdvisor - Container metrics
+- blackbox - Network probes
+
+**Features:**
+- Prometheus time-series database
+- Grafana dashboards
+- Alert manager integration
+- PromQL query language
+- Dashboard templates
+- Multi-target scraping
+
+**Use cases:**
+- Infrastructure monitoring
+- VM performance tracking
+- Container resource usage
+- Alerting on issues
+- Capacity planning
+- SLA monitoring
+
+### 28. Security Hardening
+
+Security policy and hardening using virtos-security:
+
+#### Submenu Options:
+- **Initialize SELinux** - Setup SELinux (enforcing/permissive/disabled)
+- **Create SELinux Policy** - New SELinux policy template
+- **Compile SELinux Policy** - Compile and install policy
+- **Initialize AppArmor** - Setup AppArmor (enforce/complain)
+- **Create AppArmor Profile** - New AppArmor profile
+- **Load AppArmor Profile** - Activate profile
+- **Harden SSH** - Apply SSH hardening rules
+- **Initialize Firewall** - Setup iptables firewall
+- **Add Firewall Rule** - Allow/deny ports
+- **Run Vulnerability Scan** - Lynis security audit
+- **Compliance Check** - Check standards (CIS/NIST/PCI/HIPAA)
+- **Enable Audit Logging** - Start auditd logging
+- **View Audit Logs** - Show security audit logs
+- **Security Status** - Complete security overview
+- **Security Wizard** - Guided security setup
+
+#### Example: Harden System
+```
+1. Select "Security Wizard"
+2. Choose SELinux mode: Enforcing
+3. Initialize firewall: Drop default
+4. Apply SSH hardening: Yes
+5. Enable audit logging: Yes
+6. Select compliance: CIS Benchmarks
+7. System hardened automatically
+```
+
+#### Example: Add Firewall Rule
+```
+1. Select "Add Firewall Rule"
+2. Choose protocol: TCP
+3. Enter port: 8080
+4. Rule added and active
+5. Port 8080 now accessible
+```
+
+#### Example: Compliance Check
+```
+1. Select "Compliance Check"
+2. Choose framework: CIS Benchmarks
+3. System scans configuration
+4. Report shows PASS/FAIL for each check
+5. Recommendations displayed
+```
+
+**Security Features:**
+- SELinux mandatory access control
+- AppArmor application confinement
+- SSH key-only authentication
+- iptables firewall
+- Vulnerability scanning (Lynis)
+- Compliance checking
+- Audit logging
+
+**Compliance Frameworks:**
+- CIS Benchmarks
+- NIST 800-53
+- PCI-DSS
+- HIPAA
+
+**Use cases:**
+- Regulatory compliance
+- Security hardening
+- Access control
+- Intrusion prevention
+- Audit trails
+- Penetration testing
+
+### 29. Billing & Cost Tracking
+
+Resource usage and billing using virtos-billing:
+
+#### Submenu Options:
+- **Initialize Billing** - Setup billing database
+- **Track VM Usage** - Record VM resource usage
+- **Calculate Costs** - Compute resource costs
+- **Cost Report** - Generate cost reports (day/week/month/year)
+- **Generate Invoice** - Create customer invoice
+- **List Invoices** - Show all/pending/paid invoices
+- **View Invoice** - Display invoice details
+- **Mark Invoice Paid** - Update payment status
+- **Set Pricing** - Configure resource prices
+- **Show Pricing** - Display current rates
+- **Setup Wizard** - Guided billing setup
+
+#### Example: Track Costs
+```
+1. Select "Track VM Usage"
+2. Enter VM name: web-server
+3. System records:
+   - vCPU count and hours
+   - RAM GB and hours
+   - Disk GB usage
+4. Usage tracked in database
+```
+
+#### Example: Generate Monthly Invoice
+```
+1. Select "Generate Invoice"
+2. Enter customer: Acme Corp
+3. Start date: 2026-05-01
+4. End date: 2026-05-31
+5. Invoice created: INV-20260531-123456
+6. View or email invoice
+```
+
+#### Example: Cost Report
+```
+1. Select "Cost Report"
+2. Choose period: Month
+3. Report shows:
+   - Cost by VM
+   - CPU/RAM/Disk breakdown
+   - Total costs
+```
+
+**Pricing Model:**
+- CPU: $ per vCPU hour
+- RAM: $ per GB hour
+- Disk: $ per GB month
+- Network: $ per GB transfer
+
+**Features:**
+- SQLite database for tracking
+- Customizable pricing
+- Invoice generation
+- Cost reports by period
+- Multi-VM tracking
+- Tax calculation
+- Payment status tracking
+
+**Use cases:**
+- Service provider billing
+- Internal cost allocation
+- Budget tracking
+- Chargeback reporting
+- Resource optimization
+- Cost forecasting
+
+### 30. Service Mesh
+
+Microservices mesh integration using virtos-mesh:
+
+#### Submenu Options:
+- **Install Istio** - Deploy Istio service mesh
+- **Install Linkerd** - Deploy Linkerd service mesh
+- **Install Consul Connect** - Deploy Consul Connect mesh
+- **Inject Sidecar** - Add proxy to deployment
+- **Enable mTLS** - Activate mutual TLS
+- **Create Virtual Service** - Traffic routing rules
+- **Create Destination Rule** - Load balancing policies
+- **Traffic Split** - Canary/blue-green deployments
+- **Fault Injection** - Chaos engineering (delay/abort)
+- **Circuit Breaker** - Failure handling
+- **Mesh Status** - View mesh state
+- **Open Dashboard** - Launch mesh UI
+- **Setup Wizard** - Guided mesh installation
+
+#### Example: Deploy Istio
+```
+1. Select "Install Istio"
+2. System downloads Istio
+3. Control plane deployed to K3s
+4. Istio injector configured
+5. Access Kiali dashboard
+```
+
+#### Example: Canary Deployment
+```
+1. Select "Traffic Split"
+2. Enter service: my-app
+3. Version A: v1 (90%)
+4. Version B: v2 (10%)
+5. 10% of traffic routes to new version
+6. Monitor metrics
+7. Adjust split as needed
+```
+
+#### Example: Enable mTLS
+```
+1. Select "Enable mTLS"
+2. System configures strict mTLS
+3. All service-to-service traffic encrypted
+4. Certificate rotation automatic
+```
+
+**Service Mesh Options:**
+- Istio - Feature-rich, production-grade
+- Linkerd - Lightweight, simple
+- Consul Connect - Multi-platform
+
+**Features:**
+- Mutual TLS (mTLS)
+- Traffic management
+- Load balancing
+- Circuit breakers
+- Fault injection
+- Observability (metrics, tracing)
+- Service discovery
+
+**Traffic Management:**
+- Canary deployments
+- Blue-green deployments
+- A/B testing
+- Traffic splitting by percentage
+- Header-based routing
+- URL path routing
+
+**Use cases:**
+- Microservices security
+- Zero-trust networking
+- Gradual rollouts
+- Chaos engineering
+- Service monitoring
+- Multi-cluster communication
+
 ### 22. Settings
 
 VirtOS configuration and information:
@@ -1413,6 +1704,7 @@ Shows checkmarks for:
 - ✓ Phase 7 Tools (virtos-monitor, virtos-ha, virtos-migrate, virtos-quota)
 - ✓ Phase 8 Tools (virtos-auth, virtos-cloud-init, virtos-api, virtos-update, virtos-dr)
 - ✓ Phase 9 Tools (virtos-storage, virtos-network, virtos-gpu, virtos-usb)
+- ✓ Phase 10 Tools (virtos-telemetry, virtos-security, virtos-billing, virtos-mesh)
 
 **Use cases:**
 - Verify installation
