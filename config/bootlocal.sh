@@ -61,8 +61,23 @@ iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 # tce-load -i lxc.tcz
 # tce-load -i containerd.tcz
 
+# Set up libvirt group for remote access
+echo "Configuring libvirt access..."
+if ! grep -q "^libvirt:" /etc/group; then
+    addgroup -g 112 libvirt 2>/dev/null || true
+fi
+
 # Start services
-# /usr/local/etc/init.d/libvirtd start
+if [ -x /usr/local/etc/init.d/libvirtd ]; then
+    echo "Starting libvirtd..."
+    /usr/local/etc/init.d/libvirtd start
+fi
+
+# Start SSH for remote access
+if [ -x /usr/local/etc/init.d/openssh ]; then
+    echo "Starting SSH server..."
+    /usr/local/etc/init.d/openssh start
+fi
 
 echo "=== FlossWare VirtOS Ready ==="
 echo ""

@@ -86,6 +86,15 @@ qemu-system-x86_64 -enable-kvm -m 2048 \
 
 See [docs/PROFILES.md](docs/PROFILES.md) for details.
 
+### Remote Management
+
+**Connect with virt-manager from your desktop:**
+```bash
+virt-manager -c qemu+ssh://vmadmin@virtos/system
+```
+
+VirtOS includes SSH and libvirt for remote management. See [docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md) for setup.
+
 ### Customization
 
 **Everything is choosable!** Edit `build/build.conf`:

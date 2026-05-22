@@ -1,5 +1,20 @@
 # Quick Reference Guide
 
+## Remote Access
+
+```bash
+# virt-manager (GUI)
+virt-manager -c qemu+ssh://vmadmin@virtos/system
+
+# virsh (CLI)
+virsh -c qemu+ssh://vmadmin@virtos/system list --all
+
+# SSH
+ssh vmadmin@virtos
+```
+
+See [REMOTE-ACCESS.md](REMOTE-ACCESS.md) for detailed setup.
+
 ## Build Commands
 
 ```bash
