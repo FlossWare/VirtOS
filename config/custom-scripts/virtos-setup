@@ -2,7 +2,7 @@
 # VirtOS Setup Wizard - First-time configuration TUI
 # Interactive ncurses-based setup for VirtOS
 
-VERSION="0.1-alpha"
+VERSION="1"
 
 # Check for dialog/whiptail
 if command -v dialog >/dev/null 2>&1; then

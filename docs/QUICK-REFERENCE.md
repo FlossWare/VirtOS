@@ -135,6 +135,120 @@ virtos-snapshot schedule web-server-1 --daily 02:00 --keep 7
 virtos-snapshot cleanup web-server-1
 ```
 
+## Monitoring & Alerts
+
+```bash
+# Start monitoring daemon
+virtos-monitor start
+
+# Stop monitoring daemon
+virtos-monitor stop
+
+# Check monitoring status
+virtos-monitor status
+
+# Run health checks once
+virtos-monitor check
+
+# View active alerts
+virtos-monitor alerts
+
+# Configure CPU threshold
+virtos-monitor config cpu 90
+
+# Configure memory threshold
+virtos-monitor config memory 80
+
+# Configure email alerts
+virtos-monitor config email admin@example.com
+
+# Configure webhook alerts
+virtos-monitor config webhook https://hooks.example.com/alert
+```
+
+## High Availability (HA)
+
+```bash
+# Enable HA for a VM
+virtos-ha enable web-server-1 --priority high
+
+# Disable HA for a VM
+virtos-ha disable web-server-1
+
+# List HA-enabled VMs
+virtos-ha list
+
+# Check HA status
+virtos-ha status
+
+# Manual failover
+virtos-ha failover db-server virtos-2
+
+# Start HA daemon
+virtos-ha start-daemon
+
+# Stop HA daemon
+virtos-ha stop-daemon
+```
+
+## VM Migration
+
+```bash
+# Live migration with shared storage
+virtos-migrate --live --shared-storage web-1 virtos-2
+
+# Block migration (no shared storage required)
+virtos-migrate --block app-1 virtos-3
+
+# Offline migration
+virtos-migrate --offline db-server virtos-2
+
+# Migration with bandwidth limit
+virtos-migrate --live --bandwidth 100 web-1 virtos-2
+
+# Compressed migration
+virtos-migrate --block --compressed large-vm virtos-3
+
+# Migration with auto-converge (for busy VMs)
+virtos-migrate --live --auto-converge vm-1 virtos-2
+```
+
+## Resource Quotas
+
+```bash
+# Set VM CPU limit
+virtos-quota set web-1 cpu 4
+
+# Set VM memory limit
+virtos-quota set db-server memory 8192
+
+# Set VM disk limit
+virtos-quota set app-1 disk 100
+
+# Get VM quotas
+virtos-quota get web-1
+
+# Check VM quota compliance
+virtos-quota check web-1
+
+# List all quotas
+virtos-quota list
+
+# Show cluster resource usage
+virtos-quota usage
+
+# Set cluster-wide quotas
+virtos-quota cluster-quota vms 100
+virtos-quota cluster-quota cpu 256
+virtos-quota cluster-quota memory 524288
+
+# Enable quota enforcement
+virtos-quota enforce on
+
+# Disable quota enforcement
+virtos-quota enforce off
+```
+
 ## Build Commands
 
 ```bash

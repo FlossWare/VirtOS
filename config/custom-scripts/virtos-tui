@@ -2,7 +2,7 @@
 # VirtOS TUI - Text User Interface for VirtOS Management
 # ncurses-based management console
 
-VERSION="0.1-alpha"
+VERSION="1"
 
 # Check for dialog/whiptail
 if command -v dialog >/dev/null 2>&1; then
@@ -139,20 +139,24 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 25 76 13 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 30 76 17 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
         3 "VM Backups & Restore" \
         4 "VM Templates" \
         5 "VM Snapshots" \
         6 "IaaS VM Creation" \
-        7 "Containers" \
-        8 "Storage Management" \
-        9 "Cluster Status" \
-        10 "Networking" \
-        11 "Services" \
-        12 "System Logs" \
-        13 "Settings" \
+        7 "Monitoring & Alerts" \
+        8 "High Availability (HA)" \
+        9 "VM Migration" \
+        10 "Resource Quotas" \
+        11 "Containers" \
+        12 "Storage Management" \
+        13 "Cluster Status" \
+        14 "Networking" \
+        15 "Services" \
+        16 "System Logs" \
+        17 "Settings" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -165,13 +169,17 @@ main_menu() {
         4) templates_menu ;;
         5) snapshots_menu ;;
         6) iaas_vm_create_menu ;;
-        7) container_management_menu ;;
-        8) storage_management_menu ;;
-        9) cluster_status_menu ;;
-        10) networking_menu ;;
-        11) services_menu ;;
-        12) logs_menu ;;
-        13) settings_menu ;;
+        7) monitoring_menu ;;
+        8) ha_menu ;;
+        9) migration_menu ;;
+        10) quota_menu ;;
+        11) container_management_menu ;;
+        12) storage_management_menu ;;
+        13) cluster_status_menu ;;
+        14) networking_menu ;;
+        15) services_menu ;;
+        16) logs_menu ;;
+        17) settings_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -672,6 +680,464 @@ logs_menu() {
             ;;
         0) main_menu ;;
         *) logs_menu ;;
+    esac
+}
+
+monitoring_menu() {
+    if ! command -v virtos-monitor >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-monitor not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Monitoring & Alerts" \
+        --menu "Select option:" 18 76 8 \
+        1 "Show Monitoring Status" \
+        2 "View Active Alerts" \
+        3 "Run Health Checks Now" \
+        4 "Start Monitoring Daemon" \
+        5 "Stop Monitoring Daemon" \
+        6 "Configure CPU Threshold" \
+        7 "Configure Memory Threshold" \
+        8 "Configure Email Alerts" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Monitoring Status" \
+                --msgbox "$(virtos-monitor status 2>&1)" 25 80
+            monitoring_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Active Alerts" \
+                --msgbox "$(virtos-monitor alerts 2>&1)" 25 100
+            monitoring_menu
+            ;;
+        3)
+            virtos-monitor check 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Health Check Results" --programbox 20 76
+            $DIALOG $DIALOG_OPTS --msgbox "Health checks completed" 6 40
+            monitoring_menu
+            ;;
+        4)
+            virtos-monitor start 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Starting Daemon" --programbox 15 76
+            $DIALOG $DIALOG_OPTS --msgbox "Monitoring daemon started" 6 40
+            monitoring_menu
+            ;;
+        5)
+            virtos-monitor stop 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Stopping Daemon" --programbox 15 76
+            $DIALOG $DIALOG_OPTS --msgbox "Monitoring daemon stopped" 6 40
+            monitoring_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "CPU Threshold" \
+                --inputbox "Enter CPU warning threshold (%):" 10 60 "90" \
+                2> $TEMP_FILE
+            THRESHOLD=$(cat $TEMP_FILE)
+            if [ -n "$THRESHOLD" ]; then
+                virtos-monitor config cpu "$THRESHOLD" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            monitoring_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Memory Threshold" \
+                --inputbox "Enter memory warning threshold (%):" 10 60 "80" \
+                2> $TEMP_FILE
+            THRESHOLD=$(cat $TEMP_FILE)
+            if [ -n "$THRESHOLD" ]; then
+                virtos-monitor config memory "$THRESHOLD" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            monitoring_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Email Alerts" \
+                --inputbox "Enter email address for alerts:" 10 70 \
+                2> $TEMP_FILE
+            EMAIL=$(cat $TEMP_FILE)
+            if [ -n "$EMAIL" ]; then
+                virtos-monitor config email "$EMAIL" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            monitoring_menu
+            ;;
+        0) main_menu ;;
+        *) monitoring_menu ;;
+    esac
+}
+
+ha_menu() {
+    if ! command -v virtos-ha >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-ha not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "High Availability (HA)" \
+        --menu "Select option:" 18 76 8 \
+        1 "Show HA Status" \
+        2 "List HA-Enabled VMs" \
+        3 "Enable HA for VM" \
+        4 "Disable HA for VM" \
+        5 "Manual Failover" \
+        6 "Start HA Daemon" \
+        7 "Stop HA Daemon" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "HA Status" \
+                --msgbox "$(virtos-ha status 2>&1)" 25 80
+            ha_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "HA-Enabled VMs" \
+                --msgbox "$(virtos-ha list 2>&1)" 25 80
+            ha_menu
+            ;;
+        3)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Enable HA" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Select priority
+                $DIALOG $DIALOG_OPTS \
+                    --title "HA Priority" \
+                    --menu "Select VM priority:" 12 60 3 \
+                    1 "Normal" \
+                    2 "High" \
+                    3 "Low" \
+                    2> $TEMP_FILE
+                PRIORITY_CHOICE=$(cat $TEMP_FILE)
+
+                case $PRIORITY_CHOICE in
+                    2) PRIORITY="high" ;;
+                    3) PRIORITY="low" ;;
+                    *) PRIORITY="normal" ;;
+                esac
+
+                virtos-ha enable "$VM_NAME" --priority "$PRIORITY" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                $DIALOG $DIALOG_OPTS --msgbox "HA enabled for $VM_NAME" 6 50
+            fi
+            ha_menu
+            ;;
+        4)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Disable HA" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Confirm" \
+                    --yesno "Disable HA for '$VM_NAME'?" 8 50
+
+                if [ $? -eq 0 ]; then
+                    virtos-ha disable "$VM_NAME" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+                    $DIALOG $DIALOG_OPTS --msgbox "HA disabled for $VM_NAME" 6 50
+                fi
+            fi
+            ha_menu
+            ;;
+        5)
+            # Manual failover
+            $DIALOG $DIALOG_OPTS \
+                --title "Manual Failover" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Failover Destination" \
+                    --inputbox "Enter destination host:" 10 60 \
+                    2> $TEMP_FILE
+                DEST_HOST=$(cat $TEMP_FILE)
+
+                if [ -n "$DEST_HOST" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Confirm Failover" \
+                        --yesno "Failover '$VM_NAME' to '$DEST_HOST'?" 8 60
+
+                    if [ $? -eq 0 ]; then
+                        virtos-ha failover "$VM_NAME" "$DEST_HOST" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Failover Progress" --programbox 20 76
+                        $DIALOG $DIALOG_OPTS --msgbox "Failover operation completed" 6 50
+                    fi
+                fi
+            fi
+            ha_menu
+            ;;
+        6)
+            virtos-ha start-daemon 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Starting HA Daemon" --programbox 15 76
+            $DIALOG $DIALOG_OPTS --msgbox "HA daemon started" 6 40
+            ha_menu
+            ;;
+        7)
+            virtos-ha stop-daemon 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Stopping HA Daemon" --programbox 15 76
+            $DIALOG $DIALOG_OPTS --msgbox "HA daemon stopped" 6 40
+            ha_menu
+            ;;
+        0) main_menu ;;
+        *) ha_menu ;;
+    esac
+}
+
+migration_menu() {
+    if ! command -v virtos-migrate >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-migrate not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "VM Migration" \
+        --msgbox "Live and offline VM migration between hosts.\n\nSupports shared storage and block migration." 10 70
+
+    # Get VM name
+    $DIALOG $DIALOG_OPTS \
+        --title "VM Name" \
+        --inputbox "Enter VM name to migrate:" 10 60 \
+        2> $TEMP_FILE
+    VM_NAME=$(cat $TEMP_FILE)
+
+    if [ -z "$VM_NAME" ]; then
+        main_menu
+        return
+    fi
+
+    # Get destination host
+    $DIALOG $DIALOG_OPTS \
+        --title "Destination Host" \
+        --inputbox "Enter destination host:" 10 60 \
+        2> $TEMP_FILE
+    DEST_HOST=$(cat $TEMP_FILE)
+
+    if [ -z "$DEST_HOST" ]; then
+        main_menu
+        return
+    fi
+
+    # Select migration type
+    $DIALOG $DIALOG_OPTS \
+        --title "Migration Type" \
+        --menu "Select migration type:" 14 70 4 \
+        1 "Live (shared storage)" \
+        2 "Block (no shared storage)" \
+        3 "Offline" \
+        2> $TEMP_FILE
+    MIG_TYPE=$(cat $TEMP_FILE)
+
+    case $MIG_TYPE in
+        1)
+            MIG_OPT="--live --shared-storage"
+            TYPE_DESC="live with shared storage"
+            ;;
+        2)
+            MIG_OPT="--block"
+            TYPE_DESC="block migration"
+            ;;
+        3)
+            MIG_OPT="--offline"
+            TYPE_DESC="offline"
+            ;;
+        *)
+            main_menu
+            return
+            ;;
+    esac
+
+    # Confirm
+    $DIALOG $DIALOG_OPTS \
+        --title "Confirm Migration" \
+        --yesno "Migrate '$VM_NAME' to '$DEST_HOST'?\n\nType: $TYPE_DESC" 10 70
+
+    if [ $? -eq 0 ]; then
+        virtos-migrate $MIG_OPT "$VM_NAME" "$DEST_HOST" 2>&1 | \
+            $DIALOG $DIALOG_OPTS --title "Migration Progress" --programbox 25 100
+
+        $DIALOG $DIALOG_OPTS --msgbox "Migration operation completed\n\nCheck output for status" 8 50
+    fi
+
+    main_menu
+}
+
+quota_menu() {
+    if ! command -v virtos-quota >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-quota not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Resource Quotas" \
+        --menu "Select option:" 18 76 8 \
+        1 "List All Quotas" \
+        2 "Show Cluster Usage" \
+        3 "Set VM CPU Limit" \
+        4 "Set VM Memory Limit" \
+        5 "Set VM Disk Limit" \
+        6 "Check VM Quota" \
+        7 "Set Cluster Quota" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Resource Quotas" \
+                --msgbox "$(virtos-quota list 2>&1)" 25 80
+            quota_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Cluster Usage" \
+                --msgbox "$(virtos-quota usage 2>&1)" 20 76
+            quota_menu
+            ;;
+        3)
+            # Set CPU limit
+            $DIALOG $DIALOG_OPTS \
+                --title "Set CPU Limit" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "CPU Cores" \
+                    --inputbox "Enter CPU limit (cores):" 10 60 "4" \
+                    2> $TEMP_FILE
+                CPU_LIMIT=$(cat $TEMP_FILE)
+
+                if [ -n "$CPU_LIMIT" ]; then
+                    virtos-quota set "$VM_NAME" cpu "$CPU_LIMIT" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+                fi
+            fi
+            quota_menu
+            ;;
+        4)
+            # Set Memory limit
+            $DIALOG $DIALOG_OPTS \
+                --title "Set Memory Limit" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Memory (MB)" \
+                    --inputbox "Enter memory limit (MB):" 10 60 "8192" \
+                    2> $TEMP_FILE
+                MEM_LIMIT=$(cat $TEMP_FILE)
+
+                if [ -n "$MEM_LIMIT" ]; then
+                    virtos-quota set "$VM_NAME" memory "$MEM_LIMIT" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+                fi
+            fi
+            quota_menu
+            ;;
+        5)
+            # Set Disk limit
+            $DIALOG $DIALOG_OPTS \
+                --title "Set Disk Limit" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Disk (GB)" \
+                    --inputbox "Enter disk limit (GB):" 10 60 "100" \
+                    2> $TEMP_FILE
+                DISK_LIMIT=$(cat $TEMP_FILE)
+
+                if [ -n "$DISK_LIMIT" ]; then
+                    virtos-quota set "$VM_NAME" disk "$DISK_LIMIT" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+                fi
+            fi
+            quota_menu
+            ;;
+        6)
+            # Check quota
+            $DIALOG $DIALOG_OPTS \
+                --title "Check Quota" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Quota Check: $VM_NAME" \
+                    --msgbox "$(virtos-quota check "$VM_NAME" 2>&1)" 20 76
+            fi
+            quota_menu
+            ;;
+        7)
+            # Set cluster quota
+            $DIALOG $DIALOG_OPTS \
+                --title "Cluster Quota" \
+                --menu "Select resource:" 12 60 3 \
+                1 "Max VMs" \
+                2 "Max Total CPU" \
+                3 "Max Total Memory" \
+                2> $TEMP_FILE
+            RESOURCE=$(cat $TEMP_FILE)
+
+            case $RESOURCE in
+                1) RES_NAME="vms"; RES_DESC="max VMs"; RES_DEFAULT="100" ;;
+                2) RES_NAME="cpu"; RES_DESC="max total CPU (cores)"; RES_DEFAULT="256" ;;
+                3) RES_NAME="memory"; RES_DESC="max total memory (MB)"; RES_DEFAULT="524288" ;;
+                *) quota_menu; return ;;
+            esac
+
+            $DIALOG $DIALOG_OPTS \
+                --title "Cluster Quota" \
+                --inputbox "Enter $RES_DESC:" 10 60 "$RES_DEFAULT" \
+                2> $TEMP_FILE
+            LIMIT=$(cat $TEMP_FILE)
+
+            if [ -n "$LIMIT" ]; then
+                virtos-quota cluster-quota "$RES_NAME" "$LIMIT" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            quota_menu
+            ;;
+        0) main_menu ;;
+        *) quota_menu ;;
     esac
 }
 
@@ -1388,9 +1854,14 @@ settings_menu() {
             command -v virtos-backup >/dev/null && INFO="${INFO}  ✓ virtos-backup\n"
             command -v virtos-template >/dev/null && INFO="${INFO}  ✓ virtos-template\n"
             command -v virtos-snapshot >/dev/null && INFO="${INFO}  ✓ virtos-snapshot\n"
+            INFO="${INFO}\nPhase 7 Tools:\n"
+            command -v virtos-monitor >/dev/null && INFO="${INFO}  ✓ virtos-monitor\n"
+            command -v virtos-ha >/dev/null && INFO="${INFO}  ✓ virtos-ha\n"
+            command -v virtos-migrate >/dev/null && INFO="${INFO}  ✓ virtos-migrate\n"
+            command -v virtos-quota >/dev/null && INFO="${INFO}  ✓ virtos-quota\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
-                --msgbox "$INFO" 20 50
+                --msgbox "$INFO" 25 50
             settings_menu
             ;;
         4)

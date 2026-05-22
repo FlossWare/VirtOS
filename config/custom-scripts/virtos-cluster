@@ -1,7 +1,7 @@
 #!/bin/sh
 # VirtOS Cluster Management Tool
 
-VERSION="0.1-alpha"
+VERSION="1"
 CLUSTER_CONF="/etc/virtos/cluster.conf"
 CACHE_DIR="/var/run/virtos"
 CLUSTER_CACHE="$CACHE_DIR/cluster-members"

@@ -1,7 +1,7 @@
 #!/bin/sh
 # VirtOS - Automated VM Creation with IaaS Placement
 
-VERSION="0.1-alpha"
+VERSION="1"
 
 # Colors
 if [ -t 1 ]; then

@@ -226,15 +226,16 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 
 **Critical gaps:**
 - ✅ Automated backup/restore (virtos-backup - Phase 6)
-- ❌ Automatic HA/failover
+- ✅ Automatic HA/failover (virtos-ha - Phase 7)
 - ❌ Web UI (by design - TUI only)
-- ⚠️ Live migration (only with shared storage)
+- ✅ Live migration (virtos-migrate - Phase 7)
 - ❌ Distributed storage (Ceph/GlusterFS)
 
 **Important gaps:**
-- ❌ Monitoring and alerting
+- ✅ Monitoring and alerting (virtos-monitor - Phase 7)
 - ❌ User authentication/RBAC
 - ✅ VM templates & snapshots (virtos-template, virtos-snapshot - Phase 6)
+- ✅ Resource quotas (virtos-quota - Phase 7)
 - ❌ REST API (basic via libvirt)
 
 **VirtOS is good for:** Home labs, learning, edge computing, dev/test  

@@ -2,7 +2,7 @@
 # VirtOS Template - VM template management and cloning
 # Create, manage, and clone from VM templates
 
-VERSION="0.1-alpha"
+VERSION="1"
 TEMPLATE_DIR="${TEMPLATE_DIR:-/var/lib/virtos/templates}"
 
 usage() {
