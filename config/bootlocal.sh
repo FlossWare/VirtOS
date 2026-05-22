@@ -79,6 +79,12 @@ if [ -x /usr/local/etc/init.d/openssh ]; then
     /usr/local/etc/init.d/openssh start
 fi
 
+# Start Avahi/mDNS for cluster discovery (if enabled)
+if [ -x /usr/local/etc/init.d/avahi-daemon ]; then
+    echo "Starting Avahi for cluster discovery..."
+    /usr/local/etc/init.d/avahi-daemon start
+fi
+
 echo "=== FlossWare VirtOS Ready ==="
 echo ""
 echo "Available virtualization:"

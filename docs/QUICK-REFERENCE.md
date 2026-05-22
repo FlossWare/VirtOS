@@ -15,6 +15,24 @@ ssh vmadmin@virtos
 
 See [REMOTE-ACCESS.md](REMOTE-ACCESS.md) for detailed setup.
 
+## Cluster Management
+
+```bash
+# List all VirtOS instances on network
+virtos-cluster list
+
+# Show resources across cluster
+virtos-cluster resources
+
+# Node details
+virtos-cluster info virtos-2
+
+# Refresh discovery cache
+virtos-cluster refresh
+```
+
+See [CLUSTERING.md](CLUSTERING.md) for multi-host setup.
+
 ## Build Commands
 
 ```bash

@@ -95,6 +95,21 @@ virt-manager -c qemu+ssh://vmadmin@virtos/system
 
 VirtOS includes SSH and libvirt for remote management. See [docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md) for setup.
 
+### Clustering
+
+**Run multiple VirtOS instances that discover each other:**
+```bash
+# On any VirtOS host
+virtos-cluster list
+
+# Shows all VirtOS instances on your network:
+# virtos-1  192.168.1.101  up  4 VMs
+# virtos-2  192.168.1.102  up  2 VMs
+# virtos-3  192.168.1.103  up  1 VM
+```
+
+Automatic discovery via mDNS/Avahi - hosts appear as `virtos-X.local`. See [docs/CLUSTERING.md](docs/CLUSTERING.md) for multi-host setup.
+
 ### Customization
 
 **Everything is choosable!** Edit `build/build.conf`:
