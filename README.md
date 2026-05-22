@@ -119,6 +119,7 @@ virtos-tui
 | **containers** | ~150MB | All container runtimes + minimal VMs |
 | **developer** | ~250MB | All runtimes + dev tools |
 | **kubernetes** | ~250MB | K3s + all runtimes + clustering |
+| **storage** | ~350MB | Btrfs + LVM + ZFS + NFS (4GB+ RAM) |
 
 See [docs/PROFILES.md](docs/PROFILES.md) for details.
 

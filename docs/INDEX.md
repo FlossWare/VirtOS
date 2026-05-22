@@ -83,6 +83,21 @@ Complete documentation for FlossWare VirtOS.
 2. [IAAS.md](IAAS.md) - Enable automated placement
 3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-create-vm commands
 
+#### Configure VirtOS (First Boot)
+1. [TUI.md](TUI.md) - Run virtos-setup wizard
+2. [STORAGE.md](STORAGE.md) - Choose filesystem (if advanced storage)
+3. [CLUSTERING.md](CLUSTERING.md) - Join cluster (if multi-host)
+
+#### Manage VirtOS (Daily)
+1. [TUI.md](TUI.md) - Use virtos-tui management console
+2. [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - SSH access
+3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - CLI commands
+
+#### Configure Advanced Storage
+1. [STORAGE.md](STORAGE.md) - Choose filesystem (Btrfs/LVM/ZFS)
+2. [PROFILES.md](PROFILES.md) - Use storage profile
+3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Storage commands
+
 ## Documentation by Profile
 
 ### Minimal Profile
@@ -114,6 +129,11 @@ Complete documentation for FlossWare VirtOS.
 - [KUBERNETES.md](KUBERNETES.md) - Complete K3s guide
 - [CLUSTERING.md](CLUSTERING.md) - Multi-node setup
 
+### Storage Profile
+- [PROFILES.md](PROFILES.md#storage-profile)
+- [STORAGE.md](STORAGE.md) - Complete storage guide
+- [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Storage commands
+
 ## Feature Matrix
 
 | Feature | Documentation |
@@ -124,17 +144,21 @@ Complete documentation for FlossWare VirtOS.
 | Podman | CONTAINER-RUNTIMES.md, QUICK-REFERENCE.md |
 | containerd | CONTAINER-RUNTIMES.md, QUICK-REFERENCE.md |
 | K3s/Kubernetes | KUBERNETES.md |
+| Microservices | MICROSERVICES.md |
 | libvirt | REMOTE-ACCESS.md, QUICK-REFERENCE.md |
 | virt-manager | REMOTE-ACCESS.md |
 | Clustering | CLUSTERING.md |
+| IaaS Placement | IAAS.md |
 | Remote Access | REMOTE-ACCESS.md |
+| Storage (Btrfs/LVM/ZFS/NFS) | STORAGE.md, QUICK-REFERENCE.md |
+| Text UI (ncurses) | TUI.md |
 | Build Profiles | PROFILES.md |
 | Configuration | CONFIGURATION.md |
 
 ## Total Documentation
 
-- **12 Documentation Files**
-- **6,400+ Lines**
+- **17 Documentation Files**
+- **10,000+ Lines**
 - **Complete Coverage** of all features
 
 ## Getting Help
