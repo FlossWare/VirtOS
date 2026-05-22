@@ -416,6 +416,10 @@ NFS server not starting.
 
 - System monitoring (CPU, RAM, disk, uptime)
 - Virtual machine management
+- **VM backups and restore** (Phase 6)
+- **VM templates and cloning** (Phase 6)
+- **VM snapshots** (Phase 6)
+- **IaaS VM creation** with automatic placement (Phase 6)
 - Container management (Docker, Podman, LXC)
 - Storage administration (Btrfs, LVM, ZFS, NFS)
 - Cluster status and coordination
@@ -488,15 +492,19 @@ virtos-tui
 │                                                     │
 │  Select an option:                                 │
 │                                                     │
-│  1 System Overview                                 │
-│  2 Virtual Machines (VMs)                          │
-│  3 Containers                                      │
-│  4 Storage Management                              │
-│  5 Cluster Status                                  │
-│  6 Networking                                      │
-│  7 Services                                        │
-│  8 System Logs                                     │
-│  9 Settings                                        │
+│  1  System Overview                                │
+│  2  Virtual Machines (VMs)                         │
+│  3  VM Backups & Restore                           │
+│  4  VM Templates                                   │
+│  5  VM Snapshots                                   │
+│  6  IaaS VM Creation                               │
+│  7  Containers                                     │
+│  8  Storage Management                             │
+│  9  Cluster Status                                 │
+│  10 Networking                                     │
+│  11 Services                                       │
+│  12 System Logs                                    │
+│  13 Settings                                       │
 │  0 Exit                                            │
 │                                                     │
 └─────────────────────────────────────────────────────┘
@@ -554,7 +562,161 @@ Manage KVM/QEMU virtual machines:
 - Check VM status remotely
 - Emergency VM console access
 
-### 3. Containers
+### 3. VM Backups & Restore
+
+Automated backup and restore for VMs using virtos-backup:
+
+#### Submenu Options:
+- **List All Backups** - Show available backups
+- **Backup a VM** - Create VM backup (local or remote)
+- **Restore a VM** - Restore from backup by date
+- **Schedule Automatic Backups** - Set up recurring backups
+- **Cleanup Old Backups** - Remove old backups per retention policy
+- **View Backup Statistics** - Backup summary and status
+
+#### Example: Backup a VM
+```
+1. Select "Backup a VM"
+2. Enter VM name: web-server-1
+3. Choose destination (local or remote)
+4. For remote: enter scp://user@host:/path or s3://bucket/path
+5. Watch backup progress
+6. Backup created with timestamp
+```
+
+#### Example: Schedule Backups
+```
+1. Select "Schedule Automatic Backups"
+2. Enter VM name: db-server
+3. Choose frequency: Daily
+4. Enter time: 02:00
+5. Schedule configured in cron
+```
+
+**Use cases:**
+- Protect critical VMs
+- Automated backup workflows
+- Remote backup to off-site storage
+- Point-in-time recovery
+
+### 4. VM Templates
+
+VM template library and cloning using virtos-template:
+
+#### Submenu Options:
+- **List Templates** - Show available templates
+- **Create Template from VM** - Convert VM to reusable template
+- **Clone VM from Template** - Fast VM creation via copy-on-write
+- **Import Cloud Image** - Download and import cloud images
+- **Delete Template** - Remove template
+
+#### Example: Create Template
+```
+1. Select "Create Template from VM"
+2. Enter source VM name: ubuntu-base (must be shut down)
+3. Enter template name: ubuntu-22.04-template
+4. Template created with disk copy
+```
+
+#### Example: Clone from Template
+```
+1. Select "Clone VM from Template"
+2. See available templates
+3. Enter template name: ubuntu-22.04-template
+4. Enter new VM name: web-server-2
+5. VM cloned instantly (copy-on-write)
+6. Start with: virsh start web-server-2
+```
+
+**Use cases:**
+- Fast VM provisioning
+- Consistent base images
+- Dev/test VM creation
+- Golden image management
+
+### 5. VM Snapshots
+
+Point-in-time VM snapshots using virtos-snapshot:
+
+#### Submenu Options:
+- **List Snapshots for VM** - Show all snapshots
+- **Create Snapshot** - Take VM snapshot (disk-only or with RAM)
+- **Revert to Snapshot** - Restore VM to snapshot state
+- **Delete Snapshot** - Remove specific snapshot
+- **Schedule Automatic Snapshots** - Recurring snapshots
+- **Cleanup Old Snapshots** - Remove old snapshots with retention
+
+#### Example: Create Snapshot
+```
+1. Select "Create Snapshot"
+2. Enter VM name: web-server-1
+3. Enter description: Before upgrade
+4. Choose type:
+   - Disk-only (faster, no RAM state)
+   - Full (includes RAM, can resume)
+5. Snapshot created with timestamp
+```
+
+#### Example: Revert Snapshot
+```
+1. Select "Revert to Snapshot"
+2. Enter VM name: web-server-1
+3. See available snapshots
+4. Enter snapshot name: snapshot-20260522-120000
+5. Confirm revert (current state lost)
+6. VM restored to snapshot state
+```
+
+**Use cases:**
+- Pre-upgrade snapshots
+- Development checkpoints
+- Quick rollback capability
+- Testing and experimentation
+
+### 6. IaaS VM Creation
+
+Guided VM creation with automatic cluster placement using virtos-create-vm:
+
+#### Wizard Steps:
+1. **VM Name** - Unique VM identifier
+2. **CPU Cores** - Number of vCPUs
+3. **Memory (RAM)** - RAM in MB
+4. **Disk Size** - Disk size (e.g., 20G, 50G)
+5. **Scheduling Policy**:
+   - Balanced - Even distribution (default)
+   - Packed - Maximize host utilization
+   - Spread - Minimize VMs per host
+6. **Priority Level**:
+   - Normal (default)
+   - High - Prefers hosts with more resources
+   - Low - Uses less-capable hosts first
+7. **OS Template** - Optional base image
+8. **Dry Run Preview** - See placement before creating
+9. **Confirmation** - Create VM on selected host
+
+#### Example: Create VM
+```
+1. Select "IaaS VM Creation"
+2. Enter VM name: app-server-1
+3. CPU cores: 4
+4. RAM: 8192 MB
+5. Disk size: 50G
+6. Policy: Balanced
+7. Priority: High
+8. OS template: ubuntu-22.04 (optional)
+9. Dry run: Yes
+10. See: "Best host: virtos-3 (94% fit)"
+11. Confirm: Yes
+12. VM created on optimal host
+```
+
+**Use cases:**
+- Hands-free VM placement
+- Multi-host resource optimization
+- IaaS-style VM provisioning
+- Balanced cluster utilization
+
+### 7. Containers
 
 Manage containers across all runtimes:
 
@@ -574,7 +736,7 @@ Displays:
 - Overview of all container workloads
 - Quick runtime comparison
 
-### 4. Storage Management
+### 8. Storage Management
 
 Comprehensive storage administration:
 
@@ -611,7 +773,7 @@ Shows:
 - Verify snapshots exist
 - Review storage configuration
 
-### 5. Cluster Status
+### 9. Cluster Status
 
 Multi-host cluster management:
 
@@ -633,7 +795,7 @@ Shows:
 - Node status verification
 - Quick cluster overview
 
-### 6. Networking
+### 10. Networking
 
 Network configuration and status:
 
@@ -650,7 +812,7 @@ Network configuration and status:
 - Check firewall rules
 - Review IP assignments
 
-### 7. Services
+### 11. Services
 
 Manage VirtOS services:
 
@@ -668,7 +830,7 @@ Manage VirtOS services:
 - Verify clustering services
 - Process monitoring
 
-### 8. System Logs
+### 12. System Logs
 
 View system and service logs:
 
@@ -687,7 +849,7 @@ Shows last 50 lines by default.
 - System diagnostics
 - Kernel message review
 
-### 9. Settings
+### 13. Settings
 
 VirtOS configuration and information:
 
