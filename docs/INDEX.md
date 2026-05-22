@@ -25,6 +25,7 @@ Complete documentation for FlossWare VirtOS.
 ### VMs and Containers
 - **[CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md)** - Docker vs Podman vs containerd
 - **[KUBERNETES.md](KUBERNETES.md)** - K3s orchestration (optional)
+- **[MICROSERVICES.md](MICROSERVICES.md)** - Deploying microservices on VirtOS
 
 ## Multi-Host Features
 
@@ -67,9 +68,10 @@ Complete documentation for FlossWare VirtOS.
 3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - All commands
 
 #### Deploy Microservices
-1. [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Choose runtime
-2. [CLUSTERING.md](CLUSTERING.md) - Set up cluster
-3. [KUBERNETES.md](KUBERNETES.md) - Deploy with K3s
+1. [MICROSERVICES.md](MICROSERVICES.md) - Complete microservices guide
+2. [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Choose runtime
+3. [CLUSTERING.md](CLUSTERING.md) - Set up cluster
+4. [KUBERNETES.md](KUBERNETES.md) - Deploy with K3s
 
 #### Use IaaS Automation
 1. [CLUSTERING.md](CLUSTERING.md) - Set up multi-host cluster
