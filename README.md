@@ -197,6 +197,29 @@ INCLUDE_LXC="yes"          # LXC
 
 Or use a profile as starting point. See [docs/PROFILES.md](docs/PROFILES.md).
 
+## How Does VirtOS Compare?
+
+**vs Proxmox, ESXi, oVirt, XCP-ng, Harvester, etc.**
+
+VirtOS occupies a unique niche:
+- **Smaller** - 100-400MB vs 1GB+ for most alternatives
+- **Faster** - <10s boot vs 30-120s for others
+- **More flexible** - Choose only what you need (7 profiles)
+- **Container-friendly** - Docker, Podman, containerd, LXC, K8s
+- **Text-first** - TUI works great over SSH, no web overhead
+
+**Trade-offs:**
+- Less mature (new project vs 10+ years)
+- No web UI (terminal/SSH only)
+- Smaller community
+- Manual HA (no automatic failover yet)
+
+**Best for:** Home labs, edge computing, learning, cost-sensitive projects, terminal users
+
+**Not ready for:** Large enterprises needing commercial support, mature HA, or web UI
+
+See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 major platforms.
+
 ## License
 
 TBD
