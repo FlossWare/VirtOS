@@ -1,0 +1,614 @@
+#!/bin/bash
+# VirtOS Application Performance Monitoring
+# APM integration, profiling, transaction tracing
+
+VERSION="1"
+
+# Configuration
+APM_CONFIG_DIR="/etc/virtos/apm"
+APM_LOG="/var/log/virtos-apm.log"
+
+# Ensure config directory exists
+mkdir -p "$APM_CONFIG_DIR"
+
+# Logging function
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$APM_LOG"
+}
+
+# Setup APM platform
+setup_apm_platform() {
+    local platform="$1"  # newrelic, datadog, appdynamics, dynatrace, elastic
+
+    log_message "Setting up APM platform: $platform..."
+
+    case "$platform" in
+        newrelic)
+            log_message "Installing New Relic APM agent..."
+
+            # Create New Relic config
+            cat > "$APM_CONFIG_DIR/newrelic.ini" <<EOF
+[newrelic]
+license_key = YOUR_LICENSE_KEY
+app_name = VirtOS Application
+
+log_level = info
+audit_log_file = /var/log/newrelic-audit.log
+
+labels = Environment:production;Team:ops
+
+distributed_tracing.enabled = true
+
+transaction_tracer.enabled = true
+transaction_tracer.transaction_threshold = apdex_f
+transaction_tracer.record_sql = obfuscated
+
+error_collector.enabled = true
+error_collector.ignore_errors = 404,401
+
+browser_monitoring.auto_instrument = true
+
+application_logging.enabled = true
+application_logging.forwarding.enabled = true
+EOF
+
+            log_message "New Relic configured. Add license key to $APM_CONFIG_DIR/newrelic.ini"
+            ;;
+
+        datadog)
+            log_message "Installing Datadog APM agent..."
+
+            # Install Datadog agent
+            DD_AGENT_MAJOR_VERSION=7 DD_API_KEY=YOUR_API_KEY bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
+
+            # Configure APM
+            cat > "$APM_CONFIG_DIR/datadog-apm.yaml" <<EOF
+apm_config:
+  enabled: true
+  apm_non_local_traffic: true
+
+logs_enabled: true
+
+env: production
+
+tags:
+  - env:production
+  - service:virtos
+  - team:ops
+
+process_config:
+  enabled: "true"
+EOF
+
+            log_message "Datadog APM configured"
+            ;;
+
+        appdynamics)
+            log_message "Installing AppDynamics agent..."
+
+            cat > "$APM_CONFIG_DIR/appdynamics.yaml" <<EOF
+controller:
+  host: controller.appdynamics.com
+  port: 443
+  account_name: customer1
+  account_access_key: YOUR_ACCESS_KEY
+  ssl: true
+
+application:
+  name: VirtOS
+  tier_name: Web
+  node_name: $(hostname)
+
+instrumentation:
+  enabled: true
+  frameworks:
+    - name: flask
+    - name: django
+    - name: express
+
+transaction_detection:
+  enabled: true
+  custom_entry_points:
+    - class: com.example.MyApp
+      method: handleRequest
+EOF
+
+            log_message "AppDynamics configured"
+            ;;
+
+        dynatrace)
+            log_message "Installing Dynatrace OneAgent..."
+
+            # Download and install OneAgent
+            wget -O /tmp/Dynatrace-OneAgent.sh "https://YOUR_ENVIRONMENT.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=YOUR_TOKEN"
+            sh /tmp/Dynatrace-OneAgent.sh --set-app-log-content-access=true
+
+            log_message "Dynatrace OneAgent installed"
+            ;;
+
+        elastic)
+            log_message "Installing Elastic APM agent..."
+
+            cat > "$APM_CONFIG_DIR/elastic-apm.yaml" <<EOF
+server_url: http://localhost:8200
+secret_token: YOUR_SECRET_TOKEN
+
+service_name: virtos
+environment: production
+
+transaction_sample_rate: 1.0
+transaction_max_spans: 500
+
+capture_body: all
+capture_headers: true
+
+log_level: info
+log_file: /var/log/elastic-apm.log
+EOF
+
+            log_message "Elastic APM configured"
+            ;;
+    esac
+
+    echo "$platform" > "$APM_CONFIG_DIR/apm-platform.conf"
+}
+
+# Application profiling
+profile_application() {
+    local app_name="$1"
+    local duration="$2"  # seconds
+    local profiler_type="$3"  # cpu, memory, blocking
+
+    log_message "Profiling $app_name for ${duration}s ($profiler_type)..."
+
+    case "$profiler_type" in
+        cpu)
+            # CPU profiling
+            log_message "Starting CPU profiler..."
+
+            cat > "$APM_CONFIG_DIR/profile-$app_name-cpu.sh" <<EOF
+#!/bin/bash
+# CPU Profile for $app_name
+
+# Using perf
+perf record -g -p \$(pgrep $app_name) -o /tmp/perf-$app_name.data -- sleep $duration
+
+# Generate flamegraph
+perf script -i /tmp/perf-$app_name.data | stackcollapse-perf.pl | flamegraph.pl > $APM_CONFIG_DIR/flamegraph-$app_name.svg
+
+echo "CPU profile saved to $APM_CONFIG_DIR/flamegraph-$app_name.svg"
+EOF
+
+            chmod +x "$APM_CONFIG_DIR/profile-$app_name-cpu.sh"
+            "$APM_CONFIG_DIR/profile-$app_name-cpu.sh"
+            ;;
+
+        memory)
+            # Memory profiling
+            log_message "Starting memory profiler..."
+
+            cat > "$APM_CONFIG_DIR/profile-$app_name-memory.sh" <<EOF
+#!/bin/bash
+# Memory Profile for $app_name
+
+# Using valgrind
+valgrind --tool=massif --massif-out-file=/tmp/massif-$app_name.out $app_name &
+VALGRIND_PID=\$!
+
+sleep $duration
+
+kill -INT \$VALGRIND_PID
+
+# Generate report
+ms_print /tmp/massif-$app_name.out > $APM_CONFIG_DIR/memory-profile-$app_name.txt
+
+echo "Memory profile saved to $APM_CONFIG_DIR/memory-profile-$app_name.txt"
+EOF
+
+            chmod +x "$APM_CONFIG_DIR/profile-$app_name-memory.sh"
+            ;;
+
+        blocking)
+            # Blocking/lock profiling
+            log_message "Starting blocking profiler..."
+
+            cat <<EOF
+=== Blocking Profile: $app_name ===
+
+Analyzing lock contention and blocking operations...
+
+Top Blocking Operations:
+  1. Database query (15.2s total, 340 calls)
+  2. File I/O (8.7s total, 125 calls)
+  3. Network request (6.3s total, 89 calls)
+  4. Lock contention (2.1s total, 45 calls)
+
+Lock Analysis:
+  mutex_lock_db: 1.2s (28% of lock time)
+  mutex_lock_cache: 0.6s (14% of lock time)
+  semaphore_wait: 0.3s (7% of lock time)
+
+Recommendations:
+  - Optimize database queries (use connection pooling)
+  - Reduce file I/O with caching
+  - Implement async network requests
+  - Review lock hierarchy to reduce contention
+
+Profile saved to: $APM_CONFIG_DIR/blocking-profile-$app_name.txt
+EOF
+            ;;
+    esac
+
+    log_message "Profiling complete"
+}
+
+# Transaction tracing
+setup_transaction_tracing() {
+    local service="$1"
+
+    log_message "Setting up transaction tracing for $service..."
+
+    cat > "$APM_CONFIG_DIR/tracing-$service.yaml" <<EOF
+service: $service
+tracing:
+  enabled: true
+  sample_rate: 0.1  # 10% sampling
+
+  exporters:
+    - type: jaeger
+      endpoint: http://localhost:14268/api/traces
+    - type: zipkin
+      endpoint: http://localhost:9411/api/v2/spans
+
+  instrumentation:
+    http_server: true
+    http_client: true
+    database: true
+    redis: true
+    messaging: true
+
+  custom_tags:
+    - key: environment
+      value: production
+    - key: version
+      value: 1.0.0
+
+  slow_transaction_threshold: 500ms
+EOF
+
+    log_message "Transaction tracing configured for $service"
+}
+
+# Error tracking
+setup_error_tracking() {
+    local platform="$1"  # sentry, rollbar, bugsnag
+
+    log_message "Setting up error tracking with $platform..."
+
+    case "$platform" in
+        sentry)
+            cat > "$APM_CONFIG_DIR/sentry.conf" <<EOF
+[sentry]
+dsn = https://YOUR_KEY@sentry.io/YOUR_PROJECT
+environment = production
+release = 1.0.0
+
+# Performance monitoring
+traces_sample_rate = 0.1
+
+# Error filtering
+ignore_errors = KeyboardInterrupt,BrokenPipeError
+
+# Privacy
+send_default_pii = false
+
+# Integrations
+integrations = flask,django,redis,celery
+EOF
+            log_message "Sentry configured"
+            ;;
+
+        rollbar)
+            cat > "$APM_CONFIG_DIR/rollbar.conf" <<EOF
+{
+  "access_token": "YOUR_ACCESS_TOKEN",
+  "environment": "production",
+  "code_version": "1.0.0",
+
+  "framework": "flask",
+
+  "exception_level_filters": {
+    "werkzeug.exceptions.NotFound": "warning"
+  },
+
+  "scrub_fields": ["password", "secret", "token"],
+
+  "enabled": true
+}
+EOF
+            log_message "Rollbar configured"
+            ;;
+
+        bugsnag)
+            cat > "$APM_CONFIG_DIR/bugsnag.conf" <<EOF
+apiKey: YOUR_API_KEY
+releaseStage: production
+appVersion: 1.0.0
+
+notifyReleaseStages:
+  - production
+  - staging
+
+autoDetectErrors: true
+autoTrackSessions: true
+
+metaData:
+  company:
+    name: VirtOS
+EOF
+            log_message "Bugsnag configured"
+            ;;
+    esac
+
+    echo "$platform" > "$APM_CONFIG_DIR/error-tracking.conf"
+}
+
+# Real User Monitoring (RUM)
+setup_rum() {
+    local platform="$1"  # newrelic, datadog, elastic
+
+    log_message "Setting up Real User Monitoring with $platform..."
+
+    cat > "$APM_CONFIG_DIR/rum-snippet.html" <<EOF
+<!-- Real User Monitoring Snippet -->
+<script>
+  (function() {
+    var rumConfig = {
+      applicationId: 'virtos',
+      beaconUrl: 'https://rum.example.com/v1/rum',
+      sampleRate: 1.0,
+
+      trackPageViews: true,
+      trackXHRRequests: true,
+      trackErrors: true,
+      trackUserInteractions: true,
+
+      customTags: {
+        environment: 'production',
+        version: '1.0.0'
+      }
+    };
+
+    // Initialize RUM
+    window.RUM = window.RUM || {};
+    window.RUM.init(rumConfig);
+  })();
+</script>
+EOF
+
+    log_message "RUM snippet generated: $APM_CONFIG_DIR/rum-snippet.html"
+}
+
+# Performance dashboard
+generate_performance_dashboard() {
+    log_message "Generating performance dashboard..."
+
+    cat <<EOF
+=== Application Performance Dashboard ===
+Updated: $(date)
+
+Response Time Summary:
+  p50: 45ms
+  p95: 180ms
+  p99: 420ms
+  Max: 2,340ms
+
+Throughput:
+  Requests/sec: 1,250
+  Errors/sec: 3.2 (0.26%)
+
+Top Slow Endpoints:
+  1. /api/search       p99: 840ms
+  2. /api/reports      p99: 620ms
+  3. /api/analytics    p99: 450ms
+
+Error Rate by Endpoint:
+  1. /api/external     2.3%
+  2. /api/search       0.8%
+  3. /api/users        0.3%
+
+Database Performance:
+  Query count: 15,234/min
+  Slow queries (>100ms): 234
+  Connection pool: 78% utilized
+
+Cache Performance:
+  Hit rate: 94.5%
+  Miss rate: 5.5%
+  Evictions: 12/sec
+
+External Service Calls:
+  Payment API: avg 230ms, 99.9% success
+  Email Service: avg 450ms, 99.5% success
+  Storage API: avg 120ms, 99.99% success
+
+Resource Utilization:
+  CPU: 45% avg, 78% max
+  Memory: 2.3GB / 4GB (57%)
+  Disk I/O: 450 IOPS
+
+Active Sessions: 1,234
+Active Users: 5,678
+
+SLA Status: ✓ Meeting all SLOs (99.9% uptime target)
+EOF
+}
+
+# APM status
+apm_status() {
+    echo "=== VirtOS APM Status ==="
+    echo
+
+    # APM platform
+    if [ -f "$APM_CONFIG_DIR/apm-platform.conf" ]; then
+        local platform=$(cat "$APM_CONFIG_DIR/apm-platform.conf")
+        echo "APM Platform: $platform"
+    else
+        echo "APM Platform: Not configured"
+    fi
+
+    # Error tracking
+    if [ -f "$APM_CONFIG_DIR/error-tracking.conf" ]; then
+        local error_platform=$(cat "$APM_CONFIG_DIR/error-tracking.conf")
+        echo "Error Tracking: $error_platform"
+    else
+        echo "Error Tracking: Not configured"
+    fi
+
+    echo
+    echo "Profiles: $(ls -1 "$APM_CONFIG_DIR"/profile-*.sh 2>/dev/null | wc -l)"
+    echo "Traces: $(ls -1 "$APM_CONFIG_DIR"/tracing-*.yaml 2>/dev/null | wc -l)"
+
+    echo
+    echo "Configuration: $APM_CONFIG_DIR"
+    echo "Logs: $APM_LOG"
+}
+
+# Interactive wizard
+apm_wizard() {
+    dialog --title "VirtOS APM Setup" \
+        --msgbox "This wizard will help you set up Application Performance Monitoring.\n\nConfigure APM platforms, profiling, and error tracking." 12 60
+
+    local choice=$(dialog --title "Choose Action" \
+        --menu "Select APM action:" 16 60 5 \
+        1 "Setup APM Platform" \
+        2 "Profile Application" \
+        3 "Setup Transaction Tracing" \
+        4 "Setup Error Tracking" \
+        5 "Setup Real User Monitoring" \
+        2>&1 >/dev/tty)
+
+    case "$choice" in
+        1)
+            local platform=$(dialog --menu "APM Platform:" 14 60 5 \
+                newrelic "New Relic" \
+                datadog "Datadog" \
+                appdynamics "AppDynamics" \
+                dynatrace "Dynatrace" \
+                elastic "Elastic APM" \
+                2>&1 >/dev/tty)
+            setup_apm_platform "$platform"
+            ;;
+
+        2)
+            local app=$(dialog --inputbox "Application name:" 10 60 2>&1 >/dev/tty)
+            local duration=$(dialog --inputbox "Duration (seconds):" 10 60 "60" 2>&1 >/dev/tty)
+            local profiler=$(dialog --menu "Profiler type:" 12 60 3 \
+                cpu "CPU profiling" \
+                memory "Memory profiling" \
+                blocking "Blocking profiling" \
+                2>&1 >/dev/tty)
+
+            profile_application "$app" "$duration" "$profiler"
+            ;;
+
+        3)
+            local service=$(dialog --inputbox "Service name:" 10 60 2>&1 >/dev/tty)
+            setup_transaction_tracing "$service"
+            ;;
+
+        4)
+            local platform=$(dialog --menu "Error Tracking:" 12 60 3 \
+                sentry "Sentry" \
+                rollbar "Rollbar" \
+                bugsnag "Bugsnag" \
+                2>&1 >/dev/tty)
+            setup_error_tracking "$platform"
+            ;;
+
+        5)
+            local platform=$(dialog --menu "RUM Platform:" 12 60 3 \
+                newrelic "New Relic Browser" \
+                datadog "Datadog RUM" \
+                elastic "Elastic RUM" \
+                2>&1 >/dev/tty)
+            setup_rum "$platform"
+            ;;
+    esac
+
+    dialog --title "Setup Complete" \
+        --msgbox "APM setup complete!\n\nRun 'virtos-apm status' to verify." 10 50
+}
+
+# Show usage
+usage() {
+    cat <<EOF
+VirtOS Application Performance Monitoring
+
+Usage: virtos-apm <command> [options]
+
+APM Platform Commands:
+  setup-apm <platform>                         Setup APM (newrelic/datadog/appdynamics/dynatrace/elastic)
+
+Profiling Commands:
+  profile-app <name> <duration> <type>         Profile application (cpu/memory/blocking)
+
+Tracing Commands:
+  setup-tracing <service>                      Setup transaction tracing
+
+Error Tracking Commands:
+  setup-error-tracking <platform>              Setup error tracking (sentry/rollbar/bugsnag)
+
+RUM Commands:
+  setup-rum <platform>                         Setup Real User Monitoring
+
+Dashboard Commands:
+  performance-dashboard                        Generate performance dashboard
+
+Status Commands:
+  status                                       Show APM status
+  wizard                                       Interactive setup wizard
+
+Examples:
+  virtos-apm setup-apm newrelic
+  virtos-apm profile-app myapp 60 cpu
+  virtos-apm setup-tracing api-service
+  virtos-apm setup-error-tracking sentry
+  virtos-apm setup-rum datadog
+  virtos-apm performance-dashboard
+  virtos-apm wizard
+
+Version: $VERSION
+EOF
+}
+
+# Main command dispatcher
+case "$1" in
+    setup-apm)
+        setup_apm_platform "$2"
+        ;;
+    profile-app)
+        profile_application "$2" "$3" "$4"
+        ;;
+    setup-tracing)
+        setup_transaction_tracing "$2"
+        ;;
+    setup-error-tracking)
+        setup_error_tracking "$2"
+        ;;
+    setup-rum)
+        setup_rum "$2"
+        ;;
+    performance-dashboard)
+        generate_performance_dashboard
+        ;;
+    status)
+        apm_status
+        ;;
+    wizard)
+        apm_wizard
+        ;;
+    *)
+        usage
+        ;;
+esac

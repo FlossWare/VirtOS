@@ -1635,6 +1635,168 @@ virtos-governance status
 virtos-governance wizard
 ```
 
+### Site Reliability Engineering (virtos-sre)
+
+```bash
+# Define Service Level Objectives
+virtos-sre define-slo api-availability api-service 99.9 30
+virtos-sre define-slo web-latency web-service 99.5 30
+
+# Calculate SLO status
+virtos-sre calculate-slo api-availability
+
+# Error budget reporting
+virtos-sre error-budget-report
+
+# Incident management
+virtos-sre create-incident P1 "API service down" "All endpoints returning 500"
+virtos-sre create-incident P2 "High latency" "p99 latency above threshold"
+virtos-sre update-incident INC-20260522-120000 timeline "Root cause identified"
+virtos-sre update-incident INC-20260522-120000 status "investigating"
+virtos-sre close-incident INC-20260522-120000 "Fixed database connection pool"
+
+# Postmortem
+virtos-sre create-postmortem INC-20260522-120000
+
+# On-call management
+virtos-sre setup-oncall sre-team weekly
+virtos-sre setup-oncall devops-team daily
+virtos-sre whos-oncall sre-team
+
+# Runbooks
+virtos-sre create-runbook service-restart api-service
+virtos-sre create-runbook scale-up web-service
+
+# Status
+virtos-sre status
+
+# Wizard
+virtos-sre wizard
+```
+
+### Multi-Cloud Management (virtos-multicloud)
+
+```bash
+# Cost analysis
+virtos-multicloud analyze-costs 7d
+virtos-multicloud analyze-costs 30d
+virtos-multicloud analyze-costs 90d
+
+# Cost forecasting
+virtos-multicloud forecast-costs 3
+virtos-multicloud forecast-costs 12
+
+# Workload placement
+virtos-multicloud place-workload myapp "cpu:4,memory:8,storage:100" "cost"
+virtos-multicloud place-workload ml-job "cpu:16,memory:64,gpu:2" "performance"
+
+# Resource optimization
+virtos-multicloud optimize-resources rightsizing
+virtos-multicloud optimize-resources reserved
+virtos-multicloud optimize-resources spot
+virtos-multicloud optimize-resources storage
+
+# Cloud arbitrage
+virtos-multicloud cloud-arbitrage web-service
+virtos-multicloud cloud-arbitrage database-cluster
+
+# Multi-cloud backup
+virtos-multicloud backup-strategy
+
+# FinOps dashboard
+virtos-multicloud finops-dashboard
+
+# Status
+virtos-multicloud status
+
+# Wizard
+virtos-multicloud wizard
+```
+
+### Advanced Networking (virtos-networking-advanced)
+
+```bash
+# Software Defined Networking
+virtos-networking-advanced setup-sdn ovs
+virtos-networking-advanced setup-sdn onos
+virtos-networking-advanced setup-sdn floodlight
+
+# Network Function Virtualization
+virtos-networking-advanced setup-nfv firewall
+virtos-networking-advanced setup-nfv lb
+virtos-networking-advanced setup-nfv router
+virtos-networking-advanced setup-nfv ids
+
+# Service discovery
+virtos-networking-advanced setup-service-discovery consul
+virtos-networking-advanced setup-service-discovery etcd
+virtos-networking-advanced setup-service-discovery zookeeper
+
+# Register services
+virtos-networking-advanced register-service api 10.0.1.10 8080
+virtos-networking-advanced register-service web 10.0.1.20 80
+virtos-networking-advanced register-service db 10.0.1.30 5432
+
+# Load balancing
+virtos-networking-advanced setup-load-balancer haproxy roundrobin
+virtos-networking-advanced setup-load-balancer nginx leastconn
+virtos-networking-advanced setup-load-balancer envoy iphash
+
+# Network segmentation
+virtos-networking-advanced create-segment dmz 100 10.100.0.0/24
+virtos-networking-advanced create-segment internal 200 10.200.0.0/24
+
+# Traffic shaping
+virtos-networking-advanced setup-traffic-shaping eth0 100mbit
+virtos-networking-advanced setup-traffic-shaping eth1 1gbit
+
+# Status
+virtos-networking-advanced status
+
+# Wizard
+virtos-networking-advanced wizard
+```
+
+### Application Performance Monitoring (virtos-apm)
+
+```bash
+# Setup APM platforms
+virtos-apm setup-apm newrelic
+virtos-apm setup-apm datadog
+virtos-apm setup-apm appdynamics
+virtos-apm setup-apm dynatrace
+virtos-apm setup-apm elastic
+
+# Profile applications
+virtos-apm profile-app myapp 60 cpu
+virtos-apm profile-app myapp 120 memory
+virtos-apm profile-app myapp 300 blocking
+
+# Transaction tracing
+virtos-apm setup-tracing api-service
+virtos-apm setup-tracing web-service
+virtos-apm setup-tracing worker-service
+
+# Error tracking
+virtos-apm setup-error-tracking sentry
+virtos-apm setup-error-tracking rollbar
+virtos-apm setup-error-tracking bugsnag
+
+# Real User Monitoring
+virtos-apm setup-rum newrelic
+virtos-apm setup-rum datadog
+virtos-apm setup-rum elastic
+
+# Performance dashboard
+virtos-apm performance-dashboard
+
+# Status
+virtos-apm status
+
+# Wizard
+virtos-apm wizard
+```
+
 ## Build Commands
 
 ```bash
