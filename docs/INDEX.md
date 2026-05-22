@@ -58,6 +58,7 @@ Complete documentation for FlossWare VirtOS.
 1. [GETTING-STARTED.md](GETTING-STARTED.md) - Boot VirtOS
 2. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - KVM/QEMU commands
 3. [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - Use virt-manager
+4. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Backup, templates, snapshots
 
 #### Run Containers
 1. [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Choose runtime
@@ -99,6 +100,11 @@ Complete documentation for FlossWare VirtOS.
 1. [STORAGE.md](STORAGE.md) - Choose filesystem (Btrfs/LVM/ZFS)
 2. [PROFILES.md](PROFILES.md) - Use storage profile
 3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Storage commands
+
+#### Backup and Protect VMs
+1. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-backup commands
+2. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-snapshot commands
+3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-template commands
 
 ## Documentation by Profile
 
@@ -156,12 +162,16 @@ Complete documentation for FlossWare VirtOS.
 | Text UI (ncurses) | TUI.md |
 | Build Profiles | PROFILES.md |
 | Configuration | CONFIGURATION.md |
+| Backup & Restore | QUICK-REFERENCE.md (virtos-backup) |
+| VM Templates | QUICK-REFERENCE.md (virtos-template) |
+| Snapshots | QUICK-REFERENCE.md (virtos-snapshot) |
 
 ## Total Documentation
 
 - **19 Documentation Files**
-- **11,500+ Lines**
+- **9,700+ Lines**
 - **Complete and Honest Coverage** - including what's missing
+- **Phase 6 Complete** - Backup, templates, and snapshots implemented (May 2026)
 
 ## Getting Help
 

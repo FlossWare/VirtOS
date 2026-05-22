@@ -225,7 +225,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 **VirtOS is alpha software.** Many features found in mature platforms are missing or incomplete:
 
 **Critical gaps:**
-- ❌ Automated backup/restore
+- ✅ Automated backup/restore (virtos-backup - Phase 6)
 - ❌ Automatic HA/failover
 - ❌ Web UI (by design - TUI only)
 - ⚠️ Live migration (only with shared storage)
@@ -234,7 +234,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 **Important gaps:**
 - ❌ Monitoring and alerting
 - ❌ User authentication/RBAC
-- ❌ VM templates (manual only)
+- ✅ VM templates & snapshots (virtos-template, virtos-snapshot - Phase 6)
 - ❌ REST API (basic via libvirt)
 
 **VirtOS is good for:** Home labs, learning, edge computing, dev/test  

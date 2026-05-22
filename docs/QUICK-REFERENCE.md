@@ -61,6 +61,80 @@ virtos-create-vm --name special --cpu 2 --ram 4096 --disk 20G \
 
 See [IAAS.md](IAAS.md) for automated placement and scheduling.
 
+## Backup & Restore
+
+```bash
+# Backup a VM
+virtos-backup backup web-server-1
+
+# Schedule daily backups at 2 AM
+virtos-backup schedule web-server-1 --daily 02:00
+
+# Schedule with retention policy (keep last 7)
+virtos-backup schedule web-server-1 --daily 02:00 --keep 7
+
+# Backup to remote location
+virtos-backup backup web-server-1 --remote scp://backup@server:/backups
+
+# List backups
+virtos-backup list
+
+# Restore from backup
+virtos-backup restore web-server-1 2026-05-22
+
+# Cleanup old backups
+virtos-backup cleanup
+```
+
+## VM Templates
+
+```bash
+# Create template from existing VM (must be shut down)
+virtos-template create ubuntu-vm ubuntu-22.04-template
+
+# Clone from template
+virtos-template clone ubuntu-22.04-template web-server-1
+
+# Import cloud image as template
+virtos-template import \
+  https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img \
+  ubuntu-2204-cloud
+
+# List available templates
+virtos-template list
+
+# Delete template
+virtos-template delete old-template
+```
+
+## VM Snapshots
+
+```bash
+# Create snapshot
+virtos-snapshot create web-server-1 "Before update"
+
+# Create disk-only snapshot (faster, no RAM state)
+virtos-snapshot create web-server-1 "Pre-migration" --disk-only
+
+# Create snapshot with memory state
+virtos-snapshot create db-server "Debug state" --memory
+
+# List snapshots
+virtos-snapshot list web-server-1
+
+# Revert to snapshot
+virtos-snapshot revert web-server-1 snapshot-20260522-120000
+
+# Delete snapshot
+virtos-snapshot delete web-server-1 snapshot-20260520-080000
+
+# Schedule daily snapshots at 2 AM, keep last 7
+virtos-snapshot schedule web-server-1 --daily 02:00 --keep 7
+
+# Cleanup old snapshots manually
+virtos-snapshot cleanup web-server-1
+```
+
 ## Build Commands
 
 ```bash
