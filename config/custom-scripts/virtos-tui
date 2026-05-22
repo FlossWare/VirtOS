@@ -1,0 +1,751 @@
+#!/bin/bash
+# VirtOS TUI - Text User Interface for VirtOS Management
+# ncurses-based management console
+
+VERSION="0.1-alpha"
+
+# Check for dialog/whiptail
+if command -v dialog >/dev/null 2>&1; then
+    DIALOG="dialog"
+    DIALOG_OPTS="--backtitle \"VirtOS Management Console v${VERSION}\" --colors"
+elif command -v whiptail >/dev/null 2>&1; then
+    DIALOG="whiptail"
+    DIALOG_OPTS="--title \"VirtOS Management v${VERSION}\""
+else
+    echo "Error: dialog or whiptail required"
+    echo "Install with: tce-load -i dialog"
+    exit 1
+fi
+
+# Temp file for dialog output
+TEMP_FILE=$(mktemp)
+trap "rm -f $TEMP_FILE" EXIT
+
+# Colors (for dialog)
+export DIALOGRC=/tmp/dialogrc.$$
+cat > $DIALOGRC << 'EOF'
+use_colors = ON
+screen_color = (WHITE,BLUE,ON)
+title_color = (YELLOW,BLUE,ON)
+button_active_color = (WHITE,RED,ON)
+button_inactive_color = (BLACK,WHITE,OFF)
+EOF
+
+#==============================================================================
+# Helper Functions
+#==============================================================================
+
+get_system_info() {
+    # CPU info
+    CPU_MODEL=$(grep "model name" /proc/cpuinfo | head -1 | cut -d: -f2 | xargs)
+    CPU_COUNT=$(grep -c processor /proc/cpuinfo)
+    CPU_LOAD=$(uptime | awk -F'load average:' '{print $2}' | xargs)
+
+    # Memory
+    MEM_TOTAL=$(free -h | grep Mem | awk '{print $2}')
+    MEM_USED=$(free -h | grep Mem | awk '{print $3}')
+    MEM_FREE=$(free -h | grep Mem | awk '{print $4}')
+
+    # Disk
+    DISK_TOTAL=$(df -h / | tail -1 | awk '{print $2}')
+    DISK_USED=$(df -h / | tail -1 | awk '{print $3}')
+    DISK_FREE=$(df -h / | tail -1 | awk '{print $4}')
+    DISK_PERCENT=$(df -h / | tail -1 | awk '{print $5}')
+
+    # Uptime
+    UPTIME=$(uptime -p)
+
+    # Hostname
+    HOSTNAME=$(hostname)
+}
+
+get_vm_list() {
+    if command -v virsh >/dev/null 2>&1; then
+        virsh list --all 2>/dev/null | tail -n +3 | head -n -1
+    else
+        echo "virsh not available"
+    fi
+}
+
+get_container_list() {
+    local containers=""
+
+    # Docker
+    if command -v docker >/dev/null 2>&1; then
+        containers="${containers}Docker:\n"
+        containers="${containers}$(docker ps -a --format 'table {{.Names}}\t{{.Status}}' 2>/dev/null | tail -n +2)\n\n"
+    fi
+
+    # Podman
+    if command -v podman >/dev/null 2>&1; then
+        containers="${containers}Podman:\n"
+        containers="${containers}$(podman ps -a --format 'table {{.Names}}\t{{.Status}}' 2>/dev/null | tail -n +2)\n\n"
+    fi
+
+    # LXC
+    if command -v lxc-ls >/dev/null 2>&1; then
+        containers="${containers}LXC:\n"
+        containers="${containers}$(lxc-ls -f 2>/dev/null)\n"
+    fi
+
+    echo -e "${containers:-No containers found}"
+}
+
+get_cluster_status() {
+    if [ -f /var/run/virtos/cluster-members ]; then
+        cat /var/run/virtos/cluster-members
+    else
+        echo "Clustering not enabled or no members found"
+    fi
+}
+
+get_storage_info() {
+    local storage=""
+
+    # Filesystems
+    storage="${storage}Mounted Filesystems:\n"
+    storage="${storage}$(df -h -t ext4 -t btrfs -t zfs -t nfs 2>/dev/null)\n\n"
+
+    # Btrfs
+    if command -v btrfs >/dev/null 2>&1; then
+        storage="${storage}Btrfs Subvolumes:\n"
+        for mnt in $(mount | grep btrfs | cut -d' ' -f3); do
+            storage="${storage}$(btrfs subvolume list $mnt 2>/dev/null)\n"
+        done
+        storage="${storage}\n"
+    fi
+
+    # LVM
+    if command -v vgdisplay >/dev/null 2>&1; then
+        storage="${storage}LVM Volume Groups:\n"
+        storage="${storage}$(vgdisplay 2>/dev/null | grep -E 'VG Name|VG Size|Free')\n\n"
+    fi
+
+    # ZFS
+    if command -v zpool >/dev/null 2>&1; then
+        storage="${storage}ZFS Pools:\n"
+        storage="${storage}$(zpool list 2>/dev/null)\n"
+    fi
+
+    echo -e "${storage:-No advanced storage configured}"
+}
+
+#==============================================================================
+# Menu Functions
+#==============================================================================
+
+main_menu() {
+    get_system_info
+
+    $DIALOG $DIALOG_OPTS \
+        --title "VirtOS Management Console" \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 20 76 10 \
+        1 "System Overview" \
+        2 "Virtual Machines (VMs)" \
+        3 "Containers" \
+        4 "Storage Management" \
+        5 "Cluster Status" \
+        6 "Networking" \
+        7 "Services" \
+        8 "System Logs" \
+        9 "Settings" \
+        0 "Exit" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1) system_overview_menu ;;
+        2) vm_management_menu ;;
+        3) container_management_menu ;;
+        4) storage_management_menu ;;
+        5) cluster_status_menu ;;
+        6) networking_menu ;;
+        7) services_menu ;;
+        8) logs_menu ;;
+        9) settings_menu ;;
+        0) exit 0 ;;
+        *) return ;;
+    esac
+}
+
+system_overview_menu() {
+    get_system_info
+
+    INFO="System Information\n\n"
+    INFO="${INFO}Hostname: $HOSTNAME\n"
+    INFO="${INFO}Uptime: $UPTIME\n\n"
+    INFO="${INFO}CPU:\n"
+    INFO="${INFO}  Model: $CPU_MODEL\n"
+    INFO="${INFO}  Cores: $CPU_COUNT\n"
+    INFO="${INFO}  Load: $CPU_LOAD\n\n"
+    INFO="${INFO}Memory:\n"
+    INFO="${INFO}  Total: $MEM_TOTAL\n"
+    INFO="${INFO}  Used: $MEM_USED\n"
+    INFO="${INFO}  Free: $MEM_FREE\n\n"
+    INFO="${INFO}Disk (/):\n"
+    INFO="${INFO}  Total: $DISK_TOTAL\n"
+    INFO="${INFO}  Used: $DISK_USED ($DISK_PERCENT)\n"
+    INFO="${INFO}  Free: $DISK_FREE\n\n"
+
+    # VMs count
+    if command -v virsh >/dev/null 2>&1; then
+        VM_RUNNING=$(virsh list --state-running 2>/dev/null | tail -n +3 | grep -c . || echo 0)
+        VM_TOTAL=$(virsh list --all 2>/dev/null | tail -n +3 | grep -c . || echo 0)
+        INFO="${INFO}Virtual Machines: $VM_RUNNING running / $VM_TOTAL total\n"
+    fi
+
+    # Containers count
+    if command -v docker >/dev/null 2>&1; then
+        DOCKER_RUNNING=$(docker ps -q 2>/dev/null | wc -l)
+        DOCKER_TOTAL=$(docker ps -aq 2>/dev/null | wc -l)
+        INFO="${INFO}Docker Containers: $DOCKER_RUNNING running / $DOCKER_TOTAL total\n"
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "System Overview" \
+        --msgbox "$INFO" 25 76
+
+    main_menu
+}
+
+vm_management_menu() {
+    local vm_list=$(get_vm_list)
+
+    if [ -z "$vm_list" ] || [ "$vm_list" = "virsh not available" ]; then
+        $DIALOG $DIALOG_OPTS \
+            --title "Virtual Machines" \
+            --msgbox "No VMs found or virsh not available" 8 50
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Virtual Machine Management" \
+        --menu "Select action:" 20 76 10 \
+        1 "List All VMs" \
+        2 "Start VM" \
+        3 "Shutdown VM" \
+        4 "Force Stop VM" \
+        5 "VM Console" \
+        6 "VM Info" \
+        7 "Create New VM (via IaaS)" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Virtual Machines" \
+                --msgbox "$(virsh list --all 2>/dev/null)" 20 76
+            vm_management_menu
+            ;;
+        2|3|4|5|6)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Select VM" \
+                --inputbox "Enter VM name:" 8 50 2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                case $CHOICE in
+                    2) virsh start "$VM_NAME" ;;
+                    3) virsh shutdown "$VM_NAME" ;;
+                    4) virsh destroy "$VM_NAME" ;;
+                    5)
+                        clear
+                        echo "Connecting to VM console (Ctrl+] to exit)..."
+                        virsh console "$VM_NAME"
+                        ;;
+                    6)
+                        $DIALOG $DIALOG_OPTS \
+                            --title "VM Info: $VM_NAME" \
+                            --msgbox "$(virsh dominfo "$VM_NAME" 2>/dev/null)" 20 76
+                        ;;
+                esac
+            fi
+            vm_management_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create VM via IaaS" \
+                --msgbox "Use: virtos-create-vm --name <name> --cpu <n> --ram <MB> --disk <size>\n\nSee 'virtos-create-vm --help' for full options" 10 70
+            vm_management_menu
+            ;;
+        0) main_menu ;;
+        *) vm_management_menu ;;
+    esac
+}
+
+container_management_menu() {
+    local containers=$(get_container_list)
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Container Management" \
+        --menu "Select runtime:" 15 76 5 \
+        1 "Docker Containers" \
+        2 "Podman Containers" \
+        3 "LXC Containers" \
+        4 "All Containers (overview)" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            if command -v docker >/dev/null 2>&1; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Docker Containers" \
+                    --msgbox "$(docker ps -a 2>/dev/null)" 20 100
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "Docker not installed" 6 40
+            fi
+            container_management_menu
+            ;;
+        2)
+            if command -v podman >/dev/null 2>&1; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Podman Containers" \
+                    --msgbox "$(podman ps -a 2>/dev/null)" 20 100
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "Podman not installed" 6 40
+            fi
+            container_management_menu
+            ;;
+        3)
+            if command -v lxc-ls >/dev/null 2>&1; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "LXC Containers" \
+                    --msgbox "$(lxc-ls -f 2>/dev/null)" 20 76
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "LXC not installed" 6 40
+            fi
+            container_management_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "All Containers" \
+                --msgbox "$containers" 25 100
+            container_management_menu
+            ;;
+        0) main_menu ;;
+        *) container_management_menu ;;
+    esac
+}
+
+storage_management_menu() {
+    local storage=$(get_storage_info)
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Storage Management" \
+        --menu "Select option:" 18 76 8 \
+        1 "Disk Usage Overview" \
+        2 "Mounted Filesystems" \
+        3 "Btrfs Subvolumes/Snapshots" \
+        4 "LVM Volumes" \
+        5 "ZFS Pools/Datasets" \
+        6 "NFS Mounts" \
+        7 "All Storage Info" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Disk Usage" \
+                --msgbox "$(df -h)" 20 76
+            storage_management_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Mounted Filesystems" \
+                --msgbox "$(mount | column -t)" 25 100
+            storage_management_menu
+            ;;
+        3)
+            if command -v btrfs >/dev/null 2>&1; then
+                INFO="Btrfs Subvolumes:\n\n"
+                for mnt in $(mount | grep btrfs | cut -d' ' -f3); do
+                    INFO="${INFO}Mount: $mnt\n"
+                    INFO="${INFO}$(btrfs subvolume list $mnt 2>/dev/null)\n\n"
+                done
+                $DIALOG $DIALOG_OPTS \
+                    --title "Btrfs Information" \
+                    --msgbox "$INFO" 25 100
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "Btrfs not available" 6 40
+            fi
+            storage_management_menu
+            ;;
+        4)
+            if command -v vgdisplay >/dev/null 2>&1; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "LVM Information" \
+                    --msgbox "$(vgdisplay 2>/dev/null; echo '\n'; lvdisplay 2>/dev/null)" 25 100
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "LVM not available" 6 40
+            fi
+            storage_management_menu
+            ;;
+        5)
+            if command -v zpool >/dev/null 2>&1; then
+                INFO="ZFS Pools:\n$(zpool list 2>/dev/null)\n\n"
+                INFO="${INFO}ZFS Datasets:\n$(zfs list 2>/dev/null)"
+                $DIALOG $DIALOG_OPTS \
+                    --title "ZFS Information" \
+                    --msgbox "$INFO" 25 100
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "ZFS not available" 6 40
+            fi
+            storage_management_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "NFS Mounts" \
+                --msgbox "$(mount | grep nfs)" 20 76
+            storage_management_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "All Storage Information" \
+                --msgbox "$storage" 25 100
+            storage_management_menu
+            ;;
+        0) main_menu ;;
+        *) storage_management_menu ;;
+    esac
+}
+
+cluster_status_menu() {
+    if command -v virtos-cluster >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS \
+            --title "Cluster Status" \
+            --menu "Select option:" 15 76 5 \
+            1 "List Cluster Members" \
+            2 "Cluster Resources" \
+            3 "Node Details" \
+            4 "Refresh Discovery" \
+            0 "Back" \
+            2> $TEMP_FILE
+
+        CHOICE=$(cat $TEMP_FILE)
+
+        case $CHOICE in
+            1)
+                $DIALOG $DIALOG_OPTS \
+                    --title "Cluster Members" \
+                    --msgbox "$(virtos-cluster list 2>/dev/null)" 20 76
+                cluster_status_menu
+                ;;
+            2)
+                $DIALOG $DIALOG_OPTS \
+                    --title "Cluster Resources" \
+                    --msgbox "$(virtos-cluster resources 2>/dev/null)" 20 76
+                cluster_status_menu
+                ;;
+            3)
+                $DIALOG $DIALOG_OPTS \
+                    --inputbox "Enter node name:" 8 50 2> $TEMP_FILE
+                NODE=$(cat $TEMP_FILE)
+                if [ -n "$NODE" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Node: $NODE" \
+                        --msgbox "$(virtos-cluster info $NODE 2>/dev/null)" 20 76
+                fi
+                cluster_status_menu
+                ;;
+            4)
+                virtos-cluster refresh
+                $DIALOG $DIALOG_OPTS --msgbox "Cluster discovery refreshed" 6 40
+                cluster_status_menu
+                ;;
+            0) main_menu ;;
+            *) cluster_status_menu ;;
+        esac
+    else
+        $DIALOG $DIALOG_OPTS \
+            --title "Clustering" \
+            --msgbox "Clustering not enabled or virtos-cluster not found" 8 50
+        main_menu
+    fi
+}
+
+networking_menu() {
+    $DIALOG $DIALOG_OPTS \
+        --title "Networking" \
+        --menu "Select option:" 15 76 6 \
+        1 "Network Interfaces" \
+        2 "IP Addresses" \
+        3 "Routing Table" \
+        4 "Bridges" \
+        5 "Firewall Rules" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Network Interfaces" \
+                --msgbox "$(ip link show)" 25 100
+            networking_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "IP Addresses" \
+                --msgbox "$(ip addr show)" 25 100
+            networking_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Routing Table" \
+                --msgbox "$(ip route show)" 20 76
+            networking_menu
+            ;;
+        4)
+            if command -v brctl >/dev/null 2>&1; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Network Bridges" \
+                    --msgbox "$(brctl show)" 15 76
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "brctl not available" 6 40
+            fi
+            networking_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Firewall Rules (iptables)" \
+                --msgbox "$(iptables -L -n -v 2>/dev/null)" 25 100
+            networking_menu
+            ;;
+        0) main_menu ;;
+        *) networking_menu ;;
+    esac
+}
+
+services_menu() {
+    $DIALOG $DIALOG_OPTS \
+        --title "Services" \
+        --menu "Select service:" 18 76 10 \
+        1 "libvirtd status" \
+        2 "Restart libvirtd" \
+        3 "Docker status" \
+        4 "Restart Docker" \
+        5 "K3s status (if installed)" \
+        6 "Avahi status (clustering)" \
+        7 "NFS status (if configured)" \
+        8 "All running processes" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            if pgrep libvirtd >/dev/null; then
+                $DIALOG $DIALOG_OPTS --msgbox "libvirtd is running" 6 40
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "libvirtd is NOT running" 6 40
+            fi
+            services_menu
+            ;;
+        2)
+            /usr/local/etc/init.d/libvirtd restart 2>/dev/null
+            $DIALOG $DIALOG_OPTS --msgbox "libvirtd restarted" 6 40
+            services_menu
+            ;;
+        3)
+            if pgrep dockerd >/dev/null; then
+                $DIALOG $DIALOG_OPTS --msgbox "Docker is running" 6 40
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "Docker is NOT running" 6 40
+            fi
+            services_menu
+            ;;
+        4)
+            /usr/local/etc/init.d/docker restart 2>/dev/null
+            $DIALOG $DIALOG_OPTS --msgbox "Docker restarted" 6 40
+            services_menu
+            ;;
+        5)
+            if command -v k3s >/dev/null 2>&1; then
+                $DIALOG $DIALOG_OPTS \
+                    --msgbox "$(k3s kubectl get nodes 2>/dev/null || echo 'K3s not running')" 15 76
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "K3s not installed" 6 40
+            fi
+            services_menu
+            ;;
+        6)
+            if pgrep avahi-daemon >/dev/null; then
+                $DIALOG $DIALOG_OPTS --msgbox "Avahi is running" 6 40
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "Avahi is NOT running" 6 40
+            fi
+            services_menu
+            ;;
+        7)
+            if pgrep nfsd >/dev/null || pgrep rpc.nfsd >/dev/null; then
+                $DIALOG $DIALOG_OPTS --msgbox "NFS is running" 6 40
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "NFS is NOT running" 6 40
+            fi
+            services_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Running Processes" \
+                --msgbox "$(ps aux | head -30)" 25 120
+            services_menu
+            ;;
+        0) main_menu ;;
+        *) services_menu ;;
+    esac
+}
+
+logs_menu() {
+    $DIALOG $DIALOG_OPTS \
+        --title "System Logs" \
+        --menu "Select log:" 15 76 6 \
+        1 "System Messages (dmesg)" \
+        2 "Last 50 kernel messages" \
+        3 "libvirt logs" \
+        4 "Docker logs (last 50 lines)" \
+        5 "System log (syslog)" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "System Messages" \
+                --msgbox "$(dmesg | tail -50)" 25 120
+            logs_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Kernel Messages" \
+                --msgbox "$(dmesg | grep -E 'error|warn|fail' | tail -50)" 25 120
+            logs_menu
+            ;;
+        3)
+            if [ -d /var/log/libvirt ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "libvirt Logs" \
+                    --msgbox "$(tail -50 /var/log/libvirt/libvirtd.log 2>/dev/null)" 25 120
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "libvirt logs not found" 6 40
+            fi
+            logs_menu
+            ;;
+        4)
+            if command -v docker >/dev/null 2>&1; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Docker Logs" \
+                    --msgbox "$(journalctl -u docker -n 50 2>/dev/null || echo 'No logs available')" 25 120
+            else
+                $DIALOG $DIALOG_OPTS --msgbox "Docker not installed" 6 40
+            fi
+            logs_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "System Log" \
+                --msgbox "$(tail -50 /var/log/messages 2>/dev/null || tail -50 /var/log/syslog 2>/dev/null || echo 'No syslog found')" 25 120
+            logs_menu
+            ;;
+        0) main_menu ;;
+        *) logs_menu ;;
+    esac
+}
+
+settings_menu() {
+    $DIALOG $DIALOG_OPTS \
+        --title "Settings" \
+        --menu "Select option:" 15 76 5 \
+        1 "About VirtOS" \
+        2 "System Info" \
+        3 "Installed Components" \
+        4 "Backup Configuration" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            INFO="VirtOS Management Console\n"
+            INFO="${INFO}Version: $VERSION\n\n"
+            INFO="${INFO}VirtOS - Minimal Virtualization OS\n"
+            INFO="${INFO}Based on Tiny Core Linux\n\n"
+            if [ -f /etc/virtos/version.txt ]; then
+                INFO="${INFO}$(cat /etc/virtos/version.txt)\n"
+            fi
+            $DIALOG $DIALOG_OPTS \
+                --title "About VirtOS" \
+                --msgbox "$INFO" 15 60
+            settings_menu
+            ;;
+        2)
+            system_overview_menu
+            ;;
+        3)
+            INFO="Installed Components:\n\n"
+            command -v qemu-system-x86_64 >/dev/null && INFO="${INFO}✓ KVM/QEMU\n"
+            command -v virsh >/dev/null && INFO="${INFO}✓ libvirt\n"
+            command -v docker >/dev/null && INFO="${INFO}✓ Docker\n"
+            command -v podman >/dev/null && INFO="${INFO}✓ Podman\n"
+            command -v containerd >/dev/null && INFO="${INFO}✓ containerd\n"
+            command -v lxc-create >/dev/null && INFO="${INFO}✓ LXC\n"
+            command -v k3s >/dev/null && INFO="${INFO}✓ K3s\n"
+            command -v btrfs >/dev/null && INFO="${INFO}✓ Btrfs\n"
+            command -v vgdisplay >/dev/null && INFO="${INFO}✓ LVM\n"
+            command -v zpool >/dev/null && INFO="${INFO}✓ ZFS\n"
+            command -v avahi-daemon >/dev/null && INFO="${INFO}✓ Avahi (clustering)\n"
+            command -v virtos-cluster >/dev/null && INFO="${INFO}✓ virtos-cluster\n"
+            $DIALOG $DIALOG_OPTS \
+                --title "Installed Components" \
+                --msgbox "$INFO" 20 50
+            settings_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Backup Configuration" \
+                --yesno "Backup VirtOS configuration now?\n\nThis will run: filetool.sh -b" 10 50
+            if [ $? -eq 0 ]; then
+                filetool.sh -b
+                $DIALOG $DIALOG_OPTS --msgbox "Configuration backed up" 6 40
+            fi
+            settings_menu
+            ;;
+        0) main_menu ;;
+        *) settings_menu ;;
+    esac
+}
+
+#==============================================================================
+# Main Entry Point
+#==============================================================================
+
+# Check if running as root
+if [ "$(id -u)" -ne 0 ]; then
+    $DIALOG $DIALOG_OPTS \
+        --title "Permission Required" \
+        --yesno "Some features require root access.\n\nContinue anyway?" 8 50
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+fi
+
+# Main loop
+while true; do
+    main_menu
+done

@@ -34,6 +34,10 @@ Complete documentation for FlossWare VirtOS.
 - **[IAAS.md](IAAS.md)** - Automated VM placement and scheduling
 - **[REMOTE-ACCESS.md](REMOTE-ACCESS.md)** - virt-manager and SSH setup
 
+## User Interface
+
+- **[TUI.md](TUI.md)** - Text user interface (ncurses setup wizard and management console)
+
 ## Reference
 
 - **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** - All commands in one place

@@ -74,6 +74,41 @@ qemu-system-x86_64 -enable-kvm -m 2048 \
     -cdrom ../output/FlossWare-Virt-*.iso
 ```
 
+### First-Time Setup
+
+**Interactive setup wizard (ncurses TUI):**
+```bash
+# Boot VirtOS, then run:
+sudo virtos-setup
+```
+
+**Setup wizard configures:**
+- Hostname and networking (DHCP or static IP)
+- Storage for VMs (ext4, Btrfs, LVM, ZFS)
+- Clustering (optional multi-host)
+- Services to auto-start
+- Admin user for remote access
+
+**Takes 5-10 minutes.** See [docs/TUI.md](docs/TUI.md) for details.
+
+### Management Console
+
+**Text-based management interface (ncurses TUI):**
+```bash
+virtos-tui
+```
+
+**Features:**
+- System monitoring (CPU, RAM, disk)
+- VM management (start, stop, console)
+- Container management (Docker, Podman, LXC)
+- Storage administration (Btrfs, LVM, ZFS, NFS)
+- Cluster status
+- Service control
+- System logs
+
+**Perfect for remote SSH management.** See [docs/TUI.md](docs/TUI.md) for full guide.
+
 ### Profiles
 
 | Profile | Size | What's Included |

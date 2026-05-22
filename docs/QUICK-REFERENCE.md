@@ -92,6 +92,12 @@ sudo dd if=build/output/FlossWare-Virt-*.iso \
 ## Helper Commands (once booted)
 
 ```bash
+# First-time setup wizard (ncurses TUI)
+sudo virtos-setup
+
+# Management console (ncurses TUI)
+virtos-tui
+
 # Check KVM status
 check-kvm
 
