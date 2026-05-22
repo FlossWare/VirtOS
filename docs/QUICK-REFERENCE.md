@@ -288,6 +288,98 @@ mkdir /mnt/data
 mount /dev/sdb1 /mnt/data
 ```
 
+### Btrfs (if included)
+
+```bash
+# Create filesystem
+mkfs.btrfs /dev/sdb1
+
+# Mount with compression
+mount -o compress=lz4 /dev/sdb1 /var/lib/vms
+
+# Create subvolume
+btrfs subvolume create /var/lib/vms/production
+
+# Snapshot
+btrfs subvolume snapshot /var/lib/vms/production \
+  /var/lib/vms/backup-2026-05-22
+
+# List subvolumes
+btrfs subvolume list /var/lib/vms
+
+# Delete snapshot
+btrfs subvolume delete /var/lib/vms/backup-2026-05-22
+```
+
+### LVM (if included)
+
+```bash
+# Create physical volume
+pvcreate /dev/sdb1
+
+# Create volume group
+vgcreate vg_vms /dev/sdb1
+
+# Create logical volume
+lvcreate -L 50G -n vm-disk vg_vms
+
+# Format and mount
+mkfs.ext4 /dev/vg_vms/vm-disk
+mount /dev/vg_vms/vm-disk /mnt
+
+# Extend volume
+lvextend -L +50G /dev/vg_vms/vm-disk
+resize2fs /dev/vg_vms/vm-disk
+
+# Snapshot
+lvcreate -L 10G -s -n vm-disk-snap /dev/vg_vms/vm-disk
+```
+
+### ZFS (if included)
+
+```bash
+# Create pool
+zpool create vmpool /dev/sdb
+
+# Create dataset with compression
+zfs create vmpool/vms
+zfs set compression=lz4 vmpool/vms
+
+# Create zvol (block device)
+zfs create -V 50G vmpool/vms/disk1
+
+# Snapshot
+zfs snapshot vmpool/vms@backup-2026-05-22
+
+# Clone
+zfs clone vmpool/vms@backup-2026-05-22 vmpool/test-clone
+
+# Send to remote
+zfs send vmpool/vms@backup | ssh host zfs receive pool/backup
+
+# Pool status
+zpool status
+zpool iostat
+
+# Dataset info
+zfs list
+zfs get compressratio vmpool/vms
+```
+
+### NFS (if included)
+
+```bash
+# Server - export directory
+echo "/export/vms *(rw,sync,no_subtree_check)" >> /etc/exports
+exportfs -av
+
+# Client - mount
+mount -t nfs virtos-1.local:/export/vms /var/lib/vms
+
+# Show exports
+showmount -e virtos-1.local
+```
+
 ## libvirt (if installed)
 
 ```bash

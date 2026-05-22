@@ -13,27 +13,30 @@ PROFILE="standard"     # ~200MB - Balanced (default)
 PROFILE="full"         # ~400MB - Everything
 PROFILE="containers"   # ~150MB - Container-focused
 PROFILE="developer"    # ~250MB - Dev-friendly
+PROFILE="kubernetes"   # ~250MB - K3s orchestration
+PROFILE="storage"      # ~350MB - Advanced storage (4GB+ RAM recommended)
 ```
 
 Or customize individual options (see Configuration section below).
 
 ## Profile Comparison
 
-| Component | Minimal | Standard | Full | Containers | Developer | Kubernetes |
-|-----------|---------|----------|------|------------|-----------|------------|
-| **Size** | ~100MB | ~200MB | ~400MB | ~150MB | ~250MB | ~250MB |
-| **KVM/QEMU** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **LXC** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Docker** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Podman** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **containerd** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **K3s** | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ |
-| **libvirt** | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ |
-| **Clustering** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Web UI** | ❌ | ❌ | ✅ | Portainer | Portainer | ❌ |
-| **Bash** | ❌ (ash) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Advanced Net** | ❌ | ❌ | ✅ | OVS | WireGuard | WireGuard |
-| **Storage** | Basic | Basic | All | Basic | Basic | Basic |
+| Component | Minimal | Standard | Full | Containers | Developer | Kubernetes | Storage |
+|-----------|---------|----------|------|------------|-----------|------------|---------|
+| **Size** | ~100MB | ~200MB | ~400MB | ~150MB | ~250MB | ~250MB | ~350MB |
+| **RAM** | 1GB+ | 2GB+ | 4GB+ | 2GB+ | 2GB+ | 4GB+ | 4GB+ |
+| **KVM/QEMU** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **LXC** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Docker** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Podman** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **containerd** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **K3s** | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **libvirt** | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ |
+| **Clustering** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Web UI** | ❌ | ❌ | ✅ | Portainer | Portainer | ❌ | ❌ |
+| **Bash** | ❌ (ash) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Advanced Net** | ❌ | ❌ | ✅ | OVS | WireGuard | WireGuard | ❌ |
+| **Storage** | Basic | Basic | All | Basic | Basic | Basic | **Btrfs+LVM+ZFS+NFS** |
 
 ## Profile Details
 
@@ -188,6 +191,62 @@ PROFILE="kubernetes" ./build/scripts/build-all.sh
 
 **See**: [KUBERNETES.md](KUBERNETES.md) for K3s setup and usage
 
+### Storage Profile
+**Size**: ~350MB  
+**RAM**: 4GB+ recommended (for ZFS)  
+**Use Case**: Advanced storage features and management
+
+**Includes**:
+- **Btrfs** - Snapshots, compression, subvolumes
+- **LVM** - Logical volume management, flexible resizing
+- **ZFS** - Enterprise storage with data integrity
+- **NFS** - Shared storage for multi-host clusters
+- KVM/QEMU for VMs
+- containerd (minimal container runtime)
+- libvirt for remote management
+- Clustering enabled (for shared storage)
+- All storage tools (qemu-img, etc.)
+
+**Excludes**:
+- LXC (storage focus, not containers)
+- Docker/Podman (use containerd if needed)
+- K3s (storage focus)
+- Web UIs
+
+**Best for**:
+- VM snapshots and cloning
+- Enterprise storage requirements
+- Data integrity (ZFS checksums)
+- Multi-host shared storage (NFS)
+- Storage pool management
+- Compression to save disk space
+- Storage administrators
+
+**Features**:
+```bash
+# Btrfs snapshots
+btrfs subvolume snapshot /var/lib/vms /var/lib/vms-backup
+
+# LVM flexible volumes
+lvcreate -L 50G -n vm-disk vg_vms
+lvextend -L +50G /dev/vg_vms/vm-disk
+
+# ZFS with compression
+zpool create vmpool /dev/sdb /dev/sdc
+zfs set compression=lz4 vmpool/vms
+
+# NFS shared storage
+exportfs -av  # Server
+mount -t nfs virtos-1.local:/export/vms /var/lib/vms  # Client
+```
+
+**Command**: 
+```bash
+PROFILE="storage" ./build/scripts/build-all.sh
+```
+
+**See**: [STORAGE.md](STORAGE.md) for comprehensive storage guide
+
 ## Custom Configuration
 
 Don't like the profiles? **Customize everything!**
@@ -281,6 +340,8 @@ Profiles are stored in `config/profiles/`:
 - `full.conf`
 - `containers.conf`
 - `developer.conf`
+- `kubernetes.conf`
+- `storage.conf`
 
 ## Size Estimates
 
@@ -303,7 +364,9 @@ Actual size depends on:
 | Home lab | **Standard** |
 | Production VMs | **Minimal** or **Standard** |
 | Container hosting | **Containers** |
+| Kubernetes cluster | **Kubernetes** |
 | Learning/Education | **Developer** |
+| Advanced storage | **Storage** |
 | Edge/IoT | **Minimal** |
 | Testing everything | **Full** |
 | Custom needs | **Edit build.conf** |
