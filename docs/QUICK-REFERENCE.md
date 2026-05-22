@@ -33,6 +33,34 @@ virtos-cluster refresh
 
 See [CLUSTERING.md](CLUSTERING.md) for multi-host setup.
 
+## IaaS - Automated VM Placement
+
+```bash
+# Create VM with automatic placement
+virtos-create-vm --name web-1 --cpu 2 --ram 4096 --disk 20G
+
+# With OS template
+virtos-create-vm --name app --cpu 4 --ram 8192 --disk 50G \
+  --os ubuntu-22.04
+
+# High availability (spread policy)
+virtos-create-vm --name db --cpu 8 --ram 16384 --disk 200G \
+  --policy spread --priority high
+
+# Anti-affinity (different host than another VM)
+virtos-create-vm --name db-replica --cpu 8 --ram 16384 --disk 200G \
+  --anti-affinity db-primary
+
+# Dry run (show where it would be placed)
+virtos-create-vm --name test --cpu 2 --ram 4096 --disk 20G --dry-run
+
+# Force specific host (skip scheduler)
+virtos-create-vm --name special --cpu 2 --ram 4096 --disk 20G \
+  --require virtos-2
+```
+
+See [IAAS.md](IAAS.md) for automated placement and scheduling.
+
 ## Build Commands
 
 ```bash

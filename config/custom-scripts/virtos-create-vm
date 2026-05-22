@@ -1,0 +1,254 @@
+#!/bin/sh
+# VirtOS - Automated VM Creation with IaaS Placement
+
+VERSION="0.1-alpha"
+
+# Colors
+if [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m'
+else
+    RED='' GREEN='' YELLOW='' BLUE='' NC=''
+fi
+
+usage() {
+    cat << EOF
+VirtOS Automated VM Creation v${VERSION}
+
+Usage: virtos-create-vm [options]
+
+Required Options:
+  --name <name>          VM name
+  --cpu <count>          Number of vCPUs
+  --ram <MB>             RAM in MB
+  --disk <size>          Disk size (e.g., 20G, 500M)
+
+Optional:
+  --os <template>        OS template (ubuntu-22.04, debian-12, etc.)
+  --network <type>       Network type (bridged, nat, isolated) [default: bridged]
+  --prefer <host>        Prefer this host (soft constraint)
+  --avoid <host>         Avoid this host
+  --require <host>       Must use this host (skip scheduler)
+  --anti-affinity <vm>   Don't place on same host as <vm>
+  --affinity <vm>        Prefer same host as <vm>
+  --policy <policy>      Scheduler policy (balanced, packed, spread) [default: balanced]
+  --priority <level>     Priority (low, normal, high) [default: normal]
+  --auto-start           Start VM after creation
+  --dry-run              Show placement decision without creating
+  --verbose              Show detailed scheduling information
+
+Examples:
+  # Simple VM (auto-placed)
+  virtos-create-vm --name web-1 --cpu 2 --ram 4096 --disk 20G
+
+  # With OS template
+  virtos-create-vm --name app --cpu 4 --ram 8192 --disk 50G --os ubuntu-22.04
+
+  # High availability (spread across hosts)
+  virtos-create-vm --name db-primary --cpu 8 --ram 16384 --disk 200G \\
+    --policy spread --priority high
+
+  # Anti-affinity with another VM
+  virtos-create-vm --name db-replica --cpu 8 --ram 16384 --disk 200G \\
+    --anti-affinity db-primary
+
+  # Force specific host
+  virtos-create-vm --name test --cpu 1 --ram 2048 --disk 10G \\
+    --require virtos-2
+
+EOF
+}
+
+# Parse arguments
+NAME=""
+CPU=""
+RAM=""
+DISK=""
+OS_TEMPLATE=""
+NETWORK="bridged"
+PREFER=""
+AVOID=""
+REQUIRE=""
+ANTI_AFFINITY=""
+AFFINITY=""
+POLICY="balanced"
+PRIORITY="normal"
+AUTO_START="no"
+DRY_RUN="no"
+VERBOSE="no"
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --name) NAME="$2"; shift 2 ;;
+        --cpu) CPU="$2"; shift 2 ;;
+        --ram) RAM="$2"; shift 2 ;;
+        --disk) DISK="$2"; shift 2 ;;
+        --os) OS_TEMPLATE="$2"; shift 2 ;;
+        --network) NETWORK="$2"; shift 2 ;;
+        --prefer) PREFER="$2"; shift 2 ;;
+        --avoid) AVOID="$2"; shift 2 ;;
+        --require) REQUIRE="$2"; shift 2 ;;
+        --anti-affinity) ANTI_AFFINITY="$2"; shift 2 ;;
+        --affinity) AFFINITY="$2"; shift 2 ;;
+        --policy) POLICY="$2"; shift 2 ;;
+        --priority) PRIORITY="$2"; shift 2 ;;
+        --auto-start) AUTO_START="yes"; shift ;;
+        --dry-run) DRY_RUN="yes"; shift ;;
+        --verbose|-v) VERBOSE="yes"; shift ;;
+        --help|-h) usage; exit 0 ;;
+        *) echo "Unknown option: $1"; usage; exit 1 ;;
+    esac
+done
+
+# Validate required arguments
+if [ -z "$NAME" ] || [ -z "$CPU" ] || [ -z "$RAM" ] || [ -z "$DISK" ]; then
+    echo "${RED}Error: Missing required arguments${NC}"
+    echo ""
+    usage
+    exit 1
+fi
+
+echo "${BLUE}VirtOS IaaS - Automated VM Placement${NC}"
+echo "=========================================="
+echo ""
+echo "Request:"
+echo "  Name:     $NAME"
+echo "  CPU:      $CPU vCPUs"
+echo "  RAM:      $RAM MB"
+echo "  Disk:     $DISK"
+echo "  Policy:   $POLICY"
+echo "  Priority: $PRIORITY"
+[ -n "$OS_TEMPLATE" ] && echo "  OS:       $OS_TEMPLATE"
+[ -n "$PREFER" ] && echo "  Prefer:   $PREFER"
+[ -n "$AVOID" ] && echo "  Avoid:    $AVOID"
+[ -n "$REQUIRE" ] && echo "  Require:  $REQUIRE"
+[ -n "$ANTI_AFFINITY" ] && echo "  Anti-affinity: $ANTI_AFFINITY"
+[ -n "$AFFINITY" ] && echo "  Affinity: $AFFINITY"
+echo ""
+
+# If --require specified, skip scheduler
+if [ -n "$REQUIRE" ]; then
+    echo "${YELLOW}Required host specified: $REQUIRE${NC}"
+    echo "Skipping scheduler, using: $REQUIRE"
+    SELECTED_HOST="$REQUIRE"
+else
+    # Run scheduler
+    echo "Analyzing cluster..."
+
+    # Use virtos-schedule command
+    SCHED_ARGS="--vm $NAME --cpu $CPU --ram $RAM --policy $POLICY"
+    [ -n "$PREFER" ] && SCHED_ARGS="$SCHED_ARGS --prefer $PREFER"
+    [ -n "$AVOID" ] && SCHED_ARGS="$SCHED_ARGS --avoid $AVOID"
+    [ -n "$ANTI_AFFINITY" ] && SCHED_ARGS="$SCHED_ARGS --anti-affinity $ANTI_AFFINITY"
+    [ -n "$AFFINITY" ] && SCHED_ARGS="$SCHED_ARGS --affinity $AFFINITY"
+    [ "$VERBOSE" = "yes" ] && SCHED_ARGS="$SCHED_ARGS --verbose"
+
+    # TODO: Call actual virtos-schedule script
+    # For now, simple implementation
+
+    # Get cluster members
+    if [ ! -f /var/run/virtos/cluster-members ]; then
+        echo "${RED}Error: Cluster information not available${NC}"
+        echo "Run: virtos-cluster refresh"
+        exit 1
+    fi
+
+    # Simple scheduling: pick first available host
+    # TODO: Implement actual scoring algorithm
+    SELECTED_HOST=$(head -1 /var/run/virtos/cluster-members | awk '{print $1}')
+
+    if [ -z "$SELECTED_HOST" ]; then
+        echo "${RED}Error: No suitable host found${NC}"
+        exit 1
+    fi
+
+    echo "${GREEN}Selected host: $SELECTED_HOST${NC}"
+    echo "  Reason: Simple first-available (full scheduler TODO)"
+fi
+
+echo ""
+
+# Dry run mode - stop here
+if [ "$DRY_RUN" = "yes" ]; then
+    echo "${YELLOW}Dry run mode - VM not created${NC}"
+    echo ""
+    echo "Would create VM '$NAME' on $SELECTED_HOST"
+    exit 0
+fi
+
+# Create the VM
+echo "Creating VM on $SELECTED_HOST..."
+
+# Generate basic VM XML
+# TODO: Use proper templates, this is simplified
+VM_DIR="/var/lib/virtos/vms/$NAME"
+mkdir -p "$VM_DIR"
+
+cat > "$VM_DIR/$NAME.xml" << EOF
+<domain type='kvm'>
+  <name>$NAME</name>
+  <memory unit='MiB'>$RAM</memory>
+  <vcpu>$CPU</vcpu>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <devices>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='$VM_DIR/$NAME.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    <interface type='bridge'>
+      <source bridge='br0'/>
+      <model type='virtio'/>
+    </interface>
+    <graphics type='vnc' port='-1'/>
+  </devices>
+</domain>
+EOF
+
+# Create disk
+echo "Creating disk..."
+qemu-img create -f qcow2 "$VM_DIR/$NAME.qcow2" "$DISK"
+
+# Define VM on selected host
+echo "Defining VM on $SELECTED_HOST..."
+
+if [ "$SELECTED_HOST" = "$(hostname)" ] || [ "$SELECTED_HOST" = "localhost" ]; then
+    # Local host
+    virsh define "$VM_DIR/$NAME.xml"
+else
+    # Remote host
+    virsh -c "qemu+ssh://root@$SELECTED_HOST.local/system" define "$VM_DIR/$NAME.xml"
+fi
+
+echo ""
+echo "${GREEN}VM '$NAME' created successfully on $SELECTED_HOST${NC}"
+echo ""
+
+# Auto-start if requested
+if [ "$AUTO_START" = "yes" ]; then
+    echo "Starting VM..."
+    if [ "$SELECTED_HOST" = "$(hostname)" ] || [ "$SELECTED_HOST" = "localhost" ]; then
+        virsh start "$NAME"
+    else
+        virsh -c "qemu+ssh://root@$SELECTED_HOST.local/system" start "$NAME"
+    fi
+    echo "${GREEN}VM started${NC}"
+fi
+
+# Show connection info
+echo "Connect to VM:"
+if [ "$SELECTED_HOST" = "$(hostname)" ] || [ "$SELECTED_HOST" = "localhost" ]; then
+    echo "  virsh console $NAME"
+else
+    echo "  virsh -c qemu+ssh://root@$SELECTED_HOST.local/system console $NAME"
+fi
+echo ""
+echo "Manage via virt-manager:"
+echo "  virt-manager -c qemu+ssh://root@$SELECTED_HOST.local/system"
+echo ""

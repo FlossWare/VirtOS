@@ -128,6 +128,24 @@ sudo k3s kubectl create deployment nginx --image=nginx --replicas=6
 
 K3s provides orchestration, auto-scaling, and self-healing for containers. See [docs/KUBERNETES.md](docs/KUBERNETES.md) for complete setup.
 
+### IaaS - Automated VM Placement
+
+**Request VMs and let the cluster decide where to run them:**
+```bash
+# Just specify what you need - no manual host selection!
+virtos-create-vm \
+  --name myapp \
+  --cpu 4 \
+  --ram 8192 \
+  --disk 50G
+
+# System analyzes cluster and responds:
+# "Best host: virtos-3 (94% fit score)"
+# VM created on optimal host automatically
+```
+
+Infrastructure as a Service - simplified! See [docs/IAAS.md](docs/IAAS.md) for automated placement, scheduling policies, and resource management.
+
 ### Customization
 
 **Everything is choosable!** Edit `build/build.conf`:

@@ -29,6 +29,7 @@ Complete documentation for FlossWare VirtOS.
 ## Multi-Host Features
 
 - **[CLUSTERING.md](CLUSTERING.md)** - Multi-host discovery and coordination
+- **[IAAS.md](IAAS.md)** - Automated VM placement and scheduling
 - **[REMOTE-ACCESS.md](REMOTE-ACCESS.md)** - virt-manager and SSH setup
 
 ## Reference
@@ -69,6 +70,11 @@ Complete documentation for FlossWare VirtOS.
 1. [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Choose runtime
 2. [CLUSTERING.md](CLUSTERING.md) - Set up cluster
 3. [KUBERNETES.md](KUBERNETES.md) - Deploy with K3s
+
+#### Use IaaS Automation
+1. [CLUSTERING.md](CLUSTERING.md) - Set up multi-host cluster
+2. [IAAS.md](IAAS.md) - Enable automated placement
+3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-create-vm commands
 
 ## Documentation by Profile
 
