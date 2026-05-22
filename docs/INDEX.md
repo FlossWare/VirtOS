@@ -198,13 +198,17 @@ Complete documentation for FlossWare VirtOS.
 | Performance Optimization | QUICK-REFERENCE.md (virtos-performance) |
 | Observability | QUICK-REFERENCE.md (virtos-observability) |
 | Advanced DR | QUICK-REFERENCE.md (virtos-dr-advanced) |
+| Web UI | QUICK-REFERENCE.md (virtos-web) |
+| DevOps Integration | QUICK-REFERENCE.md (virtos-devops) |
+| Directory Services | QUICK-REFERENCE.md (virtos-directory) |
+| Governance & Policy | QUICK-REFERENCE.md (virtos-governance) |
 
 ## Total Documentation
 
 - **19 Documentation Files**
-- **18,000+ Lines**
+- **19,000+ Lines**
 - **Complete and Honest Coverage** - including what's missing
-- **Phase 14 Complete** - Advanced security, performance, observability, DR (May 2026)
+- **Phase 15 Complete** - Web UI, DevOps, directory, governance (May 2026)
 
 ## Getting Help
 

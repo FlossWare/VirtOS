@@ -1485,6 +1485,156 @@ virtos-dr-advanced dr-report export /var/log/dr-report.pdf
 virtos-dr-advanced wizard
 ```
 
+### Web UI (virtos-web)
+
+```bash
+# Install web UIs
+virtos-web install-cockpit
+virtos-web install-portainer
+virtos-web install-custom-ui
+
+# Start services
+virtos-web start-cockpit                  # https://localhost:9090
+virtos-web start-portainer                # http://localhost:9000
+virtos-web start-custom-ui                # http://localhost:8080
+
+# Stop services
+virtos-web stop-cockpit
+virtos-web stop-portainer
+virtos-web stop-custom-ui
+
+# Configure SSL/TLS
+virtos-web configure-ssl cockpit /path/to/cert.crt /path/to/key.key
+virtos-web configure-ssl portainer
+
+# Enable authentication
+virtos-web enable-auth cockpit basic
+virtos-web enable-auth cockpit ldap
+virtos-web enable-auth cockpit oauth
+
+# Customize dashboard
+virtos-web customize-dashboard default
+virtos-web customize-dashboard compact
+virtos-web customize-dashboard detailed
+
+# Status
+virtos-web status
+
+# Wizard
+virtos-web wizard
+```
+
+### DevOps Integration (virtos-devops)
+
+```bash
+# GitOps
+virtos-devops install-argocd              # Kubernetes GitOps
+virtos-devops install-flux                # Kubernetes GitOps
+
+# CI/CD
+virtos-devops install-jenkins             # http://localhost:8081
+virtos-devops install-gitlab-runner
+virtos-devops install-github-actions owner/repo TOKEN
+
+# Infrastructure as Code
+virtos-devops install-terraform
+virtos-devops install-ansible
+virtos-devops install-pulumi
+
+# Container registry
+virtos-devops install-harbor              # https://localhost
+
+# Create CI pipelines
+virtos-devops create-ci-pipeline github-actions /path/to/project
+virtos-devops create-ci-pipeline gitlab-ci /path/to/project
+virtos-devops create-ci-pipeline jenkins /path/to/project
+
+# Create deployments
+virtos-devops create-deployment myapp kubernetes
+virtos-devops create-deployment myapp docker-compose
+virtos-devops create-deployment myapp systemd
+
+# Status
+virtos-devops status
+
+# Wizard
+virtos-devops wizard
+```
+
+### Directory Services (virtos-directory)
+
+```bash
+# LDAP
+virtos-directory setup-ldap ldap.example.com dc=example,dc=com cn=admin,dc=example,dc=com
+virtos-directory enable-ldap-auth ldap.example.com dc=example,dc=com cn=admin,dc=example,dc=com password123
+
+# Active Directory
+virtos-directory join-ad example.com dc.example.com Administrator password123
+virtos-directory enable-ad-auth
+virtos-directory search-ad-users john
+
+# FreeIPA
+virtos-directory join-ipa ipa.example.com example.com password123
+virtos-directory search-ipa-users john
+
+# User management
+virtos-directory search-users "uid=john*"
+virtos-directory create-group developers 2000
+virtos-directory create-user john 1001 2000 John Doe
+virtos-directory add-ad-group-member john developers
+
+# Sync users
+virtos-directory sync-users ldap local
+virtos-directory sync-users ad local
+
+# Status
+virtos-directory status
+
+# Wizard
+virtos-directory wizard
+```
+
+### Governance & Policy (virtos-governance)
+
+```bash
+# Create policies
+virtos-governance create-resource-policy vm-limits 16 64 500
+virtos-governance create-security-policy security-baseline
+virtos-governance create-naming-policy naming-std "^vm-[a-z]+-[0-9]+$"
+
+# Compliance policies
+virtos-governance create-compliance-policy pci-compliance pci-dss
+virtos-governance create-compliance-policy hipaa-compliance hipaa
+virtos-governance create-compliance-policy gdpr-compliance gdpr
+virtos-governance create-compliance-policy sox-compliance sox
+
+# Enforce policies
+virtos-governance enforce-policy vm-limits vm vm-001
+virtos-governance enforce-policy security-baseline vm vm-002
+
+# Change management
+virtos-governance create-change standard "Deploy new VM" admin
+virtos-governance create-change emergency "Fix critical bug" admin
+virtos-governance approve-change CHG-20260522-120000 manager
+virtos-governance implement-change CHG-20260522-120000
+virtos-governance complete-change CHG-20260522-120000 true
+
+# Audit trail
+virtos-governance audit-action create vm admin "Created VM vm-001"
+virtos-governance audit-action modify vm admin "Updated VM vm-001 memory"
+
+# Compliance reporting
+virtos-governance generate-compliance-report all
+virtos-governance generate-compliance-report pci-dss
+virtos-governance generate-compliance-report hipaa
+
+# Status
+virtos-governance status
+
+# Wizard
+virtos-governance wizard
+```
+
 ## Build Commands
 
 ```bash

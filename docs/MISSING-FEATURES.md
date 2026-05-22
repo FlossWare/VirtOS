@@ -1266,10 +1266,16 @@ Features VirtOS won't implement due to philosophy or constraints.
 - ✅ Advanced observability (virtos-observability - tracing, log aggregation, metrics)
 - ✅ Advanced DR (virtos-dr-advanced - continuous replication, PITR, multi-site)
 
-### Phase 15+ (Next - Future Enhancements)
-- Web UI (optional - philosophical choice to remain text-first)
+### Phase 15 (Complete - May 2026)
+- ✅ Web UI (virtos-web - Cockpit, Portainer, custom UI, optional)
+- ✅ DevOps integration (virtos-devops - GitOps, CI/CD, IaC, Harbor)
+- ✅ Directory services (virtos-directory - LDAP, AD, FreeIPA integration)
+- ✅ Governance (virtos-governance - policies, compliance, change management)
+
+### Phase 16+ (Next - Future Enhancements)
 - Community-driven features
 - Additional integrations
+- Extended compliance frameworks
 
 ## How to Help
 
