@@ -139,16 +139,20 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 20 76 10 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 25 76 13 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
-        3 "Containers" \
-        4 "Storage Management" \
-        5 "Cluster Status" \
-        6 "Networking" \
-        7 "Services" \
-        8 "System Logs" \
-        9 "Settings" \
+        3 "VM Backups & Restore" \
+        4 "VM Templates" \
+        5 "VM Snapshots" \
+        6 "IaaS VM Creation" \
+        7 "Containers" \
+        8 "Storage Management" \
+        9 "Cluster Status" \
+        10 "Networking" \
+        11 "Services" \
+        12 "System Logs" \
+        13 "Settings" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -157,13 +161,17 @@ main_menu() {
     case $CHOICE in
         1) system_overview_menu ;;
         2) vm_management_menu ;;
-        3) container_management_menu ;;
-        4) storage_management_menu ;;
-        5) cluster_status_menu ;;
-        6) networking_menu ;;
-        7) services_menu ;;
-        8) logs_menu ;;
-        9) settings_menu ;;
+        3) backup_restore_menu ;;
+        4) templates_menu ;;
+        5) snapshots_menu ;;
+        6) iaas_vm_create_menu ;;
+        7) container_management_menu ;;
+        8) storage_management_menu ;;
+        9) cluster_status_menu ;;
+        10) networking_menu ;;
+        11) services_menu ;;
+        12) logs_menu ;;
+        13) settings_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -667,6 +675,666 @@ logs_menu() {
     esac
 }
 
+iaas_vm_create_menu() {
+    if ! command -v virtos-create-vm >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-create-vm not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "IaaS VM Creation Wizard" \
+        --msgbox "Create a VM with automatic placement across the cluster.\n\nThe system will analyze resources and select the optimal host." 10 70
+
+    # Get VM name
+    $DIALOG $DIALOG_OPTS \
+        --title "VM Name" \
+        --inputbox "Enter VM name:" 10 60 \
+        2> $TEMP_FILE
+    VM_NAME=$(cat $TEMP_FILE)
+
+    if [ -z "$VM_NAME" ]; then
+        main_menu
+        return
+    fi
+
+    # Get CPU count
+    $DIALOG $DIALOG_OPTS \
+        --title "CPU Cores" \
+        --inputbox "Enter number of CPU cores:" 10 60 "2" \
+        2> $TEMP_FILE
+    CPU_COUNT=$(cat $TEMP_FILE)
+
+    # Get RAM in MB
+    $DIALOG $DIALOG_OPTS \
+        --title "Memory (RAM)" \
+        --inputbox "Enter RAM in MB:" 10 60 "4096" \
+        2> $TEMP_FILE
+    RAM_MB=$(cat $TEMP_FILE)
+
+    # Get disk size
+    $DIALOG $DIALOG_OPTS \
+        --title "Disk Size" \
+        --inputbox "Enter disk size (e.g., 20G, 50G, 100G):" 10 60 "20G" \
+        2> $TEMP_FILE
+    DISK_SIZE=$(cat $TEMP_FILE)
+
+    # Select scheduling policy
+    $DIALOG $DIALOG_OPTS \
+        --title "Scheduling Policy" \
+        --menu "Select VM placement policy:" 15 70 4 \
+        1 "Balanced (default - even distribution)" \
+        2 "Packed (maximize host utilization)" \
+        3 "Spread (minimize VMs per host)" \
+        2> $TEMP_FILE
+    POLICY_CHOICE=$(cat $TEMP_FILE)
+
+    case $POLICY_CHOICE in
+        2) POLICY="packed" ;;
+        3) POLICY="spread" ;;
+        *) POLICY="balanced" ;;
+    esac
+
+    # Select priority
+    $DIALOG $DIALOG_OPTS \
+        --title "VM Priority" \
+        --menu "Select VM priority:" 12 60 3 \
+        1 "Normal" \
+        2 "High" \
+        3 "Low" \
+        2> $TEMP_FILE
+    PRIORITY_CHOICE=$(cat $TEMP_FILE)
+
+    case $PRIORITY_CHOICE in
+        2) PRIORITY="high" ;;
+        3) PRIORITY="low" ;;
+        *) PRIORITY="normal" ;;
+    esac
+
+    # Optional: OS template
+    $DIALOG $DIALOG_OPTS \
+        --title "OS Template" \
+        --inputbox "Enter OS template (optional, press Enter to skip):\n(e.g., ubuntu-22.04, debian-12)" 12 70 \
+        2> $TEMP_FILE
+    OS_TEMPLATE=$(cat $TEMP_FILE)
+
+    # Build command
+    CMD="virtos-create-vm --name \"$VM_NAME\" --cpu $CPU_COUNT --ram $RAM_MB --disk $DISK_SIZE --policy $POLICY --priority $PRIORITY"
+
+    if [ -n "$OS_TEMPLATE" ]; then
+        CMD="$CMD --os \"$OS_TEMPLATE\""
+    fi
+
+    # Dry run first
+    $DIALOG $DIALOG_OPTS \
+        --title "Preview Placement" \
+        --yesno "Run a dry-run to see where the VM would be placed?\n\n(Recommended before creating)" 10 70
+
+    if [ $? -eq 0 ]; then
+        eval "$CMD --dry-run" 2>&1 | \
+            $DIALOG $DIALOG_OPTS --title "Placement Preview" --programbox 20 100
+
+        $DIALOG $DIALOG_OPTS \
+            --title "Create VM" \
+            --yesno "Proceed with VM creation?" 8 50
+
+        if [ $? -ne 0 ]; then
+            main_menu
+            return
+        fi
+    fi
+
+    # Create VM
+    $DIALOG $DIALOG_OPTS \
+        --title "Creating VM" \
+        --infobox "Creating VM '$VM_NAME' on optimal host...\n\nPlease wait..." 8 60
+
+    eval "$CMD" > /tmp/iaas-result.txt 2>&1
+
+    # Show result
+    RESULT=$(cat /tmp/iaas-result.txt)
+    rm -f /tmp/iaas-result.txt
+
+    $DIALOG $DIALOG_OPTS \
+        --title "VM Creation Result" \
+        --msgbox "$RESULT\n\nVM '$VM_NAME' has been created and placed on the optimal host." 15 80
+
+    main_menu
+}
+
+snapshots_menu() {
+    if ! command -v virtos-snapshot >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-snapshot not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "VM Snapshots" \
+        --menu "Select option:" 18 76 8 \
+        1 "List Snapshots for VM" \
+        2 "Create Snapshot" \
+        3 "Revert to Snapshot" \
+        4 "Delete Snapshot" \
+        5 "Schedule Automatic Snapshots" \
+        6 "Cleanup Old Snapshots" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "List Snapshots" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Snapshots for $VM_NAME" \
+                    --msgbox "$(virtos-snapshot list "$VM_NAME" 2>&1)" 25 100
+            fi
+            snapshots_menu
+            ;;
+        2)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Create Snapshot" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Get description
+                $DIALOG $DIALOG_OPTS \
+                    --title "Snapshot Description" \
+                    --inputbox "Enter description (optional):" 10 60 "Manual snapshot" \
+                    2> $TEMP_FILE
+                DESCRIPTION=$(cat $TEMP_FILE)
+
+                # Ask for snapshot type
+                $DIALOG $DIALOG_OPTS \
+                    --title "Snapshot Type" \
+                    --menu "Select snapshot type:" 12 60 2 \
+                    1 "Disk-only (faster, no RAM state)" \
+                    2 "Full (includes RAM state)" \
+                    2> $TEMP_FILE
+                TYPE_CHOICE=$(cat $TEMP_FILE)
+
+                if [ "$TYPE_CHOICE" = "2" ]; then
+                    virtos-snapshot create "$VM_NAME" "$DESCRIPTION" --memory 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Creating Snapshot" --programbox 15 76
+                else
+                    virtos-snapshot create "$VM_NAME" "$DESCRIPTION" --disk-only 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Creating Snapshot" --programbox 15 76
+                fi
+
+                $DIALOG $DIALOG_OPTS --msgbox "Snapshot created" 6 40
+            fi
+            snapshots_menu
+            ;;
+        3)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Revert Snapshot" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Show available snapshots
+                SNAPSHOTS=$(virtos-snapshot list "$VM_NAME" 2>&1)
+
+                # Get snapshot name
+                $DIALOG $DIALOG_OPTS \
+                    --title "Select Snapshot" \
+                    --inputbox "Enter snapshot name:\n\n$SNAPSHOTS" 25 100 \
+                    2> $TEMP_FILE
+                SNAPSHOT_NAME=$(cat $TEMP_FILE)
+
+                if [ -n "$SNAPSHOT_NAME" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Confirm Revert" \
+                        --yesno "Revert VM '$VM_NAME' to snapshot '$SNAPSHOT_NAME'?\n\nCurrent state will be lost!" 10 70
+
+                    if [ $? -eq 0 ]; then
+                        virtos-snapshot revert "$VM_NAME" "$SNAPSHOT_NAME" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Reverting" --programbox 15 76
+                        $DIALOG $DIALOG_OPTS --msgbox "VM reverted to snapshot" 6 40
+                    fi
+                fi
+            fi
+            snapshots_menu
+            ;;
+        4)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Delete Snapshot" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Show available snapshots
+                SNAPSHOTS=$(virtos-snapshot list "$VM_NAME" 2>&1)
+
+                # Get snapshot name
+                $DIALOG $DIALOG_OPTS \
+                    --title "Select Snapshot" \
+                    --inputbox "Enter snapshot name to delete:\n\n$SNAPSHOTS" 25 100 \
+                    2> $TEMP_FILE
+                SNAPSHOT_NAME=$(cat $TEMP_FILE)
+
+                if [ -n "$SNAPSHOT_NAME" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Confirm Delete" \
+                        --yesno "Delete snapshot '$SNAPSHOT_NAME'?\n\nThis cannot be undone!" 10 60
+
+                    if [ $? -eq 0 ]; then
+                        virtos-snapshot delete "$VM_NAME" "$SNAPSHOT_NAME" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Deleting Snapshot" --programbox 15 76
+                        $DIALOG $DIALOG_OPTS --msgbox "Snapshot deleted" 6 40
+                    fi
+                fi
+            fi
+            snapshots_menu
+            ;;
+        5)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Schedule Snapshots" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Select schedule type
+                $DIALOG $DIALOG_OPTS \
+                    --title "Snapshot Schedule" \
+                    --menu "Select schedule frequency:" 12 60 2 \
+                    1 "Hourly" \
+                    2 "Daily" \
+                    2> $TEMP_FILE
+                SCHED_CHOICE=$(cat $TEMP_FILE)
+
+                case $SCHED_CHOICE in
+                    1)
+                        # Get retention count
+                        $DIALOG $DIALOG_OPTS \
+                            --title "Retention Policy" \
+                            --inputbox "Keep last N snapshots:" 10 60 "7" \
+                            2> $TEMP_FILE
+                        KEEP_COUNT=$(cat $TEMP_FILE)
+
+                        virtos-snapshot schedule "$VM_NAME" --hourly --keep "$KEEP_COUNT" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Schedule Result" --programbox 15 76
+                        ;;
+                    2)
+                        # Get time
+                        $DIALOG $DIALOG_OPTS \
+                            --title "Daily Snapshot Time" \
+                            --inputbox "Enter time (HH:MM, e.g., 02:00):" 10 60 "02:00" \
+                            2> $TEMP_FILE
+                        SNAPSHOT_TIME=$(cat $TEMP_FILE)
+
+                        # Get retention count
+                        $DIALOG $DIALOG_OPTS \
+                            --title "Retention Policy" \
+                            --inputbox "Keep last N snapshots:" 10 60 "7" \
+                            2> $TEMP_FILE
+                        KEEP_COUNT=$(cat $TEMP_FILE)
+
+                        if [ -n "$SNAPSHOT_TIME" ]; then
+                            virtos-snapshot schedule "$VM_NAME" --daily "$SNAPSHOT_TIME" --keep "$KEEP_COUNT" 2>&1 | \
+                                $DIALOG $DIALOG_OPTS --title "Schedule Result" --programbox 15 76
+                        fi
+                        ;;
+                esac
+
+                $DIALOG $DIALOG_OPTS --msgbox "Snapshot schedule configured" 6 40
+            fi
+            snapshots_menu
+            ;;
+        6)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Cleanup Snapshots" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Get retention count
+                $DIALOG $DIALOG_OPTS \
+                    --title "Retention Policy" \
+                    --inputbox "Keep last N snapshots:" 10 60 "7" \
+                    2> $TEMP_FILE
+                KEEP_COUNT=$(cat $TEMP_FILE)
+
+                $DIALOG $DIALOG_OPTS \
+                    --title "Confirm Cleanup" \
+                    --yesno "Remove old snapshots for '$VM_NAME'?\n\nKeeping last $KEEP_COUNT snapshots" 10 60
+
+                if [ $? -eq 0 ]; then
+                    virtos-snapshot cleanup "$VM_NAME" --keep "$KEEP_COUNT" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Cleanup Progress" --programbox 15 76
+                    $DIALOG $DIALOG_OPTS --msgbox "Cleanup completed" 6 40
+                fi
+            fi
+            snapshots_menu
+            ;;
+        0) main_menu ;;
+        *) snapshots_menu ;;
+    esac
+}
+
+templates_menu() {
+    if ! command -v virtos-template >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-template not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "VM Templates" \
+        --menu "Select option:" 16 76 7 \
+        1 "List Templates" \
+        2 "Create Template from VM" \
+        3 "Clone VM from Template" \
+        4 "Import Cloud Image" \
+        5 "Delete Template" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Available Templates" \
+                --msgbox "$(virtos-template list 2>&1)" 25 100
+            templates_menu
+            ;;
+        2)
+            # Get source VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Create Template" \
+                --inputbox "Enter source VM name (must be shut down):" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Get template name
+                $DIALOG $DIALOG_OPTS \
+                    --title "Template Name" \
+                    --inputbox "Enter template name:" 10 60 \
+                    2> $TEMP_FILE
+                TEMPLATE_NAME=$(cat $TEMP_FILE)
+
+                if [ -n "$TEMPLATE_NAME" ]; then
+                    virtos-template create "$VM_NAME" "$TEMPLATE_NAME" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Creating Template" --programbox 20 76
+                    $DIALOG $DIALOG_OPTS --msgbox "Template creation completed\n\nCheck output for status" 8 50
+                fi
+            fi
+            templates_menu
+            ;;
+        3)
+            # Show available templates first
+            TEMPLATES=$(virtos-template list 2>&1)
+
+            # Get template name
+            $DIALOG $DIALOG_OPTS \
+                --title "Clone from Template" \
+                --inputbox "Enter template name to clone from:\n\n$TEMPLATES" 20 76 \
+                2> $TEMP_FILE
+            TEMPLATE_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$TEMPLATE_NAME" ]; then
+                # Get new VM name
+                $DIALOG $DIALOG_OPTS \
+                    --title "New VM Name" \
+                    --inputbox "Enter new VM name:" 10 60 \
+                    2> $TEMP_FILE
+                NEW_VM_NAME=$(cat $TEMP_FILE)
+
+                if [ -n "$NEW_VM_NAME" ]; then
+                    virtos-template clone "$TEMPLATE_NAME" "$NEW_VM_NAME" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Cloning VM" --programbox 20 76
+                    $DIALOG $DIALOG_OPTS --msgbox "VM cloned successfully\n\nStart with: virsh start $NEW_VM_NAME" 8 60
+                fi
+            fi
+            templates_menu
+            ;;
+        4)
+            # Get image URL
+            $DIALOG $DIALOG_OPTS \
+                --title "Import Cloud Image" \
+                --inputbox "Enter cloud image URL:\n(e.g., https://cloud-images.ubuntu.com/...)" 12 76 \
+                2> $TEMP_FILE
+            IMAGE_URL=$(cat $TEMP_FILE)
+
+            if [ -n "$IMAGE_URL" ]; then
+                # Get template name
+                $DIALOG $DIALOG_OPTS \
+                    --title "Template Name" \
+                    --inputbox "Enter template name:" 10 60 \
+                    2> $TEMP_FILE
+                TEMPLATE_NAME=$(cat $TEMP_FILE)
+
+                if [ -n "$TEMPLATE_NAME" ]; then
+                    virtos-template import "$IMAGE_URL" "$TEMPLATE_NAME" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Importing Image" --programbox 20 76
+                    $DIALOG $DIALOG_OPTS --msgbox "Cloud image imported as template" 6 50
+                fi
+            fi
+            templates_menu
+            ;;
+        5)
+            # Show available templates first
+            TEMPLATES=$(virtos-template list 2>&1)
+
+            # Get template name
+            $DIALOG $DIALOG_OPTS \
+                --title "Delete Template" \
+                --inputbox "Enter template name to delete:\n\n$TEMPLATES" 20 76 \
+                2> $TEMP_FILE
+            TEMPLATE_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$TEMPLATE_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Confirm Delete" \
+                    --yesno "Delete template '$TEMPLATE_NAME'?\n\nThis cannot be undone!" 10 60
+
+                if [ $? -eq 0 ]; then
+                    virtos-template delete "$TEMPLATE_NAME" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Deleting Template" --programbox 15 76
+                    $DIALOG $DIALOG_OPTS --msgbox "Template deleted" 6 40
+                fi
+            fi
+            templates_menu
+            ;;
+        0) main_menu ;;
+        *) templates_menu ;;
+    esac
+}
+
+backup_restore_menu() {
+    if ! command -v virtos-backup >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-backup not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "VM Backups & Restore" \
+        --menu "Select option:" 18 76 8 \
+        1 "List All Backups" \
+        2 "Backup a VM" \
+        3 "Restore a VM" \
+        4 "Schedule Automatic Backups" \
+        5 "Cleanup Old Backups" \
+        6 "View Backup Statistics" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Available Backups" \
+                --msgbox "$(virtos-backup list 2>&1)" 25 100
+            backup_restore_menu
+            ;;
+        2)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Backup VM" \
+                --inputbox "Enter VM name to backup:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Ask for remote destination (optional)
+                $DIALOG $DIALOG_OPTS \
+                    --title "Backup Destination" \
+                    --yesno "Backup to remote location?\n\nNo = Local backup\nYes = Specify remote" 10 50
+
+                if [ $? -eq 0 ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Remote Destination" \
+                        --inputbox "Enter remote destination:\n(e.g., scp://user@host:/path or s3://bucket/path)" 12 76 \
+                        2> $TEMP_FILE
+                    REMOTE=$(cat $TEMP_FILE)
+
+                    if [ -n "$REMOTE" ]; then
+                        virtos-backup backup "$VM_NAME" --remote "$REMOTE" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Backup Progress" --programbox 20 76
+                    else
+                        $DIALOG $DIALOG_OPTS --msgbox "Remote destination required" 6 40
+                    fi
+                else
+                    virtos-backup backup "$VM_NAME" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Backup Progress" --programbox 20 76
+                fi
+
+                $DIALOG $DIALOG_OPTS --msgbox "Backup operation completed\n\nCheck logs for status" 8 50
+            fi
+            backup_restore_menu
+            ;;
+        3)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Restore VM" \
+                --inputbox "Enter VM name to restore:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Get backup date
+                $DIALOG $DIALOG_OPTS \
+                    --title "Restore Date" \
+                    --inputbox "Enter backup date (YYYY-MM-DD):" 10 60 \
+                    2> $TEMP_FILE
+                BACKUP_DATE=$(cat $TEMP_FILE)
+
+                if [ -n "$BACKUP_DATE" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Confirm Restore" \
+                        --yesno "Restore VM '$VM_NAME' from backup '$BACKUP_DATE'?\n\nThis will overwrite the current VM!" 10 60
+
+                    if [ $? -eq 0 ]; then
+                        virtos-backup restore "$VM_NAME" "$BACKUP_DATE" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Restore Progress" --programbox 20 76
+                        $DIALOG $DIALOG_OPTS --msgbox "Restore operation completed\n\nCheck logs for status" 8 50
+                    fi
+                fi
+            fi
+            backup_restore_menu
+            ;;
+        4)
+            # Get VM name
+            $DIALOG $DIALOG_OPTS \
+                --title "Schedule Backups" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                # Select schedule type
+                $DIALOG $DIALOG_OPTS \
+                    --title "Backup Schedule" \
+                    --menu "Select schedule frequency:" 12 60 4 \
+                    1 "Hourly" \
+                    2 "Daily" \
+                    3 "Weekly" \
+                    2> $TEMP_FILE
+                SCHED_CHOICE=$(cat $TEMP_FILE)
+
+                case $SCHED_CHOICE in
+                    1)
+                        virtos-backup schedule "$VM_NAME" --hourly 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Schedule Result" --programbox 15 76
+                        ;;
+                    2)
+                        $DIALOG $DIALOG_OPTS \
+                            --title "Daily Backup Time" \
+                            --inputbox "Enter time (HH:MM, e.g., 02:00):" 10 60 "02:00" \
+                            2> $TEMP_FILE
+                        BACKUP_TIME=$(cat $TEMP_FILE)
+
+                        if [ -n "$BACKUP_TIME" ]; then
+                            virtos-backup schedule "$VM_NAME" --daily "$BACKUP_TIME" 2>&1 | \
+                                $DIALOG $DIALOG_OPTS --title "Schedule Result" --programbox 15 76
+                        fi
+                        ;;
+                    3)
+                        $DIALOG $DIALOG_OPTS \
+                            --title "Weekly Backup Time" \
+                            --inputbox "Enter time (HH:MM, e.g., 03:00):" 10 60 "03:00" \
+                            2> $TEMP_FILE
+                        BACKUP_TIME=$(cat $TEMP_FILE)
+
+                        if [ -n "$BACKUP_TIME" ]; then
+                            virtos-backup schedule "$VM_NAME" --weekly "$BACKUP_TIME" 2>&1 | \
+                                $DIALOG $DIALOG_OPTS --title "Schedule Result" --programbox 15 76
+                        fi
+                        ;;
+                esac
+
+                $DIALOG $DIALOG_OPTS --msgbox "Backup schedule configured" 6 40
+            fi
+            backup_restore_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Cleanup Backups" \
+                --yesno "Remove old backups according to retention policy?\n\nThis cannot be undone!" 10 60
+
+            if [ $? -eq 0 ]; then
+                virtos-backup cleanup 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Cleanup Progress" --programbox 20 76
+                $DIALOG $DIALOG_OPTS --msgbox "Cleanup completed" 6 40
+            fi
+            backup_restore_menu
+            ;;
+        6)
+            STATS="Backup Statistics:\n\n"
+            STATS="${STATS}$(virtos-backup list 2>&1 | head -20)\n"
+            $DIALOG $DIALOG_OPTS \
+                --title "Backup Statistics" \
+                --msgbox "$STATS" 25 100
+            backup_restore_menu
+            ;;
+        0) main_menu ;;
+        *) backup_restore_menu ;;
+    esac
+}
+
 settings_menu() {
     $DIALOG $DIALOG_OPTS \
         --title "Settings" \
@@ -699,18 +1367,27 @@ settings_menu() {
             ;;
         3)
             INFO="Installed Components:\n\n"
-            command -v qemu-system-x86_64 >/dev/null && INFO="${INFO}✓ KVM/QEMU\n"
-            command -v virsh >/dev/null && INFO="${INFO}✓ libvirt\n"
-            command -v docker >/dev/null && INFO="${INFO}✓ Docker\n"
-            command -v podman >/dev/null && INFO="${INFO}✓ Podman\n"
-            command -v containerd >/dev/null && INFO="${INFO}✓ containerd\n"
-            command -v lxc-create >/dev/null && INFO="${INFO}✓ LXC\n"
-            command -v k3s >/dev/null && INFO="${INFO}✓ K3s\n"
-            command -v btrfs >/dev/null && INFO="${INFO}✓ Btrfs\n"
-            command -v vgdisplay >/dev/null && INFO="${INFO}✓ LVM\n"
-            command -v zpool >/dev/null && INFO="${INFO}✓ ZFS\n"
-            command -v avahi-daemon >/dev/null && INFO="${INFO}✓ Avahi (clustering)\n"
-            command -v virtos-cluster >/dev/null && INFO="${INFO}✓ virtos-cluster\n"
+            INFO="${INFO}Core Virtualization:\n"
+            command -v qemu-system-x86_64 >/dev/null && INFO="${INFO}  ✓ KVM/QEMU\n"
+            command -v virsh >/dev/null && INFO="${INFO}  ✓ libvirt\n"
+            command -v lxc-create >/dev/null && INFO="${INFO}  ✓ LXC\n"
+            INFO="${INFO}\nContainers:\n"
+            command -v docker >/dev/null && INFO="${INFO}  ✓ Docker\n"
+            command -v podman >/dev/null && INFO="${INFO}  ✓ Podman\n"
+            command -v containerd >/dev/null && INFO="${INFO}  ✓ containerd\n"
+            command -v k3s >/dev/null && INFO="${INFO}  ✓ K3s\n"
+            INFO="${INFO}\nStorage:\n"
+            command -v btrfs >/dev/null && INFO="${INFO}  ✓ Btrfs\n"
+            command -v vgdisplay >/dev/null && INFO="${INFO}  ✓ LVM\n"
+            command -v zpool >/dev/null && INFO="${INFO}  ✓ ZFS\n"
+            INFO="${INFO}\nClustering:\n"
+            command -v avahi-daemon >/dev/null && INFO="${INFO}  ✓ Avahi\n"
+            command -v virtos-cluster >/dev/null && INFO="${INFO}  ✓ virtos-cluster\n"
+            command -v virtos-create-vm >/dev/null && INFO="${INFO}  ✓ virtos-create-vm (IaaS)\n"
+            INFO="${INFO}\nPhase 6 Tools:\n"
+            command -v virtos-backup >/dev/null && INFO="${INFO}  ✓ virtos-backup\n"
+            command -v virtos-template >/dev/null && INFO="${INFO}  ✓ virtos-template\n"
+            command -v virtos-snapshot >/dev/null && INFO="${INFO}  ✓ virtos-snapshot\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
                 --msgbox "$INFO" 20 50
