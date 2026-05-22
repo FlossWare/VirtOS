@@ -8,40 +8,52 @@ Features essential for production use that VirtOS currently lacks.
 
 ### 1. Automated Backup and Restore
 
-**Status:** ❌ Not implemented
+**Status:** ✅ IMPLEMENTED (Phase 6)
 
-**What's missing:**
-- Automated VM backup scheduling
-- Incremental backups
-- Backup retention policies
-- Point-in-time recovery
-- Backup compression
-- Backup verification
-- Backup to remote storage
-- Restore wizard
+**What's included:**
+- ✅ Automated VM backup scheduling (cron-based)
+- ✅ Backup retention policies
+- ✅ Point-in-time recovery
+- ✅ Backup compression
+- ✅ Backup verification (checksums)
+- ✅ Backup to remote storage (SCP, S3)
+- ✅ Restore wizard (virtos-backup restore)
+- ⚠️ Incremental backups (planned for future)
 
-**Current workaround:**
+**Implementation:**
 ```bash
-# Manual backup
-virsh dumpxml vm-name > vm-name.xml
-qemu-img convert vm-disk.qcow2 vm-disk-backup.qcow2
+# Backup a VM
+virtos-backup backup web-server-1
 
-# Manual restore
-virsh define vm-name.xml
-cp vm-disk-backup.qcow2 vm-disk.qcow2
+# Schedule daily backups at 2 AM
+virtos-backup schedule web-server-1 --daily 02:00
+
+# Restore from backup
+virtos-backup restore web-server-1 2026-05-22
+
+# List backups
+virtos-backup list
+
+# Cleanup old backups
+virtos-backup cleanup
 ```
 
-**Competitors have:**
-- **Proxmox:** Proxmox Backup Server, integrated backups
-- **ESXi:** vSphere Data Protection (paid)
-- **oVirt:** Integrated backup via API
-- **XCP-ng:** Xen Orchestra backups
+**Features:**
+- Automatic snapshot for consistent backups
+- Compression to save space
+- Remote destinations (SCP or S3)
+- Retention policy enforcement
+- Backup verification with SHA256
+- Full VM backup (XML + all disks)
 
-**Priority:** 🔴 Critical for production
+**Competitors still have:**
+- Incremental/differential backups
+- Deduplication
+- More mature backup servers
 
-**Effort:** Medium (3-4 weeks)
+**Priority:** 🟢 Implemented
 
-**Roadmap:** Planned for Phase 6
+**Completed:** Phase 6 (May 2026)
 
 ---
 
@@ -193,40 +205,52 @@ Significantly useful features that improve usability and functionality.
 
 ### 6. VM Templates and Cloning
 
-**Status:** ⚠️ Partially implemented
+**Status:** ✅ IMPLEMENTED (Phase 6)
 
-**What works:**
-- Manual VM cloning via `qemu-img`
-- Btrfs/ZFS snapshots for quick clones
+**What's included:**
+- ✅ Template library management
+- ✅ Golden image management
+- ✅ Clone wizard (virtos-template clone)
+- ✅ Linked clones (copy-on-write with qcow2)
+- ✅ Cloud image import
+- ⚠️ Template versioning (basic, can improve)
+- ⚠️ Cloud-init integration (planned for Phase 8)
 
-**What's missing:**
-- Template library
-- Golden image management
-- Clone wizard
-- Linked clones (copy-on-write)
-- Template versioning
-- Cloud images (cloud-init)
-
-**Current workaround:**
+**Implementation:**
 ```bash
-# Manual clone
-qemu-img create -f qcow2 -b base-vm.qcow2 clone-vm.qcow2
-virsh dumpxml base-vm > clone-vm.xml
-# Edit clone-vm.xml (change name, UUID, MAC)
-virsh define clone-vm.xml
+# Create template from VM
+virtos-template create ubuntu-vm ubuntu-22.04-template
+
+# Clone from template (copy-on-write)
+virtos-template clone ubuntu-22.04-template web-server-1
+
+# Import cloud image as template
+virtos-template import \
+  https://cloud-images.ubuntu.com/...img \
+  ubuntu-2204-cloud
+
+# List templates
+virtos-template list
+
+# Delete template
+virtos-template delete old-template
 ```
 
-**Competitors have:**
-- **Proxmox:** Template system, clone wizard
-- **ESXi:** Template library, content library
-- **oVirt:** Template management
-- **XCP-ng:** Template VMs
+**Features:**
+- Template library in /var/lib/virtos/templates
+- Copy-on-write cloning (fast, space-efficient)
+- Cloud image import support
+- Template manifest tracking
+- Automatic UUID/MAC generation for clones
 
-**Priority:** 🟡 Important for efficiency
+**Competitors still have:**
+- More sophisticated versioning
+- Cloud-init integration (planned)
+- Template marketplace
 
-**Effort:** Low-Medium (2-3 weeks)
+**Priority:** 🟢 Implemented
 
-**Roadmap:** Planned for Phase 6
+**Completed:** Phase 6 (May 2026)
 
 ---
 
@@ -400,30 +424,56 @@ Features that improve user experience but aren't essential.
 
 ### 12. VM Snapshots (Automated)
 
-**Status:** ⚠️ Partially implemented
+**Status:** ✅ IMPLEMENTED (Phase 6)
 
-**What works:**
-- Storage snapshots (Btrfs, ZFS, LVM)
-- Manual `virsh snapshot-create`
+**What's included:**
+- ✅ Snapshot scheduling (hourly, daily)
+- ✅ Snapshot chains (libvirt managed)
+- ✅ Snapshot manager CLI (virtos-snapshot)
+- ✅ Automatic snapshot cleanup
+- ✅ Storage-specific snapshots (Btrfs, ZFS, LVM)
+- ⚠️ Application-consistent snapshots (requires guest agent)
+- ⚠️ Snapshot replication (planned)
 
-**What's missing:**
-- Snapshot scheduling
-- Snapshot chains
-- Snapshot manager UI/TUI
-- Automatic snapshot cleanup
-- Application-consistent snapshots
+**Implementation:**
+```bash
+# Create snapshot
+virtos-snapshot create web-server-1 "Before update"
+
+# Schedule daily snapshots at 2 AM
+virtos-snapshot schedule web-server-1 --daily 02:00 --keep 7
+
+# List snapshots
+virtos-snapshot list web-server-1
+
+# Revert to snapshot
+virtos-snapshot revert web-server-1 snapshot-20260522
+
+# Cleanup old snapshots
+virtos-snapshot cleanup web-server-1 --keep 7
+
+# Storage-specific snapshots
+virtos-snapshot btrfs web-server-1  # Btrfs snapshot
+virtos-snapshot zfs db-server-1      # ZFS snapshot
+virtos-snapshot lvm app-server-1     # LVM snapshot
+```
+
+**Features:**
+- Automated scheduling via cron
+- Retention policy (keep last N)
+- Disk-only or memory snapshots
+- Integration with storage backends
+- Snapshot listing and management
+- Automatic cleanup of old snapshots
+
+**Competitors still have:**
+- Application-consistent snapshots (need guest agent)
 - Snapshot replication
+- More sophisticated UI
 
-**Competitors have:**
-- **Proxmox:** Snapshot management
-- **ESXi:** Snapshot manager
-- **oVirt:** Snapshot workflows
+**Priority:** 🟢 Implemented
 
-**Priority:** 🟢 Nice to have
-
-**Effort:** Low (1-2 weeks)
-
-**Roadmap:** Phase 6
+**Completed:** Phase 6 (May 2026)
 
 ---
 
@@ -749,14 +799,14 @@ Features VirtOS won't implement due to philosophy or constraints.
 ## Summary by Category
 
 ### Critical (Production Blockers)
-1. ❌ Automated backup/restore
+1. ✅ Automated backup/restore **[IMPLEMENTED Phase 6]**
 2. ❌ Automatic HA/failover
 3. ❌ Web UI (philosophical choice - TUI is primary)
 4. ⚠️ Live migration (partial - needs work)
 5. ❌ Distributed storage
 
 ### Important (Significant Value)
-6. ⚠️ VM templates/cloning (partial)
+6. ✅ VM templates/cloning **[IMPLEMENTED Phase 6]**
 7. ❌ Monitoring/alerting
 8. ❌ User authentication/RBAC
 9. ❌ Network virtualization (SDN)
@@ -764,7 +814,7 @@ Features VirtOS won't implement due to philosophy or constraints.
 
 ### Convenience (Nice to Have)
 11. ❌ Cloud-init integration
-12. ⚠️ VM snapshots (partial)
+12. ✅ VM snapshots **[IMPLEMENTED Phase 6]**
 13. ❌ GPU passthrough (manual possible)
 14. ⚠️ USB passthrough (partial)
 15. ⚠️ Integrated firewall (partial)
@@ -785,12 +835,12 @@ Features VirtOS won't implement due to philosophy or constraints.
 
 ## Implementation Priority
 
-### Phase 6 (Next - Basic Production)
-- Automated backup/restore
-- VM templates/cloning
-- VM snapshot automation
+### Phase 6 ✅ COMPLETE (May 2026)
+- ✅ Automated backup/restore (virtos-backup)
+- ✅ VM templates/cloning (virtos-template)
+- ✅ VM snapshot automation (virtos-snapshot)
 
-### Phase 7 (HA and Monitoring)
+### Phase 7 (Next - HA and Monitoring)
 - Automatic HA/failover
 - Monitoring and alerting
 - Live migration improvements
