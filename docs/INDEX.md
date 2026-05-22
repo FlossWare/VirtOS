@@ -194,13 +194,17 @@ Complete documentation for FlossWare VirtOS.
 | Quantum Hardware | QUICK-REFERENCE.md (virtos-quantum-hardware) |
 | Blockchain DeFi | QUICK-REFERENCE.md (virtos-blockchain-advanced) |
 | Extended Federation | QUICK-REFERENCE.md (virtos-federation-extended) |
+| Advanced Security | QUICK-REFERENCE.md (virtos-security-advanced) |
+| Performance Optimization | QUICK-REFERENCE.md (virtos-performance) |
+| Observability | QUICK-REFERENCE.md (virtos-observability) |
+| Advanced DR | QUICK-REFERENCE.md (virtos-dr-advanced) |
 
 ## Total Documentation
 
 - **19 Documentation Files**
-- **17,000+ Lines**
+- **18,000+ Lines**
 - **Complete and Honest Coverage** - including what's missing
-- **Phase 13 Complete** - Advanced AI, quantum hardware, blockchain DeFi, extended federation (May 2026)
+- **Phase 14 Complete** - Advanced security, performance, observability, DR (May 2026)
 
 ## Getting Help
 

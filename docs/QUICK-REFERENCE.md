@@ -1326,6 +1326,165 @@ virtos-federation-extended federation-ext-status
 virtos-federation-extended wizard
 ```
 
+### Advanced Security (virtos-security-advanced)
+
+```bash
+# Enable Mandatory Access Control
+virtos-security-advanced enable-mac selinux enforcing
+virtos-security-advanced enable-mac apparmor enforce
+
+# Setup Intrusion Detection/Prevention
+virtos-security-advanced setup-ids snort /etc/snort/snort.conf
+virtos-security-advanced setup-ids suricata /etc/suricata/suricata.yaml
+virtos-security-advanced setup-ids ossec /var/ossec
+
+# Vulnerability scanning
+virtos-security-advanced vuln-scan openvas 192.168.1.0/24
+virtos-security-advanced vuln-scan nessus 10.0.0.0/8
+virtos-security-advanced vuln-scan clair registry:5000
+
+# Compliance checking
+virtos-security-advanced compliance-check pci-dss
+virtos-security-advanced compliance-check hipaa
+virtos-security-advanced compliance-check iso27001
+virtos-security-advanced compliance-check nist
+
+# Penetration testing
+virtos-security-advanced pentest-run metasploit 192.168.1.100
+virtos-security-advanced pentest-run burp https://api.example.com
+virtos-security-advanced pentest-run zap http://web.example.com
+
+# Threat intelligence
+virtos-security-advanced threat-intel misp https://misp.local API_KEY
+virtos-security-advanced threat-intel opencti https://opencti.local API_KEY
+virtos-security-advanced threat-intel alienvault OTX_KEY
+
+# Security audit
+virtos-security-advanced security-audit full
+virtos-security-advanced security-audit quick
+virtos-security-advanced security-audit report /var/log/security-audit.txt
+
+# Wizard
+virtos-security-advanced wizard
+```
+
+### Performance Optimization (virtos-performance)
+
+```bash
+# System benchmarking
+virtos-performance system-benchmark cpu
+virtos-performance system-benchmark memory
+virtos-performance system-benchmark disk /dev/sda
+virtos-performance system-benchmark network eth0
+virtos-performance system-benchmark full
+
+# Auto-tuning
+virtos-performance auto-tune cpu performance
+virtos-performance auto-tune memory throughput
+virtos-performance auto-tune disk latency
+virtos-performance auto-tune network bandwidth
+virtos-performance auto-tune all balanced
+
+# Bottleneck detection
+virtos-performance bottleneck-detect vm-001
+virtos-performance bottleneck-detect all
+virtos-performance bottleneck-detect real-time
+
+# Application profiling
+virtos-performance profile-application myapp.py 60           # 60 seconds
+virtos-performance profile-application nginx 300              # 5 minutes
+virtos-performance profile-application java-app 120
+
+# Performance report
+virtos-performance report /var/log/performance-report.txt
+
+# Wizard
+virtos-performance wizard
+```
+
+### Observability (virtos-observability)
+
+```bash
+# Setup distributed tracing
+virtos-observability setup-tracing opentelemetry
+virtos-observability setup-tracing jaeger http://jaeger:14268/api/traces
+virtos-observability setup-tracing zipkin http://zipkin:9411
+
+# View traces
+virtos-observability view-traces service-name myapp
+virtos-observability view-traces trace-id abc123def456
+virtos-observability view-traces last 1h
+
+# Setup log aggregation
+virtos-observability setup-log-aggregation elk
+virtos-observability setup-log-aggregation loki http://loki:3100
+virtos-observability setup-log-aggregation fluentd
+
+# Query logs
+virtos-observability query-logs "error" last 24h
+virtos-observability query-logs "level:warn" last 1h
+virtos-observability query-logs "service:api AND status:500" last 7d
+
+# Metrics dashboard
+virtos-observability metrics-dashboard create my-dashboard
+virtos-observability metrics-dashboard view my-dashboard
+virtos-observability metrics-dashboard export my-dashboard /tmp/dashboard.json
+
+# Create alerts
+virtos-observability create-alert cpu-high "cpu > 80" critical
+virtos-observability create-alert mem-low "memory < 20%" warning
+virtos-observability create-alert disk-full "disk > 90%" critical
+
+# View observability status
+virtos-observability status
+virtos-observability health
+
+# Wizard
+virtos-observability wizard
+```
+
+### Advanced Disaster Recovery (virtos-dr-advanced)
+
+```bash
+# Setup continuous replication
+virtos-dr-advanced setup-continuous-replication vm-001 remote-site-1
+virtos-dr-advanced setup-continuous-replication volume-data remote-storage
+virtos-dr-advanced setup-continuous-replication database db-replica
+
+# Point-in-time restore
+virtos-dr-advanced point-in-time-restore vm-001 "2026-05-20 14:30:00"
+virtos-dr-advanced point-in-time-restore database "2026-05-21 09:15:00"
+virtos-dr-advanced point-in-time-restore list vm-001               # List available points
+
+# Multi-site DR setup
+virtos-dr-advanced multi-site-dr-setup primary-dc secondary-dc tertiary-dc
+virtos-dr-advanced multi-site-dr-setup site1 site2
+virtos-dr-advanced multi-site-dr-status
+
+# Test DR failover
+virtos-dr-advanced test-dr-failover primary-site backup-site
+virtos-dr-advanced test-dr-failover validate
+virtos-dr-advanced test-dr-failover rollback
+
+# Automated failback
+virtos-dr-advanced automated-failback backup-site primary-site
+virtos-dr-advanced automated-failback status
+virtos-dr-advanced automated-failback cancel
+
+# DR runbook execution
+virtos-dr-advanced dr-runbook-execute /etc/virtos/dr-runbooks/failover.yaml
+virtos-dr-advanced dr-runbook-execute /etc/virtos/dr-runbooks/restore.yaml
+virtos-dr-advanced dr-runbook-validate /etc/virtos/dr-runbooks/failover.yaml
+
+# DR report
+virtos-dr-advanced dr-report full
+virtos-dr-advanced dr-report summary
+virtos-dr-advanced dr-report export /var/log/dr-report.pdf
+
+# Wizard
+virtos-dr-advanced wizard
+```
+
 ## Build Commands
 
 ```bash

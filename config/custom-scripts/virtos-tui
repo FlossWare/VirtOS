@@ -139,7 +139,7 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 55 76 42 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 59 76 46 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
         3 "VM Backups & Restore" \
@@ -182,6 +182,10 @@ main_menu() {
         40 "Quantum Hardware" \
         41 "Blockchain DeFi" \
         42 "Extended Federation" \
+        43 "Advanced Security" \
+        44 "Performance Optimization" \
+        45 "Observability" \
+        46 "Advanced DR" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -230,6 +234,10 @@ main_menu() {
         40) quantum_hw_menu ;;
         41) blockchain_adv_menu ;;
         42) federation_ext_menu ;;
+        43) security_adv_menu ;;
+        44) performance_menu ;;
+        45) observability_menu ;;
+        46) dr_adv_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -5611,6 +5619,279 @@ federation_ext_menu() {
     esac
 }
 
+
+#==============================================================================
+# Phase 14 Menus: Advanced Security, Performance, Observability, DR
+#==============================================================================
+
+security_adv_menu() {
+    if ! command -v virtos-security-advanced >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-security-advanced not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Advanced Security" \
+        --menu "Select option:" 20 76 12 \
+        1 "Enable MAC (SELinux/AppArmor)" \
+        2 "Setup IDS/IPS" \
+        3 "Vulnerability Scan" \
+        4 "Compliance Check" \
+        5 "Penetration Test" \
+        6 "Threat Intelligence" \
+        7 "Security Audit" \
+        8 "Advanced Security Status" \
+        9 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-security-advanced enable-mac apparmor 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Mandatory Access Control" --programbox 20 76
+            security_adv_menu
+            ;;
+        2)
+            virtos-security-advanced setup-ids ips 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "IDS/IPS Setup" --programbox 20 76
+            security_adv_menu
+            ;;
+        3)
+            virtos-security-advanced vuln-scan localhost full 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Vulnerability Scan" --programbox 30 100
+            security_adv_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Compliance Framework" \
+                --menu "Select framework:" 14 60 4 \
+                1 "PCI DSS" \
+                2 "HIPAA" \
+                3 "ISO 27001" \
+                4 "NIST" \
+                2> $TEMP_FILE
+            FRAMEWORK_CHOICE=$(cat $TEMP_FILE)
+            case $FRAMEWORK_CHOICE in
+                1) FW="pci-dss" ;;
+                2) FW="hipaa" ;;
+                3) FW="iso27001" ;;
+                4) FW="nist" ;;
+                *) security_adv_menu; return ;;
+            esac
+            virtos-security-advanced compliance-check "$FW" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Compliance Check" --programbox 30 100
+            security_adv_menu
+            ;;
+        5)
+            virtos-security-advanced pentest-run localhost normal 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Penetration Test" --programbox 30 100
+            security_adv_menu
+            ;;
+        6)
+            virtos-security-advanced threat-intel update 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Threat Intelligence" --programbox 20 76
+            security_adv_menu
+            ;;
+        7)
+            virtos-security-advanced security-audit 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Security Audit" --programbox 30 76
+            security_adv_menu
+            ;;
+        8)
+            virtos-security-advanced security-adv-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Advanced Security Status" --programbox 20 76
+            security_adv_menu
+            ;;
+        9)
+            virtos-security-advanced wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Security Wizard" --programbox 25 80
+            security_adv_menu
+            ;;
+        0) main_menu ;;
+        *) security_adv_menu ;;
+    esac
+}
+
+performance_menu() {
+    if ! command -v virtos-performance >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-performance not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Performance Optimization" \
+        --menu "Select option:" 16 76 8 \
+        1 "System Benchmark" \
+        2 "Auto-Tune" \
+        3 "Detect Bottlenecks" \
+        4 "Profile Application" \
+        5 "Performance Status" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-performance system-benchmark 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "System Benchmark" --programbox 30 100
+            performance_menu
+            ;;
+        2)
+            virtos-performance auto-tune 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Auto-Tune" --programbox 20 76
+            performance_menu
+            ;;
+        3)
+            virtos-performance bottleneck-detect 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Bottleneck Detection" --programbox 20 76
+            performance_menu
+            ;;
+        4)
+            virtos-performance profile-application qemu 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Application Profiling" --programbox 25 100
+            performance_menu
+            ;;
+        5)
+            virtos-performance performance-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Performance Status" --programbox 20 76
+            performance_menu
+            ;;
+        0) main_menu ;;
+        *) performance_menu ;;
+    esac
+}
+
+observability_menu() {
+    if ! command -v virtos-observability >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-observability not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Observability" \
+        --menu "Select option:" 18 76 10 \
+        1 "Setup Distributed Tracing" \
+        2 "View Traces" \
+        3 "Setup Log Aggregation" \
+        4 "Query Logs" \
+        5 "Metrics Dashboard" \
+        6 "Create Alert" \
+        7 "Observability Status" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-observability setup-tracing 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Distributed Tracing" --programbox 15 76
+            observability_menu
+            ;;
+        2)
+            virtos-observability view-traces 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "View Traces" --programbox 20 100
+            observability_menu
+            ;;
+        3)
+            virtos-observability setup-log-aggregation 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Log Aggregation" --programbox 15 76
+            observability_menu
+            ;;
+        4)
+            virtos-observability query-logs "error" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Query Logs" --programbox 20 100
+            observability_menu
+            ;;
+        5)
+            virtos-observability metrics-dashboard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Metrics Dashboard" --programbox 30 100
+            observability_menu
+            ;;
+        6)
+            virtos-observability create-alert cpu_usage 90 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Create Alert" --msgbox 12 76
+            observability_menu
+            ;;
+        7)
+            virtos-observability observability-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Observability Status" --programbox 20 76
+            observability_menu
+            ;;
+        0) main_menu ;;
+        *) observability_menu ;;
+    esac
+}
+
+dr_adv_menu() {
+    if ! command -v virtos-dr-advanced >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-dr-advanced not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Advanced DR" \
+        --menu "Select option:" 18 76 10 \
+        1 "Setup Continuous Replication" \
+        2 "Point-in-Time Restore" \
+        3 "Multi-Site DR Setup" \
+        4 "Test DR Failover" \
+        5 "Automated Failback" \
+        6 "Execute DR Runbook" \
+        7 "Advanced DR Status" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-dr-advanced setup-continuous-replication vm1 dr-site 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Continuous Replication" --programbox 20 76
+            dr_adv_menu
+            ;;
+        2)
+            virtos-dr-advanced point-in-time-restore vm1 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Point-in-Time Restore" --programbox 20 76
+            dr_adv_menu
+            ;;
+        3)
+            virtos-dr-advanced multi-site-dr-setup 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Multi-Site DR" --programbox 20 76
+            dr_adv_menu
+            ;;
+        4)
+            virtos-dr-advanced test-dr-failover dc1 dc2 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "DR Failover Test" --programbox 30 100
+            dr_adv_menu
+            ;;
+        5)
+            virtos-dr-advanced automated-failback dc1 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Automated Failback" --programbox 20 76
+            dr_adv_menu
+            ;;
+        6)
+            virtos-dr-advanced dr-runbook-execute 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "DR Runbook" --programbox 30 100
+            dr_adv_menu
+            ;;
+        7)
+            virtos-dr-advanced dr-adv-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Advanced DR Status" --programbox 20 76
+            dr_adv_menu
+            ;;
+        0) main_menu ;;
+        *) dr_adv_menu ;;
+    esac
+}
+
 settings_menu() {
     $DIALOG $DIALOG_OPTS \
         --title "Settings" \
@@ -5700,6 +5981,11 @@ settings_menu() {
             command -v virtos-quantum-hardware >/dev/null && INFO="${INFO}  ✓ virtos-quantum-hardware\n"
             command -v virtos-blockchain-advanced >/dev/null && INFO="${INFO}  ✓ virtos-blockchain-advanced\n"
             command -v virtos-federation-extended >/dev/null && INFO="${INFO}  ✓ virtos-federation-extended\n"
+            INFO="${INFO}\nPhase 14 Tools:\n"
+            command -v virtos-security-advanced >/dev/null && INFO="${INFO}  ✓ virtos-security-advanced\n"
+            command -v virtos-performance >/dev/null && INFO="${INFO}  ✓ virtos-performance\n"
+            command -v virtos-observability >/dev/null && INFO="${INFO}  ✓ virtos-observability\n"
+            command -v virtos-dr-advanced >/dev/null && INFO="${INFO}  ✓ virtos-dr-advanced\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
                 --msgbox "$INFO" 40 50
