@@ -139,7 +139,7 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 43 76 30 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 47 76 34 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
         3 "VM Backups & Restore" \
@@ -170,6 +170,10 @@ main_menu() {
         28 "Security Hardening" \
         29 "Billing & Cost Tracking" \
         30 "Service Mesh" \
+        31 "Multi-Datacenter" \
+        32 "Analytics & Reporting" \
+        33 "Edge Computing" \
+        34 "Automation & Orchestration" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -206,6 +210,10 @@ main_menu() {
         28) security_menu ;;
         29) billing_menu ;;
         30) mesh_menu ;;
+        31) datacenter_menu ;;
+        32) analytics_menu ;;
+        33) edge_menu ;;
+        34) automation_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -3732,6 +3740,745 @@ mesh_menu() {
     esac
 }
 
+#==============================================================================
+# Phase 11 Menus (Multi-Datacenter, Analytics, Edge, Automation)
+#==============================================================================
+
+datacenter_menu() {
+    if ! command -v virtos-datacenter >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-datacenter not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Multi-Datacenter Management" \
+        --menu "Select option:" 22 76 14 \
+        1 "Initialize Datacenter" \
+        2 "Register Remote Datacenter" \
+        3 "List Datacenters" \
+        4 "Remove Datacenter" \
+        5 "VM Placement Decision" \
+        6 "Setup Replication" \
+        7 "Start Replication" \
+        8 "Stop Replication" \
+        9 "Replication Status" \
+        10 "Geographic Load Balance" \
+        11 "DR Failover" \
+        12 "WAN Status" \
+        13 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Datacenter Name" \
+                --inputbox "Enter datacenter name:" 10 60 \
+                2> $TEMP_FILE
+            DC_NAME=$(cat $TEMP_FILE)
+            if [ -n "$DC_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Region" \
+                    --inputbox "Enter region (e.g., us-east):" 10 60 \
+                    2> $TEMP_FILE
+                REGION=$(cat $TEMP_FILE)
+                if [ -n "$REGION" ]; then
+                    virtos-datacenter datacenter-init "$DC_NAME" "$REGION" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            datacenter_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Datacenter Name" \
+                --inputbox "Enter datacenter name:" 10 60 \
+                2> $TEMP_FILE
+            DC_NAME=$(cat $TEMP_FILE)
+            if [ -n "$DC_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Host" \
+                    --inputbox "Enter host (IP or hostname):" 10 60 \
+                    2> $TEMP_FILE
+                HOST=$(cat $TEMP_FILE)
+                if [ -n "$HOST" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Region" \
+                        --inputbox "Enter region [unknown]:" 10 60 \
+                        2> $TEMP_FILE
+                    REGION=$(cat $TEMP_FILE)
+                    REGION="${REGION:-unknown}"
+                    virtos-datacenter datacenter-register "$DC_NAME" "$HOST" "$REGION" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            datacenter_menu
+            ;;
+        3)
+            virtos-datacenter datacenter-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Datacenters" --programbox 20 100
+            datacenter_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Datacenter Name" \
+                --inputbox "Enter datacenter name to remove:" 10 60 \
+                2> $TEMP_FILE
+            DC_NAME=$(cat $TEMP_FILE)
+            if [ -n "$DC_NAME" ]; then
+                virtos-datacenter datacenter-remove "$DC_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+            fi
+            datacenter_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "VM Name" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                virtos-datacenter vm-place "$VM_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Placement Decision" --msgbox 12 76
+            fi
+            datacenter_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Source Datacenter" \
+                --inputbox "Enter source datacenter:" 10 60 \
+                2> $TEMP_FILE
+            SOURCE=$(cat $TEMP_FILE)
+            if [ -n "$SOURCE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Target Datacenter" \
+                    --inputbox "Enter target datacenter:" 10 60 \
+                    2> $TEMP_FILE
+                TARGET=$(cat $TEMP_FILE)
+                if [ -n "$TARGET" ]; then
+                    virtos-datacenter replication-setup "$SOURCE" "$TARGET" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            datacenter_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Source Datacenter" \
+                --inputbox "Enter source datacenter:" 10 60 \
+                2> $TEMP_FILE
+            SOURCE=$(cat $TEMP_FILE)
+            if [ -n "$SOURCE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Target Datacenter" \
+                    --inputbox "Enter target datacenter:" 10 60 \
+                    2> $TEMP_FILE
+                TARGET=$(cat $TEMP_FILE)
+                if [ -n "$TARGET" ]; then
+                    virtos-datacenter replication-start "$SOURCE" "$TARGET" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            datacenter_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Source Datacenter" \
+                --inputbox "Enter source datacenter:" 10 60 \
+                2> $TEMP_FILE
+            SOURCE=$(cat $TEMP_FILE)
+            if [ -n "$SOURCE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Target Datacenter" \
+                    --inputbox "Enter target datacenter:" 10 60 \
+                    2> $TEMP_FILE
+                TARGET=$(cat $TEMP_FILE)
+                if [ -n "$TARGET" ]; then
+                    virtos-datacenter replication-stop "$SOURCE" "$TARGET" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+                fi
+            fi
+            datacenter_menu
+            ;;
+        9)
+            virtos-datacenter replication-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Replication Status" --programbox 20 76
+            datacenter_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "Service Name" \
+                --inputbox "Enter service name:" 10 60 \
+                2> $TEMP_FILE
+            SERVICE=$(cat $TEMP_FILE)
+            if [ -n "$SERVICE" ]; then
+                virtos-datacenter geo-loadbalance "$SERVICE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Nearest Datacenter" --msgbox 12 76
+            fi
+            datacenter_menu
+            ;;
+        11)
+            $DIALOG $DIALOG_OPTS \
+                --title "Failed Datacenter" \
+                --inputbox "Enter failed datacenter:" 10 60 \
+                2> $TEMP_FILE
+            FAILED=$(cat $TEMP_FILE)
+            if [ -n "$FAILED" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Target Datacenter" \
+                    --inputbox "Enter target datacenter:" 10 60 \
+                    2> $TEMP_FILE
+                TARGET=$(cat $TEMP_FILE)
+                if [ -n "$TARGET" ]; then
+                    virtos-datacenter dr-failover "$FAILED" "$TARGET" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "DR Failover" --programbox 20 76
+                fi
+            fi
+            datacenter_menu
+            ;;
+        12)
+            virtos-datacenter wan-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "WAN Status" --programbox 15 76
+            datacenter_menu
+            ;;
+        13)
+            virtos-datacenter wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Datacenter Wizard" --programbox 25 80
+            datacenter_menu
+            ;;
+        0) main_menu ;;
+        *) datacenter_menu ;;
+    esac
+}
+
+analytics_menu() {
+    if ! command -v virtos-analytics >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-analytics not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Analytics & Reporting" \
+        --menu "Select option:" 20 76 12 \
+        1 "Start Data Collection" \
+        2 "Stop Data Collection" \
+        3 "Collection Status" \
+        4 "Trends Report" \
+        5 "Capacity Prediction" \
+        6 "Anomaly Detection" \
+        7 "Cost Optimization" \
+        8 "Performance Report" \
+        9 "Custom Report" \
+        10 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-analytics collection-start 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Start Collection" --programbox 15 76
+            analytics_menu
+            ;;
+        2)
+            virtos-analytics collection-stop 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Stop Collection" --msgbox 12 76
+            analytics_menu
+            ;;
+        3)
+            virtos-analytics collection-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Collection Status" --programbox 15 76
+            analytics_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Days" \
+                --inputbox "Enter days to analyze [7]:" 10 60 \
+                2> $TEMP_FILE
+            DAYS=$(cat $TEMP_FILE)
+            DAYS="${DAYS:-7}"
+            virtos-analytics trends-report "$DAYS" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Trends Report" --programbox 25 100
+            analytics_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Resource" \
+                --menu "Select resource:" 12 60 3 \
+                1 "CPU" \
+                2 "RAM" \
+                3 "Disk" \
+                2> $TEMP_FILE
+            RESOURCE_CHOICE=$(cat $TEMP_FILE)
+            case $RESOURCE_CHOICE in
+                1) RESOURCE="cpu" ;;
+                2) RESOURCE="ram" ;;
+                3) RESOURCE="disk" ;;
+                *) analytics_menu; return ;;
+            esac
+            if [ -n "$RESOURCE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Horizon (days)" \
+                    --inputbox "Enter prediction horizon [30]:" 10 60 \
+                    2> $TEMP_FILE
+                HORIZON=$(cat $TEMP_FILE)
+                HORIZON="${HORIZON:-30}"
+                virtos-analytics capacity-predict "$RESOURCE" "$HORIZON" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Capacity Prediction" --programbox 15 76
+            fi
+            analytics_menu
+            ;;
+        6)
+            virtos-analytics anomaly-detect 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Anomaly Detection" --programbox 25 100
+            analytics_menu
+            ;;
+        7)
+            virtos-analytics cost-optimize 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Cost Optimization" --programbox 25 100
+            analytics_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "VM Name" \
+                --inputbox "Enter VM name (leave empty for system-wide):" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            virtos-analytics performance-report "$VM_NAME" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Performance Report" --programbox 25 100
+            analytics_menu
+            ;;
+        9)
+            $DIALOG $DIALOG_OPTS \
+                --title "Report Type" \
+                --menu "Select type:" 12 60 2 \
+                1 "Hourly" \
+                2 "Daily" \
+                2> $TEMP_FILE
+            TYPE_CHOICE=$(cat $TEMP_FILE)
+            case $TYPE_CHOICE in
+                1) TYPE="hourly" ;;
+                2) TYPE="daily" ;;
+                *) analytics_menu; return ;;
+            esac
+            if [ -n "$TYPE" ]; then
+                virtos-analytics custom-report "$TYPE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Custom Report" --programbox 25 100
+            fi
+            analytics_menu
+            ;;
+        10)
+            virtos-analytics wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Analytics Wizard" --programbox 25 80
+            analytics_menu
+            ;;
+        0) main_menu ;;
+        *) analytics_menu ;;
+    esac
+}
+
+edge_menu() {
+    if ! command -v virtos-edge >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-edge not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Edge Computing" \
+        --menu "Select option:" 24 76 16 \
+        1 "Initialize Edge Node" \
+        2 "Register with Cloud Hub" \
+        3 "Deploy Workload" \
+        4 "Workload Placement" \
+        5 "Sync to Cloud" \
+        6 "Sync from Cloud" \
+        7 "Start Auto-Sync" \
+        8 "Stop Auto-Sync" \
+        9 "Sync Status" \
+        10 "Enable Offline Mode" \
+        11 "Disable Offline Mode" \
+        12 "Offline Status" \
+        13 "Optimize Bandwidth" \
+        14 "Latency Test" \
+        15 "Edge Status" \
+        16 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Edge Mode" \
+                --menu "Select mode:" 12 60 2 \
+                1 "Edge Node" \
+                2 "Cloud Hub" \
+                2> $TEMP_FILE
+            MODE_CHOICE=$(cat $TEMP_FILE)
+            case $MODE_CHOICE in
+                1) MODE="edge-node" ;;
+                2) MODE="cloud-hub" ;;
+                *) edge_menu; return ;;
+            esac
+            if [ -n "$MODE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Location" \
+                    --inputbox "Enter location name:" 10 60 \
+                    2> $TEMP_FILE
+                LOCATION=$(cat $TEMP_FILE)
+                if [ -n "$LOCATION" ]; then
+                    virtos-edge edge-init "$MODE" "$LOCATION" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            edge_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Cloud Hub" \
+                --inputbox "Enter cloud hub host:" 10 60 \
+                2> $TEMP_FILE
+            HUB=$(cat $TEMP_FILE)
+            if [ -n "$HUB" ]; then
+                virtos-edge edge-register "$HUB" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            edge_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Workload Name" \
+                --inputbox "Enter workload name:" 10 60 \
+                2> $TEMP_FILE
+            WORKLOAD=$(cat $TEMP_FILE)
+            if [ -n "$WORKLOAD" ]; then
+                virtos-edge edge-deploy "$WORKLOAD" cloud 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Deploy Workload" --programbox 20 76
+            fi
+            edge_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Workload Name" \
+                --inputbox "Enter workload name:" 10 60 \
+                2> $TEMP_FILE
+            WORKLOAD=$(cat $TEMP_FILE)
+            if [ -n "$WORKLOAD" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Latency Requirement" \
+                    --inputbox "Enter max latency (ms) [100]:" 10 60 \
+                    2> $TEMP_FILE
+                LATENCY=$(cat $TEMP_FILE)
+                LATENCY="${LATENCY:-100}"
+                virtos-edge workload-place "$WORKLOAD" "$LATENCY" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Placement Decision" --msgbox 12 76
+            fi
+            edge_menu
+            ;;
+        5)
+            virtos-edge sync-to-cloud 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Sync to Cloud" --programbox 20 76
+            edge_menu
+            ;;
+        6)
+            virtos-edge sync-from-cloud 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Sync from Cloud" --programbox 20 76
+            edge_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Sync Interval" \
+                --inputbox "Enter interval (seconds) [300]:" 10 60 \
+                2> $TEMP_FILE
+            INTERVAL=$(cat $TEMP_FILE)
+            INTERVAL="${INTERVAL:-300}"
+            virtos-edge sync-start "$INTERVAL" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Start Auto-Sync" --programbox 12 76
+            edge_menu
+            ;;
+        8)
+            virtos-edge sync-stop 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Stop Auto-Sync" --msgbox 12 76
+            edge_menu
+            ;;
+        9)
+            virtos-edge sync-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Sync Status" --programbox 15 76
+            edge_menu
+            ;;
+        10)
+            virtos-edge offline-enable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Enable Offline Mode" --msgbox 12 76
+            edge_menu
+            ;;
+        11)
+            virtos-edge offline-disable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Disable Offline Mode" --msgbox 12 76
+            edge_menu
+            ;;
+        12)
+            virtos-edge offline-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Offline Status" --msgbox 12 76
+            edge_menu
+            ;;
+        13)
+            $DIALOG $DIALOG_OPTS \
+                --title "Bandwidth Limit" \
+                --inputbox "Enter bandwidth limit (Mbps):" 10 60 \
+                2> $TEMP_FILE
+            LIMIT=$(cat $TEMP_FILE)
+            if [ -n "$LIMIT" ]; then
+                virtos-edge bandwidth-optimize "$LIMIT" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+            fi
+            edge_menu
+            ;;
+        14)
+            $DIALOG $DIALOG_OPTS \
+                --title "Target Host" \
+                --inputbox "Enter target host (leave empty for cloud hub):" 10 60 \
+                2> $TEMP_FILE
+            TARGET=$(cat $TEMP_FILE)
+            virtos-edge latency-test "$TARGET" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Latency Test" --programbox 20 76
+            edge_menu
+            ;;
+        15)
+            virtos-edge edge-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Edge Status" --programbox 25 76
+            edge_menu
+            ;;
+        16)
+            virtos-edge wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Edge Computing Wizard" --programbox 25 80
+            edge_menu
+            ;;
+        0) main_menu ;;
+        *) edge_menu ;;
+    esac
+}
+
+automation_menu() {
+    if ! command -v virtos-automation >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-automation not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Automation & Orchestration" \
+        --menu "Select option:" 24 76 16 \
+        1 "Create Workflow" \
+        2 "List Workflows" \
+        3 "Run Workflow" \
+        4 "Delete Workflow" \
+        5 "Create Scheduled Task" \
+        6 "List Scheduled Tasks" \
+        7 "Delete Scheduled Task" \
+        8 "Enable Auto-Scaling" \
+        9 "Auto-Scaling Status" \
+        10 "Scale Up Service" \
+        11 "Scale Down Service" \
+        12 "Enable Self-Healing" \
+        13 "Self-Healing Status" \
+        14 "Trigger Event" \
+        15 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Workflow Name" \
+                --inputbox "Enter workflow name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                virtos-automation workflow-create "$NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            automation_menu
+            ;;
+        2)
+            virtos-automation workflow-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Workflows" --programbox 20 76
+            automation_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Workflow Name" \
+                --inputbox "Enter workflow name to run:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                virtos-automation workflow-run "$NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Workflow Execution" --programbox 25 100
+            fi
+            automation_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Workflow Name" \
+                --inputbox "Enter workflow name to delete:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                virtos-automation workflow-delete "$NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+            fi
+            automation_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Task Name" \
+                --inputbox "Enter task name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Command" \
+                    --inputbox "Enter command to run:" 10 70 \
+                    2> $TEMP_FILE
+                COMMAND=$(cat $TEMP_FILE)
+                if [ -n "$COMMAND" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Schedule (cron)" \
+                        --inputbox "Enter cron schedule (e.g., '0 2 * * *'):" 10 70 \
+                        2> $TEMP_FILE
+                    SCHEDULE=$(cat $TEMP_FILE)
+                    if [ -n "$SCHEDULE" ]; then
+                        virtos-automation schedule-create "$NAME" "$COMMAND" "$SCHEDULE" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+                    fi
+                fi
+            fi
+            automation_menu
+            ;;
+        6)
+            virtos-automation schedule-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Scheduled Tasks" --programbox 20 100
+            automation_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Task Name" \
+                --inputbox "Enter task name to delete:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                virtos-automation schedule-delete "$NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+            fi
+            automation_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Service Name" \
+                --inputbox "Enter service name:" 10 60 \
+                2> $TEMP_FILE
+            SERVICE=$(cat $TEMP_FILE)
+            if [ -n "$SERVICE" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Minimum Instances" \
+                    --inputbox "Enter minimum instances [1]:" 10 60 \
+                    2> $TEMP_FILE
+                MIN=$(cat $TEMP_FILE)
+                MIN="${MIN:-1}"
+                $DIALOG $DIALOG_OPTS \
+                    --title "Maximum Instances" \
+                    --inputbox "Enter maximum instances [10]:" 10 60 \
+                    2> $TEMP_FILE
+                MAX=$(cat $TEMP_FILE)
+                MAX="${MAX:-10}"
+                virtos-automation autoscale-enable "$SERVICE" "$MIN" "$MAX" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            automation_menu
+            ;;
+        9)
+            virtos-automation autoscale-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Auto-Scaling Status" --programbox 20 76
+            automation_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "Service Name" \
+                --inputbox "Enter service name:" 10 60 \
+                2> $TEMP_FILE
+            SERVICE=$(cat $TEMP_FILE)
+            if [ -n "$SERVICE" ]; then
+                virtos-automation autoscale-up "$SERVICE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Scale Up" --msgbox 12 76
+            fi
+            automation_menu
+            ;;
+        11)
+            $DIALOG $DIALOG_OPTS \
+                --title "Service Name" \
+                --inputbox "Enter service name:" 10 60 \
+                2> $TEMP_FILE
+            SERVICE=$(cat $TEMP_FILE)
+            if [ -n "$SERVICE" ]; then
+                virtos-automation autoscale-down "$SERVICE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Scale Down" --msgbox 12 76
+            fi
+            automation_menu
+            ;;
+        12)
+            $DIALOG $DIALOG_OPTS \
+                --title "Resource Type" \
+                --menu "Select resource:" 12 60 2 \
+                1 "VM" \
+                2 "Container" \
+                2> $TEMP_FILE
+            RESOURCE_CHOICE=$(cat $TEMP_FILE)
+            case $RESOURCE_CHOICE in
+                1) RESOURCE="vm" ;;
+                2) RESOURCE="container" ;;
+                *) automation_menu; return ;;
+            esac
+            if [ -n "$RESOURCE" ]; then
+                virtos-automation selfheal-enable "$RESOURCE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            automation_menu
+            ;;
+        13)
+            virtos-automation selfheal-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Self-Healing Status" --programbox 15 76
+            automation_menu
+            ;;
+        14)
+            $DIALOG $DIALOG_OPTS \
+                --title "Event Name" \
+                --inputbox "Enter event name:" 10 60 \
+                2> $TEMP_FILE
+            EVENT=$(cat $TEMP_FILE)
+            if [ -n "$EVENT" ]; then
+                virtos-automation event-trigger "$EVENT" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Event Triggered" --msgbox 12 76
+            fi
+            automation_menu
+            ;;
+        15)
+            virtos-automation wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Automation Wizard" --programbox 25 80
+            automation_menu
+            ;;
+        0) main_menu ;;
+        *) automation_menu ;;
+    esac
+}
+
 settings_menu() {
     $DIALOG $DIALOG_OPTS \
         --title "Settings" \
@@ -3806,9 +4553,14 @@ settings_menu() {
             command -v virtos-security >/dev/null && INFO="${INFO}  ✓ virtos-security\n"
             command -v virtos-billing >/dev/null && INFO="${INFO}  ✓ virtos-billing\n"
             command -v virtos-mesh >/dev/null && INFO="${INFO}  ✓ virtos-mesh\n"
+            INFO="${INFO}\nPhase 11 Tools:\n"
+            command -v virtos-datacenter >/dev/null && INFO="${INFO}  ✓ virtos-datacenter\n"
+            command -v virtos-analytics >/dev/null && INFO="${INFO}  ✓ virtos-analytics\n"
+            command -v virtos-edge >/dev/null && INFO="${INFO}  ✓ virtos-edge\n"
+            command -v virtos-automation >/dev/null && INFO="${INFO}  ✓ virtos-automation\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
-                --msgbox "$INFO" 36 50
+                --msgbox "$INFO" 40 50
             settings_menu
             ;;
         4)

@@ -1679,6 +1679,308 @@ Microservices mesh integration using virtos-mesh:
 - Service monitoring
 - Multi-cluster communication
 
+### 31. Multi-Datacenter
+
+Multi-datacenter orchestration using virtos-datacenter:
+
+#### Submenu Options:
+- **Initialize Datacenter** - Setup local datacenter
+- **Register Remote Datacenter** - Add remote datacenter
+- **List Datacenters** - Show all datacenters
+- **Remove Datacenter** - Delete datacenter
+- **VM Placement Decision** - Find optimal datacenter for VM
+- **Setup Replication** - Configure datacenter replication
+- **Start Replication** - Begin replication
+- **Stop Replication** - End replication
+- **Replication Status** - View replication state
+- **Geographic Load Balance** - Find nearest datacenter
+- **DR Failover** - Disaster recovery failover
+- **WAN Status** - WAN optimization status
+- **Setup Wizard** - Guided datacenter setup
+
+#### Example: Initialize Datacenter
+```
+1. Select "Initialize Datacenter"
+2. Enter datacenter name: dc1
+3. Enter region: us-east
+4. Datacenter initialized
+5. Ready for VM placement
+```
+
+#### Example: Setup Replication
+```
+1. Select "Setup Replication"
+2. Source datacenter: dc1
+3. Target datacenter: dc2
+4. Replication configured
+5. Select "Start Replication"
+6. Data syncs automatically
+```
+
+#### Example: DR Failover
+```
+1. Select "DR Failover"
+2. Failed datacenter: dc1
+3. Target datacenter: dc2
+4. System analyzes state
+5. VMs activated on dc2
+6. Services restored
+```
+
+**Features:**
+- Datacenter discovery and registration
+- Cross-datacenter VM placement
+- WAN-optimized replication with bandwidth limits
+- Geographic load balancing
+- Automatic disaster recovery
+- Latency-aware routing
+
+**Use cases:**
+- Multi-region deployments
+- Disaster recovery
+- Geographic redundancy
+- Load distribution
+- Compliance (data residency)
+- Global services
+
+### 32. Analytics & Reporting
+
+Advanced analytics using virtos-analytics:
+
+#### Submenu Options:
+- **Start Data Collection** - Begin metrics collection
+- **Stop Data Collection** - End collection
+- **Collection Status** - View collection state
+- **Trends Report** - Resource utilization trends
+- **Capacity Prediction** - Predict future capacity needs
+- **Anomaly Detection** - Detect resource anomalies
+- **Cost Optimization** - Cost reduction recommendations
+- **Performance Report** - Performance analysis
+- **Custom Report** - Generate custom reports
+- **Setup Wizard** - Guided analytics setup
+
+#### Example: Capacity Prediction
+```
+1. Select "Capacity Prediction"
+2. Select resource: CPU
+3. Enter horizon: 30 days
+4. System analyzes trends
+5. Predicts CPU will be at 85% in 30 days
+6. Recommendations displayed
+```
+
+#### Example: Cost Optimization
+```
+1. Select "Cost Optimization"
+2. System analyzes usage patterns
+3. Detects underutilization:
+   - CPU average: 25%
+   - RAM average: 35%
+4. Recommendations:
+   - Consolidate VMs: 20-30% savings
+   - Reduce RAM allocations: 15-25% savings
+   - Total potential savings: 35-55%
+```
+
+#### Example: Anomaly Detection
+```
+1. Select "Anomaly Detection"
+2. System scans last 24 hours
+3. Anomalies found:
+   - CPU spike: 95% at 14:30
+   - Memory leak detected
+   - Disk I/O bottleneck
+4. Investigation suggestions provided
+```
+
+**Analytics Features:**
+- Resource utilization trends
+- Linear regression capacity planning
+- Statistical anomaly detection
+- Cost optimization analysis
+- Performance profiling
+- Custom report generation
+
+**Reports:**
+- Hourly resource usage
+- Daily summaries
+- Weekly trends
+- Monthly capacity reports
+- Cost optimization suggestions
+
+**Use cases:**
+- Capacity planning
+- Cost reduction
+- Performance optimization
+- Anomaly investigation
+- Budget forecasting
+- Resource right-sizing
+
+### 33. Edge Computing
+
+Edge computing management using virtos-edge:
+
+#### Submenu Options:
+- **Initialize Edge Node** - Setup edge/hub node
+- **Register with Cloud Hub** - Connect to cloud
+- **Deploy Workload** - Deploy to edge
+- **Workload Placement** - Decide edge vs cloud
+- **Sync to Cloud** - Upload to cloud
+- **Sync from Cloud** - Download from cloud
+- **Start Auto-Sync** - Enable automatic sync
+- **Stop Auto-Sync** - Disable automatic sync
+- **Sync Status** - View sync state
+- **Enable Offline Mode** - Disconnect from cloud
+- **Disable Offline Mode** - Reconnect to cloud
+- **Offline Status** - Check offline state
+- **Optimize Bandwidth** - Set bandwidth limit
+- **Latency Test** - Measure network latency
+- **Edge Status** - Complete edge status
+- **Setup Wizard** - Guided edge setup
+
+#### Example: Edge Node Setup
+```
+1. Select "Setup Wizard"
+2. Mode: Edge Node
+3. Location: retail-store-1
+4. Cloud hub: 192.168.1.100
+5. Bandwidth limit: 50 Mbps
+6. Enable sync: Yes
+7. Enable offline: Yes
+8. Edge node configured
+```
+
+#### Example: Workload Placement
+```
+1. Select "Workload Placement"
+2. Workload: pos-system
+3. Max latency: 50ms
+4. System tests cloud latency: 150ms
+5. Recommendation: EDGE
+6. Deploy workload locally
+```
+
+#### Example: Offline Operation
+```
+1. Edge node loses connectivity
+2. Select "Enable Offline Mode"
+3. System operates independently
+4. Changes queued for sync
+5. Connectivity restored
+6. Select "Disable Offline Mode"
+7. Changes sync automatically
+```
+
+**Edge Features:**
+- Edge and cloud hub modes
+- Intelligent workload placement
+- Bi-directional synchronization
+- Bandwidth optimization
+- Offline operation capability
+- Latency-aware decisions
+
+**Sync Strategies:**
+- Incremental (only changed files)
+- Full (complete sync)
+- Scheduled or on-demand
+- Bandwidth-limited transfer
+
+**Use cases:**
+- Retail point-of-sale systems
+- Factory floor automation
+- Remote offices
+- IoT gateways
+- Content delivery
+- Low-latency applications
+
+### 34. Automation & Orchestration
+
+Workflow automation using virtos-automation:
+
+#### Submenu Options:
+- **Create Workflow** - New workflow template
+- **List Workflows** - Show all workflows
+- **Run Workflow** - Execute workflow
+- **Delete Workflow** - Remove workflow
+- **Create Scheduled Task** - New cron task
+- **List Scheduled Tasks** - Show scheduled tasks
+- **Delete Scheduled Task** - Remove task
+- **Enable Auto-Scaling** - Configure auto-scaling
+- **Auto-Scaling Status** - View scaling state
+- **Scale Up Service** - Manually add instances
+- **Scale Down Service** - Manually remove instances
+- **Enable Self-Healing** - Activate self-healing
+- **Self-Healing Status** - View healing state
+- **Trigger Event** - Fire event-driven workflows
+- **Setup Wizard** - Guided automation setup
+
+#### Example: Create Workflow
+```
+1. Select "Create Workflow"
+2. Name: nightly-backup
+3. Template created at /etc/virtos/workflows/
+4. Edit YAML file:
+   - Trigger: cron "0 2 * * *"
+   - Steps:
+     - backup all VMs
+     - verify backups
+     - send notification
+5. Select "Run Workflow"
+6. Workflow executes successfully
+```
+
+#### Example: Auto-Scaling
+```
+1. Select "Enable Auto-Scaling"
+2. Service: web-app
+3. Min instances: 2
+4. Max instances: 10
+5. Auto-scaling enabled
+6. System monitors CPU usage
+7. At 85% CPU: automatically scales up
+8. At 25% CPU: automatically scales down
+```
+
+#### Example: Self-Healing
+```
+1. Select "Enable Self-Healing"
+2. Resource: vm
+3. Self-healing monitor started
+4. VM crashes unexpectedly
+5. Monitor detects failure
+6. VM automatically restarted
+7. Services restored
+```
+
+**Automation Features:**
+- YAML workflow definitions
+- Event-driven automation
+- Scheduled task execution
+- Auto-scaling with policies
+- Self-healing monitoring
+- Webhook notifications
+
+**Triggers:**
+- Schedule (cron expressions)
+- Events (vm.created, vm.failed, etc.)
+- Webhooks (HTTP callbacks)
+- Manual execution
+
+**Actions:**
+- Shell commands
+- Workflow steps
+- Service scaling
+- Resource healing
+- External integrations
+
+**Use cases:**
+- Automated backups
+- Scheduled maintenance
+- Auto-scaling workloads
+- Self-healing infrastructure
+- Event-driven operations
+- DevOps automation
+
 ### 22. Settings
 
 VirtOS configuration and information:
@@ -1705,6 +2007,7 @@ Shows checkmarks for:
 - ✓ Phase 8 Tools (virtos-auth, virtos-cloud-init, virtos-api, virtos-update, virtos-dr)
 - ✓ Phase 9 Tools (virtos-storage, virtos-network, virtos-gpu, virtos-usb)
 - ✓ Phase 10 Tools (virtos-telemetry, virtos-security, virtos-billing, virtos-mesh)
+- ✓ Phase 11 Tools (virtos-datacenter, virtos-analytics, virtos-edge, virtos-automation)
 
 **Use cases:**
 - Verify installation

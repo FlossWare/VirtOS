@@ -791,6 +791,208 @@ virtos-mesh dashboard  # Kiali/Linkerd viz/Consul UI
 virtos-mesh wizard
 ```
 
+## Phase 11 Commands
+
+### Multi-Datacenter (virtos-datacenter)
+
+```bash
+# Initialize local datacenter
+virtos-datacenter datacenter-init dc1 us-east
+
+# Register remote datacenter
+virtos-datacenter datacenter-register dc2 192.168.2.100 us-west
+virtos-datacenter datacenter-register dc3 192.168.3.100 eu-central
+
+# List datacenters
+virtos-datacenter datacenter-list
+
+# Remove datacenter
+virtos-datacenter datacenter-remove dc3
+
+# VM placement decision
+virtos-datacenter vm-place production-db
+
+# Setup replication between datacenters
+virtos-datacenter replication-setup dc1 dc2
+
+# Start replication
+virtos-datacenter replication-start dc1 dc2
+
+# Stop replication
+virtos-datacenter replication-stop dc1 dc2
+
+# Check replication status
+virtos-datacenter replication-status
+
+# Geographic load balancing
+virtos-datacenter geo-loadbalance web-app 40.7 -74.0
+
+# Disaster recovery failover
+virtos-datacenter dr-failover dc1 dc2
+
+# WAN optimization status
+virtos-datacenter wan-status
+
+# Setup wizard
+virtos-datacenter wizard
+```
+
+### Advanced Analytics (virtos-analytics)
+
+```bash
+# Start data collection
+virtos-analytics collection-start
+
+# Stop data collection
+virtos-analytics collection-stop
+
+# Check collection status
+virtos-analytics collection-status
+
+# Resource utilization trends
+virtos-analytics trends-report 7
+virtos-analytics trends-report 30
+
+# Capacity prediction
+virtos-analytics capacity-predict cpu 30
+virtos-analytics capacity-predict ram 60
+virtos-analytics capacity-predict disk 90
+
+# Anomaly detection
+virtos-analytics anomaly-detect
+
+# Cost optimization recommendations
+virtos-analytics cost-optimize
+
+# Performance report
+virtos-analytics performance-report
+virtos-analytics performance-report web-server
+
+# Custom reports
+virtos-analytics custom-report hourly
+virtos-analytics custom-report daily
+
+# Setup wizard
+virtos-analytics wizard
+```
+
+### Edge Computing (virtos-edge)
+
+```bash
+# Initialize edge node
+virtos-edge edge-init edge-node retail-store-1
+
+# Initialize cloud hub
+virtos-edge edge-init cloud-hub datacenter-1
+
+# Register edge node with cloud hub
+virtos-edge edge-register 192.168.1.100
+
+# Deploy workload to edge
+virtos-edge edge-deploy pos-system cloud
+virtos-edge edge-deploy inventory-app cloud
+
+# Workload placement decision
+virtos-edge workload-place web-app 50
+virtos-edge workload-place database 100
+
+# Sync to cloud
+virtos-edge sync-to-cloud /var/lib/virtos/edge-data/
+virtos-edge sync-to-cloud /var/lib/virtos/edge-data/ incremental
+
+# Sync from cloud
+virtos-edge sync-from-cloud /var/lib/virtos/cloud-data/
+
+# Start auto-sync (every 5 minutes)
+virtos-edge sync-start 300
+
+# Stop auto-sync
+virtos-edge sync-stop
+
+# Check sync status
+virtos-edge sync-status
+
+# Enable offline mode
+virtos-edge offline-enable
+
+# Disable offline mode
+virtos-edge offline-disable
+
+# Check offline status
+virtos-edge offline-status
+
+# Optimize bandwidth
+virtos-edge bandwidth-optimize 50
+virtos-edge bandwidth-optimize 100
+
+# Test latency
+virtos-edge latency-test 192.168.1.100
+virtos-edge latency-test cloud-hub.example.com
+
+# Edge status
+virtos-edge edge-status
+
+# Setup wizard
+virtos-edge wizard
+```
+
+### Workflow Automation (virtos-automation)
+
+```bash
+# Create workflow
+virtos-automation workflow-create nightly-backup
+virtos-automation workflow-create vm-cleanup
+
+# List workflows
+virtos-automation workflow-list
+
+# Run workflow
+virtos-automation workflow-run nightly-backup
+
+# Delete workflow
+virtos-automation workflow-delete old-workflow
+
+# Create scheduled task
+virtos-automation schedule-create cleanup "find /tmp -mtime +7 -delete" "0 3 * * *"
+virtos-automation schedule-create backup "virtos-backup backup-all" "0 2 * * *"
+
+# List scheduled tasks
+virtos-automation schedule-list
+
+# Delete scheduled task
+virtos-automation schedule-delete cleanup
+
+# Enable auto-scaling
+virtos-automation autoscale-enable web-app 2 10
+virtos-automation autoscale-enable api-service 3 20
+
+# Auto-scaling status
+virtos-automation autoscale-status
+virtos-automation autoscale-status web-app
+
+# Trigger scale up
+virtos-automation autoscale-up web-app
+
+# Trigger scale down
+virtos-automation autoscale-down web-app
+
+# Enable self-healing for VMs
+virtos-automation selfheal-enable vm
+
+# Enable self-healing for containers
+virtos-automation selfheal-enable container
+
+# Self-healing status
+virtos-automation selfheal-status
+
+# Trigger event
+virtos-automation event-trigger vm.created
+virtos-automation event-trigger vm.failed
+
+# Setup wizard
+virtos-automation wizard
+```
+
 ## Build Commands
 
 ```bash
