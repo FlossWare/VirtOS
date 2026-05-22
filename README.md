@@ -83,6 +83,7 @@ qemu-system-x86_64 -enable-kvm -m 2048 \
 | **full** | ~400MB | Everything |
 | **containers** | ~150MB | All container runtimes + minimal VMs |
 | **developer** | ~250MB | All runtimes + dev tools |
+| **kubernetes** | ~250MB | K3s + all runtimes + clustering |
 
 See [docs/PROFILES.md](docs/PROFILES.md) for details.
 
@@ -109,6 +110,23 @@ virtos-cluster list
 ```
 
 Automatic discovery via mDNS/Avahi - hosts appear as `virtos-X.local`. See [docs/CLUSTERING.md](docs/CLUSTERING.md) for multi-host setup.
+
+### Kubernetes (Optional)
+
+**Deploy K3s across your VirtOS cluster:**
+```bash
+# On virtos-1
+curl -sfL https://get.k3s.io | sh -
+
+# On virtos-2, virtos-3
+curl -sfL https://get.k3s.io | K3S_URL=https://virtos-1.local:6443 \
+  K3S_TOKEN=<token> sh -
+
+# Deploy apps across cluster
+sudo k3s kubectl create deployment nginx --image=nginx --replicas=6
+```
+
+K3s provides orchestration, auto-scaling, and self-healing for containers. See [docs/KUBERNETES.md](docs/KUBERNETES.md) for complete setup.
 
 ### Customization
 

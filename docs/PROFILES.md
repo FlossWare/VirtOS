@@ -19,19 +19,21 @@ Or customize individual options (see Configuration section below).
 
 ## Profile Comparison
 
-| Component | Minimal | Standard | Full | Containers | Developer |
-|-----------|---------|----------|------|------------|-----------|
-| **Size** | ~100MB | ~200MB | ~400MB | ~150MB | ~250MB |
-| **KVM/QEMU** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **LXC** | ❌ | ✅ | ✅ | ✅ | ✅ |
-| **Docker** | ❌ | ✅ | ✅ | ✅ | ✅ |
-| **Podman** | ❌ | ✅ | ✅ | ✅ | ✅ |
-| **containerd** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **libvirt** | ❌ | ✅ | ✅ | ❌ | ✅ |
-| **Web UI** | ❌ | ❌ | ✅ | Portainer | Portainer |
-| **Bash** | ❌ (ash) | ✅ | ✅ | ✅ | ✅ |
-| **Advanced Net** | ❌ | ❌ | ✅ | OVS | WireGuard |
-| **Storage** | Basic | Basic | All | Basic | Basic |
+| Component | Minimal | Standard | Full | Containers | Developer | Kubernetes |
+|-----------|---------|----------|------|------------|-----------|------------|
+| **Size** | ~100MB | ~200MB | ~400MB | ~150MB | ~250MB | ~250MB |
+| **KVM/QEMU** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **LXC** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Docker** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Podman** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **containerd** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **K3s** | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ |
+| **libvirt** | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Clustering** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Web UI** | ❌ | ❌ | ✅ | Portainer | Portainer | ❌ |
+| **Bash** | ❌ (ash) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Advanced Net** | ❌ | ❌ | ✅ | OVS | WireGuard | WireGuard |
+| **Storage** | Basic | Basic | All | Basic | Basic | Basic |
 
 ## Profile Details
 
@@ -154,6 +156,37 @@ PROFILE="containers" ./build/scripts/build-all.sh
 ```bash
 PROFILE="developer" ./build/scripts/build-all.sh
 ```
+
+### Kubernetes Profile
+**Size**: ~250MB  
+**Use Case**: K3s orchestration across VirtOS cluster
+
+**Includes**:
+- **K3s** (lightweight Kubernetes)
+- **All container runtimes** (Docker, Podman, containerd)
+- LXC system containers
+- Clustering enabled (required for multi-node K3s)
+- Minimal KVM (available but not focus)
+- WireGuard for K3s secure networking
+
+**Excludes**:
+- libvirt (not needed for K3s)
+- Web UIs (use kubectl/Lens/k9s)
+- Advanced storage
+
+**Best for**:
+- Kubernetes learning and development
+- Microservices orchestration across VirtOS cluster
+- Cloud-native application deployment
+- Auto-scaling container workloads
+- GitOps workflows
+
+**Command**: 
+```bash
+PROFILE="kubernetes" ./build/scripts/build-all.sh
+```
+
+**See**: [KUBERNETES.md](KUBERNETES.md) for K3s setup and usage
 
 ## Custom Configuration
 
