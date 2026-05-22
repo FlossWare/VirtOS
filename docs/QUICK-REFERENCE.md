@@ -70,6 +70,9 @@ check-kvm
 # Create a VM
 create-vm myvm 20 /path/to/installer.iso
 
+# Create remote user
+add-user.sh vmadmin
+
 # Check system info
 cat /etc/virtos/version.txt
 
@@ -77,6 +80,7 @@ cat /etc/virtos/version.txt
 tce-load -i qemu       # KVM/QEMU
 tce-load -i lxc        # LXC containers
 tce-load -i docker     # Docker
+tce-load -i podman     # Podman
 tce-load -i containerd # containerd
 ```
 
@@ -173,6 +177,45 @@ ctr task kill web1
 
 # Remove container
 ctr container delete web1
+```
+
+## Kubernetes (K3s)
+
+```bash
+# Install K3s server (first node)
+curl -sfL https://get.k3s.io | sh -
+
+# Get join token
+sudo cat /var/lib/rancher/k3s/server/node-token
+
+# Install K3s agent (other nodes)
+curl -sfL https://get.k3s.io | \
+  K3S_URL=https://virtos-1.local:6443 \
+  K3S_TOKEN=<token> sh -
+
+# Get nodes
+sudo k3s kubectl get nodes
+
+# Create deployment
+sudo k3s kubectl create deployment nginx --image=nginx
+
+# Scale deployment
+sudo k3s kubectl scale deployment nginx --replicas=3
+
+# Expose service
+sudo k3s kubectl expose deployment nginx --port=80 --type=LoadBalancer
+
+# Get pods
+sudo k3s kubectl get pods -o wide
+
+# Get services
+sudo k3s kubectl get svc
+
+# Delete deployment
+sudo k3s kubectl delete deployment nginx
+
+# Uninstall K3s
+sudo /usr/local/bin/k3s-uninstall.sh
 ```
 
 ## Networking

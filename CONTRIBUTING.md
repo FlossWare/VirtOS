@@ -83,14 +83,38 @@ Before submitting:
 
 Current priorities (see ROADMAP.md):
 
-- [ ] Custom kernel configuration
-- [ ] TCZ package building
-- [ ] LXC integration
-- [ ] Container runtime integration
-- [ ] Network configuration scripts
-- [ ] Management tools/CLI
-- [ ] Documentation improvements
+**Core System**:
+- [ ] Custom kernel configuration optimization
+- [ ] TCZ package building automation
+- [ ] Build script improvements
 - [ ] Testing on various hardware
+
+**Advanced Features**:
+- [ ] Web UI integration (Cockpit/Portainer)
+- [ ] GPU passthrough support
+- [ ] USB passthrough
+- [ ] Live VM migration
+- [ ] High availability implementation
+- [ ] Advanced networking (OVS, VLANs)
+
+**Documentation**:
+- [ ] Video tutorials
+- [ ] More examples and use cases
+- [ ] Troubleshooting guides
+- [ ] Performance tuning guides
+- [ ] Translation to other languages
+
+**Testing**:
+- [ ] Automated testing
+- [ ] Integration tests
+- [ ] Performance benchmarks
+- [ ] Hardware compatibility list
+
+**Community**:
+- [ ] Sample configurations
+- [ ] Template library
+- [ ] Blog posts / articles
+- [ ] Community support
 
 ## Code Style
 

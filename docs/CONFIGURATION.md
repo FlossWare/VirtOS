@@ -321,9 +321,39 @@ PROFILE="myprofile" ./build/scripts/build-all.sh
 6. **Web UIs** - add significant size, consider loading later
 7. **Don't worry about size** - extensions load on-demand anyway
 
+## Kubernetes Configuration
+
+```bash
+# Enable K3s (optional)
+INCLUDE_K3S="yes"           # Lightweight Kubernetes
+
+# K3s settings
+K3S_VERSION="latest"        # or specific version
+K3S_ROLE="server"           # server, agent, both
+AUTOSTART_K3S="no"          # Auto-start at boot
+
+# Advanced K3s
+K3S_DISABLE_TRAEFIK="no"    # Disable built-in ingress
+K3S_DISABLE_SERVICELB="no"  # Disable built-in LB
+```
+
+**When to enable**:
+- Multi-host container orchestration
+- Need auto-scaling and self-healing
+- Microservices deployment
+- Learning Kubernetes
+
+**When to skip**:
+- Single host (use docker-compose instead)
+- Only running VMs
+- Limited resources (<4GB RAM)
+
+See [KUBERNETES.md](KUBERNETES.md) for complete guide.
+
 ## See Also
 
 - [PROFILES.md](PROFILES.md) - Profile details
 - [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Container runtime comparison
+- [KUBERNETES.md](KUBERNETES.md) - K3s orchestration
 - [PACKAGES.md](PACKAGES.md) - Package details and sizes
 - [build/build.conf](../build/build.conf) - Full configuration file

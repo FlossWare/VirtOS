@@ -43,8 +43,16 @@
 - **Use Cases**: Microservices, application deployment
 - **Options**:
   - containerd (minimal, used by Kubernetes)
-  - cri-o (Kubernetes-native)
-  - Docker (full-featured, larger footprint)
+  - Docker (full-featured, docker-compose)
+  - Podman (rootless, daemon-free)
+
+#### Kubernetes (Optional)
+- **Purpose**: Container orchestration across cluster
+- **Use Cases**: Multi-host microservices, auto-scaling, self-healing
+- **Implementation**: K3s (lightweight Kubernetes)
+  - 50MB vs 500MB+ for full Kubernetes
+  - Perfect for edge/home lab environments
+  - 100% Kubernetes API compliant
 
 ### 4. Networking Layer
 
@@ -76,12 +84,24 @@
 
 ### 6. Management Layer
 
-**Options**:
+**Virtualization Management**:
 - **libvirt** - Unified API for KVM/QEMU, LXC
 - **virsh** - CLI for libvirt
 - **virt-manager** - GUI (optional, for remote access)
-- **Portainer** / **Cockpit** - Web UI (optional)
-- Custom scripts - Tiny Core specific tools
+
+**Container Management**:
+- **docker/podman** - Direct container management
+- **kubectl** - Kubernetes CLI (if K3s enabled)
+- **Helm** - Kubernetes package manager (optional)
+- **k9s** - Terminal UI for Kubernetes (optional)
+
+**Web Interfaces** (optional):
+- **Portainer** - Container management UI
+- **Cockpit** - System management UI
+
+**Cluster Management**:
+- **virtos-cluster** - Multi-host coordination
+- Custom scripts - VirtOS-specific tools
 
 ## Boot Process
 
