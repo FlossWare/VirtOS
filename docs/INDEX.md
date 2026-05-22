@@ -42,6 +42,7 @@ Complete documentation for FlossWare VirtOS.
 
 - **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** - All commands in one place
 - **[COMPARISON.md](COMPARISON.md)** - VirtOS vs similar projects (Proxmox, ESXi, etc.)
+- **[MISSING-FEATURES.md](MISSING-FEATURES.md)** - What VirtOS lacks (honest assessment)
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
 
 ## Documentation by Use Case
@@ -158,9 +159,9 @@ Complete documentation for FlossWare VirtOS.
 
 ## Total Documentation
 
-- **18 Documentation Files**
-- **10,800+ Lines**
-- **Complete Coverage** of all features
+- **19 Documentation Files**
+- **11,500+ Lines**
+- **Complete and Honest Coverage** - including what's missing
 
 ## Getting Help
 

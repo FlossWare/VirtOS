@@ -220,6 +220,30 @@ VirtOS occupies a unique niche:
 
 See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 major platforms.
 
+## What's Missing?
+
+**VirtOS is alpha software.** Many features found in mature platforms are missing or incomplete:
+
+**Critical gaps:**
+- ❌ Automated backup/restore
+- ❌ Automatic HA/failover
+- ❌ Web UI (by design - TUI only)
+- ⚠️ Live migration (only with shared storage)
+- ❌ Distributed storage (Ceph/GlusterFS)
+
+**Important gaps:**
+- ❌ Monitoring and alerting
+- ❌ User authentication/RBAC
+- ❌ VM templates (manual only)
+- ❌ REST API (basic via libvirt)
+
+**VirtOS is good for:** Home labs, learning, edge computing, dev/test  
+**VirtOS is NOT ready for:** Production with SLAs, mission-critical workloads, large enterprises
+
+See [docs/MISSING-FEATURES.md](docs/MISSING-FEATURES.md) for complete list and roadmap.
+
+**Being honest:** It will take years to match platforms with 10+ years of development. But VirtOS offers unique advantages (size, flexibility, container support) that may matter more for your use case.
+
 ## License
 
 TBD
