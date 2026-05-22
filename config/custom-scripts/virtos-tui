@@ -139,7 +139,7 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 51 76 38 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 55 76 42 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
         3 "VM Backups & Restore" \
@@ -178,6 +178,10 @@ main_menu() {
         36 "Quantum Computing" \
         37 "Blockchain Auditing" \
         38 "Cloud Federation" \
+        39 "Advanced AI" \
+        40 "Quantum Hardware" \
+        41 "Blockchain DeFi" \
+        42 "Extended Federation" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -222,6 +226,10 @@ main_menu() {
         36) quantum_menu ;;
         37) blockchain_menu ;;
         38) federation_menu ;;
+        39) ai_advanced_menu ;;
+        40) quantum_hw_menu ;;
+        41) blockchain_adv_menu ;;
+        42) federation_ext_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -5217,6 +5225,392 @@ federation_menu() {
     esac
 }
 
+#==============================================================================
+# Phase 13 Menus: Advanced AI, Quantum Hardware, Blockchain DeFi, Extended Federation
+#==============================================================================
+
+ai_advanced_menu() {
+    if ! command -v virtos-ai-advanced >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-ai-advanced not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Advanced AI" \
+        --menu "Select option:" 20 76 12 \
+        1 "Deep Learning (CNN/RNN/LSTM/Transformer)" \
+        2 "Reinforcement Learning (DQN/PPO/A3C/SAC)" \
+        3 "Neural Architecture Search" \
+        4 "Transfer Learning" \
+        5 "Distributed Training" \
+        6 "AutoML" \
+        7 "Federated Learning" \
+        8 "Model Compression" \
+        9 "Advanced AI Status" \
+        10 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Model Type" \
+                --menu "Select type:" 14 60 4 \
+                1 "CNN" \
+                2 "RNN" \
+                3 "LSTM" \
+                4 "Transformer" \
+                2> $TEMP_FILE
+            TYPE_CHOICE=$(cat $TEMP_FILE)
+            case $TYPE_CHOICE in
+                1) TYPE="cnn" ;;
+                2) TYPE="rnn" ;;
+                3) TYPE="lstm" ;;
+                4) TYPE="transformer" ;;
+                *) ai_advanced_menu; return ;;
+            esac
+            virtos-ai-advanced deep-learning-train "$TYPE" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Deep Learning Training" --programbox 30 100
+            ai_advanced_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "RL Algorithm" \
+                --menu "Select algorithm:" 14 60 4 \
+                1 "DQN" \
+                2 "PPO" \
+                3 "A3C" \
+                4 "SAC" \
+                2> $TEMP_FILE
+            ALG_CHOICE=$(cat $TEMP_FILE)
+            case $ALG_CHOICE in
+                1) ALG="dqn" ;;
+                2) ALG="ppo" ;;
+                3) ALG="a3c" ;;
+                4) ALG="sac" ;;
+                *) ai_advanced_menu; return ;;
+            esac
+            virtos-ai-advanced rl-train "$ALG" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "RL Training" --programbox 30 100
+            ai_advanced_menu
+            ;;
+        3)
+            virtos-ai-advanced neural-arch-search 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Neural Architecture Search" --programbox 25 100
+            ai_advanced_menu
+            ;;
+        4)
+            virtos-ai-advanced transfer-learning resnet50 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Transfer Learning" --programbox 30 100
+            ai_advanced_menu
+            ;;
+        5)
+            virtos-ai-advanced distributed-training data-parallel 4 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Distributed Training" --programbox 25 100
+            ai_advanced_menu
+            ;;
+        6)
+            virtos-ai-advanced automl-run classification 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "AutoML" --programbox 30 100
+            ai_advanced_menu
+            ;;
+        7)
+            virtos-ai-advanced federated-learning 10 50 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Federated Learning" --programbox 25 100
+            ai_advanced_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Compression Technique" \
+                --menu "Select technique:" 13 60 3 \
+                1 "Pruning" \
+                2 "Quantization" \
+                3 "Distillation" \
+                2> $TEMP_FILE
+            COMP_CHOICE=$(cat $TEMP_FILE)
+            case $COMP_CHOICE in
+                1) TECH="pruning" ;;
+                2) TECH="quantization" ;;
+                3) TECH="distillation" ;;
+                *) ai_advanced_menu; return ;;
+            esac
+            virtos-ai-advanced model-compression "$TECH" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Model Compression" --programbox 25 100
+            ai_advanced_menu
+            ;;
+        9)
+            virtos-ai-advanced ai-advanced-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Advanced AI Status" --programbox 25 76
+            ai_advanced_menu
+            ;;
+        10)
+            virtos-ai-advanced wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Advanced AI Wizard" --programbox 25 80
+            ai_advanced_menu
+            ;;
+        0) main_menu ;;
+        *) ai_advanced_menu ;;
+    esac
+}
+
+quantum_hw_menu() {
+    if ! command -v virtos-quantum-hardware >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-quantum-hardware not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Quantum Hardware" \
+        --menu "Select option:" 20 76 12 \
+        1 "Initialize Quantum Hardware" \
+        2 "List Backends" \
+        3 "Backend Info" \
+        4 "Submit Job" \
+        5 "Job Status" \
+        6 "List Jobs" \
+        7 "Hybrid Execution (VQE/QAOA)" \
+        8 "Error Mitigation" \
+        9 "Quantum Hardware Status" \
+        10 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Provider" \
+                --menu "Select provider:" 14 60 4 \
+                1 "IBM Quantum" \
+                2 "AWS Braket" \
+                3 "Azure Quantum" \
+                4 "IonQ" \
+                2> $TEMP_FILE
+            PROV_CHOICE=$(cat $TEMP_FILE)
+            case $PROV_CHOICE in
+                1) PROV="ibm-quantum" ;;
+                2) PROV="aws-braket" ;;
+                3) PROV="azure-quantum" ;;
+                4) PROV="ionq" ;;
+                *) quantum_hw_menu; return ;;
+            esac
+            virtos-quantum-hardware quantum-hw-init "$PROV" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Hardware Init" --msgbox 15 76
+            quantum_hw_menu
+            ;;
+        2)
+            virtos-quantum-hardware list-backends 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Backends" --programbox 25 76
+            quantum_hw_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Backend Name" \
+                --inputbox "Enter backend name:" 10 60 \
+                2> $TEMP_FILE
+            BACKEND=$(cat $TEMP_FILE)
+            if [ -n "$BACKEND" ]; then
+                virtos-quantum-hardware backend-info "$BACKEND" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Backend Info" --programbox 25 76
+            fi
+            quantum_hw_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Algorithm" \
+                --menu "Select algorithm:" 12 60 2 \
+                1 "VQE" \
+                2 "QAOA" \
+                2> $TEMP_FILE
+            ALG_CHOICE=$(cat $TEMP_FILE)
+            case $ALG_CHOICE in
+                1) ALG="vqe" ;;
+                2) ALG="qaoa" ;;
+                *) quantum_hw_menu; return ;;
+            esac
+            virtos-quantum-hardware hybrid-execute "$ALG" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Hybrid Execution" --programbox 30 100
+            quantum_hw_menu
+            ;;
+        8)
+            virtos-quantum-hardware error-mitigation zne 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Error Mitigation" --programbox 25 76
+            quantum_hw_menu
+            ;;
+        9)
+            virtos-quantum-hardware quantum-hw-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Hardware Status" --programbox 25 76
+            quantum_hw_menu
+            ;;
+        10)
+            virtos-quantum-hardware wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Hardware Wizard" --programbox 25 80
+            quantum_hw_menu
+            ;;
+        0) main_menu ;;
+        *) quantum_hw_menu ;;
+    esac
+}
+
+blockchain_adv_menu() {
+    if ! command -v virtos-blockchain-advanced >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-blockchain-advanced not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Blockchain DeFi" \
+        --menu "Select option:" 22 76 14 \
+        1 "Create Token (ERC-20)" \
+        2 "Transfer Tokens" \
+        3 "Create NFT Collection" \
+        4 "Mint NFT" \
+        5 "Create Liquidity Pool" \
+        6 "Swap Tokens" \
+        7 "Stake Tokens" \
+        8 "Bridge Transfer" \
+        9 "Create Governance Proposal" \
+        10 "Vote on Proposal" \
+        11 "Blockchain DeFi Status" \
+        12 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Token Name" \
+                --inputbox "Enter token name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Token Symbol" \
+                    --inputbox "Enter symbol:" 10 50 \
+                    2> $TEMP_FILE
+                SYMBOL=$(cat $TEMP_FILE)
+                if [ -n "$SYMBOL" ]; then
+                    virtos-blockchain-advanced token-create "$NAME" "$SYMBOL" 1000000 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Token Created" --programbox 15 76
+                fi
+            fi
+            blockchain_adv_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "NFT Collection Name" \
+                --inputbox "Enter collection name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Collection Symbol" \
+                    --inputbox "Enter symbol:" 10 50 \
+                    2> $TEMP_FILE
+                SYMBOL=$(cat $TEMP_FILE)
+                if [ -n "$SYMBOL" ]; then
+                    virtos-blockchain-advanced nft-create-collection "$NAME" "$SYMBOL" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "NFT Collection" --programbox 15 76
+                fi
+            fi
+            blockchain_adv_menu
+            ;;
+        7)
+            virtos-blockchain-advanced defi-stake VOS 100 30 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Token Staking" --programbox 20 76
+            blockchain_adv_menu
+            ;;
+        11)
+            virtos-blockchain-advanced blockchain-adv-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Blockchain DeFi Status" --programbox 25 76
+            blockchain_adv_menu
+            ;;
+        12)
+            virtos-blockchain-advanced wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Blockchain DeFi Wizard" --programbox 25 80
+            blockchain_adv_menu
+            ;;
+        0) main_menu ;;
+        *) blockchain_adv_menu ;;
+    esac
+}
+
+federation_ext_menu() {
+    if ! command -v virtos-federation-extended >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-federation-extended not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Extended Federation" \
+        --menu "Select option:" 20 76 12 \
+        1 "Register Oracle Cloud" \
+        2 "Register DigitalOcean" \
+        3 "Register Linode" \
+        4 "Register Alibaba Cloud" \
+        5 "Register IBM Cloud" \
+        6 "Multi-Region Deploy" \
+        7 "Test Failover" \
+        8 "Cost Comparison" \
+        9 "Extended Federation Status" \
+        10 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Oracle Tenancy ID" \
+                --inputbox "Enter tenancy ID:" 10 70 \
+                2> $TEMP_FILE
+            TENANCY=$(cat $TEMP_FILE)
+            if [ -n "$TENANCY" ]; then
+                virtos-federation-extended register-oracle "$TENANCY" us-ashburn-1 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Oracle Cloud" --msgbox 12 76
+            fi
+            federation_ext_menu
+            ;;
+        6)
+            virtos-federation-extended multi-region-deploy myapp us-east eu-west ap-southeast 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Multi-Region Deployment" --programbox 25 100
+            federation_ext_menu
+            ;;
+        7)
+            virtos-federation-extended test-failover us-east us-west 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Failover Test" --programbox 30 100
+            federation_ext_menu
+            ;;
+        8)
+            virtos-federation-extended cost-comparison 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Cost Comparison" --programbox 25 100
+            federation_ext_menu
+            ;;
+        9)
+            virtos-federation-extended federation-ext-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Extended Federation Status" --programbox 25 76
+            federation_ext_menu
+            ;;
+        10)
+            virtos-federation-extended wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Extended Federation Wizard" --programbox 25 80
+            federation_ext_menu
+            ;;
+        0) main_menu ;;
+        *) federation_ext_menu ;;
+    esac
+}
+
 settings_menu() {
     $DIALOG $DIALOG_OPTS \
         --title "Settings" \
@@ -5301,6 +5695,11 @@ settings_menu() {
             command -v virtos-quantum >/dev/null && INFO="${INFO}  ✓ virtos-quantum\n"
             command -v virtos-blockchain >/dev/null && INFO="${INFO}  ✓ virtos-blockchain\n"
             command -v virtos-federation >/dev/null && INFO="${INFO}  ✓ virtos-federation\n"
+            INFO="${INFO}\nPhase 13 Tools:\n"
+            command -v virtos-ai-advanced >/dev/null && INFO="${INFO}  ✓ virtos-ai-advanced\n"
+            command -v virtos-quantum-hardware >/dev/null && INFO="${INFO}  ✓ virtos-quantum-hardware\n"
+            command -v virtos-blockchain-advanced >/dev/null && INFO="${INFO}  ✓ virtos-blockchain-advanced\n"
+            command -v virtos-federation-extended >/dev/null && INFO="${INFO}  ✓ virtos-federation-extended\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
                 --msgbox "$INFO" 40 50

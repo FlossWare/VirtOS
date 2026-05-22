@@ -1174,6 +1174,158 @@ virtos-federation federation-status
 virtos-federation wizard
 ```
 
+### Advanced AI (virtos-ai-advanced)
+
+```bash
+# Deep learning
+virtos-ai-advanced deep-learning-train cnn vm-classification
+virtos-ai-advanced deep-learning-train rnn time-series
+virtos-ai-advanced deep-learning-train lstm resource-prediction
+virtos-ai-advanced deep-learning-train transformer workload-optimization
+
+# Reinforcement learning
+virtos-ai-advanced rl-train dqn vm-scheduler
+virtos-ai-advanced rl-train ppo resource-allocator
+virtos-ai-advanced rl-train a3c load-balancer
+virtos-ai-advanced rl-train sac continuous-control
+
+# Neural Architecture Search
+virtos-ai-advanced neural-arch-search nas-cell accuracy
+
+# Transfer learning
+virtos-ai-advanced transfer-learning resnet50 vm-anomaly-detection
+virtos-ai-advanced transfer-learning vgg16 image-classification
+virtos-ai-advanced transfer-learning bert log-analysis
+
+# Distributed training
+virtos-ai-advanced distributed-training data-parallel 4
+virtos-ai-advanced distributed-training model-parallel 8
+virtos-ai-advanced distributed-training pipeline 4
+
+# AutoML
+virtos-ai-advanced automl-run classification vm-metrics
+virtos-ai-advanced automl-run regression capacity-prediction
+
+# Federated learning
+virtos-ai-advanced federated-learning 10 50           # 10 clients, 50 rounds
+
+# Model compression
+virtos-ai-advanced model-compression pruning large-model
+virtos-ai-advanced model-compression quantization resnet50
+virtos-ai-advanced model-compression distillation bert-large
+
+# Status
+virtos-ai-advanced ai-advanced-status
+
+# Wizard
+virtos-ai-advanced wizard
+```
+
+### Quantum Hardware (virtos-quantum-hardware)
+
+```bash
+# Initialize
+virtos-quantum-hardware quantum-hw-init ibm-quantum YOUR_TOKEN
+virtos-quantum-hardware quantum-hw-init aws-braket
+virtos-quantum-hardware quantum-hw-init azure-quantum
+virtos-quantum-hardware quantum-hw-init ionq
+
+# List backends
+virtos-quantum-hardware list-backends
+
+# Backend info
+virtos-quantum-hardware backend-info ibmq_manila
+virtos-quantum-hardware backend-info ibm_brisbane
+
+# Submit job (requires circuit file)
+virtos-quantum-hardware submit-job /path/to/circuit.qasm ibmq_manila 1024
+
+# Monitor jobs
+virtos-quantum-hardware job-status qhw-1234567890-456
+virtos-quantum-hardware job-results qhw-1234567890-456
+virtos-quantum-hardware list-jobs
+
+# Hybrid quantum-classical
+virtos-quantum-hardware hybrid-execute vqe 100        # VQE for chemistry
+virtos-quantum-hardware hybrid-execute qaoa 150       # QAOA for optimization
+
+# Error mitigation
+virtos-quantum-hardware error-mitigation zne          # Zero-noise extrapolation
+virtos-quantum-hardware error-mitigation readout      # Readout error mitigation
+virtos-quantum-hardware error-mitigation pec          # Probabilistic error cancellation
+
+# Status
+virtos-quantum-hardware quantum-hw-status
+
+# Wizard
+virtos-quantum-hardware wizard
+```
+
+### Blockchain DeFi (virtos-blockchain-advanced)
+
+```bash
+# Tokens (ERC-20)
+virtos-blockchain-advanced token-create "VirtOS Token" VOS 1000000
+virtos-blockchain-advanced token-transfer VOS alice 500
+
+# NFTs (ERC-721)
+virtos-blockchain-advanced nft-create-collection "VM Assets" VMAST
+virtos-blockchain-advanced nft-mint VMAST 1 ipfs://Qm.../1.json
+virtos-blockchain-advanced nft-mint VMAST 2 ipfs://Qm.../2.json
+
+# DeFi liquidity pools
+virtos-blockchain-advanced defi-create-pool VOS ETH 10000 10
+virtos-blockchain-advanced defi-swap VOS_ETH VOS 100
+
+# Staking
+virtos-blockchain-advanced defi-stake VOS 1000 90     # Stake 1000 VOS for 90 days
+
+# Cross-chain bridges
+virtos-blockchain-advanced bridge-transfer VOS 500 ethereum polygon
+virtos-blockchain-advanced bridge-transfer VOS 200 polygon binance
+
+# Governance
+virtos-blockchain-advanced governance-propose "Upgrade Protocol" "Propose v2.0"
+virtos-blockchain-advanced governance-vote prop-1234567890 yes 1000
+
+# Status
+virtos-blockchain-advanced blockchain-adv-status
+
+# Wizard
+virtos-blockchain-advanced wizard
+```
+
+### Extended Federation (virtos-federation-extended)
+
+```bash
+# Register providers
+virtos-federation-extended register-oracle ocid1.tenancy.oc1..xxxxx us-ashburn-1
+virtos-federation-extended register-digitalocean YOUR_API_TOKEN nyc3
+virtos-federation-extended register-linode YOUR_API_TOKEN us-east
+virtos-federation-extended register-alibaba YOUR_ACCESS_KEY cn-beijing
+virtos-federation-extended register-ibm YOUR_API_KEY us-south
+
+# Deploy to providers
+virtos-federation-extended deploy-oracle web-server VM.Standard2.1
+virtos-federation-extended deploy-digitalocean api-server s-2vcpu-4gb
+virtos-federation-extended deploy-linode db-server g6-standard-4
+
+# Multi-region deployment
+virtos-federation-extended multi-region-deploy myapp us-east us-west eu-central ap-southeast
+
+# Failover testing
+virtos-federation-extended test-failover us-east us-west
+
+# Cost comparison
+virtos-federation-extended cost-comparison
+
+# Status
+virtos-federation-extended federation-ext-status
+
+# Wizard
+virtos-federation-extended wizard
+```
+
 ## Build Commands
 
 ```bash
