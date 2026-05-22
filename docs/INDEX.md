@@ -174,13 +174,17 @@ Complete documentation for FlossWare VirtOS.
 | REST API | QUICK-REFERENCE.md (virtos-api) |
 | System Updates | QUICK-REFERENCE.md (virtos-update) |
 | Disaster Recovery | QUICK-REFERENCE.md (virtos-dr) |
+| Distributed Storage | QUICK-REFERENCE.md (virtos-storage) |
+| Network Virtualization | QUICK-REFERENCE.md (virtos-network) |
+| GPU Passthrough | QUICK-REFERENCE.md (virtos-gpu) |
+| USB Device Management | QUICK-REFERENCE.md (virtos-usb) |
 
 ## Total Documentation
 
 - **19 Documentation Files**
-- **11,500+ Lines**
+- **13,000+ Lines**
 - **Complete and Honest Coverage** - including what's missing
-- **Phase 8 Complete** - Auth, cloud-init, API, updates, and DR implemented (May 2026)
+- **Phase 9 Complete** - Distributed storage, network virtualization, GPU/USB passthrough (May 2026)
 
 ## Getting Help
 

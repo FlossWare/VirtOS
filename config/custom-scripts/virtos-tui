@@ -139,7 +139,7 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 35 76 22 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 39 76 26 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
         3 "VM Backups & Restore" \
@@ -162,6 +162,10 @@ main_menu() {
         20 "Services" \
         21 "System Logs" \
         22 "Settings" \
+        23 "Distributed Storage" \
+        24 "Network Virtualization" \
+        25 "GPU Passthrough" \
+        26 "USB Devices" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -190,6 +194,10 @@ main_menu() {
         20) services_menu ;;
         21) logs_menu ;;
         22) settings_menu ;;
+        23) distributed_storage_menu ;;
+        24) network_virtualization_menu ;;
+        25) gpu_passthrough_menu ;;
+        26) usb_devices_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -2265,6 +2273,660 @@ backup_restore_menu() {
     esac
 }
 
+distributed_storage_menu() {
+    if ! command -v virtos-storage >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-storage not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Distributed Storage" \
+        --menu "Select option:" 20 76 12 \
+        1 "List All Storage Pools" \
+        2 "Initialize Ceph Cluster" \
+        3 "Ceph Status" \
+        4 "Create Ceph Pool" \
+        5 "Initialize GlusterFS" \
+        6 "GlusterFS Status" \
+        7 "Create GlusterFS Volume" \
+        8 "List GlusterFS Volumes" \
+        9 "Initialize Clustered NFS" \
+        10 "Add NFS Export" \
+        11 "List NFS Exports" \
+        12 "Replication Status" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-storage pool-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Storage Pools" --programbox 20 76
+            distributed_storage_menu
+            ;;
+        2)
+            virtos-storage ceph-init 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Ceph Initialization" --programbox 20 76
+            $DIALOG $DIALOG_OPTS --msgbox "Ceph initialization complete" 6 40
+            distributed_storage_menu
+            ;;
+        3)
+            virtos-storage ceph-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Ceph Status" --programbox 20 76
+            distributed_storage_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create Ceph Pool" \
+                --inputbox "Enter pool name:" 10 60 \
+                2> $TEMP_FILE
+            POOL_NAME=$(cat $TEMP_FILE)
+            if [ -n "$POOL_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Replicas" \
+                    --inputbox "Enter replica count (default: 3):" 10 60 "3" \
+                    2> $TEMP_FILE
+                REPLICAS=$(cat $TEMP_FILE)
+                virtos-storage ceph-pool-create "$POOL_NAME" "${REPLICAS:-3}" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            distributed_storage_menu
+            ;;
+        5)
+            virtos-storage gluster-init 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "GlusterFS Initialization" --programbox 20 76
+            $DIALOG $DIALOG_OPTS --msgbox "GlusterFS initialization complete" 6 40
+            distributed_storage_menu
+            ;;
+        6)
+            virtos-storage gluster-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "GlusterFS Status" --programbox 20 76
+            distributed_storage_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create GlusterFS Volume" \
+                --inputbox "Enter volume name:" 10 60 \
+                2> $TEMP_FILE
+            VOL_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VOL_NAME" ]; then
+                virtos-storage gluster-volume-create "$VOL_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            distributed_storage_menu
+            ;;
+        8)
+            virtos-storage gluster-volume-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "GlusterFS Volumes" --programbox 20 76
+            distributed_storage_menu
+            ;;
+        9)
+            virtos-storage nfs-cluster-init 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "NFS Initialization" --programbox 20 76
+            $DIALOG $DIALOG_OPTS --msgbox "NFS initialization complete" 6 40
+            distributed_storage_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "Add NFS Export" \
+                --inputbox "Enter export path:" 10 70 \
+                2> $TEMP_FILE
+            EXPORT_PATH=$(cat $TEMP_FILE)
+            if [ -n "$EXPORT_PATH" ]; then
+                virtos-storage nfs-export-add "$EXPORT_PATH" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            distributed_storage_menu
+            ;;
+        11)
+            virtos-storage nfs-export-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "NFS Exports" --programbox 20 76
+            distributed_storage_menu
+            ;;
+        12)
+            virtos-storage replication-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Replication Status" --programbox 20 76
+            distributed_storage_menu
+            ;;
+        0) main_menu ;;
+        *) distributed_storage_menu ;;
+    esac
+}
+
+network_virtualization_menu() {
+    if ! command -v virtos-network >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-network not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Network Virtualization" \
+        --menu "Select option:" 22 76 14 \
+        1 "List VLANs" \
+        2 "Create VLAN" \
+        3 "Attach VM to VLAN" \
+        4 "Initialize OVN" \
+        5 "OVN Status" \
+        6 "Create Virtual Network" \
+        7 "List Bridges" \
+        8 "Create Bridge" \
+        9 "Create Firewall Rule" \
+        10 "List Firewall Rules" \
+        11 "Set QoS Limit" \
+        12 "Show QoS Settings" \
+        13 "Enable SDN" \
+        14 "SDN Status" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-network vlan-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "VLANs" --programbox 20 76
+            network_virtualization_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create VLAN" \
+                --inputbox "Enter VLAN ID (1-4094):" 10 60 \
+                2> $TEMP_FILE
+            VLAN_ID=$(cat $TEMP_FILE)
+            if [ -n "$VLAN_ID" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "VLAN Name" \
+                    --inputbox "Enter VLAN name:" 10 60 \
+                    2> $TEMP_FILE
+                VLAN_NAME=$(cat $TEMP_FILE)
+                if [ -n "$VLAN_NAME" ]; then
+                    virtos-network vlan-create "$VLAN_ID" "$VLAN_NAME" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            network_virtualization_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Attach VM to VLAN" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "VLAN ID" \
+                    --inputbox "Enter VLAN ID:" 10 60 \
+                    2> $TEMP_FILE
+                VLAN_ID=$(cat $TEMP_FILE)
+                if [ -n "$VLAN_ID" ]; then
+                    virtos-network vlan-attach "$VM_NAME" "$VLAN_ID" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            network_virtualization_menu
+            ;;
+        4)
+            virtos-network ovn-init 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "OVN Initialization" --programbox 20 76
+            $DIALOG $DIALOG_OPTS --msgbox "OVN initialization complete" 6 40
+            network_virtualization_menu
+            ;;
+        5)
+            virtos-network ovn-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "OVN Status" --programbox 20 76
+            network_virtualization_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create Virtual Network" \
+                --inputbox "Enter network name:" 10 60 \
+                2> $TEMP_FILE
+            NET_NAME=$(cat $TEMP_FILE)
+            if [ -n "$NET_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Subnet" \
+                    --inputbox "Enter subnet (CIDR, e.g., 10.10.0.0/24):" 10 70 \
+                    2> $TEMP_FILE
+                SUBNET=$(cat $TEMP_FILE)
+                virtos-network ovn-network-create "$NET_NAME" --subnet "$SUBNET" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            network_virtualization_menu
+            ;;
+        7)
+            virtos-network bridge-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Bridges" --programbox 20 76
+            network_virtualization_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create Bridge" \
+                --inputbox "Enter bridge name:" 10 60 \
+                2> $TEMP_FILE
+            BRIDGE_NAME=$(cat $TEMP_FILE)
+            if [ -n "$BRIDGE_NAME" ]; then
+                virtos-network bridge-create "$BRIDGE_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            network_virtualization_menu
+            ;;
+        9)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create Firewall Rule" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Rule" \
+                    --inputbox "Enter rule (e.g., 'allow tcp 80,443'):" 10 70 \
+                    2> $TEMP_FILE
+                RULE=$(cat $TEMP_FILE)
+                if [ -n "$RULE" ]; then
+                    virtos-network firewall-create "$VM_NAME" "$RULE" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+                fi
+            fi
+            network_virtualization_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "VM Name" \
+                --inputbox "Enter VM name (leave empty for all):" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            virtos-network firewall-list "$VM_NAME" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Firewall Rules" --programbox 20 76
+            network_virtualization_menu
+            ;;
+        11)
+            $DIALOG $DIALOG_OPTS \
+                --title "Set QoS Limit" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Bandwidth" \
+                    --inputbox "Enter bandwidth limit (Mbps):" 10 60 "100" \
+                    2> $TEMP_FILE
+                RATE=$(cat $TEMP_FILE)
+                if [ -n "$RATE" ]; then
+                    virtos-network qos-set "$VM_NAME" "$RATE" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+                fi
+            fi
+            network_virtualization_menu
+            ;;
+        12)
+            $DIALOG $DIALOG_OPTS \
+                --title "Show QoS Settings" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                virtos-network qos-show "$VM_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "QoS Settings" --msgbox 12 76
+            fi
+            network_virtualization_menu
+            ;;
+        13)
+            virtos-network sdn-enable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Enable SDN" --programbox 15 76
+            $DIALOG $DIALOG_OPTS --msgbox "SDN enabled" 6 40
+            network_virtualization_menu
+            ;;
+        14)
+            virtos-network sdn-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "SDN Status" --programbox 20 76
+            network_virtualization_menu
+            ;;
+        0) main_menu ;;
+        *) network_virtualization_menu ;;
+    esac
+}
+
+gpu_passthrough_menu() {
+    if ! command -v virtos-gpu >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-gpu not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "GPU Passthrough" \
+        --menu "Select option:" 20 76 12 \
+        1 "Detect GPUs" \
+        2 "List GPUs with IOMMU Groups" \
+        3 "Check IOMMU Status" \
+        4 "Check VFIO Status" \
+        5 "Run Passthrough Wizard" \
+        6 "Isolate GPU for Passthrough" \
+        7 "Release GPU to Host" \
+        8 "Attach GPU to VM" \
+        9 "Detach GPU from VM" \
+        10 "Enable vGPU Support" \
+        11 "List vGPU Instances" \
+        12 "Schedule Auto-Attach" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-gpu detect 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "GPU Detection" --programbox 25 80
+            gpu_passthrough_menu
+            ;;
+        2)
+            virtos-gpu list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "GPU List" --programbox 25 100
+            gpu_passthrough_menu
+            ;;
+        3)
+            virtos-gpu iommu-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "IOMMU Status" --programbox 20 76
+            gpu_passthrough_menu
+            ;;
+        4)
+            virtos-gpu vfio-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "VFIO Status" --programbox 20 76
+            gpu_passthrough_menu
+            ;;
+        5)
+            virtos-gpu wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "GPU Passthrough Wizard" --programbox 30 80
+            $DIALOG $DIALOG_OPTS --msgbox "Wizard completed" 6 40
+            gpu_passthrough_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Isolate GPU" \
+                --inputbox "Enter PCI ID (e.g., 0000:01:00.0):" 10 70 \
+                2> $TEMP_FILE
+            PCI_ID=$(cat $TEMP_FILE)
+            if [ -n "$PCI_ID" ]; then
+                virtos-gpu isolate "$PCI_ID" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 20 76
+            fi
+            gpu_passthrough_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Release GPU" \
+                --inputbox "Enter PCI ID:" 10 70 \
+                2> $TEMP_FILE
+            PCI_ID=$(cat $TEMP_FILE)
+            if [ -n "$PCI_ID" ]; then
+                virtos-gpu release "$PCI_ID" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            gpu_passthrough_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Attach GPU to VM" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "PCI ID" \
+                    --inputbox "Enter GPU PCI ID:" 10 70 \
+                    2> $TEMP_FILE
+                PCI_ID=$(cat $TEMP_FILE)
+                if [ -n "$PCI_ID" ]; then
+                    virtos-gpu attach "$VM_NAME" "$PCI_ID" --persistent 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            gpu_passthrough_menu
+            ;;
+        9)
+            $DIALOG $DIALOG_OPTS \
+                --title "Detach GPU from VM" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "PCI ID" \
+                    --inputbox "Enter GPU PCI ID:" 10 70 \
+                    2> $TEMP_FILE
+                PCI_ID=$(cat $TEMP_FILE)
+                if [ -n "$PCI_ID" ]; then
+                    virtos-gpu detach "$VM_NAME" "$PCI_ID" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            gpu_passthrough_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "Enable vGPU" \
+                --inputbox "Enter GPU PCI ID:" 10 70 \
+                2> $TEMP_FILE
+            PCI_ID=$(cat $TEMP_FILE)
+            if [ -n "$PCI_ID" ]; then
+                virtos-gpu vgpu-enable "$PCI_ID" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+            fi
+            gpu_passthrough_menu
+            ;;
+        11)
+            virtos-gpu vgpu-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "vGPU Instances" --programbox 20 76
+            gpu_passthrough_menu
+            ;;
+        12)
+            $DIALOG $DIALOG_OPTS \
+                --title "Schedule Auto-Attach" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "PCI ID" \
+                    --inputbox "Enter GPU PCI ID:" 10 70 \
+                    2> $TEMP_FILE
+                PCI_ID=$(cat $TEMP_FILE)
+                if [ -n "$PCI_ID" ]; then
+                    virtos-gpu schedule-attach "$VM_NAME" "$PCI_ID" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+                fi
+            fi
+            gpu_passthrough_menu
+            ;;
+        0) main_menu ;;
+        *) gpu_passthrough_menu ;;
+    esac
+}
+
+usb_devices_menu() {
+    if ! command -v virtos-usb >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-usb not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "USB Device Management" \
+        --menu "Select option:" 20 76 12 \
+        1 "List USB Devices" \
+        2 "Attach USB to VM" \
+        3 "Detach USB from VM" \
+        4 "Hot-Plug USB Device" \
+        5 "Create USB Filter" \
+        6 "List USB Filters" \
+        7 "Enable USB Redirection" \
+        8 "Redirection Status" \
+        9 "Start USB Monitor" \
+        10 "Stop USB Monitor" \
+        11 "Monitor Status" \
+        12 "Setup Auto-Attach" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-usb list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "USB Devices" --programbox 25 100
+            usb_devices_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Attach USB to VM" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Bus:Dev" \
+                    --inputbox "Enter BUS:DEV (e.g., 001:004):" 10 70 \
+                    2> $TEMP_FILE
+                BUS_DEV=$(cat $TEMP_FILE)
+                if [ -n "$BUS_DEV" ]; then
+                    virtos-usb attach "$VM_NAME" "$BUS_DEV" --permanent 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            usb_devices_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Detach USB from VM" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Bus:Dev" \
+                    --inputbox "Enter BUS:DEV:" 10 70 \
+                    2> $TEMP_FILE
+                BUS_DEV=$(cat $TEMP_FILE)
+                if [ -n "$BUS_DEV" ]; then
+                    virtos-usb detach "$VM_NAME" "$BUS_DEV" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            usb_devices_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Hot-Plug USB" \
+                --inputbox "Enter VM name (must be running):" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Bus:Dev" \
+                    --inputbox "Enter BUS:DEV:" 10 70 \
+                    2> $TEMP_FILE
+                BUS_DEV=$(cat $TEMP_FILE)
+                if [ -n "$BUS_DEV" ]; then
+                    virtos-usb hotplug "$VM_NAME" "$BUS_DEV" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
+                fi
+            fi
+            usb_devices_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create USB Filter" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Pattern" \
+                    --inputbox "Enter pattern (vendorid:productid or vendorid:*):" 10 70 \
+                    2> $TEMP_FILE
+                PATTERN=$(cat $TEMP_FILE)
+                if [ -n "$PATTERN" ]; then
+                    virtos-usb filter-create "$VM_NAME" "$PATTERN" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+                fi
+            fi
+            usb_devices_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "VM Name" \
+                --inputbox "Enter VM name (leave empty for all):" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            virtos-usb filter-list "$VM_NAME" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "USB Filters" --programbox 20 76
+            usb_devices_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Enable USB Redirection" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                virtos-usb redirect-enable "$VM_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            usb_devices_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "VM Name" \
+                --inputbox "Enter VM name (leave empty for all):" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            virtos-usb redirect-status "$VM_NAME" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Redirection Status" --programbox 20 76
+            usb_devices_menu
+            ;;
+        9)
+            virtos-usb monitor-start 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Start Monitor" --programbox 12 76
+            $DIALOG $DIALOG_OPTS --msgbox "USB monitor started" 6 40
+            usb_devices_menu
+            ;;
+        10)
+            virtos-usb monitor-stop 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Stop Monitor" --msgbox 12 76
+            usb_devices_menu
+            ;;
+        11)
+            virtos-usb monitor-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Monitor Status" --msgbox 12 76
+            usb_devices_menu
+            ;;
+        12)
+            $DIALOG $DIALOG_OPTS \
+                --title "Auto-Attach Setup" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Device ID" \
+                    --inputbox "Enter device ID (vendorid:productid):" 10 70 \
+                    2> $TEMP_FILE
+                DEVICE_ID=$(cat $TEMP_FILE)
+                if [ -n "$DEVICE_ID" ]; then
+                    virtos-usb auto-attach "$VM_NAME" "$DEVICE_ID" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Result" --msgbox 12 76
+                fi
+            fi
+            usb_devices_menu
+            ;;
+        0) main_menu ;;
+        *) usb_devices_menu ;;
+    esac
+}
+
 settings_menu() {
     $DIALOG $DIALOG_OPTS \
         --title "Settings" \
@@ -2329,9 +2991,14 @@ settings_menu() {
             command -v virtos-api >/dev/null && INFO="${INFO}  ✓ virtos-api\n"
             command -v virtos-update >/dev/null && INFO="${INFO}  ✓ virtos-update\n"
             command -v virtos-dr >/dev/null && INFO="${INFO}  ✓ virtos-dr\n"
+            INFO="${INFO}\nPhase 9 Tools:\n"
+            command -v virtos-storage >/dev/null && INFO="${INFO}  ✓ virtos-storage\n"
+            command -v virtos-network >/dev/null && INFO="${INFO}  ✓ virtos-network\n"
+            command -v virtos-gpu >/dev/null && INFO="${INFO}  ✓ virtos-gpu\n"
+            command -v virtos-usb >/dev/null && INFO="${INFO}  ✓ virtos-usb\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
-                --msgbox "$INFO" 30 50
+                --msgbox "$INFO" 32 50
             settings_menu
             ;;
         4)

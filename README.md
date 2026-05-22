@@ -229,7 +229,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 - ✅ Automatic HA/failover (virtos-ha - Phase 7)
 - ❌ Web UI (by design - TUI only)
 - ✅ Live migration (virtos-migrate - Phase 7)
-- ❌ Distributed storage (Ceph/GlusterFS)
+- ✅ Distributed storage (virtos-storage - Phase 9)
 
 **Important gaps:**
 - ✅ Monitoring and alerting (virtos-monitor - Phase 7)
@@ -240,6 +240,9 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 - ✅ Cloud-init integration (virtos-cloud-init - Phase 8)
 - ✅ Update mechanism (virtos-update - Phase 8)
 - ✅ Disaster recovery (virtos-dr - Phase 8)
+- ✅ Network virtualization (virtos-network - Phase 9)
+- ✅ GPU passthrough (virtos-gpu - Phase 9)
+- ✅ USB management (virtos-usb - Phase 9)
 
 **VirtOS is good for:** Home labs, learning, edge computing, dev/test  
 **VirtOS is NOT ready for:** Production with SLAs, mission-critical workloads, large enterprises

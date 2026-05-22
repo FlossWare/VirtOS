@@ -514,6 +514,10 @@ virtos-tui
 │  20 Services                                       │
 │  21 System Logs                                    │
 │  22 Settings                                       │
+│  23 Distributed Storage                            │
+│  24 Network Virtualization                         │
+│  25 GPU Passthrough                                │
+│  26 USB Devices                                    │
 │  0  Exit                                           │
 │                                                     │
 └─────────────────────────────────────────────────────┘
@@ -1159,6 +1163,231 @@ DR planning and orchestration using virtos-dr:
 - Site-to-site replication
 - Compliance requirements
 
+### 23. Distributed Storage
+
+Distributed storage management using virtos-storage:
+
+#### Submenu Options:
+- **List All Storage Pools** - Show all configured pools
+- **Initialize Ceph Cluster** - Set up Ceph distributed storage
+- **Ceph Status** - View Ceph cluster health
+- **Create Ceph Pool** - Create replicated pool
+- **Initialize GlusterFS** - Set up GlusterFS
+- **GlusterFS Status** - View GlusterFS cluster
+- **Create GlusterFS Volume** - Create replicated volume
+- **List GlusterFS Volumes** - Show all volumes
+- **Initialize Clustered NFS** - Set up NFS cluster
+- **Add NFS Export** - Export directory
+- **List NFS Exports** - Show exported directories
+- **Replication Status** - View replication health
+
+#### Example: Initialize Ceph
+```
+1. Select "Initialize Ceph Cluster"
+2. Wait for initialization
+3. Ceph cluster ready
+4. Create pools with option 4
+```
+
+#### Example: Create GlusterFS Volume
+```
+1. Select "Create GlusterFS Volume"
+2. Enter volume name: vm-storage
+3. Set replicas (default: 3)
+4. Volume created
+5. Start with "Start GlusterFS Volume"
+```
+
+**Storage Types:**
+- **Ceph** - Distributed object/block storage with replication
+- **GlusterFS** - Distributed file system
+- **Clustered NFS** - High-availability NFS exports
+
+**Use cases:**
+- HA storage for VMs
+- Distributed VM images
+- Shared storage for live migration
+- Multi-host storage pools
+
+### 24. Network Virtualization
+
+Software-defined networking using virtos-network:
+
+#### Submenu Options:
+- **List VLANs** - Show configured VLANs
+- **Create VLAN** - Create VLAN with ID
+- **Attach VM to VLAN** - Assign VM to VLAN
+- **Initialize OVN** - Set up Open Virtual Network
+- **OVN Status** - View OVN state
+- **Create Virtual Network** - Create isolated network
+- **List Bridges** - Show virtual bridges
+- **Create Bridge** - Create new bridge
+- **Create Firewall Rule** - Per-VM firewall
+- **List Firewall Rules** - Show VM rules
+- **Set QoS Limit** - Bandwidth limiting
+- **Show QoS Settings** - View QoS config
+- **Enable SDN** - Enable SDN mode
+- **SDN Status** - View SDN state
+
+#### Example: Create VLAN
+```
+1. Select "Create VLAN"
+2. Enter VLAN ID: 100
+3. Enter name: dmz-network
+4. VLAN created
+5. Attach VMs with option 3
+```
+
+#### Example: Set QoS Limit
+```
+1. Select "Set QoS Limit"
+2. Enter VM name: download-vm
+3. Enter bandwidth (Mbps): 100
+4. QoS limit applied
+```
+
+**Features:**
+- VLAN tagging (802.1Q)
+- OVN logical networks
+- Per-VM firewall rules
+- Bandwidth QoS
+- Software-defined networking
+
+**Use cases:**
+- Network isolation
+- Multi-tenant networking
+- Bandwidth management
+- Virtual network overlays
+
+### 25. GPU Passthrough
+
+GPU passthrough wizard using virtos-gpu:
+
+#### Submenu Options:
+- **Detect GPUs** - Scan for GPUs
+- **List GPUs with IOMMU Groups** - Show GPU details
+- **Check IOMMU Status** - Verify VT-d/IOMMU
+- **Check VFIO Status** - Verify VFIO driver
+- **Run Passthrough Wizard** - Interactive setup
+- **Isolate GPU for Passthrough** - Bind to VFIO
+- **Release GPU to Host** - Unbind from VFIO
+- **Attach GPU to VM** - Assign GPU
+- **Detach GPU from VM** - Remove GPU
+- **Enable vGPU Support** - Virtual GPU
+- **List vGPU Instances** - Show vGPUs
+- **Schedule Auto-Attach** - Automatic assignment
+
+#### Example: Interactive Wizard
+```
+1. Select "Run Passthrough Wizard"
+2. Wizard checks IOMMU
+3. Lists available GPUs
+4. Enter PCI ID: 0000:01:00.0
+5. GPU isolated
+6. Enter VM name: gaming-vm
+7. GPU attached
+8. Start VM to use GPU
+```
+
+#### Example: Manual Passthrough
+```
+1. Select "Check IOMMU Status"
+2. Verify IOMMU enabled
+3. Select "Detect GPUs"
+4. Note PCI ID (e.g., 0000:01:00.0)
+5. Select "Isolate GPU for Passthrough"
+6. Enter PCI ID
+7. GPU isolated (bound to VFIO)
+8. Select "Attach GPU to VM"
+9. Enter VM name and PCI ID
+10. GPU attached persistently
+```
+
+**Requirements:**
+- IOMMU/VT-d enabled in BIOS
+- Kernel parameters: intel_iommu=on (or amd_iommu=on)
+- vfio-pci kernel module
+- GPU in separate IOMMU group
+
+**vGPU Support:**
+- NVIDIA GRID (enterprise GPUs)
+- Intel GVT-g (integrated graphics)
+- SR-IOV capable GPUs
+
+**Use cases:**
+- Gaming VMs
+- GPU compute workloads
+- Graphics workstations
+- AI/ML in VMs
+
+### 26. USB Device Management
+
+USB passthrough and management using virtos-usb:
+
+#### Submenu Options:
+- **List USB Devices** - Show connected USB devices
+- **Attach USB to VM** - Assign USB device
+- **Detach USB from VM** - Remove USB device
+- **Hot-Plug USB Device** - Attach to running VM
+- **Create USB Filter** - Device filter rule
+- **List USB Filters** - Show filter rules
+- **Enable USB Redirection** - Enable redirection
+- **Redirection Status** - View redirection state
+- **Start USB Monitor** - Monitor USB changes
+- **Stop USB Monitor** - Stop monitoring
+- **Monitor Status** - View monitor state
+- **Setup Auto-Attach** - Automatic attachment
+
+#### Example: Attach USB
+```
+1. Select "List USB Devices"
+2. Note BUS:DEV (e.g., 001:004)
+3. Select "Attach USB to VM"
+4. Enter VM name: workstation-vm
+5. Enter BUS:DEV: 001:004
+6. USB attached (permanent)
+7. Device available in VM
+```
+
+#### Example: Create USB Filter
+```
+1. Select "Create USB Filter"
+2. Enter VM name: desktop-vm
+3. Enter pattern: 046d:0825
+4. Filter created
+5. All Logitech webcams auto-allowed
+```
+
+#### Example: Hot-Plug
+```
+1. VM must be running
+2. Select "Hot-Plug USB Device"
+3. Enter VM name
+4. Enter BUS:DEV
+5. Device instantly available in VM
+6. Non-persistent (removed on shutdown)
+```
+
+**Addressing:**
+- BUS:DEV format (from lsusb)
+- Example: 001:004
+- Vendor:Product ID filtering
+
+**Features:**
+- USB 2.0 and 3.0 support
+- Hot-plug for running VMs
+- Device filtering by vendor/product
+- USB redirection (SPICE)
+- Auto-attachment rules
+- USB monitoring daemon
+
+**Use cases:**
+- USB security keys
+- Webcams in VMs
+- USB printers
+- Hardware dongles
+- Development boards
+
 ### 22. Settings
 
 VirtOS configuration and information:
@@ -1183,6 +1412,7 @@ Shows checkmarks for:
 - ✓ Phase 6 Tools (virtos-backup, virtos-template, virtos-snapshot)
 - ✓ Phase 7 Tools (virtos-monitor, virtos-ha, virtos-migrate, virtos-quota)
 - ✓ Phase 8 Tools (virtos-auth, virtos-cloud-init, virtos-api, virtos-update, virtos-dr)
+- ✓ Phase 9 Tools (virtos-storage, virtos-network, virtos-gpu, virtos-usb)
 
 **Use cases:**
 - Verify installation

@@ -202,32 +202,61 @@ virsh start vm-name  # on new host
 
 ### 5. Distributed Storage
 
-**Status:** ❌ Not implemented
+**Status:** ✅ IMPLEMENTED (Phase 9)
 
-**What's missing:**
-- Ceph integration
-- GlusterFS support
-- Distributed replication
-- Storage pools
-- Automatic storage balancing
-- Storage HA
-- Erasure coding
+**What's included:**
+- ✅ Ceph cluster initialization and management
+- ✅ Ceph pool creation and configuration
+- ✅ GlusterFS initialization and volume management
+- ✅ Clustered NFS with export management
+- ✅ Storage pool creation (multiple types)
+- ✅ Replication configuration and status
+- ✅ Management CLI (virtos-storage)
+- ⚠️ Automatic storage balancing (future)
+- ⚠️ Erasure coding (future)
 
-**Current solution:**
-- Local storage (ext4, Btrfs, LVM, ZFS)
-- NFS (single point of failure)
+**Implementation:**
+```bash
+# Initialize Ceph cluster
+virtos-storage ceph-init
 
-**Competitors have:**
-- **Proxmox:** Ceph, ZFS replication
-- **ESXi:** vSAN (paid)
-- **oVirt:** GlusterFS, Ceph
-- **Harvester:** Longhorn
+# Create Ceph pool with replication
+virtos-storage ceph-pool-create vm-pool --replicas 3
 
-**Priority:** 🟡 Important for HA
+# Initialize GlusterFS
+virtos-storage gluster-init
 
-**Effort:** Very High (10+ weeks)
+# Create GlusterFS volume
+virtos-storage gluster-volume-create data-volume --replicas 3
 
-**Roadmap:** Planned for Phase 9
+# Initialize clustered NFS
+virtos-storage nfs-cluster-init
+
+# Add NFS export
+virtos-storage nfs-export-add /var/lib/virt/images
+
+# List all storage pools
+virtos-storage pool-list
+
+# Check replication status
+virtos-storage replication-status
+```
+
+**Features:**
+- Ceph OSD and monitor configuration
+- GlusterFS replicated volumes
+- Clustered NFS exports
+- Unified pool management
+- Replication monitoring
+
+**Competitors still have:**
+- More mature storage orchestration
+- Automatic rebalancing
+- Advanced erasure coding
+
+**Priority:** 🟢 Implemented
+
+**Completed:** Phase 9 (May 2026)
 
 ---
 
@@ -398,33 +427,65 @@ virtos-auth role-list
 
 ### 9. Network Virtualization (SDN)
 
-**Status:** ❌ Not implemented
+**Status:** ✅ IMPLEMENTED (Phase 9)
 
-**What's missing:**
-- Software-defined networking
-- Virtual networks (VLANs)
-- Firewall rules per VM
+**What's included:**
+- ✅ VLAN creation and management
+- ✅ VLAN tagging and trunk ports
+- ✅ OVN (Open Virtual Network) integration
+- ✅ Virtual network creation with subnets
+- ✅ Bridge management (Linux bridges)
+- ✅ Per-VM firewall rules
+- ✅ Network policies
+- ✅ QoS bandwidth limiting
+- ✅ SDN mode enablement
+- ✅ Management CLI (virtos-network)
+- ⚠️ VXLAN support (basic, can expand)
+- ⚠️ Load balancers (future)
+
+**Implementation:**
+```bash
+# Create VLAN
+virtos-network vlan-create 100 dmz-network
+
+# Attach VM to VLAN
+virtos-network vlan-attach web-server 100
+
+# Initialize OVN
+virtos-network ovn-init
+
+# Create virtual network
+virtos-network ovn-network-create tenant-net --subnet 10.10.0.0/24
+
+# Create bridge
+virtos-network bridge-create isolated-br0
+
+# Create firewall rule
+virtos-network firewall-create web-1 "allow tcp 80,443"
+
+# Set QoS bandwidth limit
+virtos-network qos-set download-vm 100  # 100 Mbps
+
+# Enable SDN mode
+virtos-network sdn-enable
+```
+
+**Features:**
+- VLAN 802.1Q tagging
+- OVN logical switches and routers
+- Per-VM firewall rules
+- Network QoS and rate limiting
+- Virtual bridge management
 - Network isolation
-- VXLAN support
-- Load balancers
-- Network QoS
 
-**Current solution:**
-- Linux bridges (br0)
-- iptables for NAT
-- Manual VLAN configuration
+**Competitors still have:**
+- More mature SDN controllers
+- Advanced load balancing
+- Network function virtualization (NFV)
 
-**Competitors have:**
-- **Proxmox:** SDN with zones, VLANs, VXLAN
-- **ESXi:** vSphere Distributed Switch
-- **oVirt:** OVN (Open Virtual Network)
-- **XCP-ng:** Network virtualization
+**Priority:** 🟢 Implemented
 
-**Priority:** 🟢 Nice to have
-
-**Effort:** High (6-8 weeks)
-
-**Roadmap:** Phase 9+
+**Completed:** Phase 9 (May 2026)
 
 ---
 
@@ -603,59 +664,123 @@ virtos-snapshot lvm app-server-1     # LVM snapshot
 
 ### 13. GPU Passthrough
 
-**Status:** ❌ Not implemented (but possible manually)
+**Status:** ✅ IMPLEMENTED (Phase 9)
 
-**What's missing:**
-- GPU detection
-- Automated passthrough configuration
-- vGPU support
-- GPU scheduling
-- SR-IOV support
+**What's included:**
+- ✅ GPU detection with lspci integration
+- ✅ IOMMU/VT-d status checking
+- ✅ VFIO driver management
+- ✅ GPU isolation (bind to VFIO)
+- ✅ GPU attachment to VMs
+- ✅ Interactive passthrough wizard
+- ✅ GPU release back to host
+- ✅ vGPU support enablement
+- ✅ Scheduled GPU attachment
+- ✅ Management CLI (virtos-gpu)
+- ⚠️ GPU scheduling (future)
+- ⚠️ Advanced SR-IOV (future)
 
-**Current solution:**
+**Implementation:**
 ```bash
-# Manual VFIO configuration
-# Edit kernel cmdline
-# Bind GPU to vfio-pci
-# Pass through in VM XML
+# Detect GPUs
+virtos-gpu detect
+
+# Run interactive wizard
+virtos-gpu wizard
+
+# Check IOMMU status
+virtos-gpu iommu-status
+
+# Isolate GPU for passthrough
+virtos-gpu isolate 0000:01:00.0
+
+# Attach GPU to VM
+virtos-gpu attach gaming-vm 0000:01:00.0 --persistent
+
+# Enable vGPU (if supported)
+virtos-gpu vgpu-enable 0000:01:00.0
+
+# Schedule automatic attachment
+virtos-gpu schedule-attach workstation-vm 0000:01:00.0
+
+# Release GPU back to host
+virtos-gpu release 0000:01:00.0
 ```
 
-**Competitors have:**
-- **Proxmox:** PCI passthrough wizard
-- **ESXi:** vGPU support (paid)
-- **oVirt:** GPU passthrough
+**Features:**
+- Automatic GPU detection
+- IOMMU group display
+- VFIO binding automation
+- Persistent GPU assignments
+- vGPU configuration (NVIDIA GRID, Intel GVT-g)
+- Interactive wizard for easy setup
 
-**Priority:** 🟢 Nice to have
+**Competitors still have:**
+- More mature vGPU implementations
+- Advanced GPU scheduling
+- Multi-GPU orchestration
 
-**Effort:** Medium (3-4 weeks)
+**Priority:** 🟢 Implemented
 
-**Roadmap:** Phase 8+
+**Completed:** Phase 9 (May 2026)
 
 ---
 
 ### 14. USB Passthrough
 
-**Status:** ⚠️ Partially implemented
+**Status:** ✅ IMPLEMENTED (Phase 9)
 
-**What works:**
-- Manual USB passthrough via libvirt XML
+**What's included:**
+- ✅ USB device listing and detection
+- ✅ USB attachment to VMs (offline and running)
+- ✅ USB hot-plug support
+- ✅ USB device filtering by vendor/product ID
+- ✅ USB redirection enablement
+- ✅ USB monitoring daemon
+- ✅ Auto-attachment by device ID
+- ✅ Management CLI (virtos-usb)
+- ⚠️ Advanced USB redirection protocols (future)
 
-**What's missing:**
-- USB device selector
-- Hot-plug USB devices
-- USB redirection protocol
-- USB device filtering
+**Implementation:**
+```bash
+# List USB devices
+virtos-usb list
 
-**Competitors have:**
-- **Proxmox:** USB passthrough UI
-- **ESXi:** USB passthrough
-- **XCP-ng:** USB passthrough
+# Attach USB to VM
+virtos-usb attach gaming-vm 001:004 --permanent
 
-**Priority:** 🟢 Nice to have
+# Hot-plug USB device (running VM)
+virtos-usb hotplug workstation-vm 002:003
 
-**Effort:** Low (1-2 weeks)
+# Create USB filter
+virtos-usb filter-create vm1 "046d:0825"  # Logitech webcam
 
-**Roadmap:** Phase 8
+# Enable USB redirection
+virtos-usb redirect-enable desktop-vm
+
+# Start USB monitoring
+virtos-usb monitor-start
+
+# Auto-attach all keyboards
+virtos-usb auto-attach office-vm "046d:*"
+```
+
+**Features:**
+- USB device detection via lsusb
+- BUS:DEV addressing
+- Vendor:Product ID filtering
+- Hot-plug for running VMs
+- USB monitoring daemon
+- Auto-attachment rules
+- USB redirection support
+
+**Competitors still have:**
+- More sophisticated redirection protocols
+- Better USB device management UI
+
+**Priority:** 🟢 Implemented
+
+**Completed:** Phase 9 (May 2026)
 
 ---
 
@@ -1054,21 +1179,21 @@ Features VirtOS won't implement due to philosophy or constraints.
 2. ✅ Automatic HA/failover **[IMPLEMENTED Phase 7]**
 3. ❌ Web UI (philosophical choice - TUI is primary)
 4. ✅ Live migration **[IMPLEMENTED Phase 7]**
-5. ❌ Distributed storage
+5. ✅ Distributed storage **[IMPLEMENTED Phase 9]**
 
 ### Important (Significant Value)
 6. ✅ VM templates/cloning **[IMPLEMENTED Phase 6]**
 7. ✅ Monitoring/alerting **[IMPLEMENTED Phase 7]**
 8. ✅ User authentication/RBAC **[IMPLEMENTED Phase 8]**
-9. ❌ Network virtualization (SDN)
+9. ✅ Network virtualization (SDN) **[IMPLEMENTED Phase 9]**
 10. ✅ Resource quotas/limits **[IMPLEMENTED Phase 7]**
 
 ### Convenience (Nice to Have)
 11. ✅ Cloud-init integration **[IMPLEMENTED Phase 8]**
 12. ✅ VM snapshots **[IMPLEMENTED Phase 6]**
-13. ❌ GPU passthrough (manual possible)
-14. ⚠️ USB passthrough (partial)
-15. ⚠️ Integrated firewall (partial)
+13. ✅ GPU passthrough **[IMPLEMENTED Phase 9]**
+14. ✅ USB passthrough **[IMPLEMENTED Phase 9]**
+15. ⚠️ Integrated firewall (partial - per-VM rules in Phase 9)
 16. ✅ Update mechanism **[IMPLEMENTED Phase 8]**
 17. ✅ REST API **[IMPLEMENTED Phase 8]**
 
@@ -1104,18 +1229,20 @@ Features VirtOS won't implement due to philosophy or constraints.
 - ✅ Update mechanism (virtos-update)
 - ✅ Disaster recovery (virtos-dr)
 - ⚠️ Optional Web UI (deferred)
-- ⚠️ GPU passthrough (deferred)
 
-### Phase 9 (Next - Advanced Features)
-- Distributed storage (Ceph/GlusterFS)
-- Network virtualization (SDN, VLANs)
-- GPU passthrough wizard
-- USB device management
+### Phase 9 ✅ COMPLETE (May 2026)
+- ✅ Distributed storage (virtos-storage - Ceph, GlusterFS, clustered NFS)
+- ✅ Network virtualization (virtos-network - SDN, VLANs, OVN, QoS)
+- ✅ GPU passthrough wizard (virtos-gpu - VFIO, vGPU, IOMMU)
+- ✅ USB device management (virtos-usb - hot-plug, filters, redirection)
 
-### Phase 10+ (Future)
+### Phase 10+ (Next - Future Enhancements)
+- Multi-datacenter support
+- Metrics and telemetry (Prometheus/Grafana)
+- Cost management and billing
+- Service mesh integration
+- Advanced security policies
 - Community-driven features
-- Ecosystem integrations
-- Enterprise features
 
 ## How to Help
 

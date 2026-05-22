@@ -420,6 +420,198 @@ virtos-dr cluster-backup
 virtos-dr cluster-restore cluster-20260522-120000
 ```
 
+## Distributed Storage
+
+```bash
+# Initialize Ceph cluster
+virtos-storage ceph-init
+
+# Check Ceph status
+virtos-storage ceph-status
+
+# Create Ceph pool
+virtos-storage ceph-pool-create vm-pool --replicas 3
+
+# List Ceph pools
+virtos-storage ceph-pool-list
+
+# Initialize GlusterFS
+virtos-storage gluster-init
+
+# Check GlusterFS status
+virtos-storage gluster-status
+
+# Create GlusterFS volume
+virtos-storage gluster-volume-create data-volume \
+  --replicas 3 \
+  --transport tcp
+
+# Start GlusterFS volume
+virtos-storage gluster-volume-start data-volume
+
+# List GlusterFS volumes
+virtos-storage gluster-volume-list
+
+# Initialize clustered NFS
+virtos-storage nfs-cluster-init
+
+# Add NFS export
+virtos-storage nfs-export-add /var/lib/virt/images
+
+# List NFS exports
+virtos-storage nfs-export-list
+
+# List all storage pools
+virtos-storage pool-list
+
+# Create storage pool
+virtos-storage pool-create distributed-vms ceph
+
+# Check replication status
+virtos-storage replication-status
+```
+
+## Network Virtualization
+
+```bash
+# Create VLAN
+virtos-network vlan-create 100 dmz-network
+
+# Delete VLAN
+virtos-network vlan-delete 100
+
+# List VLANs
+virtos-network vlan-list
+
+# Attach VM to VLAN
+virtos-network vlan-attach web-server-1 100
+
+# Initialize OVN
+virtos-network ovn-init
+
+# Check OVN status
+virtos-network ovn-status
+
+# Create virtual network
+virtos-network ovn-network-create tenant-net \
+  --subnet 10.10.0.0/24 \
+  --gateway 10.10.0.1 \
+  --dhcp 10.10.0.100-10.10.0.200
+
+# Create bridge
+virtos-network bridge-create isolated-br0
+
+# List bridges
+virtos-network bridge-list
+
+# Create firewall rule
+virtos-network firewall-create web-1 "allow tcp 80,443"
+
+# List firewall rules
+virtos-network firewall-list web-1
+
+# Create network policy
+virtos-network policy-create strict-web
+
+# Apply policy to VM
+virtos-network policy-apply web-1 strict-web
+
+# Set QoS bandwidth limit
+virtos-network qos-set download-vm 100
+
+# Show QoS settings
+virtos-network qos-show download-vm
+
+# Enable SDN mode
+virtos-network sdn-enable
+
+# Check SDN status
+virtos-network sdn-status
+```
+
+## GPU Passthrough
+
+```bash
+# Detect GPUs
+virtos-gpu detect
+
+# List GPUs with IOMMU groups
+virtos-gpu list
+
+# Check IOMMU status
+virtos-gpu iommu-status
+
+# Check VFIO driver status
+virtos-gpu vfio-status
+
+# Run interactive passthrough wizard
+virtos-gpu wizard
+
+# Isolate GPU for passthrough
+virtos-gpu isolate 0000:01:00.0
+
+# Release GPU back to host
+virtos-gpu release 0000:01:00.0
+
+# Attach GPU to VM
+virtos-gpu attach gaming-vm 0000:01:00.0 --persistent
+
+# Detach GPU from VM
+virtos-gpu detach gaming-vm 0000:01:00.0
+
+# Enable vGPU support
+virtos-gpu vgpu-enable 0000:01:00.0
+
+# List vGPU instances
+virtos-gpu vgpu-list
+
+# Schedule automatic GPU attachment
+virtos-gpu schedule-attach workstation-vm 0000:01:00.0
+```
+
+## USB Device Management
+
+```bash
+# List USB devices
+virtos-usb list
+
+# Attach USB to VM
+virtos-usb attach gaming-vm 001:004 --permanent
+
+# Detach USB from VM
+virtos-usb detach gaming-vm 001:004
+
+# Hot-plug USB device (running VM)
+virtos-usb hotplug workstation-vm 002:003
+
+# Create USB filter
+virtos-usb filter-create vm1 "046d:0825"
+
+# Delete USB filter
+virtos-usb filter-delete vm1 "046d:0825"
+
+# List USB filters
+virtos-usb filter-list vm1
+
+# Enable USB redirection
+virtos-usb redirect-enable desktop-vm
+
+# Check redirection status
+virtos-usb redirect-status desktop-vm
+
+# Start USB monitoring daemon
+virtos-usb monitor-start
+
+# Stop USB monitoring daemon
+virtos-usb monitor-stop
+
+# Check monitor status
+virtos-usb monitor-status
+
+# Setup auto-attachment
+virtos-usb auto-attach office-vm "046d:*"
+```
+
 ## Build Commands
 
 ```bash
