@@ -498,14 +498,23 @@ virtos-tui
 │  4  VM Templates                                   │
 │  5  VM Snapshots                                   │
 │  6  IaaS VM Creation                               │
-│  7  Containers                                     │
-│  8  Storage Management                             │
-│  9  Cluster Status                                 │
-│  10 Networking                                     │
-│  11 Services                                       │
-│  12 System Logs                                    │
-│  13 Settings                                       │
-│  0 Exit                                            │
+│  7  Monitoring & Alerts                            │
+│  8  High Availability (HA)                         │
+│  9  VM Migration                                   │
+│  10 Resource Quotas                                │
+│  11 User Management (RBAC)                         │
+│  12 Cloud-Init                                     │
+│  13 REST API                                       │
+│  14 System Updates                                 │
+│  15 Disaster Recovery                              │
+│  16 Containers                                     │
+│  17 Storage Management                             │
+│  18 Cluster Status                                 │
+│  19 Networking                                     │
+│  20 Services                                       │
+│  21 System Logs                                    │
+│  22 Settings                                       │
+│  0  Exit                                           │
 │                                                     │
 └─────────────────────────────────────────────────────┘
 ```
@@ -849,7 +858,308 @@ Shows last 50 lines by default.
 - System diagnostics
 - Kernel message review
 
-### 13. Settings
+### 7. Monitoring & Alerts
+
+Automated monitoring and alerting using virtos-monitor:
+
+#### Submenu Options:
+- **Show Monitoring Status** - View daemon status and alert history
+- **View Active Alerts** - List current alerts
+- **Run Health Checks Now** - Execute manual health check
+- **Start Monitoring Daemon** - Begin continuous monitoring
+- **Stop Monitoring Daemon** - Stop monitoring
+- **Configure CPU Threshold** - Set CPU warning level (%)
+- **Configure Memory Threshold** - Set memory warning level (%)
+- **Configure Email Alerts** - Set email address for alerts
+
+#### Example: Start Monitoring
+```
+1. Select "Start Monitoring Daemon"
+2. Daemon starts with default thresholds
+3. Monitors CPU, memory, disk, VMs, hosts, services
+4. Sends alerts when thresholds exceeded
+```
+
+**Use cases:**
+- Automated infrastructure monitoring
+- Alert on resource issues
+- Track system health
+- Email/webhook notifications
+
+### 8. High Availability (HA)
+
+Automatic VM failover using virtos-ha:
+
+#### Submenu Options:
+- **List HA-Enabled VMs** - Show VMs with HA configured
+- **Enable HA for VM** - Configure automatic restart/failover
+- **Disable HA for VM** - Remove HA protection
+- **Show HA Status** - View HA daemon and VM status
+- **Manual Failover** - Force VM to different host
+- **Start HA Daemon** - Begin HA monitoring
+- **Stop HA Daemon** - Stop HA monitoring
+
+#### Example: Enable HA
+```
+1. Select "Enable HA for VM"
+2. Enter VM name: web-server-1
+3. Choose priority: high/medium/low
+4. HA configured with auto-restart
+5. If VM fails, automatically restarts or fails over
+```
+
+**Use cases:**
+- Protect critical VMs
+- Automatic recovery from failures
+- Minimize downtime
+- Cluster-aware failover
+
+### 9. VM Migration
+
+Live and offline VM migration using virtos-migrate:
+
+#### Submenu Options:
+- **Live Migration (Shared Storage)** - Migrate running VM with shared disk
+- **Block Migration** - Migrate VM without shared storage
+- **Offline Migration** - Migrate stopped VM
+- **Migration with Bandwidth Limit** - Control network usage
+- **Compressed Migration** - Reduce transfer size
+
+#### Example: Live Migration
+```
+1. Select "Live Migration (Shared Storage)"
+2. Enter VM name: web-1
+3. Enter target host: virtos-2
+4. Watch migration progress
+5. VM now running on virtos-2
+```
+
+**Use cases:**
+- Load balancing
+- Hardware maintenance
+- Resource optimization
+- Zero-downtime relocation
+
+### 10. Resource Quotas
+
+Resource limits and quotas using virtos-quota:
+
+#### Submenu Options:
+- **List All Quotas** - Show configured limits
+- **Set VM Quota** - Limit CPU/memory/disk for VM
+- **Check VM Compliance** - Verify VM within limits
+- **Show Resource Usage** - Cluster-wide resource summary
+- **Set Cluster Quota** - Global resource caps
+- **Enable/Disable Enforcement** - Toggle quota enforcement
+
+#### Example: Set VM Limits
+```
+1. Select "Set VM Quota"
+2. Enter VM name: dev-vm
+3. Set CPU limit: 4 cores
+4. Set memory limit: 8192 MB
+5. Set disk limit: 100 GB
+6. Quota configured
+```
+
+**Use cases:**
+- Resource fairness
+- Prevent resource hogging
+- Capacity planning
+- Multi-tenant environments
+
+### 11. User Management (RBAC)
+
+Authentication and role-based access control using virtos-auth:
+
+#### Submenu Options:
+- **List Users** - Show all VirtOS users
+- **Add User** - Create new user with role
+- **Delete User** - Remove user
+- **Assign Role** - Change user role
+- **List Roles** - Show available roles
+- **Show Role Permissions** - View role capabilities
+- **Check User Permission** - Verify user access
+- **Create Custom Role** - Define new role
+
+#### Example: Add User
+```
+1. Select "Add User"
+2. Enter username: alice
+3. Choose role: operator
+4. User created with operator permissions
+5. Can start/stop VMs but not delete
+```
+
+**Roles:**
+- **admin** - Full access to all resources
+- **operator** - Manage VMs, limited admin
+- **viewer** - Read-only access
+- **backup-admin** - Backup/restore only
+
+**Use cases:**
+- Multi-user environments
+- Least-privilege access
+- Audit and compliance
+- Team collaboration
+
+### 12. Cloud-Init
+
+VM provisioning with cloud-init using virtos-cloud-init:
+
+#### Submenu Options:
+- **Create Config** - Generate cloud-init configuration
+- **Generate ISO** - Build cloud-init ISO
+- **Attach ISO to VM** - Mount cloud-init disk
+- **List Templates** - Show example configurations
+- **Show Template** - View template example
+- **Quick Setup (SSH)** - Fast VM setup with SSH key
+
+#### Example: Quick VM Setup
+```
+1. Select "Quick Setup (SSH)"
+2. Enter VM name: ubuntu-vm
+3. Enter hostname: web-server
+4. Enter username: admin
+5. Select SSH key: ~/.ssh/id_rsa.pub
+6. Cloud-init config created
+7. ISO generated and attached
+8. Start VM - auto-configured!
+```
+
+**Configuration options:**
+- Hostname and users
+- SSH keys
+- Static IP networking
+- Package installation
+- Custom scripts
+
+**Use cases:**
+- Automated VM provisioning
+- Consistent VM configuration
+- Infrastructure as Code
+- Template-based deployment
+
+### 13. REST API
+
+REST API server for programmatic access using virtos-api:
+
+#### Submenu Options:
+- **Start API Server** - Launch HTTP API on port 8080
+- **Stop API Server** - Shutdown API
+- **Show API Status** - View server state
+- **Test API** - Run connectivity tests
+- **Show Endpoints** - List available API routes
+
+#### Example: Start API
+```
+1. Select "Start API Server"
+2. Choose port (default: 8080)
+3. Server starts
+4. Access: http://virtos:8080/api/v1/health
+5. Manage VMs via HTTP/JSON
+```
+
+**API Endpoints:**
+- GET /api/v1/health - Health check
+- GET /api/v1/vms - List VMs
+- GET /api/v1/vms/<name> - VM details
+- POST /api/v1/vms/<name>/start - Start VM
+- POST /api/v1/vms/<name>/stop - Stop VM
+- GET /api/v1/cluster - Cluster status
+
+**Use cases:**
+- Programmatic VM management
+- Integration with tools
+- Automation scripts
+- Web dashboards
+
+### 14. System Updates
+
+VirtOS update management using virtos-update:
+
+#### Submenu Options:
+- **Check for Updates** - Scan for new versions
+- **List Available Updates** - Show pending updates
+- **Install Update** - Apply specific update
+- **Install All Updates** - Apply all updates
+- **Rollback Update** - Revert to previous version
+- **View Update History** - Show past updates
+- **Enable Auto-Updates** - Schedule automatic updates
+
+#### Example: Update System
+```
+1. Select "Check for Updates"
+2. View available updates
+3. Select "Install All Updates"
+4. Automatic backup created
+5. Updates applied
+6. Rollback available if needed
+```
+
+**Features:**
+- Automatic backups before update
+- Rollback capability
+- Update history tracking
+- Scheduled automatic updates (cron)
+- Keep last 5 backups
+
+**Use cases:**
+- Keep VirtOS current
+- Security patches
+- Feature updates
+- Safe update with rollback
+
+### 15. Disaster Recovery
+
+DR planning and orchestration using virtos-dr:
+
+#### Submenu Options:
+- **List DR Plans** - Show configured plans
+- **Create DR Plan** - Define recovery plan with RPO/RTO
+- **Show Plan Details** - View plan configuration
+- **Test DR Plan** - Dry-run without changes
+- **Execute DR Plan** - Run actual recovery
+- **Start VM Replication** - Replicate to DR site
+- **Check Replication Status** - View replication state
+- **Failover to DR Site** - Switch to disaster recovery site
+- **Cluster Backup** - Backup entire cluster
+
+#### Example: Create DR Plan
+```
+1. Select "Create DR Plan"
+2. Enter plan name: production
+3. Set priority: 1 (highest)
+4. Set RPO: 15 minutes (data loss tolerance)
+5. Set RTO: 30 minutes (recovery time goal)
+6. Enable auto-failover: yes
+7. Plan created
+```
+
+#### Example: Failover
+```
+1. Select "Failover to DR Site"
+2. Enter DR site: dr-site.example.com
+3. Confirm failover (prompts for 'yes')
+4. VMs stopped on primary
+5. VMs started on DR site
+6. Services restored
+```
+
+**DR Concepts:**
+- **RPO** (Recovery Point Objective) - Max data loss tolerance
+- **RTO** (Recovery Time Objective) - Target recovery time
+- **Replication** - Continuous data sync to DR site
+- **Failover** - Switch to DR site during disaster
+- **Failback** - Return to primary site
+
+**Use cases:**
+- Business continuity planning
+- Disaster preparedness
+- Site-to-site replication
+- Compliance requirements
+
+### 22. Settings
 
 VirtOS configuration and information:
 
@@ -870,6 +1180,9 @@ Shows checkmarks for:
 - ✓ K3s
 - ✓ Btrfs, LVM, ZFS
 - ✓ Clustering tools
+- ✓ Phase 6 Tools (virtos-backup, virtos-template, virtos-snapshot)
+- ✓ Phase 7 Tools (virtos-monitor, virtos-ha, virtos-migrate, virtos-quota)
+- ✓ Phase 8 Tools (virtos-auth, virtos-cloud-init, virtos-api, virtos-update, virtos-dr)
 
 **Use cases:**
 - Verify installation

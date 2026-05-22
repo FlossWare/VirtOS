@@ -344,34 +344,55 @@ virtos-monitor status
 
 ### 8. User Authentication and RBAC
 
-**Status:** ❌ Not implemented
+**Status:** ✅ IMPLEMENTED (Phase 8)
 
-**What's missing:**
-- Multi-user support
-- Role-based access control
-- LDAP/Active Directory integration
+**What's included:**
+- ✅ Multi-user support with system integration
+- ✅ Role-based access control (admin, operator, viewer, backup-admin)
+- ✅ Permission system (resource:action format)
+- ✅ User management CLI (virtos-auth)
+- ✅ Role assignment and management
+- ✅ Permission checking with wildcards
+- ⚠️ LDAP/Active Directory integration (future)
+- ⚠️ Two-factor authentication (future)
+- ⚠️ Audit logging (future)
+
+**Implementation:**
+```bash
+# Add user
+virtos-auth user-add alice --role operator
+
+# Assign role
+virtos-auth role-assign alice operator
+
+# Check permission
+virtos-auth check-permission alice vm:create
+
+# Custom role
+virtos-auth role-create developer
+virtos-auth permission-add developer vm:create
+virtos-auth permission-add developer vm:start
+
+# List users and roles
+virtos-auth user-list
+virtos-auth role-list
+```
+
+**Features:**
+- Built-in roles with predefined permissions
+- Custom role creation
+- Permission wildcards (vm:*, backup:*)
+- System user integration
+- Permission verification
+
+**Competitors still have:**
+- LDAP/AD integration
 - Two-factor authentication
-- Audit logging
-- User permissions (per-VM, per-cluster)
-- API tokens
+- More sophisticated audit logging
 
-**Current solution:**
-- Linux user accounts
-- SSH key authentication
-- libvirt group membership
-- No fine-grained permissions
+**Priority:** 🟢 Implemented
 
-**Competitors have:**
-- **Proxmox:** Full RBAC, LDAP/AD
-- **ESXi:** vCenter SSO, AD integration
-- **oVirt:** RBAC, LDAP
-- **Harvester:** K8s RBAC
-
-**Priority:** 🟡 Important for multi-user
-
-**Effort:** High (6-8 weeks)
-
-**Roadmap:** Planned for Phase 8
+**Completed:** Phase 8 (May 2026)
 
 ---
 
@@ -470,31 +491,58 @@ Features that improve user experience but aren't essential.
 
 ### 11. Cloud-Init Integration
 
-**Status:** ❌ Not implemented
+**Status:** ✅ IMPLEMENTED (Phase 8)
 
-**What's missing:**
-- Cloud-init ISO generation
-- Automated provisioning
-- SSH key injection
-- Hostname configuration
-- Network configuration
-- User creation
-- Package installation
+**What's included:**
+- ✅ Cloud-init ISO generation (genisoimage/mkisofs)
+- ✅ Automated VM provisioning
+- ✅ SSH key injection
+- ✅ Hostname configuration
+- ✅ Network configuration (DHCP and static)
+- ✅ User creation with passwords
+- ✅ Package installation on first boot
+- ✅ Custom script execution
+- ✅ Template library
+- ✅ ISO attachment to VMs
 
-**Current solution:**
-- Manual VM configuration
-- Post-install scripts
+**Implementation:**
+```bash
+# Create cloud-init config with SSH key
+virtos-cloud-init create ubuntu-vm \
+  --hostname web-server \
+  --user admin \
+  --ssh-key ~/.ssh/id_rsa.pub
 
-**Competitors have:**
-- **Proxmox:** Cloud-init support
-- **oVirt:** Cloud-init integration
-- **Harvester:** Cloud-init support
+# Static IP configuration
+virtos-cloud-init create db-vm \
+  --hostname database \
+  --network static \
+  --ip 192.168.1.100/24 \
+  --gateway 192.168.1.1 \
+  --dns 8.8.8.8
 
-**Priority:** 🟢 Nice to have
+# Install packages on first boot
+virtos-cloud-init create app-vm \
+  --hostname app-server \
+  --packages nginx,git,python3 \
+  --run /path/to/setup.sh
 
-**Effort:** Low-Medium (2-3 weeks)
+# Generate ISO and attach
+virtos-cloud-init generate web-vm
+virtos-cloud-init attach web-vm /var/lib/virtos/cloud-init/web-vm.iso
+```
 
-**Roadmap:** Phase 8
+**Features:**
+- Meta-data and user-data generation
+- DHCP and static IP support
+- Package installation lists
+- Custom script execution (runcmd)
+- Multiple configuration templates
+- ISO volume label (cidata)
+
+**Priority:** 🟢 Implemented
+
+**Completed:** Phase 8 (May 2026)
 
 ---
 
@@ -642,40 +690,128 @@ virtos-snapshot lvm app-server-1     # LVM snapshot
 
 ### 16. Update Mechanism
 
-**Status:** ❌ Not implemented
+**Status:** ✅ IMPLEMENTED (Phase 8)
 
-**What's missing:**
-- In-place updates
-- Update repository
-- Rollback mechanism
-- Update notifications
-- Staged updates
-- Cluster-aware updates
+**What's included:**
+- ✅ Check for available updates
+- ✅ List and install updates
+- ✅ Rollback mechanism with backups
+- ✅ Update history tracking
+- ✅ Automatic backup before update
+- ✅ Automatic update scheduling (cron)
+- ✅ Update management CLI (virtos-update)
+- ⚠️ Update repository (local version checking for now)
+- ⚠️ Cluster-aware updates (future)
 
-**Current solution:**
-- Rebuild ISO with new packages
-- Boot new ISO
-- Migrate VMs
+**Implementation:**
+```bash
+# Check for updates
+virtos-update check
 
-**Competitors have:**
-- **Proxmox:** APT-based updates
-- **ESXi:** Update Manager
-- **XCP-ng:** YUM updates
-- **Harvester:** K8s upgrade operator
+# List available updates
+virtos-update list
 
-**Priority:** 🟢 Nice to have
+# Install specific update
+virtos-update install virtos-monitor-1.1
 
-**Effort:** High (6-8 weeks)
+# Install all updates
+virtos-update install-all
 
-**Roadmap:** Phase 9
+# Rollback if needed
+virtos-update rollback virtos-monitor-1.1
 
-**Note:** Tiny Core's extension system makes this complex
+# View update history
+virtos-update history
+
+# Enable automatic updates (daily at 3 AM)
+virtos-update auto-enable
+
+# Disable automatic updates
+virtos-update auto-disable
+```
+
+**Features:**
+- Component version checking
+- Automatic backups before update
+- Rollback to previous versions
+- Update history log
+- Automatic cleanup of old backups (keep last 5)
+- Cron-based automatic updates
+
+**Competitors still have:**
+- Network-based update repositories
+- Cluster-aware coordinated updates
+- Staged rollouts
+
+**Priority:** 🟢 Implemented
+
+**Completed:** Phase 8 (May 2026)
 
 ---
 
 ### 17. REST API
 
-**Status:** ⚠️ Partially implemented
+**Status:** ✅ IMPLEMENTED (Phase 8)
+
+**What's included:**
+- ✅ RESTful HTTP API server
+- ✅ VM management endpoints (list, details, start, stop)
+- ✅ Cluster status endpoints
+- ✅ Health check endpoint
+- ✅ JSON responses
+- ✅ CORS support
+- ✅ Lightweight netcat/socat backend
+- ⚠️ Authentication (basic, tokens future)
+- ⚠️ API versioning (/api/v1)
+- ⚠️ OpenAPI documentation (future)
+- ⚠️ WebSocket support (future)
+
+**Implementation:**
+```bash
+# Start API server
+virtos-api start
+
+# Start on custom port
+virtos-api start --port 9090
+
+# Test API
+virtos-api test
+
+# API endpoints
+curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/api/v1/vms
+curl http://localhost:8080/api/v1/vms/web-1
+curl -X POST http://localhost:8080/api/v1/vms/web-1/start
+curl http://localhost:8080/api/v1/cluster
+```
+
+**Features:**
+- HTTP/1.1 server using netcat or socat
+- JSON responses for all endpoints
+- GET /api/v1/health - health check
+- GET /api/v1/vms - list all VMs
+- GET /api/v1/vms/<name> - VM details
+- POST /api/v1/vms/<name>/start - start VM
+- POST /api/v1/vms/<name>/stop - stop VM
+- GET /api/v1/cluster - cluster status
+- CORS enabled
+- API versioning (/api/v1)
+
+**Competitors still have:**
+- More comprehensive API coverage
+- GraphQL support
+- WebSocket support
+- API token authentication
+
+**Priority:** 🟢 Implemented
+
+**Completed:** Phase 8 (May 2026)
+
+---
+
+### 17a. REST API (Legacy)
+
+**Status:** ⚠️ Partially implemented via libvirt
 
 **What works:**
 - libvirt API (XML-RPC)
@@ -760,30 +896,69 @@ Specialized features for specific use cases.
 
 ### 20. Disaster Recovery
 
-**Status:** ❌ Not implemented
+**Status:** ✅ IMPLEMENTED (Phase 8)
 
-**What's missing:**
-- DR orchestration
-- Failover automation
-- Replication to DR site
-- DR testing
-- Recovery plans
-- RTO/RPO tracking
+**What's included:**
+- ✅ DR plan creation and management
+- ✅ RPO/RTO configuration
+- ✅ VM replication to DR site
+- ✅ Automated failover/failback
+- ✅ Cluster-wide backup and restore
+- ✅ DR plan testing (dry-run)
+- ✅ Auto-failover support
+- ✅ DR management CLI (virtos-dr)
+- ⚠️ Continuous replication monitoring (basic)
+- ⚠️ Multi-site DR (future)
 
-**Current solution:**
-- Manual backup to remote
-- Manual failover procedures
+**Implementation:**
+```bash
+# Create DR plan
+virtos-dr plan-create production \
+  --priority 1 \
+  --rpo 15 \
+  --rto 30 \
+  --auto-failover yes
 
-**Competitors have:**
-- **ESXi:** Site Recovery Manager (paid)
-- **oVirt:** DR capabilities
-- **Proxmox:** Replication to remote
+# Start VM replication to DR site
+virtos-dr replicate-start web-server-1 dr-site.example.com
 
-**Priority:** 🔵 Low priority
+# Check replication status
+virtos-dr replicate-status
 
-**Effort:** Very High (10+ weeks)
+# Test DR plan (dry-run)
+virtos-dr plan-test production
 
-**Roadmap:** Not planned (use external tools)
+# Execute failover to DR site
+virtos-dr failover dr-site
+
+# Failback to primary site
+virtos-dr failback primary-site
+
+# Cluster-wide backup
+virtos-dr cluster-backup
+
+# Restore entire cluster
+virtos-dr cluster-restore cluster-20260522-120000
+```
+
+**Features:**
+- DR plans with priority levels (1-10)
+- RPO (Recovery Point Objective) in minutes
+- RTO (Recovery Time Objective) in minutes
+- VM replication configuration
+- Automated failover with confirmation
+- Failback procedures
+- Cluster-wide backup to local storage
+- DR plan execution and testing
+
+**Competitors still have:**
+- More mature site-to-site replication
+- Better orchestration across datacenters
+- Advanced fencing mechanisms
+
+**Priority:** 🟢 Implemented
+
+**Completed:** Phase 8 (May 2026)
 
 ---
 
@@ -884,23 +1059,23 @@ Features VirtOS won't implement due to philosophy or constraints.
 ### Important (Significant Value)
 6. ✅ VM templates/cloning **[IMPLEMENTED Phase 6]**
 7. ✅ Monitoring/alerting **[IMPLEMENTED Phase 7]**
-8. ❌ User authentication/RBAC
+8. ✅ User authentication/RBAC **[IMPLEMENTED Phase 8]**
 9. ❌ Network virtualization (SDN)
 10. ✅ Resource quotas/limits **[IMPLEMENTED Phase 7]**
 
 ### Convenience (Nice to Have)
-11. ❌ Cloud-init integration
+11. ✅ Cloud-init integration **[IMPLEMENTED Phase 8]**
 12. ✅ VM snapshots **[IMPLEMENTED Phase 6]**
 13. ❌ GPU passthrough (manual possible)
 14. ⚠️ USB passthrough (partial)
 15. ⚠️ Integrated firewall (partial)
-16. ❌ Update mechanism
-17. ⚠️ REST API (partial via libvirt)
+16. ✅ Update mechanism **[IMPLEMENTED Phase 8]**
+17. ✅ REST API **[IMPLEMENTED Phase 8]**
 
 ### Advanced (Specialized)
 18. ⚠️ Container orchestration beyond K3s
 19. ❌ Windows guest tools
-20. ❌ Disaster recovery
+20. ✅ Disaster recovery **[IMPLEMENTED Phase 8]**
 21. ❌ Terraform/Ansible providers
 22. ❌ Multi-datacenter
 
@@ -916,24 +1091,26 @@ Features VirtOS won't implement due to philosophy or constraints.
 - ✅ VM templates/cloning (virtos-template)
 - ✅ VM snapshot automation (virtos-snapshot)
 
-### Phase 7 (Next - HA and Monitoring)
-- Automatic HA/failover
-- Monitoring and alerting
-- Live migration improvements
-- Resource quotas
+### Phase 7 ✅ COMPLETE (May 2026)
+- ✅ Automatic HA/failover (virtos-ha)
+- ✅ Monitoring and alerting (virtos-monitor)
+- ✅ Live migration improvements (virtos-migrate)
+- ✅ Resource quotas (virtos-quota)
 
-### Phase 8 (User Experience)
-- User authentication/RBAC
-- Cloud-init integration
-- REST API
-- Optional Web UI
-- GPU passthrough
+### Phase 8 ✅ COMPLETE (May 2026)
+- ✅ User authentication/RBAC (virtos-auth)
+- ✅ Cloud-init integration (virtos-cloud-init)
+- ✅ REST API (virtos-api)
+- ✅ Update mechanism (virtos-update)
+- ✅ Disaster recovery (virtos-dr)
+- ⚠️ Optional Web UI (deferred)
+- ⚠️ GPU passthrough (deferred)
 
-### Phase 9 (Advanced)
-- Distributed storage (Ceph)
-- Network virtualization
-- Update mechanism
-- Disaster recovery
+### Phase 9 (Next - Advanced Features)
+- Distributed storage (Ceph/GlusterFS)
+- Network virtualization (SDN, VLANs)
+- GPU passthrough wizard
+- USB device management
 
 ### Phase 10+ (Future)
 - Community-driven features

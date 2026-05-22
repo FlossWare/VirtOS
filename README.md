@@ -233,10 +233,13 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 
 **Important gaps:**
 - ✅ Monitoring and alerting (virtos-monitor - Phase 7)
-- ❌ User authentication/RBAC
+- ✅ User authentication/RBAC (virtos-auth - Phase 8)
 - ✅ VM templates & snapshots (virtos-template, virtos-snapshot - Phase 6)
 - ✅ Resource quotas (virtos-quota - Phase 7)
-- ❌ REST API (basic via libvirt)
+- ✅ REST API (virtos-api - Phase 8)
+- ✅ Cloud-init integration (virtos-cloud-init - Phase 8)
+- ✅ Update mechanism (virtos-update - Phase 8)
+- ✅ Disaster recovery (virtos-dr - Phase 8)
 
 **VirtOS is good for:** Home labs, learning, edge computing, dev/test  
 **VirtOS is NOT ready for:** Production with SLAs, mission-critical workloads, large enterprises

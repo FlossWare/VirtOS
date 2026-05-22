@@ -249,6 +249,177 @@ virtos-quota enforce on
 virtos-quota enforce off
 ```
 
+## Authentication & RBAC
+
+```bash
+# Add user
+virtos-auth user-add alice --role operator
+
+# Delete user
+virtos-auth user-delete alice
+
+# List users
+virtos-auth user-list
+
+# Assign role to user
+virtos-auth role-assign alice operator
+
+# Create custom role
+virtos-auth role-create developer
+
+# Add permission to role
+virtos-auth permission-add developer vm:create
+virtos-auth permission-add developer vm:start
+virtos-auth permission-add developer vm:stop
+
+# List all roles
+virtos-auth role-list
+
+# Show role permissions
+virtos-auth role-show operator
+
+# Check user permission
+virtos-auth check-permission alice vm:create
+
+# Delete role
+virtos-auth role-delete developer
+```
+
+## Cloud-Init
+
+```bash
+# Create cloud-init config with SSH key
+virtos-cloud-init create ubuntu-vm \
+  --hostname web-server \
+  --user admin \
+  --ssh-key ~/.ssh/id_rsa.pub
+
+# Create with static IP
+virtos-cloud-init create db-vm \
+  --hostname database \
+  --network static \
+  --ip 192.168.1.100/24 \
+  --gateway 192.168.1.1 \
+  --dns 8.8.8.8
+
+# Install packages on first boot
+virtos-cloud-init create app-vm \
+  --hostname app-server \
+  --packages nginx,git,python3 \
+  --run /path/to/setup.sh
+
+# Generate cloud-init ISO
+virtos-cloud-init generate web-vm
+
+# Attach ISO to VM
+virtos-cloud-init attach web-vm /var/lib/virtos/cloud-init/web-vm.iso
+
+# List available templates
+virtos-cloud-init template-list
+
+# Show template example
+virtos-cloud-init template-show ubuntu
+```
+
+## REST API
+
+```bash
+# Start API server
+virtos-api start
+
+# Start on custom port
+virtos-api start --port 9090
+
+# Stop API server
+virtos-api stop
+
+# Check API status
+virtos-api status
+
+# Test API connectivity
+virtos-api test
+
+# API endpoints (using curl)
+curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/api/v1/vms
+curl http://localhost:8080/api/v1/vms/web-1
+curl -X POST http://localhost:8080/api/v1/vms/web-1/start
+curl -X POST http://localhost:8080/api/v1/vms/web-1/stop
+curl http://localhost:8080/api/v1/cluster
+```
+
+## System Updates
+
+```bash
+# Check for updates
+virtos-update check
+
+# List available updates
+virtos-update list
+
+# Install specific update
+virtos-update install virtos-monitor-1.1
+
+# Install all available updates
+virtos-update install-all
+
+# Rollback an update
+virtos-update rollback virtos-monitor-1.1
+
+# View update history
+virtos-update history
+
+# Enable automatic updates (daily at 3 AM)
+virtos-update auto-enable
+
+# Disable automatic updates
+virtos-update auto-disable
+```
+
+## Disaster Recovery
+
+```bash
+# Create DR plan
+virtos-dr plan-create production \
+  --priority 1 \
+  --rpo 15 \
+  --rto 30 \
+  --auto-failover yes
+
+# List DR plans
+virtos-dr plan-list
+
+# Show DR plan details
+virtos-dr plan-show production
+
+# Test DR plan (dry-run)
+virtos-dr plan-test production
+
+# Execute DR plan
+virtos-dr plan-execute production
+
+# Start VM replication to DR site
+virtos-dr replicate-start web-server-1 dr-site.example.com
+
+# Stop VM replication
+virtos-dr replicate-stop web-server-1
+
+# Check replication status
+virtos-dr replicate-status
+
+# Failover to DR site
+virtos-dr failover dr-site
+
+# Failback to primary site
+virtos-dr failback primary-site
+
+# Cluster-wide backup
+virtos-dr cluster-backup
+
+# Restore entire cluster
+virtos-dr cluster-restore cluster-20260522-120000
+```
+
 ## Build Commands
 
 ```bash

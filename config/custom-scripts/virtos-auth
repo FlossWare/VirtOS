@@ -1,0 +1,547 @@
+#!/bin/bash
+# VirtOS Auth - User authentication and RBAC
+# Manage users, roles, and permissions for VirtOS resources
+
+VERSION="1"
+CONFIG_DIR="/etc/virtos/auth"
+STATE_DIR="/var/run/virtos/auth"
+
+mkdir -p "$CONFIG_DIR" "$STATE_DIR"
+mkdir -p "$CONFIG_DIR/users" "$CONFIG_DIR/roles"
+
+usage() {
+    cat << EOF
+VirtOS Auth - Authentication & RBAC v${VERSION}
+
+Usage: virtos-auth [command] [options]
+
+User Commands:
+  user-add <username>              Add new user
+  user-del <username>              Delete user
+  user-list                        List all users
+  user-info <username>             Show user details
+  user-passwd <username>           Change user password
+  user-enable <username>           Enable user
+  user-disable <username>          Disable user
+
+Role Commands:
+  role-create <role-name>          Create role
+  role-delete <role-name>          Delete role
+  role-list                        List all roles
+  role-assign <username> <role>    Assign role to user
+  role-revoke <username> <role>    Revoke role from user
+
+Permission Commands:
+  perm-grant <role> <resource>     Grant permission to role
+  perm-revoke <role> <resource>    Revoke permission from role
+  perm-list <role>                 List role permissions
+  check <username> <resource>      Check user permission
+
+Built-in Roles:
+  admin       - Full access to all resources
+  operator    - Manage VMs, containers, networks
+  viewer      - Read-only access
+  backup-admin - Manage backups and snapshots
+
+Resources:
+  vm:*           - All VM operations
+  vm:create      - Create VMs
+  vm:delete      - Delete VMs
+  vm:start       - Start/stop VMs
+  vm:migrate     - Migrate VMs
+  backup:*       - All backup operations
+  cluster:*      - Cluster management
+  quota:*        - Quota management
+
+Examples:
+  # Add a new operator user
+  virtos-auth user-add alice
+  virtos-auth role-assign alice operator
+
+  # Create custom role
+  virtos-auth role-create developer
+  virtos-auth perm-grant developer vm:create
+  virtos-auth perm-grant developer vm:start
+
+  # Check user permissions
+  virtos-auth check alice vm:create
+
+  # List all users
+  virtos-auth user-list
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> /var/log/virtos-auth.log
+}
+
+init_config() {
+    # Create default admin role if it doesn't exist
+    if [ ! -f "$CONFIG_DIR/roles/admin.role" ]; then
+        cat > "$CONFIG_DIR/roles/admin.role" <<EOF
+ROLE_NAME="admin"
+DESCRIPTION="Full system administrator"
+PERMISSIONS="*"
+EOF
+        log_message "Created default admin role"
+    fi
+
+    # Create default roles
+    for role in operator viewer backup-admin; do
+        if [ ! -f "$CONFIG_DIR/roles/${role}.role" ]; then
+            case "$role" in
+                operator)
+                    cat > "$CONFIG_DIR/roles/operator.role" <<EOF
+ROLE_NAME="operator"
+DESCRIPTION="VM and resource operator"
+PERMISSIONS="vm:* container:* network:* storage:*"
+EOF
+                    ;;
+                viewer)
+                    cat > "$CONFIG_DIR/roles/viewer.role" <<EOF
+ROLE_NAME="viewer"
+DESCRIPTION="Read-only access"
+PERMISSIONS="view:*"
+EOF
+                    ;;
+                backup-admin)
+                    cat > "$CONFIG_DIR/roles/backup-admin.role" <<EOF
+ROLE_NAME="backup-admin"
+DESCRIPTION="Backup and snapshot management"
+PERMISSIONS="backup:* snapshot:* template:*"
+EOF
+                    ;;
+            esac
+            log_message "Created default role: $role"
+        fi
+    done
+}
+
+user_add() {
+    local username="$1"
+
+    if [ -z "$username" ]; then
+        echo "Error: Username required"
+        return 1
+    fi
+
+    if [ -f "$CONFIG_DIR/users/${username}.user" ]; then
+        echo "Error: User '$username' already exists"
+        return 1
+    fi
+
+    # Create system user if it doesn't exist
+    if ! id "$username" >/dev/null 2>&1; then
+        echo "Creating system user: $username"
+        useradd -m -s /bin/bash "$username"
+    fi
+
+    # Set password
+    echo "Setting password for $username"
+    passwd "$username"
+
+    # Create user config
+    cat > "$CONFIG_DIR/users/${username}.user" <<EOF
+USERNAME="$username"
+CREATED=$(date +%s)
+ENABLED=yes
+ROLES=""
+LAST_LOGIN=0
+EOF
+
+    # Add to virtos group
+    usermod -a -G virtos "$username" 2>/dev/null || true
+
+    log_message "User added: $username"
+    echo "User '$username' created successfully"
+}
+
+user_del() {
+    local username="$1"
+
+    if [ ! -f "$CONFIG_DIR/users/${username}.user" ]; then
+        echo "Error: User '$username' not found"
+        return 1
+    fi
+
+    # Confirm deletion
+    echo "WARNING: This will delete user '$username' and all associated permissions"
+    read -p "Continue? (yes/no): " confirm
+
+    if [ "$confirm" != "yes" ]; then
+        echo "Deletion cancelled"
+        return 0
+    fi
+
+    # Remove user config
+    rm -f "$CONFIG_DIR/users/${username}.user"
+
+    # Optionally remove system user
+    read -p "Also delete system user? (yes/no): " del_system
+
+    if [ "$del_system" = "yes" ]; then
+        userdel -r "$username" 2>/dev/null || true
+    fi
+
+    log_message "User deleted: $username"
+    echo "User '$username' deleted"
+}
+
+user_list() {
+    echo "VirtOS Users:"
+    echo "============="
+    printf "%-20s %-15s %-30s\n" "USERNAME" "STATUS" "ROLES"
+    echo "-------------------------------------------------------------"
+
+    for user_file in "$CONFIG_DIR/users"/*.user; do
+        if [ ! -f "$user_file" ]; then
+            echo "No users configured"
+            return 0
+        fi
+
+        source "$user_file"
+
+        local status="enabled"
+        [ "$ENABLED" != "yes" ] && status="disabled"
+
+        printf "%-20s %-15s %-30s\n" "$USERNAME" "$status" "$ROLES"
+    done
+}
+
+user_info() {
+    local username="$1"
+    local user_file="$CONFIG_DIR/users/${username}.user"
+
+    if [ ! -f "$user_file" ]; then
+        echo "Error: User '$username' not found"
+        return 1
+    fi
+
+    source "$user_file"
+
+    echo "User Information: $username"
+    echo "============================"
+    echo "Status: $([ "$ENABLED" = "yes" ] && echo "Enabled" || echo "Disabled")"
+    echo "Created: $(date -d @$CREATED '+%Y-%m-%d %H:%M:%S')"
+    echo "Roles: ${ROLES:-none}"
+    [ "$LAST_LOGIN" -gt 0 ] && echo "Last Login: $(date -d @$LAST_LOGIN '+%Y-%m-%d %H:%M:%S')"
+
+    echo ""
+    echo "Effective Permissions:"
+
+    if [ -n "$ROLES" ]; then
+        for role in $ROLES; do
+            if [ -f "$CONFIG_DIR/roles/${role}.role" ]; then
+                source "$CONFIG_DIR/roles/${role}.role"
+                echo "  From $role: $PERMISSIONS"
+            fi
+        done
+    else
+        echo "  None (no roles assigned)"
+    fi
+}
+
+role_create() {
+    local role_name="$1"
+
+    if [ -z "$role_name" ]; then
+        echo "Error: Role name required"
+        return 1
+    fi
+
+    if [ -f "$CONFIG_DIR/roles/${role_name}.role" ]; then
+        echo "Error: Role '$role_name' already exists"
+        return 1
+    fi
+
+    cat > "$CONFIG_DIR/roles/${role_name}.role" <<EOF
+ROLE_NAME="$role_name"
+DESCRIPTION="Custom role"
+PERMISSIONS=""
+EOF
+
+    log_message "Role created: $role_name"
+    echo "Role '$role_name' created"
+}
+
+role_delete() {
+    local role_name="$1"
+
+    if [ ! -f "$CONFIG_DIR/roles/${role_name}.role" ]; then
+        echo "Error: Role '$role_name' not found"
+        return 1
+    fi
+
+    # Check if role is assigned to any users
+    local in_use=0
+    for user_file in "$CONFIG_DIR/users"/*.user; do
+        if [ -f "$user_file" ]; then
+            source "$user_file"
+            if echo "$ROLES" | grep -q "$role_name"; then
+                in_use=1
+                break
+            fi
+        fi
+    done
+
+    if [ $in_use -eq 1 ]; then
+        echo "Error: Role '$role_name' is assigned to users"
+        echo "Revoke role from users first"
+        return 1
+    fi
+
+    rm -f "$CONFIG_DIR/roles/${role_name}.role"
+    log_message "Role deleted: $role_name"
+    echo "Role '$role_name' deleted"
+}
+
+role_list() {
+    echo "VirtOS Roles:"
+    echo "============="
+    printf "%-20s %-50s\n" "ROLE NAME" "PERMISSIONS"
+    echo "------------------------------------------------------------------------"
+
+    for role_file in "$CONFIG_DIR/roles"/*.role; do
+        if [ ! -f "$role_file" ]; then
+            echo "No roles configured"
+            return 0
+        fi
+
+        source "$role_file"
+        printf "%-20s %-50s\n" "$ROLE_NAME" "$PERMISSIONS"
+    done
+}
+
+role_assign() {
+    local username="$1"
+    local role_name="$2"
+    local user_file="$CONFIG_DIR/users/${username}.user"
+
+    if [ ! -f "$user_file" ]; then
+        echo "Error: User '$username' not found"
+        return 1
+    fi
+
+    if [ ! -f "$CONFIG_DIR/roles/${role_name}.role" ]; then
+        echo "Error: Role '$role_name' not found"
+        return 1
+    fi
+
+    source "$user_file"
+
+    # Check if role already assigned
+    if echo "$ROLES" | grep -q "$role_name"; then
+        echo "Role '$role_name' already assigned to $username"
+        return 0
+    fi
+
+    # Add role
+    ROLES="${ROLES} ${role_name}"
+    ROLES=$(echo "$ROLES" | xargs)  # Trim whitespace
+
+    # Update user file
+    sed -i "s/^ROLES=.*/ROLES=\"$ROLES\"/" "$user_file"
+
+    log_message "Role assigned: $username -> $role_name"
+    echo "Role '$role_name' assigned to $username"
+}
+
+role_revoke() {
+    local username="$1"
+    local role_name="$2"
+    local user_file="$CONFIG_DIR/users/${username}.user"
+
+    if [ ! -f "$user_file" ]; then
+        echo "Error: User '$username' not found"
+        return 1
+    fi
+
+    source "$user_file"
+
+    # Remove role
+    ROLES=$(echo "$ROLES" | sed "s/$role_name//g" | xargs)
+
+    # Update user file
+    sed -i "s/^ROLES=.*/ROLES=\"$ROLES\"/" "$user_file"
+
+    log_message "Role revoked: $username -> $role_name"
+    echo "Role '$role_name' revoked from $username"
+}
+
+perm_grant() {
+    local role_name="$1"
+    local permission="$2"
+    local role_file="$CONFIG_DIR/roles/${role_name}.role"
+
+    if [ ! -f "$role_file" ]; then
+        echo "Error: Role '$role_name' not found"
+        return 1
+    fi
+
+    source "$role_file"
+
+    # Add permission
+    PERMISSIONS="${PERMISSIONS} ${permission}"
+    PERMISSIONS=$(echo "$PERMISSIONS" | xargs)
+
+    # Update role file
+    sed -i "s/^PERMISSIONS=.*/PERMISSIONS=\"$PERMISSIONS\"/" "$role_file"
+
+    log_message "Permission granted: $role_name -> $permission"
+    echo "Permission '$permission' granted to role '$role_name'"
+}
+
+perm_revoke() {
+    local role_name="$1"
+    local permission="$2"
+    local role_file="$CONFIG_DIR/roles/${role_name}.role"
+
+    if [ ! -f "$role_file" ]; then
+        echo "Error: Role '$role_name' not found"
+        return 1
+    fi
+
+    source "$role_file"
+
+    # Remove permission
+    PERMISSIONS=$(echo "$PERMISSIONS" | sed "s/$permission//g" | xargs)
+
+    # Update role file
+    sed -i "s/^PERMISSIONS=.*/PERMISSIONS=\"$PERMISSIONS\"/" "$role_file"
+
+    log_message "Permission revoked: $role_name -> $permission"
+    echo "Permission '$permission' revoked from role '$role_name'"
+}
+
+check_permission() {
+    local username="$1"
+    local resource="$2"
+    local user_file="$CONFIG_DIR/users/${username}.user"
+
+    if [ ! -f "$user_file" ]; then
+        echo "Error: User '$username' not found"
+        return 1
+    fi
+
+    source "$user_file"
+
+    if [ "$ENABLED" != "yes" ]; then
+        echo "DENIED: User is disabled"
+        return 1
+    fi
+
+    # Check each role
+    for role in $ROLES; do
+        if [ -f "$CONFIG_DIR/roles/${role}.role" ]; then
+            source "$CONFIG_DIR/roles/${role}.role"
+
+            # Check for wildcard or exact match
+            if [ "$PERMISSIONS" = "*" ]; then
+                echo "ALLOWED: User has admin role"
+                return 0
+            fi
+
+            # Check each permission
+            for perm in $PERMISSIONS; do
+                # Wildcard match (e.g., vm:* matches vm:create)
+                if echo "$resource" | grep -q "^${perm%:*}"; then
+                    echo "ALLOWED: Permission $perm matches $resource"
+                    return 0
+                fi
+
+                # Exact match
+                if [ "$perm" = "$resource" ]; then
+                    echo "ALLOWED: Exact permission match"
+                    return 0
+                fi
+            done
+        fi
+    done
+
+    echo "DENIED: No matching permissions"
+    return 1
+}
+
+# Initialize
+init_config
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    user-add)
+        user_add "$1"
+        ;;
+    user-del)
+        user_del "$1"
+        ;;
+    user-list)
+        user_list
+        ;;
+    user-info)
+        user_info "$1"
+        ;;
+    user-passwd)
+        if [ -z "$1" ]; then
+            echo "Error: Username required"
+            exit 1
+        fi
+        passwd "$1"
+        ;;
+    user-enable)
+        if [ -f "$CONFIG_DIR/users/$1.user" ]; then
+            sed -i "s/^ENABLED=.*/ENABLED=yes/" "$CONFIG_DIR/users/$1.user"
+            echo "User '$1' enabled"
+        fi
+        ;;
+    user-disable)
+        if [ -f "$CONFIG_DIR/users/$1.user" ]; then
+            sed -i "s/^ENABLED=.*/ENABLED=no/" "$CONFIG_DIR/users/$1.user"
+            echo "User '$1' disabled"
+        fi
+        ;;
+    role-create)
+        role_create "$1"
+        ;;
+    role-delete)
+        role_delete "$1"
+        ;;
+    role-list)
+        role_list
+        ;;
+    role-assign)
+        role_assign "$1" "$2"
+        ;;
+    role-revoke)
+        role_revoke "$1" "$2"
+        ;;
+    perm-grant)
+        perm_grant "$1" "$2"
+        ;;
+    perm-revoke)
+        perm_revoke "$1" "$2"
+        ;;
+    perm-list)
+        if [ -f "$CONFIG_DIR/roles/$1.role" ]; then
+            source "$CONFIG_DIR/roles/$1.role"
+            echo "Permissions for role '$1':"
+            echo "$PERMISSIONS"
+        else
+            echo "Error: Role '$1' not found"
+        fi
+        ;;
+    check)
+        check_permission "$1" "$2"
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

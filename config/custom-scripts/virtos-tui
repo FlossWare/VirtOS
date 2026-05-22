@@ -139,7 +139,7 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 30 76 17 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 35 76 22 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
         3 "VM Backups & Restore" \
@@ -150,13 +150,18 @@ main_menu() {
         8 "High Availability (HA)" \
         9 "VM Migration" \
         10 "Resource Quotas" \
-        11 "Containers" \
-        12 "Storage Management" \
-        13 "Cluster Status" \
-        14 "Networking" \
-        15 "Services" \
-        16 "System Logs" \
-        17 "Settings" \
+        11 "User Management (RBAC)" \
+        12 "Cloud-Init" \
+        13 "REST API" \
+        14 "System Updates" \
+        15 "Disaster Recovery" \
+        16 "Containers" \
+        17 "Storage Management" \
+        18 "Cluster Status" \
+        19 "Networking" \
+        20 "Services" \
+        21 "System Logs" \
+        22 "Settings" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -173,13 +178,18 @@ main_menu() {
         8) ha_menu ;;
         9) migration_menu ;;
         10) quota_menu ;;
-        11) container_management_menu ;;
-        12) storage_management_menu ;;
-        13) cluster_status_menu ;;
-        14) networking_menu ;;
-        15) services_menu ;;
-        16) logs_menu ;;
-        17) settings_menu ;;
+        11) auth_menu ;;
+        12) cloud_init_menu ;;
+        13) api_menu ;;
+        14) update_menu ;;
+        15) dr_menu ;;
+        16) container_management_menu ;;
+        17) storage_management_menu ;;
+        18) cluster_status_menu ;;
+        19) networking_menu ;;
+        20) services_menu ;;
+        21) logs_menu ;;
+        22) settings_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -1141,6 +1151,460 @@ quota_menu() {
     esac
 }
 
+auth_menu() {
+    if ! command -v virtos-auth >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-auth not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "User Management (RBAC)" \
+        --menu "Select option:" 18 76 8 \
+        1 "List Users" \
+        2 "Add User" \
+        3 "Delete User" \
+        4 "List Roles" \
+        5 "Assign Role to User" \
+        6 "Check Permission" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "VirtOS Users" \
+                --msgbox "$(virtos-auth user-list 2>&1)" 25 80
+            auth_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Add User" \
+                --inputbox "Enter username:" 10 60 \
+                2> $TEMP_FILE
+            USERNAME=$(cat $TEMP_FILE)
+
+            if [ -n "$USERNAME" ]; then
+                virtos-auth user-add "$USERNAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Add User" --programbox 20 76
+                $DIALOG $DIALOG_OPTS --msgbox "User creation completed" 6 50
+            fi
+            auth_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Delete User" \
+                --inputbox "Enter username to delete:" 10 60 \
+                2> $TEMP_FILE
+            USERNAME=$(cat $TEMP_FILE)
+
+            if [ -n "$USERNAME" ]; then
+                echo "yes" | virtos-auth user-del "$USERNAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Delete User" --programbox 15 76
+            fi
+            auth_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "VirtOS Roles" \
+                --msgbox "$(virtos-auth role-list 2>&1)" 25 80
+            auth_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Assign Role" \
+                --inputbox "Enter username:" 10 60 \
+                2> $TEMP_FILE
+            USERNAME=$(cat $TEMP_FILE)
+
+            if [ -n "$USERNAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Select Role" \
+                    --menu "Assign role to $USERNAME:" 14 60 4 \
+                    1 "admin" \
+                    2 "operator" \
+                    3 "viewer" \
+                    4 "backup-admin" \
+                    2> $TEMP_FILE
+                ROLE_CHOICE=$(cat $TEMP_FILE)
+
+                case $ROLE_CHOICE in
+                    1) ROLE="admin" ;;
+                    2) ROLE="operator" ;;
+                    3) ROLE="viewer" ;;
+                    4) ROLE="backup-admin" ;;
+                    *) auth_menu; return ;;
+                esac
+
+                virtos-auth role-assign "$USERNAME" "$ROLE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
+            fi
+            auth_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Check Permission" \
+                --inputbox "Enter username:" 10 60 \
+                2> $TEMP_FILE
+            USERNAME=$(cat $TEMP_FILE)
+
+            if [ -n "$USERNAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Resource" \
+                    --inputbox "Enter resource (e.g., vm:create):" 10 60 \
+                    2> $TEMP_FILE
+                RESOURCE=$(cat $TEMP_FILE)
+
+                if [ -n "$RESOURCE" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Permission Check" \
+                        --msgbox "$(virtos-auth check "$USERNAME" "$RESOURCE" 2>&1)" 12 76
+                fi
+            fi
+            auth_menu
+            ;;
+        0) main_menu ;;
+        *) auth_menu ;;
+    esac
+}
+
+cloud_init_menu() {
+    if ! command -v virtos-cloud-init >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-cloud-init not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Cloud-Init" \
+        --menu "Select option:" 16 76 6 \
+        1 "Create Configuration" \
+        2 "Generate ISO" \
+        3 "Attach ISO to VM" \
+        4 "List Templates" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Cloud-Init Configuration" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Hostname" \
+                    --inputbox "Enter hostname:" 10 60 "$VM_NAME" \
+                    2> $TEMP_FILE
+                HOSTNAME=$(cat $TEMP_FILE)
+
+                $DIALOG $DIALOG_OPTS \
+                    --title "SSH Key" \
+                    --inputbox "Enter path to SSH public key:" 10 70 "$HOME/.ssh/id_rsa.pub" \
+                    2> $TEMP_FILE
+                SSH_KEY=$(cat $TEMP_FILE)
+
+                virtos-cloud-init create "$VM_NAME" --hostname "$HOSTNAME" --ssh-key "$SSH_KEY" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Creating Config" --programbox 20 76
+
+                $DIALOG $DIALOG_OPTS --msgbox "Cloud-init configuration created" 6 50
+            fi
+            cloud_init_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Generate ISO" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                virtos-cloud-init generate "$VM_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Generating ISO" --programbox 15 76
+                $DIALOG $DIALOG_OPTS --msgbox "ISO generation completed" 6 50
+            fi
+            cloud_init_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Attach ISO" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                ISO_PATH="/var/lib/virtos/cloud-init/${VM_NAME}-cloud-init.iso"
+                virtos-cloud-init attach "$VM_NAME" "$ISO_PATH" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Attaching ISO" --programbox 15 76
+            fi
+            cloud_init_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Cloud-Init Templates" \
+                --msgbox "$(virtos-cloud-init template-list 2>&1)" 20 76
+            cloud_init_menu
+            ;;
+        0) main_menu ;;
+        *) cloud_init_menu ;;
+    esac
+}
+
+api_menu() {
+    if ! command -v virtos-api >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-api not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "REST API" \
+        --menu "Select option:" 14 76 5 \
+        1 "Start API Server" \
+        2 "Stop API Server" \
+        3 "API Status" \
+        4 "Test API" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-api start 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Starting API" --programbox 15 76
+            $DIALOG $DIALOG_OPTS --msgbox "API server started on port 8080" 6 50
+            api_menu
+            ;;
+        2)
+            virtos-api stop 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Stopping API" --programbox 12 76
+            $DIALOG $DIALOG_OPTS --msgbox "API server stopped" 6 40
+            api_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "API Status" \
+                --msgbox "$(virtos-api status 2>&1)" 15 76
+            api_menu
+            ;;
+        4)
+            virtos-api test 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "API Test Results" --programbox 20 80
+            api_menu
+            ;;
+        0) main_menu ;;
+        *) api_menu ;;
+    esac
+}
+
+update_menu() {
+    if ! command -v virtos-update >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-update not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "System Updates" \
+        --menu "Select option:" 16 76 7 \
+        1 "Check for Updates" \
+        2 "List Available Updates" \
+        3 "Install All Updates" \
+        4 "Update History" \
+        5 "Enable Auto-Updates" \
+        6 "Disable Auto-Updates" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            virtos-update check 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Checking Updates" --programbox 20 76
+            update_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Available Updates" \
+                --msgbox "$(virtos-update list 2>&1)" 20 76
+            update_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Confirm" \
+                --yesno "Install all available updates?" 8 50
+
+            if [ $? -eq 0 ]; then
+                virtos-update install-all 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Installing Updates" --programbox 20 76
+                $DIALOG $DIALOG_OPTS --msgbox "Updates installed" 6 40
+            fi
+            update_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Update History" \
+                --msgbox "$(virtos-update history 2>&1)" 25 80
+            update_menu
+            ;;
+        5)
+            virtos-update auto-enable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Enable Auto-Updates" --programbox 12 76
+            $DIALOG $DIALOG_OPTS --msgbox "Automatic updates enabled" 6 50
+            update_menu
+            ;;
+        6)
+            virtos-update auto-disable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Disable Auto-Updates" --programbox 12 76
+            $DIALOG $DIALOG_OPTS --msgbox "Automatic updates disabled" 6 50
+            update_menu
+            ;;
+        0) main_menu ;;
+        *) update_menu ;;
+    esac
+}
+
+dr_menu() {
+    if ! command -v virtos-dr >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-dr not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Disaster Recovery" \
+        --menu "Select option:" 18 76 9 \
+        1 "List DR Plans" \
+        2 "Create DR Plan" \
+        3 "Execute DR Plan" \
+        4 "Replication Status" \
+        5 "Start Replication" \
+        6 "Cluster Backup" \
+        7 "Failover" \
+        8 "Failback" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "DR Plans" \
+                --msgbox "$(virtos-dr plan-list 2>&1)" 25 80
+            dr_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Create DR Plan" \
+                --inputbox "Enter plan name:" 10 60 \
+                2> $TEMP_FILE
+            PLAN_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$PLAN_NAME" ]; then
+                virtos-dr plan-create "$PLAN_NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Creating Plan" --programbox 15 76
+                $DIALOG $DIALOG_OPTS --msgbox "DR plan created" 6 40
+            fi
+            dr_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Execute DR Plan" \
+                --inputbox "Enter plan name:" 10 60 \
+                2> $TEMP_FILE
+            PLAN_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$PLAN_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Confirm" \
+                    --yesno "Execute DR plan '$PLAN_NAME'?" 8 60
+
+                if [ $? -eq 0 ]; then
+                    virtos-dr plan-execute "$PLAN_NAME" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Executing Plan" --programbox 20 76
+                fi
+            fi
+            dr_menu
+            ;;
+        4)
+            $DIALOG $DIALOG_OPTS \
+                --title "Replication Status" \
+                --msgbox "$(virtos-dr replicate-status 2>&1)" 20 76
+            dr_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Start Replication" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Target Host" \
+                    --inputbox "Enter target DR site:" 10 60 \
+                    2> $TEMP_FILE
+                TARGET=$(cat $TEMP_FILE)
+
+                if [ -n "$TARGET" ]; then
+                    virtos-dr replicate-start "$VM_NAME" "$TARGET" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Starting Replication" --programbox 15 76
+                fi
+            fi
+            dr_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Confirm" \
+                --yesno "Backup entire cluster?" 8 50
+
+            if [ $? -eq 0 ]; then
+                virtos-dr cluster-backup 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Cluster Backup" --programbox 20 76
+                $DIALOG $DIALOG_OPTS --msgbox "Cluster backup completed" 6 50
+            fi
+            dr_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Failover" \
+                --inputbox "Enter DR site hostname:" 10 60 \
+                2> $TEMP_FILE
+            DR_SITE=$(cat $TEMP_FILE)
+
+            if [ -n "$DR_SITE" ]; then
+                echo "yes" | virtos-dr failover "$DR_SITE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Failover Progress" --programbox 25 80
+            fi
+            dr_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Failback" \
+                --inputbox "Enter primary site hostname:" 10 60 \
+                2> $TEMP_FILE
+            PRIMARY_SITE=$(cat $TEMP_FILE)
+
+            if [ -n "$PRIMARY_SITE" ]; then
+                echo "yes" | virtos-dr failback "$PRIMARY_SITE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Failback Progress" --programbox 25 80
+            fi
+            dr_menu
+            ;;
+        0) main_menu ;;
+        *) dr_menu ;;
+    esac
+}
+
 iaas_vm_create_menu() {
     if ! command -v virtos-create-vm >/dev/null 2>&1; then
         $DIALOG $DIALOG_OPTS --msgbox "virtos-create-vm not installed" 6 40
@@ -1859,9 +2323,15 @@ settings_menu() {
             command -v virtos-ha >/dev/null && INFO="${INFO}  ✓ virtos-ha\n"
             command -v virtos-migrate >/dev/null && INFO="${INFO}  ✓ virtos-migrate\n"
             command -v virtos-quota >/dev/null && INFO="${INFO}  ✓ virtos-quota\n"
+            INFO="${INFO}\nPhase 8 Tools:\n"
+            command -v virtos-auth >/dev/null && INFO="${INFO}  ✓ virtos-auth\n"
+            command -v virtos-cloud-init >/dev/null && INFO="${INFO}  ✓ virtos-cloud-init\n"
+            command -v virtos-api >/dev/null && INFO="${INFO}  ✓ virtos-api\n"
+            command -v virtos-update >/dev/null && INFO="${INFO}  ✓ virtos-update\n"
+            command -v virtos-dr >/dev/null && INFO="${INFO}  ✓ virtos-dr\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
-                --msgbox "$INFO" 25 50
+                --msgbox "$INFO" 30 50
             settings_menu
             ;;
         4)

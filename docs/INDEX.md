@@ -165,13 +165,22 @@ Complete documentation for FlossWare VirtOS.
 | Backup & Restore | QUICK-REFERENCE.md (virtos-backup) |
 | VM Templates | QUICK-REFERENCE.md (virtos-template) |
 | Snapshots | QUICK-REFERENCE.md (virtos-snapshot) |
+| Monitoring & Alerts | QUICK-REFERENCE.md (virtos-monitor) |
+| High Availability | QUICK-REFERENCE.md (virtos-ha) |
+| Live Migration | QUICK-REFERENCE.md (virtos-migrate) |
+| Resource Quotas | QUICK-REFERENCE.md (virtos-quota) |
+| Authentication/RBAC | QUICK-REFERENCE.md (virtos-auth) |
+| Cloud-init | QUICK-REFERENCE.md (virtos-cloud-init) |
+| REST API | QUICK-REFERENCE.md (virtos-api) |
+| System Updates | QUICK-REFERENCE.md (virtos-update) |
+| Disaster Recovery | QUICK-REFERENCE.md (virtos-dr) |
 
 ## Total Documentation
 
 - **19 Documentation Files**
-- **9,700+ Lines**
+- **11,500+ Lines**
 - **Complete and Honest Coverage** - including what's missing
-- **Phase 6 Complete** - Backup, templates, and snapshots implemented (May 2026)
+- **Phase 8 Complete** - Auth, cloud-init, API, updates, and DR implemented (May 2026)
 
 ## Getting Help
 
