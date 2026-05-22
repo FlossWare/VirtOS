@@ -737,7 +737,7 @@ Comprehensive comparison of VirtOS with similar virtualization platforms and hyp
 **Best:** Proxmox, ESXi, oVirt, or XCP-ng
 
 **Why VirtOS isn't ready:**
-- No mature backup solution
+- Basic backup solution (new in Phase 6, not as mature as Proxmox Backup Server)
 - No automatic HA
 - Limited commercial support options
 - Young project
