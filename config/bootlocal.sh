@@ -49,11 +49,12 @@ fi
 echo "Enabling IP forwarding..."
 echo 1 > /proc/sys/net/ipv4/ip_forward
 
-# Set up iptables for NAT (adjust interface names as needed)
-# Uncomment when networking is configured:
-# iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-# iptables -A FORWARD -i br0 -j ACCEPT
-# iptables -A FORWARD -o br0 -j ACCEPT
+# Set up iptables for NAT
+echo "Configuring NAT for VMs/containers..."
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+iptables -A FORWARD -i br0 -j ACCEPT
+iptables -A FORWARD -o br0 -j ACCEPT
+iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 # Load TCE extensions (if using)
 # tce-load -i qemu.tcz
