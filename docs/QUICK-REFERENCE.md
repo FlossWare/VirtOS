@@ -993,6 +993,187 @@ virtos-automation event-trigger vm.failed
 virtos-automation wizard
 ```
 
+### AI Optimization (virtos-ai)
+
+```bash
+# Initialize AI engine
+virtos-ai ai-init tensorflow      # Use TensorFlow
+virtos-ai ai-init pytorch         # Use PyTorch
+virtos-ai ai-init sklearn         # Use scikit-learn
+
+# Train ML models
+virtos-ai model-train-capacity    # Train capacity prediction model
+virtos-ai model-train-placement   # Train VM placement model
+virtos-ai model-train-anomaly     # Train anomaly detection model
+
+# View model status
+virtos-ai model-status
+
+# Predict resource capacity
+virtos-ai predict-capacity cpu    # CPU capacity prediction
+virtos-ai predict-capacity memory # Memory capacity prediction
+
+# AI-optimized placement
+virtos-ai optimize-placement      # Find optimal host for new VMs
+
+# Detect anomalies
+virtos-ai detect-anomalies        # ML-based anomaly detection
+
+# System auto-tuning
+virtos-ai autotune-system         # AI-powered system optimization
+
+# Workload balancing
+virtos-ai balance-workload        # Intelligent workload distribution
+
+# AI insights
+virtos-ai insights-report         # Comprehensive AI analysis
+
+# Setup wizard
+virtos-ai wizard
+```
+
+### Quantum Computing (virtos-quantum)
+
+```bash
+# Initialize quantum simulator
+virtos-quantum quantum-init qiskit 5        # Qiskit with 5 qubits
+virtos-quantum quantum-init cirq 10         # Cirq with 10 qubits
+virtos-quantum quantum-init pennylane 8     # PennyLane with 8 qubits
+
+# Create quantum circuits
+virtos-quantum circuit-create bell-state 2       # Bell state (2 qubits)
+virtos-quantum circuit-create grover 4           # Grover's algorithm
+virtos-quantum circuit-create qaoa 6             # QAOA circuit
+
+# Run quantum circuits
+virtos-quantum circuit-run bell-state 1000       # Run with 1000 shots
+virtos-quantum circuit-run grover 5000           # Higher accuracy
+
+# List circuits
+virtos-quantum circuit-list
+
+# Quantum algorithm optimization
+virtos-quantum optimize-algorithm routing        # Network routing
+virtos-quantum optimize-algorithm scheduling     # VM scheduling
+
+# Quantum-safe encryption
+virtos-quantum encryption-enable                 # Enable post-quantum crypto
+
+# Quantum random numbers
+virtos-quantum quantum-random 10                 # Generate 10 QRNs
+virtos-quantum quantum-random 100                # Generate 100 QRNs
+
+# Benchmarking
+virtos-quantum benchmark-volume                  # Quantum volume test
+
+# Error mitigation
+virtos-quantum error-mitigation-enable
+
+# Status
+virtos-quantum quantum-status
+
+# Setup wizard
+virtos-quantum wizard
+```
+
+### Blockchain Auditing (virtos-blockchain)
+
+```bash
+# Initialize blockchain
+virtos-blockchain blockchain-init poa virtos-chain      # PoA consensus
+virtos-blockchain blockchain-init pbft enterprise-chain # PBFT consensus
+
+# Verify blockchain integrity
+virtos-blockchain blockchain-verify
+
+# View blockchain status
+virtos-blockchain blockchain-status
+
+# List blocks
+virtos-blockchain block-list
+
+# Audit VM events (automatically creates blocks)
+virtos-blockchain audit-vm web-server create "Ubuntu 22.04, 4 cores, 8GB RAM"
+virtos-blockchain audit-vm web-server modify "Increased RAM to 16GB"
+virtos-blockchain audit-vm web-server start "Brought online for production"
+virtos-blockchain audit-vm web-server delete "End of lifecycle"
+
+# Audit configuration changes
+virtos-blockchain audit-config network "DNS change" "8.8.8.8" "1.1.1.1"
+virtos-blockchain audit-config firewall "Allow port 443" "blocked" "allowed"
+virtos-blockchain audit-config storage "Add NFS mount" "" "nfs1:/data"
+
+# Smart contracts
+virtos-blockchain contract-deploy quota-policy "VM resource quotas"
+virtos-blockchain contract-deploy compliance "Compliance rules"
+virtos-blockchain contract-execute quota-policy web-server
+virtos-blockchain contract-list
+
+# Compliance reporting
+virtos-blockchain compliance-report 30        # Last 30 days
+virtos-blockchain compliance-report 90        # Last 90 days
+
+# Consensus status
+virtos-blockchain consensus-status
+
+# Setup wizard
+virtos-blockchain wizard
+```
+
+### Cloud Federation (virtos-federation)
+
+```bash
+# Initialize federation
+virtos-federation federation-init my-hybrid-cloud
+
+# Register cloud providers
+virtos-federation provider-register aws aws us-east-1.amazonaws.com AKIAXXXX secret
+virtos-federation provider-register azure azure eastus.azure.com sub-12345 secret
+virtos-federation provider-register gcp gcp us-central1.googleapis.com proj-456 secret
+virtos-federation provider-register on-prem on-prem 192.168.1.100 "" ""
+
+# Remove provider
+virtos-federation provider-remove old-provider
+
+# List providers
+virtos-federation provider-list
+
+# Deploy VMs to different clouds
+virtos-federation vm-deploy web-server-1 aws t3.medium           # Deploy to AWS
+virtos-federation vm-deploy web-server-2 azure Standard_D2s_v3   # Deploy to Azure
+virtos-federation vm-deploy db-server gcp n1-standard-4          # Deploy to GCP
+virtos-federation vm-deploy cache-server on-prem default         # Deploy on-prem
+
+# Migrate VMs between clouds
+virtos-federation vm-migrate web-server-1 aws azure              # AWS → Azure
+virtos-federation vm-migrate db-server gcp on-prem               # GCP → On-prem
+
+# Federated identity (SSO)
+virtos-federation identity-setup aws              # Setup AWS SSO
+virtos-federation identity-setup azure            # Setup Azure AD
+
+# Cross-cloud networking
+virtos-federation network-setup aws azure vpn                # VPN between clouds
+virtos-federation network-setup gcp on-prem interconnect     # Direct interconnect
+
+# Multi-cloud load balancing
+virtos-federation loadbalance-setup global-lb aws azure gcp  # Global LB
+
+# Hybrid orchestration
+virtos-federation hybrid-orchestrate cost            # Cost-optimized placement
+virtos-federation hybrid-orchestrate performance     # Performance-optimized
+virtos-federation hybrid-orchestrate balanced        # Balanced approach
+
+# Cost optimization
+virtos-federation cost-optimize 30               # 30-day cost report
+
+# Federation status
+virtos-federation federation-status
+
+# Setup wizard
+virtos-federation wizard
+```
+
 ## Build Commands
 
 ```bash

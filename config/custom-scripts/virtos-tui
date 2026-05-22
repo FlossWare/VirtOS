@@ -139,7 +139,7 @@ main_menu() {
 
     $DIALOG $DIALOG_OPTS \
         --title "VirtOS Management Console" \
-        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 47 76 34 \
+        --menu "\n\Z4System: $HOSTNAME\Zn\nCPU: $CPU_COUNT cores | Load: $CPU_LOAD\nRAM: $MEM_USED / $MEM_TOTAL | Disk: $DISK_USED / $DISK_TOTAL ($DISK_PERCENT)\nUptime: $UPTIME\n\nSelect an option:" 51 76 38 \
         1 "System Overview" \
         2 "Virtual Machines (VMs)" \
         3 "VM Backups & Restore" \
@@ -174,6 +174,10 @@ main_menu() {
         32 "Analytics & Reporting" \
         33 "Edge Computing" \
         34 "Automation & Orchestration" \
+        35 "AI Optimization" \
+        36 "Quantum Computing" \
+        37 "Blockchain Auditing" \
+        38 "Cloud Federation" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -214,6 +218,10 @@ main_menu() {
         32) analytics_menu ;;
         33) edge_menu ;;
         34) automation_menu ;;
+        35) ai_menu ;;
+        36) quantum_menu ;;
+        37) blockchain_menu ;;
+        38) federation_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -4479,6 +4487,736 @@ automation_menu() {
     esac
 }
 
+#==============================================================================
+# Phase 12 Menus: AI, Quantum, Blockchain, Federation
+#==============================================================================
+
+ai_menu() {
+    if ! command -v virtos-ai >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-ai not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "AI Optimization" \
+        --menu "Select option:" 22 76 14 \
+        1 "Initialize AI Engine" \
+        2 "Train Capacity Model" \
+        3 "Train Placement Model" \
+        4 "Train Anomaly Model" \
+        5 "View Model Status" \
+        6 "Predict Capacity" \
+        7 "Optimize VM Placement" \
+        8 "Detect Anomalies" \
+        9 "Auto-Tune System" \
+        10 "Balance Workload" \
+        11 "AI Insights Report" \
+        12 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "AI Engine" \
+                --menu "Select ML engine:" 12 60 3 \
+                1 "TensorFlow" \
+                2 "PyTorch" \
+                3 "scikit-learn" \
+                2> $TEMP_FILE
+            ENGINE_CHOICE=$(cat $TEMP_FILE)
+            case $ENGINE_CHOICE in
+                1) ENGINE="tensorflow" ;;
+                2) ENGINE="pytorch" ;;
+                3) ENGINE="sklearn" ;;
+                *) ai_menu; return ;;
+            esac
+            if [ -n "$ENGINE" ]; then
+                virtos-ai ai-init "$ENGINE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "AI Initialization" --programbox 20 76
+            fi
+            ai_menu
+            ;;
+        2)
+            virtos-ai model-train-capacity 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Training Capacity Model" --programbox 25 100
+            ai_menu
+            ;;
+        3)
+            virtos-ai model-train-placement 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Training Placement Model" --programbox 25 100
+            ai_menu
+            ;;
+        4)
+            virtos-ai model-train-anomaly 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Training Anomaly Model" --programbox 25 100
+            ai_menu
+            ;;
+        5)
+            virtos-ai model-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Model Status" --programbox 20 76
+            ai_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Resource Type" \
+                --menu "Select resource:" 12 60 2 \
+                1 "CPU" \
+                2 "Memory" \
+                2> $TEMP_FILE
+            RESOURCE_CHOICE=$(cat $TEMP_FILE)
+            case $RESOURCE_CHOICE in
+                1) RESOURCE="cpu" ;;
+                2) RESOURCE="memory" ;;
+                *) ai_menu; return ;;
+            esac
+            if [ -n "$RESOURCE" ]; then
+                virtos-ai predict-capacity "$RESOURCE" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Capacity Prediction" --programbox 15 76
+            fi
+            ai_menu
+            ;;
+        7)
+            virtos-ai optimize-placement 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Optimizing Placement" --programbox 20 100
+            ai_menu
+            ;;
+        8)
+            virtos-ai detect-anomalies 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Anomaly Detection" --programbox 20 76
+            ai_menu
+            ;;
+        9)
+            virtos-ai autotune-system 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "System Auto-Tuning" --programbox 25 100
+            ai_menu
+            ;;
+        10)
+            virtos-ai balance-workload 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Workload Balancing" --programbox 20 76
+            ai_menu
+            ;;
+        11)
+            virtos-ai insights-report 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "AI Insights" --programbox 30 100
+            ai_menu
+            ;;
+        12)
+            virtos-ai wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "AI Setup Wizard" --programbox 25 80
+            ai_menu
+            ;;
+        0) main_menu ;;
+        *) ai_menu ;;
+    esac
+}
+
+quantum_menu() {
+    if ! command -v virtos-quantum >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-quantum not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Quantum Computing" \
+        --menu "Select option:" 22 76 14 \
+        1 "Initialize Quantum Simulator" \
+        2 "Create Quantum Circuit" \
+        3 "Run Quantum Circuit" \
+        4 "List Quantum Circuits" \
+        5 "Optimize Algorithm" \
+        6 "Enable Quantum-Safe Encryption" \
+        7 "Generate Quantum Random Numbers" \
+        8 "Benchmark Quantum Volume" \
+        9 "Enable Error Mitigation" \
+        10 "View Quantum Status" \
+        11 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Quantum Simulator" \
+                --menu "Select simulator:" 12 60 3 \
+                1 "Qiskit (IBM)" \
+                2 "Cirq (Google)" \
+                3 "PennyLane" \
+                2> $TEMP_FILE
+            SIM_CHOICE=$(cat $TEMP_FILE)
+            case $SIM_CHOICE in
+                1) SIMULATOR="qiskit" ;;
+                2) SIMULATOR="cirq" ;;
+                3) SIMULATOR="pennylane" ;;
+                *) quantum_menu; return ;;
+            esac
+            if [ -n "$SIMULATOR" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Qubit Count" \
+                    --inputbox "Enter qubit count [5]:" 10 50 \
+                    2> $TEMP_FILE
+                QUBITS=$(cat $TEMP_FILE)
+                QUBITS="${QUBITS:-5}"
+                virtos-quantum quantum-init "$SIMULATOR" "$QUBITS" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Quantum Initialization" --programbox 15 76
+            fi
+            quantum_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Circuit Name" \
+                --inputbox "Enter circuit name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Qubit Count" \
+                    --inputbox "Enter qubit count [2]:" 10 50 \
+                    2> $TEMP_FILE
+                QUBITS=$(cat $TEMP_FILE)
+                QUBITS="${QUBITS:-2}"
+                virtos-quantum circuit-create "$NAME" "$QUBITS" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Circuit Created" --msgbox 12 76
+            fi
+            quantum_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Circuit Name" \
+                --inputbox "Enter circuit name to run:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Shots" \
+                    --inputbox "Enter number of shots [1000]:" 10 50 \
+                    2> $TEMP_FILE
+                SHOTS=$(cat $TEMP_FILE)
+                SHOTS="${SHOTS:-1000}"
+                virtos-quantum circuit-run "$NAME" "$SHOTS" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Circuit Execution" --programbox 25 76
+            fi
+            quantum_menu
+            ;;
+        4)
+            virtos-quantum circuit-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Circuits" --programbox 15 76
+            quantum_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "Problem Type" \
+                --menu "Select problem:" 12 60 2 \
+                1 "Routing" \
+                2 "Scheduling" \
+                2> $TEMP_FILE
+            PROBLEM_CHOICE=$(cat $TEMP_FILE)
+            case $PROBLEM_CHOICE in
+                1) PROBLEM="routing" ;;
+                2) PROBLEM="scheduling" ;;
+                *) quantum_menu; return ;;
+            esac
+            if [ -n "$PROBLEM" ]; then
+                virtos-quantum optimize-algorithm "$PROBLEM" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Quantum Optimization" --programbox 25 100
+            fi
+            quantum_menu
+            ;;
+        6)
+            virtos-quantum encryption-enable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum-Safe Encryption" --programbox 15 76
+            quantum_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Random Count" \
+                --inputbox "How many random numbers? [10]:" 10 50 \
+                2> $TEMP_FILE
+            COUNT=$(cat $TEMP_FILE)
+            COUNT="${COUNT:-10}"
+            virtos-quantum quantum-random "$COUNT" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Random Numbers" --programbox 20 76
+            quantum_menu
+            ;;
+        8)
+            virtos-quantum benchmark-volume 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Volume Benchmark" --programbox 25 76
+            quantum_menu
+            ;;
+        9)
+            virtos-quantum error-mitigation-enable 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Error Mitigation" --programbox 15 76
+            quantum_menu
+            ;;
+        10)
+            virtos-quantum quantum-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Status" --programbox 25 76
+            quantum_menu
+            ;;
+        11)
+            virtos-quantum wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Quantum Setup Wizard" --programbox 25 80
+            quantum_menu
+            ;;
+        0) main_menu ;;
+        *) quantum_menu ;;
+    esac
+}
+
+blockchain_menu() {
+    if ! command -v virtos-blockchain >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-blockchain not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Blockchain Auditing" \
+        --menu "Select option:" 24 76 16 \
+        1 "Initialize Blockchain" \
+        2 "Verify Blockchain" \
+        3 "View Blockchain Status" \
+        4 "List Blocks" \
+        5 "Audit VM Event" \
+        6 "Audit Configuration Change" \
+        7 "Deploy Smart Contract" \
+        8 "Execute Smart Contract" \
+        9 "List Smart Contracts" \
+        10 "Compliance Report" \
+        11 "Consensus Status" \
+        12 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Consensus Algorithm" \
+                --menu "Select consensus:" 12 60 2 \
+                1 "PoA (Proof of Authority)" \
+                2 "PBFT (Byzantine Fault Tolerance)" \
+                2> $TEMP_FILE
+            CONSENSUS_CHOICE=$(cat $TEMP_FILE)
+            case $CONSENSUS_CHOICE in
+                1) CONSENSUS="poa" ;;
+                2) CONSENSUS="pbft" ;;
+                *) blockchain_menu; return ;;
+            esac
+            if [ -n "$CONSENSUS" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Network ID" \
+                    --inputbox "Enter network ID [virtos-chain]:" 10 60 \
+                    2> $TEMP_FILE
+                NETWORK=$(cat $TEMP_FILE)
+                NETWORK="${NETWORK:-virtos-chain}"
+                virtos-blockchain blockchain-init "$CONSENSUS" "$NETWORK" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Blockchain Initialization" --programbox 15 76
+            fi
+            blockchain_menu
+            ;;
+        2)
+            virtos-blockchain blockchain-verify 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Blockchain Verification" --programbox 25 76
+            blockchain_menu
+            ;;
+        3)
+            virtos-blockchain blockchain-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Blockchain Status" --programbox 25 76
+            blockchain_menu
+            ;;
+        4)
+            virtos-blockchain block-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Blockchain Blocks" --programbox 25 100
+            blockchain_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "VM Name" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Action" \
+                    --menu "Select action:" 14 60 4 \
+                    1 "create" \
+                    2 "modify" \
+                    3 "delete" \
+                    4 "start/stop" \
+                    2> $TEMP_FILE
+                ACTION_CHOICE=$(cat $TEMP_FILE)
+                case $ACTION_CHOICE in
+                    1) ACTION="create" ;;
+                    2) ACTION="modify" ;;
+                    3) ACTION="delete" ;;
+                    4) ACTION="start" ;;
+                    *) blockchain_menu; return ;;
+                esac
+                $DIALOG $DIALOG_OPTS \
+                    --title "Details" \
+                    --inputbox "Enter event details:" 10 70 \
+                    2> $TEMP_FILE
+                DETAILS=$(cat $TEMP_FILE)
+                virtos-blockchain audit-vm "$VM_NAME" "$ACTION" "$DETAILS" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "VM Event Audited" --msgbox 12 76
+            fi
+            blockchain_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "Component" \
+                --inputbox "Enter component name:" 10 60 \
+                2> $TEMP_FILE
+            COMPONENT=$(cat $TEMP_FILE)
+            if [ -n "$COMPONENT" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Change Description" \
+                    --inputbox "Describe the change:" 10 70 \
+                    2> $TEMP_FILE
+                CHANGE=$(cat $TEMP_FILE)
+                if [ -n "$CHANGE" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Old Value" \
+                        --inputbox "Enter old value:" 10 60 \
+                        2> $TEMP_FILE
+                    OLD=$(cat $TEMP_FILE)
+                    $DIALOG $DIALOG_OPTS \
+                        --title "New Value" \
+                        --inputbox "Enter new value:" 10 60 \
+                        2> $TEMP_FILE
+                    NEW=$(cat $TEMP_FILE)
+                    virtos-blockchain audit-config "$COMPONENT" "$CHANGE" "$OLD" "$NEW" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Config Change Audited" --msgbox 12 76
+                fi
+            fi
+            blockchain_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Contract Name" \
+                --inputbox "Enter smart contract name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Description" \
+                    --inputbox "Enter contract description:" 10 70 \
+                    2> $TEMP_FILE
+                DESC=$(cat $TEMP_FILE)
+                virtos-blockchain contract-deploy "$NAME" "$DESC" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Contract Deployed" --msgbox 12 76
+            fi
+            blockchain_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Contract Name" \
+                --inputbox "Enter contract name to execute:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "VM Name" \
+                    --inputbox "Enter VM name (target) [test-vm]:" 10 60 \
+                    2> $TEMP_FILE
+                VM=$(cat $TEMP_FILE)
+                VM="${VM:-test-vm}"
+                virtos-blockchain contract-execute "$NAME" "$VM" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Contract Execution" --programbox 25 76
+            fi
+            blockchain_menu
+            ;;
+        9)
+            virtos-blockchain contract-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Smart Contracts" --programbox 15 76
+            blockchain_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "Report Period" \
+                --inputbox "Enter period in days [30]:" 10 50 \
+                2> $TEMP_FILE
+            DAYS=$(cat $TEMP_FILE)
+            DAYS="${DAYS:-30}"
+            virtos-blockchain compliance-report "$DAYS" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Compliance Report" --programbox 30 100
+            blockchain_menu
+            ;;
+        11)
+            virtos-blockchain consensus-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Consensus Status" --programbox 25 76
+            blockchain_menu
+            ;;
+        12)
+            virtos-blockchain wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Blockchain Setup Wizard" --programbox 25 80
+            blockchain_menu
+            ;;
+        0) main_menu ;;
+        *) blockchain_menu ;;
+    esac
+}
+
+federation_menu() {
+    if ! command -v virtos-federation >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS --msgbox "virtos-federation not installed" 6 40
+        main_menu
+        return
+    fi
+
+    $DIALOG $DIALOG_OPTS \
+        --title "Cloud Federation" \
+        --menu "Select option:" 24 76 16 \
+        1 "Initialize Federation" \
+        2 "Register Cloud Provider" \
+        3 "Remove Cloud Provider" \
+        4 "List Cloud Providers" \
+        5 "Deploy VM to Cloud" \
+        6 "Migrate VM Between Clouds" \
+        7 "Setup Federated Identity" \
+        8 "Setup Cross-Cloud Network" \
+        9 "Setup Load Balancer" \
+        10 "Hybrid Orchestration" \
+        11 "Cost Optimization Report" \
+        12 "Federation Status" \
+        13 "Setup Wizard" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            $DIALOG $DIALOG_OPTS \
+                --title "Federation Name" \
+                --inputbox "Enter federation name [virtos-fed]:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            NAME="${NAME:-virtos-fed}"
+            virtos-federation federation-init "$NAME" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Federation Initialized" --msgbox 12 76
+            federation_menu
+            ;;
+        2)
+            $DIALOG $DIALOG_OPTS \
+                --title "Provider Name" \
+                --inputbox "Enter provider name:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Provider Type" \
+                    --menu "Select type:" 14 60 4 \
+                    1 "AWS" \
+                    2 "Azure" \
+                    3 "GCP" \
+                    4 "On-Premises" \
+                    2> $TEMP_FILE
+                TYPE_CHOICE=$(cat $TEMP_FILE)
+                case $TYPE_CHOICE in
+                    1) TYPE="aws" ;;
+                    2) TYPE="azure" ;;
+                    3) TYPE="gcp" ;;
+                    4) TYPE="on-prem" ;;
+                    *) federation_menu; return ;;
+                esac
+                $DIALOG $DIALOG_OPTS \
+                    --title "Endpoint" \
+                    --inputbox "Enter endpoint URL:" 10 70 \
+                    2> $TEMP_FILE
+                ENDPOINT=$(cat $TEMP_FILE)
+                if [ -n "$ENDPOINT" ]; then
+                    virtos-federation provider-register "$NAME" "$TYPE" "$ENDPOINT" "" "" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Provider Registered" --msgbox 12 76
+                fi
+            fi
+            federation_menu
+            ;;
+        3)
+            $DIALOG $DIALOG_OPTS \
+                --title "Provider Name" \
+                --inputbox "Enter provider name to remove:" 10 60 \
+                2> $TEMP_FILE
+            NAME=$(cat $TEMP_FILE)
+            if [ -n "$NAME" ]; then
+                virtos-federation provider-remove "$NAME" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Provider Removed" --msgbox 12 76
+            fi
+            federation_menu
+            ;;
+        4)
+            virtos-federation provider-list 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Cloud Providers" --programbox 15 76
+            federation_menu
+            ;;
+        5)
+            $DIALOG $DIALOG_OPTS \
+                --title "VM Name" \
+                --inputbox "Enter VM name:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Provider" \
+                    --inputbox "Enter provider name:" 10 60 \
+                    2> $TEMP_FILE
+                PROVIDER=$(cat $TEMP_FILE)
+                if [ -n "$PROVIDER" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Instance Type" \
+                        --inputbox "Enter instance type [t3.medium]:" 10 60 \
+                        2> $TEMP_FILE
+                    TYPE=$(cat $TEMP_FILE)
+                    TYPE="${TYPE:-t3.medium}"
+                    virtos-federation vm-deploy "$VM_NAME" "$PROVIDER" "$TYPE" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "VM Deployment" --programbox 30 100
+                fi
+            fi
+            federation_menu
+            ;;
+        6)
+            $DIALOG $DIALOG_OPTS \
+                --title "VM Name" \
+                --inputbox "Enter VM name to migrate:" 10 60 \
+                2> $TEMP_FILE
+            VM_NAME=$(cat $TEMP_FILE)
+            if [ -n "$VM_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Source Provider" \
+                    --inputbox "Enter source provider:" 10 60 \
+                    2> $TEMP_FILE
+                SOURCE=$(cat $TEMP_FILE)
+                if [ -n "$SOURCE" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Target Provider" \
+                        --inputbox "Enter target provider:" 10 60 \
+                        2> $TEMP_FILE
+                    TARGET=$(cat $TEMP_FILE)
+                    if [ -n "$TARGET" ]; then
+                        virtos-federation vm-migrate "$VM_NAME" "$SOURCE" "$TARGET" 2>&1 | \
+                            $DIALOG $DIALOG_OPTS --title "Cross-Cloud Migration" --programbox 30 100
+                    fi
+                fi
+            fi
+            federation_menu
+            ;;
+        7)
+            $DIALOG $DIALOG_OPTS \
+                --title "Provider" \
+                --inputbox "Enter provider for identity setup:" 10 60 \
+                2> $TEMP_FILE
+            PROVIDER=$(cat $TEMP_FILE)
+            if [ -n "$PROVIDER" ]; then
+                virtos-federation identity-setup "$PROVIDER" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Federated Identity" --programbox 15 76
+            fi
+            federation_menu
+            ;;
+        8)
+            $DIALOG $DIALOG_OPTS \
+                --title "Provider 1" \
+                --inputbox "Enter first provider:" 10 60 \
+                2> $TEMP_FILE
+            PROV1=$(cat $TEMP_FILE)
+            if [ -n "$PROV1" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Provider 2" \
+                    --inputbox "Enter second provider:" 10 60 \
+                    2> $TEMP_FILE
+                PROV2=$(cat $TEMP_FILE)
+                if [ -n "$PROV2" ]; then
+                    $DIALOG $DIALOG_OPTS \
+                        --title "Connection Type" \
+                        --menu "Select type:" 12 60 2 \
+                        1 "VPN" \
+                        2 "Direct Interconnect" \
+                        2> $TEMP_FILE
+                    TYPE_CHOICE=$(cat $TEMP_FILE)
+                    case $TYPE_CHOICE in
+                        1) CONN_TYPE="vpn" ;;
+                        2) CONN_TYPE="interconnect" ;;
+                        *) federation_menu; return ;;
+                    esac
+                    virtos-federation network-setup "$PROV1" "$PROV2" "$CONN_TYPE" 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Cross-Cloud Network" --programbox 20 76
+                fi
+            fi
+            federation_menu
+            ;;
+        9)
+            $DIALOG $DIALOG_OPTS \
+                --title "Load Balancer Name" \
+                --inputbox "Enter load balancer name:" 10 60 \
+                2> $TEMP_FILE
+            LB_NAME=$(cat $TEMP_FILE)
+            if [ -n "$LB_NAME" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Providers" \
+                    --inputbox "Enter providers (space-separated):" 10 70 \
+                    2> $TEMP_FILE
+                PROVIDERS=$(cat $TEMP_FILE)
+                if [ -n "$PROVIDERS" ]; then
+                    virtos-federation loadbalance-setup "$LB_NAME" $PROVIDERS 2>&1 | \
+                        $DIALOG $DIALOG_OPTS --title "Load Balancer" --programbox 25 100
+                fi
+            fi
+            federation_menu
+            ;;
+        10)
+            $DIALOG $DIALOG_OPTS \
+                --title "Orchestration Strategy" \
+                --menu "Select strategy:" 13 60 3 \
+                1 "Cost-Optimized" \
+                2 "Performance-Optimized" \
+                3 "Balanced" \
+                2> $TEMP_FILE
+            STRATEGY_CHOICE=$(cat $TEMP_FILE)
+            case $STRATEGY_CHOICE in
+                1) STRATEGY="cost" ;;
+                2) STRATEGY="performance" ;;
+                3) STRATEGY="balanced" ;;
+                *) federation_menu; return ;;
+            esac
+            if [ -n "$STRATEGY" ]; then
+                virtos-federation hybrid-orchestrate "$STRATEGY" 2>&1 | \
+                    $DIALOG $DIALOG_OPTS --title "Hybrid Orchestration" --programbox 30 100
+            fi
+            federation_menu
+            ;;
+        11)
+            $DIALOG $DIALOG_OPTS \
+                --title "Report Period" \
+                --inputbox "Enter period in days [30]:" 10 50 \
+                2> $TEMP_FILE
+            DAYS=$(cat $TEMP_FILE)
+            DAYS="${DAYS:-30}"
+            virtos-federation cost-optimize "$DAYS" 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Cost Optimization" --programbox 30 100
+            federation_menu
+            ;;
+        12)
+            virtos-federation federation-status 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Federation Status" --programbox 25 76
+            federation_menu
+            ;;
+        13)
+            virtos-federation wizard 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Federation Setup Wizard" --programbox 25 80
+            federation_menu
+            ;;
+        0) main_menu ;;
+        *) federation_menu ;;
+    esac
+}
+
 settings_menu() {
     $DIALOG $DIALOG_OPTS \
         --title "Settings" \
@@ -4558,6 +5296,11 @@ settings_menu() {
             command -v virtos-analytics >/dev/null && INFO="${INFO}  ✓ virtos-analytics\n"
             command -v virtos-edge >/dev/null && INFO="${INFO}  ✓ virtos-edge\n"
             command -v virtos-automation >/dev/null && INFO="${INFO}  ✓ virtos-automation\n"
+            INFO="${INFO}\nPhase 12 Tools:\n"
+            command -v virtos-ai >/dev/null && INFO="${INFO}  ✓ virtos-ai\n"
+            command -v virtos-quantum >/dev/null && INFO="${INFO}  ✓ virtos-quantum\n"
+            command -v virtos-blockchain >/dev/null && INFO="${INFO}  ✓ virtos-blockchain\n"
+            command -v virtos-federation >/dev/null && INFO="${INFO}  ✓ virtos-federation\n"
             $DIALOG $DIALOG_OPTS \
                 --title "Installed Components" \
                 --msgbox "$INFO" 40 50
