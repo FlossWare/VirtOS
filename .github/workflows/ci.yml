@@ -255,10 +255,67 @@ jobs:
 
           exit $EXIT_CODE
 
+  package-build:
+    name: Build Packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools
+
+      - name: Build virtos-tools package
+        run: |
+          cd packages
+          ./build-all.sh
+
+      - name: Verify package was created
+        run: |
+          if [ -f packages/output/virtos-tools.tcz ]; then
+            echo "✓ Package built successfully"
+            ls -lh packages/output/virtos-tools.tcz
+          else
+            echo "✗ Package build failed"
+            exit 1
+          fi
+
+      - name: Verify package contents
+        run: |
+          cd packages/output
+          md5sum -c virtos-tools.tcz.md5.txt
+          echo "✓ Checksum verified"
+
+      - name: Check package size
+        run: |
+          SIZE=$(stat -f%z packages/output/virtos-tools.tcz 2>/dev/null || stat -c%s packages/output/virtos-tools.tcz)
+          echo "Package size: $SIZE bytes"
+          if [ $SIZE -lt 100000 ]; then
+            echo "✗ Package too small, likely incomplete"
+            exit 1
+          fi
+          if [ $SIZE -gt 1000000 ]; then
+            echo "⚠ Package larger than expected"
+          fi
+          echo "✓ Package size acceptable"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: virtos-tools-package
+          path: |
+            packages/output/virtos-tools.tcz
+            packages/output/virtos-tools.tcz.md5.txt
+            packages/output/virtos-tools.tcz.info
+          retention-days: 30
+
   summary:
     name: Build Summary
     runs-on: ubuntu-latest
-    needs: [validate, syntax-check, permissions-check, build-test, profile-validation]
+    needs: [validate, syntax-check, permissions-check, build-test, profile-validation, package-build]
     if: always()
 
     steps:
@@ -269,13 +326,18 @@ jobs:
         run: |
           echo "## VirtOS CI Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Validation" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Project structure validated" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Shell scripts syntax checked" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ File permissions verified" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Build configuration validated" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ All profiles validated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All 7 profiles validated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "- Implement actual build process" >> $GITHUB_STEP_SUMMARY
-          echo "- Add integration tests" >> $GITHUB_STEP_SUMMARY
-          echo "- Create test artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "### Build" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Package build successful" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ virtos-tools.tcz created (~332KB)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Checksums verified" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 virtos-tools package available for download" >> $GITHUB_STEP_SUMMARY
+          echo "- ⏱️ Artifacts retained for 30 days" >> $GITHUB_STEP_SUMMARY

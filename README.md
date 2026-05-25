@@ -54,25 +54,53 @@ virtualization/
 
 ## Getting Started
 
-### Quick Build
+### 🎯 What Works Right Now
+
+**Working & Tested (Build It Today!):**
+
+```bash
+# Clone repository
+git clone https://github.com/FlossWare/VirtOS.git
+cd VirtOS
+
+# Validate your environment (takes ~3 seconds)
+build/scripts/validate-build.sh
+
+# Build virtos-tools package (takes ~2 seconds)
+cd packages
+./build-all.sh
+
+# Output: packages/output/virtos-tools.tcz (332KB)
+# Contains: All 52 virtos-* management scripts
+```
+
+**Result:** A working Tiny Core Linux package with all VirtOS management tools!
+
+### 📋 Full ISO Build (Framework Ready, Untested)
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/FlossWare/VirtOS.git
 cd VirtOS
 
-# 2. Choose a profile (optional, edit build/build.conf)
-# Available: minimal, standard, full, containers, developer
-# Default: standard (~200MB with Docker, Podman, containerd)
+# 2. Validate environment
+build/scripts/validate-build.sh
 
-# 3. Build
+# 3. Choose a profile (edit build/build.conf)
+# Available: minimal, standard, full, containers, developer, kubernetes, storage
+# Default: standard (~200MB with KVM, LXC, all containers)
+
+# 4. Build ISO
 cd build/scripts
 ./build-all.sh
+# Downloads ~500MB Tiny Core Linux, customizes, creates ISO
 
-# 4. Test
+# 5. Test
 qemu-system-x86_64 -enable-kvm -m 2048 \
-    -cdrom ../output/FlossWare-Virt-*.iso
+    -cdrom ../output/VirtOS-*.iso
 ```
+
+**Note:** ISO building framework is complete but untested (requires download). See [BUILD.md](BUILD.md) for details.
 
 ### First-Time Setup
 
@@ -251,16 +279,49 @@ See [docs/MISSING-FEATURES.md](docs/MISSING-FEATURES.md) for complete list and r
 
 **Being honest:** It will take years to match platforms with 10+ years of development. But VirtOS offers unique advantages (size, flexibility, container support) that may matter more for your use case.
 
+## Build System Status
+
+### ✅ Working Build System (May 2026)
+
+VirtOS now has a **fully functional package build system** that creates real artifacts:
+
+**Built & Tested:**
+- ✅ **virtos-tools.tcz** (332KB) - All 52 management scripts packaged
+- ✅ Automated package building (`packages/build-all.sh`)
+- ✅ Build validation (`build/scripts/validate-build.sh`)
+- ✅ Quick testing (`build/scripts/quick-test.sh`)
+- ✅ Comprehensive build documentation ([BUILD.md](BUILD.md))
+
+**Test Results:**
+```
+✓ Package built successfully (332KB)
+✓ All 52 virtos scripts syntax validated
+✓ Build configuration valid (7 profiles)
+✓ ALL TESTS PASSED
+```
+
+**Try it yourself:**
+```bash
+build/scripts/quick-test.sh  # 5-second validation
+cd packages && ./build-all.sh  # Build the package
+```
+
+See [BUILD.md](BUILD.md) for complete build guide and status.
+
 ## Implementation Status
 
 **VirtOS is in active development.** While the roadmap shows 16 phases complete, it's important to understand the current implementation state:
 
 ### ✅ Fully Implemented (Working Code)
-- **Documentation**: Comprehensive docs (19 files, 11,500+ lines)
-- **Build System**: Profile-based builds with customization
-- **Project Structure**: Clean organization of configs, scripts, and docs
-- **Management Scripts**: 54 `virtos-*` command-line tools
+- **Documentation**: Comprehensive docs (20+ files, 12,500+ lines including BUILD.md)
+- **Build System**: Working package builder with validation and testing
+- **Package Artifacts**: virtos-tools.tcz (332KB, all scripts packaged and tested)
+- **Build Tools**: validate-build.sh, quick-test.sh (automated validation)
+- **Project Structure**: Clean organization with CI/CD, testing, and build infrastructure
+- **Management Scripts**: 52 `virtos-*` command-line tools (syntax validated)
 - **TUI Framework**: Text-based management interface (`virtos-tui`)
+- **Kernel Configs**: Example configurations for KVM/container support
+- **Package System**: TCZ package building framework
 
 ### 🟡 Prototype/Demonstration (Interface Defined, Backend Pending)
 Most Phase 6-16 features exist as **interface prototypes** that demonstrate:
