@@ -210,6 +210,39 @@ virtos-create-vm \
 
 Infrastructure as a Service - simplified! See [docs/IAAS.md](docs/IAAS.md) for automated placement, scheduling policies, and resource management.
 
+### Cloud Federation - Multi-Cloud & Hybrid
+
+**Manage on-premises AND public cloud from one interface:**
+```bash
+# Initialize federation
+virtos-federation federation-init my-company-fed
+
+# Register cloud providers
+virtos-federation provider-register aws aws ec2.amazonaws.com KEY SECRET
+virtos-federation provider-register azure azure management.azure.com KEY SECRET
+
+# Deploy VMs anywhere
+virtos-federation vm-deploy web-server aws t3.medium
+virtos-federation vm-deploy database azure Standard_D4s_v3
+
+# Migrate between clouds
+virtos-federation vm-migrate myvm on-prem aws
+
+# Cost optimization
+virtos-federation cost-optimize --report monthly
+```
+
+**Federation features:**
+- **Unified management** across on-prem + AWS + Azure + GCP
+- **Cross-cloud networking** (VPN tunnels, unified IP space)
+- **Federated identity (SSO)** with SAML 2.0
+- **Multi-cloud load balancing** with geo-routing
+- **Hybrid orchestration** (auto-burst to cloud during peaks)
+- **Cost optimization** (compare providers, placement recommendations)
+- **VM migration** between any providers
+
+See [docs/FEDERATION.md](docs/FEDERATION.md) for multi-cloud setup, hybrid deployments, and cost optimization strategies.
+
 ### Customization
 
 **Everything is choosable!** Edit `build/build.conf`:
