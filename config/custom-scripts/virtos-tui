@@ -156,44 +156,45 @@ main_menu() {
         14 "System Updates" \
         15 "Disaster Recovery" \
         16 "Containers" \
-        17 "Storage Management" \
-        18 "Cluster Status" \
-        19 "Networking" \
-        20 "Services" \
-        21 "System Logs" \
-        22 "Settings" \
-        23 "Distributed Storage" \
-        24 "Network Virtualization" \
-        25 "GPU Passthrough" \
-        26 "USB Devices" \
-        27 "Metrics & Telemetry" \
-        28 "Security Hardening" \
-        29 "Billing & Cost Tracking" \
-        30 "Service Mesh" \
-        31 "Multi-Datacenter" \
-        32 "Analytics & Reporting" \
-        33 "Edge Computing" \
-        34 "Automation & Orchestration" \
-        35 "AI Optimization" \
-        36 "Quantum Computing" \
-        37 "Blockchain Auditing" \
-        38 "Cloud Federation" \
-        39 "Advanced AI" \
-        40 "Quantum Hardware" \
-        41 "Blockchain DeFi" \
-        42 "Extended Federation" \
-        43 "Advanced Security" \
-        44 "Performance Optimization" \
-        45 "Observability" \
-        46 "Advanced DR" \
-        47 "Web UI" \
-        48 "DevOps Integration" \
-        49 "Directory Services" \
-        50 "Governance & Policy" \
-        51 "Site Reliability (SRE)" \
-        52 "Multi-Cloud Management" \
-        53 "Advanced Networking" \
-        54 "Application Performance (APM)" \
+        17 "JPlatform Workloads" \
+        18 "Storage Management" \
+        19 "Cluster Status" \
+        20 "Networking" \
+        21 "Services" \
+        22 "System Logs" \
+        23 "Settings" \
+        24 "Distributed Storage" \
+        25 "Network Virtualization" \
+        26 "GPU Passthrough" \
+        27 "USB Devices" \
+        28 "Metrics & Telemetry" \
+        29 "Security Hardening" \
+        30 "Billing & Cost Tracking" \
+        31 "Service Mesh" \
+        32 "Multi-Datacenter" \
+        33 "Analytics & Reporting" \
+        34 "Edge Computing" \
+        35 "Automation & Orchestration" \
+        36 "AI Optimization" \
+        37 "Quantum Computing" \
+        38 "Blockchain Auditing" \
+        39 "Cloud Federation" \
+        40 "Advanced AI" \
+        41 "Quantum Hardware" \
+        42 "Blockchain DeFi" \
+        43 "Extended Federation" \
+        44 "Advanced Security" \
+        45 "Performance Optimization" \
+        46 "Observability" \
+        47 "Advanced DR" \
+        48 "Web UI" \
+        49 "DevOps Integration" \
+        50 "Directory Services" \
+        51 "Governance & Policy" \
+        52 "Site Reliability (SRE)" \
+        53 "Multi-Cloud Management" \
+        54 "Advanced Networking" \
+        55 "Application Performance (APM)" \
         0 "Exit" \
         2> $TEMP_FILE
 
@@ -216,44 +217,45 @@ main_menu() {
         14) update_menu ;;
         15) dr_menu ;;
         16) container_management_menu ;;
-        17) storage_management_menu ;;
-        18) cluster_status_menu ;;
-        19) networking_menu ;;
-        20) services_menu ;;
-        21) logs_menu ;;
-        22) settings_menu ;;
-        23) distributed_storage_menu ;;
-        24) network_virtualization_menu ;;
-        25) gpu_passthrough_menu ;;
-        26) usb_devices_menu ;;
-        27) telemetry_menu ;;
-        28) security_menu ;;
-        29) billing_menu ;;
-        30) mesh_menu ;;
-        31) datacenter_menu ;;
-        32) analytics_menu ;;
-        33) edge_menu ;;
-        34) automation_menu ;;
-        35) ai_menu ;;
-        36) quantum_menu ;;
-        37) blockchain_menu ;;
-        38) federation_menu ;;
-        39) ai_advanced_menu ;;
-        40) quantum_hw_menu ;;
-        41) blockchain_adv_menu ;;
-        42) federation_ext_menu ;;
-        43) security_adv_menu ;;
-        44) performance_menu ;;
-        45) observability_menu ;;
-        46) dr_adv_menu ;;
-        47) web_ui_menu ;;
-        48) devops_menu ;;
-        49) directory_menu ;;
-        50) governance_menu ;;
-        51) sre_menu ;;
-        52) multicloud_menu ;;
-        53) networking_adv_menu ;;
-        54) apm_menu ;;
+        17) jplatform_menu ;;
+        18) storage_management_menu ;;
+        19) cluster_status_menu ;;
+        20) networking_menu ;;
+        21) services_menu ;;
+        22) logs_menu ;;
+        23) settings_menu ;;
+        24) distributed_storage_menu ;;
+        25) network_virtualization_menu ;;
+        26) gpu_passthrough_menu ;;
+        27) usb_devices_menu ;;
+        28) telemetry_menu ;;
+        29) security_menu ;;
+        30) billing_menu ;;
+        31) mesh_menu ;;
+        32) datacenter_menu ;;
+        33) analytics_menu ;;
+        34) edge_menu ;;
+        35) automation_menu ;;
+        36) ai_menu ;;
+        37) quantum_menu ;;
+        38) blockchain_menu ;;
+        39) federation_menu ;;
+        40) ai_advanced_menu ;;
+        41) quantum_hw_menu ;;
+        42) blockchain_adv_menu ;;
+        43) federation_ext_menu ;;
+        44) security_adv_menu ;;
+        45) performance_menu ;;
+        46) observability_menu ;;
+        47) dr_adv_menu ;;
+        48) web_ui_menu ;;
+        49) devops_menu ;;
+        50) directory_menu ;;
+        51) governance_menu ;;
+        52) sre_menu ;;
+        53) multicloud_menu ;;
+        54) networking_adv_menu ;;
+        55) apm_menu ;;
         0) exit 0 ;;
         *) return ;;
     esac
@@ -290,6 +292,12 @@ system_overview_menu() {
         DOCKER_RUNNING=$(docker ps -q 2>/dev/null | wc -l)
         DOCKER_TOTAL=$(docker ps -aq 2>/dev/null | wc -l)
         INFO="${INFO}Docker Containers: $DOCKER_RUNNING running / $DOCKER_TOTAL total\n"
+    fi
+
+    # JPlatform workloads
+    if command -v jplatform >/dev/null 2>&1; then
+        JPLATFORM_COUNT=$(jplatform status 2>/dev/null | grep -c "RUNNING\|DEPLOYED\|STOPPED" || echo 0)
+        INFO="${INFO}JPlatform Workloads: $JPLATFORM_COUNT deployed\n"
     fi
 
     $DIALOG $DIALOG_OPTS \
@@ -423,6 +431,259 @@ container_management_menu() {
             ;;
         0) main_menu ;;
         *) container_management_menu ;;
+    esac
+}
+
+jplatform_menu() {
+    # Check if JPlatform is installed
+    if ! command -v jplatform >/dev/null 2>&1; then
+        $DIALOG $DIALOG_OPTS \
+            --title "JPlatform Not Installed" \
+            --yesno "JPlatform is not installed. Would you like to install it now?" 8 60
+
+        if [ $? -eq 0 ]; then
+            clear
+            echo "Installing JPlatform..."
+            virtos-jplatform-install
+            read -p "Press Enter to continue..."
+        fi
+        main_menu
+        return
+    fi
+
+    # Get JPlatform status
+    local jplatform_status=$(jplatform status 2>&1 || echo "Unable to get status")
+
+    $DIALOG $DIALOG_OPTS \
+        --title "JPlatform Workload Management" \
+        --menu "Unified orchestration for VMs, containers, Java apps, and native binaries\n\nSelect action:" 22 76 12 \
+        1 "List All Workloads" \
+        2 "Deploy Workload (from YAML)" \
+        3 "Start Workload" \
+        4 "Stop Workload" \
+        5 "Restart Workload" \
+        6 "View Workload Status" \
+        7 "View Workload Metrics" \
+        8 "View Workload Logs" \
+        9 "Undeploy Workload" \
+        10 "Deploy Example VM" \
+        11 "Deploy Example Container" \
+        12 "JPlatform Info" \
+        0 "Back" \
+        2> $TEMP_FILE
+
+    CHOICE=$(cat $TEMP_FILE)
+
+    case $CHOICE in
+        1)
+            # List all workloads
+            $DIALOG $DIALOG_OPTS \
+                --title "JPlatform Workloads" \
+                --msgbox "$(jplatform status 2>&1)" 25 100
+            jplatform_menu
+            ;;
+        2)
+            # Deploy from YAML
+            $DIALOG $DIALOG_OPTS \
+                --title "Deploy Workload" \
+                --inputbox "Enter path to YAML descriptor:" 8 76 2> $TEMP_FILE
+            YAML_PATH=$(cat $TEMP_FILE)
+
+            if [ -n "$YAML_PATH" ] && [ -f "$YAML_PATH" ]; then
+                clear
+                echo "Deploying workload from $YAML_PATH..."
+                jplatform deploy "$YAML_PATH"
+                echo ""
+                read -p "Press Enter to continue..."
+            elif [ -n "$YAML_PATH" ]; then
+                $DIALOG $DIALOG_OPTS --msgbox "File not found: $YAML_PATH" 6 50
+            fi
+            jplatform_menu
+            ;;
+        3)
+            # Start workload
+            $DIALOG $DIALOG_OPTS \
+                --title "Start Workload" \
+                --inputbox "Enter workload ID:" 8 50 2> $TEMP_FILE
+            WORKLOAD_ID=$(cat $TEMP_FILE)
+
+            if [ -n "$WORKLOAD_ID" ]; then
+                clear
+                echo "Starting $WORKLOAD_ID..."
+                jplatform start "$WORKLOAD_ID"
+                echo ""
+                read -p "Press Enter to continue..."
+            fi
+            jplatform_menu
+            ;;
+        4)
+            # Stop workload
+            $DIALOG $DIALOG_OPTS \
+                --title "Stop Workload" \
+                --inputbox "Enter workload ID:" 8 50 2> $TEMP_FILE
+            WORKLOAD_ID=$(cat $TEMP_FILE)
+
+            if [ -n "$WORKLOAD_ID" ]; then
+                clear
+                echo "Stopping $WORKLOAD_ID..."
+                jplatform stop "$WORKLOAD_ID"
+                echo ""
+                read -p "Press Enter to continue..."
+            fi
+            jplatform_menu
+            ;;
+        5)
+            # Restart workload
+            $DIALOG $DIALOG_OPTS \
+                --title "Restart Workload" \
+                --inputbox "Enter workload ID:" 8 50 2> $TEMP_FILE
+            WORKLOAD_ID=$(cat $TEMP_FILE)
+
+            if [ -n "$WORKLOAD_ID" ]; then
+                clear
+                echo "Restarting $WORKLOAD_ID..."
+                jplatform restart "$WORKLOAD_ID"
+                echo ""
+                read -p "Press Enter to continue..."
+            fi
+            jplatform_menu
+            ;;
+        6)
+            # View status
+            $DIALOG $DIALOG_OPTS \
+                --title "Workload Status" \
+                --inputbox "Enter workload ID:" 8 50 2> $TEMP_FILE
+            WORKLOAD_ID=$(cat $TEMP_FILE)
+
+            if [ -n "$WORKLOAD_ID" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Status: $WORKLOAD_ID" \
+                    --msgbox "$(jplatform status "$WORKLOAD_ID" 2>&1)" 25 100
+            fi
+            jplatform_menu
+            ;;
+        7)
+            # View metrics
+            $DIALOG $DIALOG_OPTS \
+                --title "Workload Metrics" \
+                --inputbox "Enter workload ID:" 8 50 2> $TEMP_FILE
+            WORKLOAD_ID=$(cat $TEMP_FILE)
+
+            if [ -n "$WORKLOAD_ID" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Metrics: $WORKLOAD_ID" \
+                    --msgbox "$(jplatform metrics "$WORKLOAD_ID" 2>&1)" 25 100
+            fi
+            jplatform_menu
+            ;;
+        8)
+            # View logs
+            $DIALOG $DIALOG_OPTS \
+                --title "Workload Logs" \
+                --inputbox "Enter workload ID:" 8 50 2> $TEMP_FILE
+            WORKLOAD_ID=$(cat $TEMP_FILE)
+
+            if [ -n "$WORKLOAD_ID" ]; then
+                clear
+                echo "=== Logs for $WORKLOAD_ID ==="
+                jplatform logs "$WORKLOAD_ID"
+                echo ""
+                read -p "Press Enter to continue..."
+            fi
+            jplatform_menu
+            ;;
+        9)
+            # Undeploy
+            $DIALOG $DIALOG_OPTS \
+                --title "Undeploy Workload" \
+                --inputbox "Enter workload ID:" 8 50 2> $TEMP_FILE
+            WORKLOAD_ID=$(cat $TEMP_FILE)
+
+            if [ -n "$WORKLOAD_ID" ]; then
+                $DIALOG $DIALOG_OPTS \
+                    --title "Confirm" \
+                    --yesno "Undeploy $WORKLOAD_ID? This will remove it permanently." 8 60
+
+                if [ $? -eq 0 ]; then
+                    clear
+                    echo "Undeploying $WORKLOAD_ID..."
+                    jplatform undeploy "$WORKLOAD_ID"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                fi
+            fi
+            jplatform_menu
+            ;;
+        10)
+            # Deploy example VM
+            EXAMPLE_VM="/tmp/example-vm-$$.yaml"
+            cat > "$EXAMPLE_VM" << 'EOF'
+applicationId: example-vm
+name: Example Virtual Machine
+properties:
+  vm.vcpu: "2"
+  vm.memory: "4096"
+  vm.disk: "/var/lib/jplatform/vms/example-vm.qcow2"
+  vm.network: "bridge"
+resources:
+  cpu: 2
+  memory: 4096
+EOF
+
+            $DIALOG $DIALOG_OPTS \
+                --title "Example VM" \
+                --yesno "Deploy example VM?\n\nID: example-vm\nCPU: 2 vCPUs\nRAM: 4096 MB\nDisk: /var/lib/jplatform/vms/example-vm.qcow2\n\nNote: You must create the disk image first:\n  qemu-img create -f qcow2 /var/lib/jplatform/vms/example-vm.qcow2 20G" 16 76
+
+            if [ $? -eq 0 ]; then
+                clear
+                echo "Deploying example VM..."
+                jplatform deploy "$EXAMPLE_VM"
+                echo ""
+                echo "To start: jplatform start example-vm"
+                echo ""
+                read -p "Press Enter to continue..."
+            fi
+            rm -f "$EXAMPLE_VM"
+            jplatform_menu
+            ;;
+        11)
+            # Deploy example container
+            EXAMPLE_CONTAINER="/tmp/example-container-$$.yaml"
+            cat > "$EXAMPLE_CONTAINER" << 'EOF'
+applicationId: nginx-web
+name: NGINX Web Server
+properties:
+  container.image: "nginx:alpine"
+  container.runtime: "docker"
+  container.ports: "8080:80"
+EOF
+
+            $DIALOG $DIALOG_OPTS \
+                --title "Example Container" \
+                --yesno "Deploy example NGINX container?\n\nID: nginx-web\nImage: nginx:alpine\nPort: 8080 -> 80" 10 60
+
+            if [ $? -eq 0 ]; then
+                clear
+                echo "Deploying NGINX container..."
+                jplatform deploy "$EXAMPLE_CONTAINER"
+                echo ""
+                echo "To start: jplatform start nginx-web"
+                echo "Access: http://localhost:8080"
+                echo ""
+                read -p "Press Enter to continue..."
+            fi
+            rm -f "$EXAMPLE_CONTAINER"
+            jplatform_menu
+            ;;
+        12)
+            # JPlatform info
+            $DIALOG $DIALOG_OPTS \
+                --title "JPlatform Info" \
+                --msgbox "$(virtos-jplatform-info 2>&1)" 25 76
+            jplatform_menu
+            ;;
+        0) main_menu ;;
+        *) jplatform_menu ;;
     esac
 }
 
