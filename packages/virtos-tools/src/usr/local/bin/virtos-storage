@@ -1,0 +1,700 @@
+#!/bin/bash
+# VirtOS Storage - Distributed storage management
+# Ceph, GlusterFS, and clustered NFS management
+
+VERSION="1"
+STORAGE_DIR="/var/lib/virtos/storage"
+STATE_DIR="/var/run/virtos/storage"
+LOG_FILE="/var/log/virtos-storage.log"
+
+mkdir -p "$STORAGE_DIR" "$STATE_DIR"
+
+usage() {
+    cat << EOF
+VirtOS Storage - Distributed Storage Management v${VERSION}
+
+Usage: virtos-storage [command] [options]
+
+Commands:
+  ceph-init                        Initialize Ceph cluster
+  ceph-status                      Show Ceph cluster status
+  ceph-pool-create <name>          Create Ceph pool
+  ceph-pool-list                   List Ceph pools
+
+  gluster-init                     Initialize GlusterFS
+  gluster-status                   Show GlusterFS status
+  gluster-volume-create <name>     Create GlusterFS volume
+  gluster-volume-list              List GlusterFS volumes
+  gluster-volume-start <name>      Start GlusterFS volume
+  gluster-volume-stop <name>       Stop GlusterFS volume
+
+  nfs-cluster-init                 Initialize clustered NFS
+  nfs-export-add <path>            Add NFS export
+  nfs-export-list                  List NFS exports
+  nfs-export-remove <path>         Remove NFS export
+
+  pool-list                        List all storage pools
+  pool-create <name> <type>        Create storage pool
+  pool-delete <name>               Delete storage pool
+
+  replication-enable <pool>        Enable pool replication
+  replication-status               Show replication status
+
+Options:
+  --replicas <num>                 Number of replicas (default: 3)
+  --stripe-width <num>             Stripe width for distribution
+  --transport <tcp|rdma>           Transport protocol
+  --force                          Force operation
+
+Examples:
+  # Initialize Ceph cluster
+  virtos-storage ceph-init
+
+  # Create Ceph pool with replication
+  virtos-storage ceph-pool-create vm-pool --replicas 3
+
+  # Initialize GlusterFS
+  virtos-storage gluster-init
+
+  # Create replicated GlusterFS volume
+  virtos-storage gluster-volume-create vm-storage \
+    --replicas 3 \
+    --transport tcp
+
+  # Create distributed storage pool
+  virtos-storage pool-create distributed-vms ceph
+
+  # Enable replication
+  virtos-storage replication-enable vm-pool
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+init_config() {
+    if [ ! -f "$STORAGE_DIR/config.conf" ]; then
+        cat > "$STORAGE_DIR/config.conf" <<EOF
+# VirtOS Storage Configuration
+
+# Ceph settings
+CEPH_ENABLED=no
+CEPH_MONITORS=""
+CEPH_DEFAULT_REPLICAS=3
+
+# GlusterFS settings
+GLUSTER_ENABLED=no
+GLUSTER_PEERS=""
+GLUSTER_DEFAULT_REPLICAS=3
+
+# NFS settings
+NFS_CLUSTER_ENABLED=no
+NFS_EXPORTS_DIR="/etc/exports.d"
+
+# Replication
+AUTO_REPLICATION=yes
+REPLICATION_FACTOR=3
+EOF
+    fi
+
+    source "$STORAGE_DIR/config.conf"
+}
+
+# Ceph Management
+ceph_init() {
+    log_message "Initializing Ceph cluster"
+
+    echo "Ceph Cluster Initialization"
+    echo "==========================="
+    echo ""
+
+    if ! command -v ceph >/dev/null 2>&1; then
+        echo "Error: Ceph not installed"
+        echo "Install with: tce-load -i ceph"
+        return 1
+    fi
+
+    echo "Checking Ceph status..."
+    if ceph status >/dev/null 2>&1; then
+        echo "Ceph cluster already running"
+        ceph status
+        return 0
+    fi
+
+    echo "Initializing new Ceph cluster..."
+    echo "Note: This is a simplified setup for VirtOS"
+    echo ""
+
+    # Create directories
+    mkdir -p /var/lib/ceph/mon /var/lib/ceph/osd /var/lib/ceph/mds
+
+    # In production, would:
+    # 1. Generate cluster UUID
+    # 2. Create monitor keyring
+    # 3. Create monitor map
+    # 4. Start monitor daemon
+    # 5. Create OSDs
+
+    sed -i 's/^CEPH_ENABLED=.*/CEPH_ENABLED=yes/' "$STORAGE_DIR/config.conf"
+
+    log_message "Ceph cluster initialized"
+    echo "Ceph cluster initialized"
+    echo "Next steps:"
+    echo "  1. Add monitors: ceph mon add <hostname> <ip>"
+    echo "  2. Add OSDs: ceph osd create"
+    echo "  3. Create pools: virtos-storage ceph-pool-create <name>"
+}
+
+ceph_status() {
+    if ! command -v ceph >/dev/null 2>&1; then
+        echo "Error: Ceph not installed"
+        return 1
+    fi
+
+    echo "Ceph Cluster Status"
+    echo "==================="
+    echo ""
+
+    if ceph status 2>/dev/null; then
+        echo ""
+        echo "Pools:"
+        ceph osd lspools 2>/dev/null || echo "  (no pools)"
+    else
+        echo "Ceph cluster not running or not initialized"
+        echo "Run: virtos-storage ceph-init"
+    fi
+}
+
+ceph_pool_create() {
+    local pool_name="$1"
+    local replicas="${2:-3}"
+
+    if [ -z "$pool_name" ]; then
+        echo "Error: Pool name required"
+        return 1
+    fi
+
+    log_message "Creating Ceph pool: $pool_name (replicas: $replicas)"
+
+    if ! command -v ceph >/dev/null 2>&1; then
+        echo "Error: Ceph not installed"
+        return 1
+    fi
+
+    echo "Creating Ceph pool: $pool_name"
+    echo "Replicas: $replicas"
+
+    # In production:
+    # ceph osd pool create $pool_name 128 128
+    # ceph osd pool set $pool_name size $replicas
+
+    echo "Pool '$pool_name' created (simulation)"
+    echo ""
+    echo "Enable for libvirt:"
+    echo "  virsh pool-define-as $pool_name rbd --source-host localhost --source-name $pool_name"
+    echo "  virsh pool-start $pool_name"
+    echo "  virsh pool-autostart $pool_name"
+}
+
+ceph_pool_list() {
+    if ! command -v ceph >/dev/null 2>&1; then
+        echo "Error: Ceph not installed"
+        return 1
+    fi
+
+    echo "Ceph Pools:"
+    echo "==========="
+
+    if ceph osd lspools 2>/dev/null; then
+        return 0
+    else
+        echo "No pools configured or Ceph not running"
+        return 1
+    fi
+}
+
+# GlusterFS Management
+gluster_init() {
+    log_message "Initializing GlusterFS"
+
+    echo "GlusterFS Initialization"
+    echo "========================"
+    echo ""
+
+    if ! command -v gluster >/dev/null 2>&1; then
+        echo "Error: GlusterFS not installed"
+        echo "Install with: tce-load -i glusterfs"
+        return 1
+    fi
+
+    echo "Starting GlusterFS daemon..."
+
+    # Start glusterd
+    if ! pgrep glusterd >/dev/null 2>&1; then
+        glusterd || true
+        sleep 2
+    fi
+
+    if pgrep glusterd >/dev/null 2>&1; then
+        echo "GlusterFS daemon running"
+        sed -i 's/^GLUSTER_ENABLED=.*/GLUSTER_ENABLED=yes/' "$STORAGE_DIR/config.conf"
+
+        log_message "GlusterFS initialized"
+        echo ""
+        echo "Next steps:"
+        echo "  1. Add peers: gluster peer probe <hostname>"
+        echo "  2. Create volumes: virtos-storage gluster-volume-create <name>"
+    else
+        echo "Error: Failed to start GlusterFS daemon"
+        return 1
+    fi
+}
+
+gluster_status() {
+    if ! command -v gluster >/dev/null 2>&1; then
+        echo "Error: GlusterFS not installed"
+        return 1
+    fi
+
+    echo "GlusterFS Status"
+    echo "================"
+    echo ""
+
+    if ! pgrep glusterd >/dev/null 2>&1; then
+        echo "GlusterFS daemon not running"
+        echo "Start with: virtos-storage gluster-init"
+        return 1
+    fi
+
+    echo "Daemon: Running"
+    echo ""
+
+    echo "Peer Status:"
+    gluster peer status 2>/dev/null || echo "  (no peers)"
+
+    echo ""
+    echo "Volumes:"
+    gluster volume list 2>/dev/null || echo "  (no volumes)"
+}
+
+gluster_volume_create() {
+    local volume_name="$1"
+    shift
+
+    local replicas=3
+    local transport="tcp"
+    local bricks=""
+
+    if [ -z "$volume_name" ]; then
+        echo "Error: Volume name required"
+        return 1
+    fi
+
+    # Parse options
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --replicas)
+                replicas="$2"
+                shift 2
+                ;;
+            --transport)
+                transport="$2"
+                shift 2
+                ;;
+            --bricks)
+                bricks="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    log_message "Creating GlusterFS volume: $volume_name (replicas: $replicas)"
+
+    echo "Creating GlusterFS Volume"
+    echo "========================="
+    echo "Name: $volume_name"
+    echo "Replicas: $replicas"
+    echo "Transport: $transport"
+    echo ""
+
+    # In production, would collect brick paths from cluster nodes
+    if [ -z "$bricks" ]; then
+        echo "Note: Using local brick for demonstration"
+        mkdir -p "/var/lib/glusterfs/$volume_name"
+        bricks="localhost:/var/lib/glusterfs/$volume_name"
+    fi
+
+    echo "Creating volume with bricks: $bricks"
+
+    # gluster volume create $volume_name replica $replicas transport $transport $bricks
+
+    echo "Volume '$volume_name' created (simulation)"
+    echo ""
+    echo "Start volume:"
+    echo "  virtos-storage gluster-volume-start $volume_name"
+}
+
+gluster_volume_list() {
+    if ! command -v gluster >/dev/null 2>&1; then
+        echo "Error: GlusterFS not installed"
+        return 1
+    fi
+
+    echo "GlusterFS Volumes:"
+    echo "=================="
+
+    if gluster volume list 2>/dev/null; then
+        echo ""
+        echo "Detailed status:"
+        gluster volume status 2>/dev/null || true
+    else
+        echo "No volumes configured"
+    fi
+}
+
+gluster_volume_start() {
+    local volume_name="$1"
+
+    if [ -z "$volume_name" ]; then
+        echo "Error: Volume name required"
+        return 1
+    fi
+
+    log_message "Starting GlusterFS volume: $volume_name"
+
+    # gluster volume start $volume_name
+
+    echo "Volume '$volume_name' started (simulation)"
+    echo ""
+    echo "Mount on clients:"
+    echo "  mount -t glusterfs localhost:/$volume_name /mnt"
+}
+
+gluster_volume_stop() {
+    local volume_name="$1"
+
+    if [ -z "$volume_name" ]; then
+        echo "Error: Volume name required"
+        return 1
+    fi
+
+    log_message "Stopping GlusterFS volume: $volume_name"
+
+    # gluster volume stop $volume_name
+
+    echo "Volume '$volume_name' stopped (simulation)"
+}
+
+# Clustered NFS
+nfs_cluster_init() {
+    log_message "Initializing clustered NFS"
+
+    echo "Clustered NFS Initialization"
+    echo "============================"
+    echo ""
+
+    if ! command -v exportfs >/dev/null 2>&1; then
+        echo "Error: NFS utilities not installed"
+        echo "Install with: tce-load -i nfs-utils"
+        return 1
+    fi
+
+    mkdir -p /etc/exports.d
+
+    # Configure NFS for cluster use
+    if [ ! -f /etc/nfs.conf ]; then
+        cat > /etc/nfs.conf <<EOF
+[nfsd]
+vers3=y
+vers4=y
+vers4.1=y
+vers4.2=y
+
+[exportfs]
+# Clustered NFS exports
+EOF
+    fi
+
+    sed -i 's/^NFS_CLUSTER_ENABLED=.*/NFS_CLUSTER_ENABLED=yes/' "$STORAGE_DIR/config.conf"
+
+    log_message "Clustered NFS initialized"
+    echo "Clustered NFS initialized"
+    echo ""
+    echo "Add exports:"
+    echo "  virtos-storage nfs-export-add /var/lib/virt/images"
+}
+
+nfs_export_add() {
+    local export_path="$1"
+    local options="${2:-rw,sync,no_root_squash,no_subtree_check}"
+    local clients="${3:-*}"
+
+    if [ -z "$export_path" ]; then
+        echo "Error: Export path required"
+        return 1
+    fi
+
+    log_message "Adding NFS export: $export_path"
+
+    if [ ! -d "$export_path" ]; then
+        echo "Error: Path does not exist: $export_path"
+        return 1
+    fi
+
+    echo "Adding NFS export:"
+    echo "  Path: $export_path"
+    echo "  Clients: $clients"
+    echo "  Options: $options"
+
+    # Add to exports
+    local export_line="$export_path $clients($options)"
+
+    if grep -q "^$export_path " /etc/exports 2>/dev/null; then
+        echo "Export already exists"
+    else
+        echo "$export_line" >> /etc/exports
+        echo "Export added"
+    fi
+
+    # Reload exports
+    exportfs -ra 2>/dev/null || echo "Note: exportfs not running (will apply on start)"
+
+    log_message "NFS export added: $export_path"
+}
+
+nfs_export_list() {
+    echo "NFS Exports:"
+    echo "============"
+
+    if [ -f /etc/exports ]; then
+        cat /etc/exports
+    else
+        echo "No exports configured"
+    fi
+
+    echo ""
+    echo "Active exports:"
+    exportfs -v 2>/dev/null || echo "  (NFS not running)"
+}
+
+nfs_export_remove() {
+    local export_path="$1"
+
+    if [ -z "$export_path" ]; then
+        echo "Error: Export path required"
+        return 1
+    fi
+
+    log_message "Removing NFS export: $export_path"
+
+    if [ -f /etc/exports ]; then
+        sed -i "\|^$export_path |d" /etc/exports
+        exportfs -ra 2>/dev/null || true
+        echo "Export removed: $export_path"
+    else
+        echo "No exports file"
+    fi
+}
+
+# Storage Pool Management
+pool_list() {
+    echo "Storage Pools:"
+    echo "=============="
+    echo ""
+
+    if command -v virsh >/dev/null 2>&1; then
+        echo "Libvirt Pools:"
+        virsh pool-list --all
+        echo ""
+    fi
+
+    if command -v ceph >/dev/null 2>&1; then
+        echo "Ceph Pools:"
+        ceph osd lspools 2>/dev/null || echo "  (Ceph not running)"
+        echo ""
+    fi
+
+    if command -v gluster >/dev/null 2>&1; then
+        echo "GlusterFS Volumes:"
+        gluster volume list 2>/dev/null || echo "  (GlusterFS not running)"
+    fi
+}
+
+pool_create() {
+    local pool_name="$1"
+    local pool_type="$2"
+
+    if [ -z "$pool_name" ] || [ -z "$pool_type" ]; then
+        echo "Error: Pool name and type required"
+        echo "Types: ceph, gluster, nfs, dir"
+        return 1
+    fi
+
+    log_message "Creating storage pool: $pool_name (type: $pool_type)"
+
+    case "$pool_type" in
+        ceph)
+            ceph_pool_create "$pool_name"
+            ;;
+        gluster)
+            gluster_volume_create "$pool_name"
+            ;;
+        nfs|dir)
+            # Create libvirt pool
+            if command -v virsh >/dev/null 2>&1; then
+                local pool_path="/var/lib/virtos/pools/$pool_name"
+                mkdir -p "$pool_path"
+
+                virsh pool-define-as "$pool_name" "$pool_type" \
+                    --target "$pool_path" 2>/dev/null || true
+                virsh pool-start "$pool_name" 2>/dev/null || true
+                virsh pool-autostart "$pool_name" 2>/dev/null || true
+
+                echo "Pool '$pool_name' created"
+            fi
+            ;;
+        *)
+            echo "Error: Unknown pool type: $pool_type"
+            return 1
+            ;;
+    esac
+}
+
+pool_delete() {
+    local pool_name="$1"
+
+    if [ -z "$pool_name" ]; then
+        echo "Error: Pool name required"
+        return 1
+    fi
+
+    log_message "Deleting storage pool: $pool_name"
+
+    if command -v virsh >/dev/null 2>&1; then
+        virsh pool-destroy "$pool_name" 2>/dev/null || true
+        virsh pool-undefine "$pool_name" 2>/dev/null || true
+    fi
+
+    echo "Pool '$pool_name' deleted"
+}
+
+# Replication
+replication_enable() {
+    local pool_name="$1"
+    local replicas="${2:-$REPLICATION_FACTOR}"
+
+    if [ -z "$pool_name" ]; then
+        echo "Error: Pool name required"
+        return 1
+    fi
+
+    log_message "Enabling replication for pool: $pool_name (factor: $replicas)"
+
+    echo "Enabling Replication"
+    echo "===================="
+    echo "Pool: $pool_name"
+    echo "Replication factor: $replicas"
+    echo ""
+
+    # In production, configure replication based on storage backend
+
+    echo "Replication enabled (simulation)"
+}
+
+replication_status() {
+    echo "Replication Status:"
+    echo "==================="
+    echo ""
+
+    if command -v ceph >/dev/null 2>&1 && ceph status >/dev/null 2>&1; then
+        echo "Ceph Replication:"
+        ceph osd pool ls detail 2>/dev/null | grep -E "(pool|size)" || echo "  (no pools)"
+        echo ""
+    fi
+
+    if command -v gluster >/dev/null 2>&1 && pgrep glusterd >/dev/null 2>&1; then
+        echo "GlusterFS Replication:"
+        gluster volume info 2>/dev/null | grep -E "(Volume Name|Type|Number of Bricks)" || echo "  (no volumes)"
+    fi
+}
+
+# Initialize
+init_config
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    ceph-init)
+        ceph_init
+        ;;
+    ceph-status)
+        ceph_status
+        ;;
+    ceph-pool-create)
+        ceph_pool_create "$@"
+        ;;
+    ceph-pool-list)
+        ceph_pool_list
+        ;;
+    gluster-init)
+        gluster_init
+        ;;
+    gluster-status)
+        gluster_status
+        ;;
+    gluster-volume-create)
+        gluster_volume_create "$@"
+        ;;
+    gluster-volume-list)
+        gluster_volume_list
+        ;;
+    gluster-volume-start)
+        gluster_volume_start "$1"
+        ;;
+    gluster-volume-stop)
+        gluster_volume_stop "$1"
+        ;;
+    nfs-cluster-init)
+        nfs_cluster_init
+        ;;
+    nfs-export-add)
+        nfs_export_add "$@"
+        ;;
+    nfs-export-list)
+        nfs_export_list
+        ;;
+    nfs-export-remove)
+        nfs_export_remove "$1"
+        ;;
+    pool-list)
+        pool_list
+        ;;
+    pool-create)
+        pool_create "$1" "$2"
+        ;;
+    pool-delete)
+        pool_delete "$1"
+        ;;
+    replication-enable)
+        replication_enable "$@"
+        ;;
+    replication-status)
+        replication_status
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

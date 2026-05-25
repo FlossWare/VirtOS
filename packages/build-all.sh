@@ -15,9 +15,13 @@ echo
 
 # List of packages to build (in dependency order)
 PACKAGES=(
-    # Core dependencies first
+    # Core VirtOS management tools
     "virtos-tools"
-    # Add more packages here as they're created
+    # Future packages:
+    # "qemu-kvm"
+    # "libvirt"
+    # "docker"
+    # "lxc"
 )
 
 # Build each package

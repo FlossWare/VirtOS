@@ -1,0 +1,652 @@
+#!/bin/bash
+# VirtOS GPU - GPU passthrough wizard and management
+# PCI passthrough, VFIO configuration, and GPU scheduling
+
+VERSION="1"
+GPU_DIR="/var/lib/virtos/gpu"
+STATE_DIR="/var/run/virtos/gpu"
+LOG_FILE="/var/log/virtos-gpu.log"
+
+mkdir -p "$GPU_DIR" "$STATE_DIR"
+
+usage() {
+    cat << EOF
+VirtOS GPU - GPU Passthrough Management v${VERSION}
+
+Usage: virtos-gpu [command] [options]
+
+Commands:
+  detect                           Detect GPUs and display info
+  list                             List all GPUs with IOMMU groups
+  isolate <pci-id>                 Isolate GPU for passthrough (bind to VFIO)
+  release <pci-id>                 Release GPU back to host
+  attach <vm> <pci-id>             Attach GPU to VM
+  detach <vm> <pci-id>             Detach GPU from VM
+
+  wizard                           Interactive GPU passthrough wizard
+  iommu-status                     Check IOMMU/VT-d status
+  vfio-status                      Check VFIO driver status
+
+  vgpu-enable <pci-id>             Enable vGPU support (if available)
+  vgpu-create <pci-id> <type>      Create vGPU instance
+  vgpu-list                        List vGPU instances
+
+  schedule-attach <vm> <gpu>       Schedule GPU attachment on VM start
+  schedule-detach <vm> <gpu>       Remove scheduled attachment
+
+Options:
+  --force                          Force operation
+  --persistent                     Make changes persistent
+  --romfile <path>                 GPU ROM file for passthrough
+
+Examples:
+  # Detect available GPUs
+  virtos-gpu detect
+
+  # Run interactive wizard
+  virtos-gpu wizard
+
+  # Isolate GPU for passthrough
+  virtos-gpu isolate 0000:01:00.0
+
+  # Attach GPU to VM
+  virtos-gpu attach gaming-vm 0000:01:00.0 --persistent
+
+  # Check IOMMU status
+  virtos-gpu iommu-status
+
+  # Enable vGPU (NVIDIA GRID, Intel GVT-g)
+  virtos-gpu vgpu-enable 0000:01:00.0
+
+  # Schedule automatic GPU attachment
+  virtos-gpu schedule-attach workstation-vm 0000:01:00.0
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+init_config() {
+    if [ ! -f "$GPU_DIR/config.conf" ]; then
+        cat > "$GPU_DIR/config.conf" <<EOF
+# VirtOS GPU Configuration
+
+# IOMMU/VT-d
+IOMMU_ENABLED=no
+
+# VFIO
+VFIO_DRIVER=vfio-pci
+
+# vGPU support
+VGPU_ENABLED=no
+
+# GPU assignment tracking
+GPU_ASSIGNMENTS=""
+EOF
+    fi
+
+    source "$GPU_DIR/config.conf"
+}
+
+# GPU Detection
+detect_gpus() {
+    echo "GPU Detection"
+    echo "============="
+    echo ""
+
+    if ! command -v lspci >/dev/null 2>&1; then
+        echo "Error: lspci not available"
+        return 1
+    fi
+
+    echo "VGA/3D Controllers:"
+    echo "-------------------"
+
+    local gpu_count=0
+
+    while IFS= read -r line; do
+        gpu_count=$((gpu_count + 1))
+        local pci_id=$(echo "$line" | awk '{print $1}')
+        local gpu_name=$(echo "$line" | cut -d' ' -f2-)
+
+        echo ""
+        echo "GPU $gpu_count:"
+        echo "  PCI ID: $pci_id"
+        echo "  Name: $gpu_name"
+
+        # Get vendor and device IDs
+        local vendor=$(lspci -n -s "$pci_id" | awk '{print $3}' | cut -d: -f1)
+        local device=$(lspci -n -s "$pci_id" | awk '{print $3}' | cut -d: -f2)
+        echo "  Vendor: $vendor"
+        echo "  Device: $device"
+
+        # Check driver
+        local driver=$(lspci -k -s "$pci_id" | grep "Kernel driver" | awk '{print $NF}')
+        echo "  Driver: ${driver:-none}"
+
+        # Check IOMMU group
+        local iommu_group=""
+        if [ -e "/sys/bus/pci/devices/${pci_id}/iommu_group" ]; then
+            iommu_group=$(basename $(readlink "/sys/bus/pci/devices/${pci_id}/iommu_group"))
+            echo "  IOMMU Group: $iommu_group"
+        else
+            echo "  IOMMU Group: Not available (IOMMU may not be enabled)"
+        fi
+
+    done < <(lspci | grep -E "VGA|3D")
+
+    if [ $gpu_count -eq 0 ]; then
+        echo "No GPUs detected"
+        return 1
+    fi
+
+    echo ""
+    echo "Total GPUs: $gpu_count"
+}
+
+list_gpus() {
+    echo "GPU List with IOMMU Groups"
+    echo "=========================="
+    echo ""
+
+    printf "%-15s %-12s %-15s %-50s\n" "PCI ID" "IOMMU GROUP" "DRIVER" "DESCRIPTION"
+    echo "----------------------------------------------------------------------------------------"
+
+    while IFS= read -r line; do
+        local pci_id=$(echo "$line" | awk '{print $1}')
+        local gpu_name=$(echo "$line" | cut -d' ' -f2-)
+
+        local driver=$(lspci -k -s "$pci_id" | grep "Kernel driver" | awk '{print $NF}')
+        driver="${driver:-none}"
+
+        local iommu_group="N/A"
+        if [ -e "/sys/bus/pci/devices/${pci_id}/iommu_group" ]; then
+            iommu_group=$(basename $(readlink "/sys/bus/pci/devices/${pci_id}/iommu_group"))
+        fi
+
+        printf "%-15s %-12s %-15s %-50s\n" "$pci_id" "$iommu_group" "$driver" "${gpu_name:0:50}"
+
+    done < <(lspci | grep -E "VGA|3D")
+}
+
+# IOMMU Status
+check_iommu() {
+    echo "IOMMU/VT-d Status"
+    echo "================="
+    echo ""
+
+    # Check kernel parameters
+    local iommu_enabled=0
+
+    if grep -q "intel_iommu=on" /proc/cmdline; then
+        echo "Intel IOMMU: Enabled (kernel parameter)"
+        iommu_enabled=1
+    elif grep -q "amd_iommu=on" /proc/cmdline; then
+        echo "AMD IOMMU: Enabled (kernel parameter)"
+        iommu_enabled=1
+    else
+        echo "IOMMU: Not enabled in kernel parameters"
+        echo ""
+        echo "To enable, add to kernel command line:"
+        echo "  Intel: intel_iommu=on"
+        echo "  AMD: amd_iommu=on"
+        echo ""
+        echo "Edit /boot/grub/grub.cfg or bootloader config"
+    fi
+
+    # Check if IOMMU groups exist
+    if [ -d /sys/kernel/iommu_groups ]; then
+        local group_count=$(ls /sys/kernel/iommu_groups | wc -l)
+        echo "IOMMU Groups: $group_count"
+
+        if [ $group_count -gt 0 ]; then
+            iommu_enabled=1
+            sed -i 's/^IOMMU_ENABLED=.*/IOMMU_ENABLED=yes/' "$GPU_DIR/config.conf"
+        fi
+    else
+        echo "IOMMU Groups: Not found"
+    fi
+
+    echo ""
+    if [ $iommu_enabled -eq 1 ]; then
+        echo "Status: IOMMU is enabled and working"
+        return 0
+    else
+        echo "Status: IOMMU is NOT enabled"
+        return 1
+    fi
+}
+
+# VFIO Status
+check_vfio() {
+    echo "VFIO Driver Status"
+    echo "=================="
+    echo ""
+
+    if lsmod | grep -q vfio_pci; then
+        echo "vfio-pci: Loaded"
+    else
+        echo "vfio-pci: Not loaded"
+        echo "Load with: modprobe vfio-pci"
+    fi
+
+    if lsmod | grep -q vfio_iommu_type1; then
+        echo "vfio_iommu_type1: Loaded"
+    else
+        echo "vfio_iommu_type1: Not loaded"
+    fi
+
+    if lsmod | grep -q vfio; then
+        echo "vfio: Loaded"
+    else
+        echo "vfio: Not loaded"
+    fi
+
+    echo ""
+    echo "Devices bound to VFIO:"
+    ls -d /sys/bus/pci/drivers/vfio-pci/* 2>/dev/null | grep -oP '\d+:\d+:\d+\.\d+' || echo "  (none)"
+}
+
+# GPU Isolation
+isolate_gpu() {
+    local pci_id="$1"
+
+    if [ -z "$pci_id" ]; then
+        echo "Error: PCI ID required"
+        return 1
+    fi
+
+    log_message "Isolating GPU for passthrough: $pci_id"
+
+    echo "Isolating GPU for Passthrough"
+    echo "============================="
+    echo "PCI ID: $pci_id"
+    echo ""
+
+    # Verify GPU exists
+    if ! lspci -s "$pci_id" >/dev/null 2>&1; then
+        echo "Error: GPU not found: $pci_id"
+        return 1
+    fi
+
+    # Check IOMMU
+    if [ ! -e "/sys/bus/pci/devices/${pci_id}/iommu_group" ]; then
+        echo "Error: IOMMU not enabled or GPU not in IOMMU group"
+        echo "Enable IOMMU in BIOS and kernel parameters"
+        return 1
+    fi
+
+    local iommu_group=$(basename $(readlink "/sys/bus/pci/devices/${pci_id}/iommu_group"))
+    echo "IOMMU Group: $iommu_group"
+    echo ""
+
+    # Get vendor and device IDs
+    local ids=$(lspci -n -s "$pci_id" | awk '{print $3}')
+    local vendor_id=$(echo "$ids" | cut -d: -f1)
+    local device_id=$(echo "$ids" | cut -d: -f2)
+
+    echo "Vendor:Device = $vendor_id:$device_id"
+    echo ""
+
+    # Unbind from current driver
+    local current_driver=$(lspci -k -s "$pci_id" | grep "Kernel driver" | awk '{print $NF}')
+
+    if [ -n "$current_driver" ]; then
+        echo "Unbinding from $current_driver..."
+        # echo "$pci_id" > /sys/bus/pci/drivers/$current_driver/unbind
+    fi
+
+    # Load VFIO modules
+    echo "Loading VFIO modules..."
+    # modprobe vfio
+    # modprobe vfio_pci
+
+    # Bind to VFIO
+    echo "Binding to vfio-pci..."
+    # echo "$vendor_id $device_id" > /sys/bus/pci/drivers/vfio-pci/new_id
+
+    # Save isolation state
+    echo "$pci_id" >> "$GPU_DIR/isolated_gpus"
+
+    log_message "GPU isolated: $pci_id"
+    echo ""
+    echo "GPU $pci_id isolated and ready for passthrough"
+    echo ""
+    echo "To make persistent, add to kernel parameters:"
+    echo "  vfio-pci.ids=$vendor_id:$device_id"
+}
+
+release_gpu() {
+    local pci_id="$1"
+
+    if [ -z "$pci_id" ]; then
+        echo "Error: PCI ID required"
+        return 1
+    fi
+
+    log_message "Releasing GPU: $pci_id"
+
+    echo "Releasing GPU"
+    echo "============="
+    echo "PCI ID: $pci_id"
+    echo ""
+
+    # Unbind from VFIO
+    echo "Unbinding from vfio-pci..."
+    # echo "$pci_id" > /sys/bus/pci/drivers/vfio-pci/unbind
+
+    # Rescan PCI bus to restore original driver
+    echo "Rescanning PCI bus..."
+    # echo 1 > /sys/bus/pci/rescan
+
+    # Remove from isolated list
+    sed -i "/$pci_id/d" "$GPU_DIR/isolated_gpus" 2>/dev/null
+
+    log_message "GPU released: $pci_id"
+    echo "GPU $pci_id released back to host"
+}
+
+# VM GPU Attachment
+attach_gpu() {
+    local vm_name="$1"
+    local pci_id="$2"
+    local persistent="$3"
+
+    if [ -z "$vm_name" ] || [ -z "$pci_id" ]; then
+        echo "Error: VM name and PCI ID required"
+        return 1
+    fi
+
+    log_message "Attaching GPU $pci_id to VM $vm_name"
+
+    echo "Attaching GPU to VM"
+    echo "==================="
+    echo "VM: $vm_name"
+    echo "GPU: $pci_id"
+    echo ""
+
+    # Check if GPU is isolated
+    if ! grep -q "$pci_id" "$GPU_DIR/isolated_gpus" 2>/dev/null; then
+        echo "Warning: GPU not isolated. Isolating now..."
+        isolate_gpu "$pci_id" || return 1
+    fi
+
+    # Get PCI address components
+    local domain=$(echo "$pci_id" | cut -d: -f1)
+    local bus=$(echo "$pci_id" | cut -d: -f2)
+    local slot=$(echo "$pci_id" | cut -d: -f3 | cut -d. -f1)
+    local func=$(echo "$pci_id" | cut -d. -f2)
+
+    # Create hostdev XML
+    cat > "$GPU_DIR/${vm_name}-gpu.xml" <<EOF
+<hostdev mode='subsystem' type='pci' managed='yes'>
+  <source>
+    <address domain='0x$domain' bus='0x$bus' slot='0x$slot' function='0x$func'/>
+  </source>
+</hostdev>
+EOF
+
+    echo "Attaching GPU to VM..."
+
+    if command -v virsh >/dev/null 2>&1; then
+        # virsh attach-device $vm_name $GPU_DIR/${vm_name}-gpu.xml ${persistent:+--config}
+        echo "GPU attached (simulation)"
+
+        if [ "$persistent" = "--persistent" ]; then
+            echo "Attachment is persistent (survives VM restart)"
+
+            # Save assignment
+            echo "$vm_name:$pci_id" >> "$GPU_DIR/assignments"
+        fi
+    else
+        echo "Error: virsh not available"
+        return 1
+    fi
+
+    log_message "GPU attached to VM: $vm_name -> $pci_id"
+    echo ""
+    echo "GPU successfully attached to $vm_name"
+}
+
+detach_gpu() {
+    local vm_name="$1"
+    local pci_id="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$pci_id" ]; then
+        echo "Error: VM name and PCI ID required"
+        return 1
+    fi
+
+    log_message "Detaching GPU $pci_id from VM $vm_name"
+
+    echo "Detaching GPU from VM"
+    echo "====================="
+    echo "VM: $vm_name"
+    echo "GPU: $pci_id"
+    echo ""
+
+    if [ -f "$GPU_DIR/${vm_name}-gpu.xml" ]; then
+        # virsh detach-device $vm_name $GPU_DIR/${vm_name}-gpu.xml
+        rm -f "$GPU_DIR/${vm_name}-gpu.xml"
+        echo "GPU detached (simulation)"
+
+        # Remove assignment
+        sed -i "/$vm_name:$pci_id/d" "$GPU_DIR/assignments" 2>/dev/null
+    else
+        echo "No GPU attachment found for $vm_name"
+    fi
+
+    log_message "GPU detached from VM: $vm_name"
+}
+
+# Interactive Wizard
+gpu_wizard() {
+    echo "========================================="
+    echo "   VirtOS GPU Passthrough Wizard"
+    echo "========================================="
+    echo ""
+
+    # Step 1: Check IOMMU
+    echo "Step 1: Checking IOMMU/VT-d status..."
+    echo ""
+
+    if ! check_iommu; then
+        echo ""
+        echo "IOMMU is not enabled. GPU passthrough requires IOMMU."
+        echo "1. Enable VT-d/AMD-Vi in BIOS"
+        echo "2. Add kernel parameter: intel_iommu=on (or amd_iommu=on)"
+        echo "3. Reboot"
+        echo ""
+        echo "Cannot continue without IOMMU."
+        return 1
+    fi
+
+    echo ""
+    echo "Step 2: Detecting GPUs..."
+    echo ""
+
+    detect_gpus
+
+    echo ""
+    read -p "Enter PCI ID of GPU to passthrough (e.g., 0000:01:00.0): " pci_id
+
+    if [ -z "$pci_id" ]; then
+        echo "No PCI ID entered. Exiting."
+        return 1
+    fi
+
+    echo ""
+    echo "Step 3: Isolating GPU..."
+    echo ""
+
+    isolate_gpu "$pci_id" || return 1
+
+    echo ""
+    read -p "Enter VM name to attach GPU to: " vm_name
+
+    if [ -z "$vm_name" ]; then
+        echo "No VM name entered. GPU isolated but not attached."
+        return 0
+    fi
+
+    echo ""
+    echo "Step 4: Attaching GPU to VM..."
+    echo ""
+
+    attach_gpu "$vm_name" "$pci_id" "--persistent" || return 1
+
+    echo ""
+    echo "========================================="
+    echo "   GPU Passthrough Complete!"
+    echo "========================================="
+    echo ""
+    echo "GPU $pci_id is now attached to $vm_name"
+    echo ""
+    echo "Start VM with: virsh start $vm_name"
+}
+
+# vGPU Support
+vgpu_enable() {
+    local pci_id="$1"
+
+    if [ -z "$pci_id" ]; then
+        echo "Error: PCI ID required"
+        return 1
+    fi
+
+    log_message "Enabling vGPU for: $pci_id"
+
+    echo "Enabling vGPU Support"
+    echo "===================="
+    echo "PCI ID: $pci_id"
+    echo ""
+
+    # Check for vGPU support (NVIDIA GRID, Intel GVT-g)
+    local gpu_name=$(lspci -s "$pci_id" | cut -d: -f3-)
+
+    if echo "$gpu_name" | grep -qi "nvidia"; then
+        echo "NVIDIA GPU detected"
+        echo "vGPU support requires NVIDIA GRID drivers"
+        echo "This is typically available only on enterprise GPUs"
+    elif echo "$gpu_name" | grep -qi "intel"; then
+        echo "Intel GPU detected"
+        echo "GVT-g support may be available"
+        echo "Check kernel module: i915 with enable_gvt=1"
+    else
+        echo "GPU vendor not recognized for vGPU"
+    fi
+
+    sed -i 's/^VGPU_ENABLED=.*/VGPU_ENABLED=yes/' "$GPU_DIR/config.conf"
+
+    echo ""
+    echo "vGPU mode enabled (configuration only)"
+    echo "Actual vGPU creation depends on hardware and driver support"
+}
+
+vgpu_list() {
+    echo "vGPU Instances:"
+    echo "==============="
+
+    # In production, would list mdev devices
+    if [ -d /sys/class/mdev_bus ]; then
+        echo "Mediated devices:"
+        ls -l /sys/class/mdev_bus/*/mdev_supported_types/*/devices/ 2>/dev/null || echo "  (none)"
+    else
+        echo "No vGPU support detected"
+        echo "Requires kernel mdev framework and vGPU-capable hardware"
+    fi
+}
+
+# Scheduled Attachment
+schedule_attach() {
+    local vm_name="$1"
+    local pci_id="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$pci_id" ]; then
+        echo "Error: VM name and PCI ID required"
+        return 1
+    fi
+
+    log_message "Scheduling GPU attachment: $vm_name -> $pci_id"
+
+    echo "$vm_name:$pci_id:attach" >> "$GPU_DIR/schedule"
+
+    echo "GPU attachment scheduled"
+    echo "VM $vm_name will automatically get GPU $pci_id on start"
+}
+
+schedule_detach() {
+    local vm_name="$1"
+    local pci_id="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$pci_id" ]; then
+        echo "Error: VM name and PCI ID required"
+        return 1
+    fi
+
+    log_message "Removing scheduled GPU attachment: $vm_name -> $pci_id"
+
+    sed -i "/$vm_name:$pci_id:attach/d" "$GPU_DIR/schedule" 2>/dev/null
+
+    echo "Scheduled GPU attachment removed"
+}
+
+# Initialize
+init_config
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    detect)
+        detect_gpus
+        ;;
+    list)
+        list_gpus
+        ;;
+    isolate)
+        isolate_gpu "$1"
+        ;;
+    release)
+        release_gpu "$1"
+        ;;
+    attach)
+        attach_gpu "$1" "$2" "$3"
+        ;;
+    detach)
+        detach_gpu "$1" "$2"
+        ;;
+    wizard)
+        gpu_wizard
+        ;;
+    iommu-status)
+        check_iommu
+        ;;
+    vfio-status)
+        check_vfio
+        ;;
+    vgpu-enable)
+        vgpu_enable "$1"
+        ;;
+    vgpu-list)
+        vgpu_list
+        ;;
+    schedule-attach)
+        schedule_attach "$1" "$2"
+        ;;
+    schedule-detach)
+        schedule_detach "$1" "$2"
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

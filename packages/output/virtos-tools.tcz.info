@@ -1,0 +1,14 @@
+Title:          virtos-tools.tcz
+Description:    VirtOS management tools and utilities
+Version:        0.1-alpha
+Author:         FlossWare
+Original-site:  https://github.com/FlossWare/VirtOS
+Copying-policy: MIT
+Size:           4.5M
+Extension_by:   FlossWare
+Tags:           virtualization management kvm docker lxc
+Comments:       Core VirtOS management scripts including virtos-tui, virtos-setup,
+                virtos-cluster, virtos-backup, and 50+ other management utilities.
+                Provides TUI-based system management and automation tools.
+Change-log:     2026/05/24 Initial release v0.1-alpha
+Current:        2026/05/24 First version

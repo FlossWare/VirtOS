@@ -1,0 +1,341 @@
+#!/bin/sh
+# VirtOS Cluster Management Tool
+
+VERSION="1"
+CLUSTER_CONF="/etc/virtos/cluster.conf"
+CACHE_DIR="/var/run/virtos"
+CLUSTER_CACHE="$CACHE_DIR/cluster-members"
+
+# Load configuration
+if [ -f "$CLUSTER_CONF" ]; then
+    . "$CLUSTER_CONF"
+else
+    echo "Warning: $CLUSTER_CONF not found, using defaults"
+    CLUSTER_NAME="homelab"
+    DISCOVERY_METHOD="avahi"
+fi
+
+# Colors (if terminal supports it)
+if [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m' # No Color
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    NC=''
+fi
+
+usage() {
+    cat << EOF
+VirtOS Cluster Management Tool v${VERSION}
+
+Usage: virtos-cluster <command> [options]
+
+Commands:
+  list                 List all cluster members
+  info <node>          Show detailed info about a node
+  resources            Show cluster resource summary
+  health               Check cluster health
+  recommend            Recommend host for new VM
+  vms [--all]          List VMs (--all for all hosts)
+  refresh              Refresh cluster member cache
+  add <name> <ip>      Add node manually (static mode)
+  remove <name>        Remove node from cluster
+  version              Show version
+
+Examples:
+  virtos-cluster list
+  virtos-cluster info virtos-2
+  virtos-cluster resources
+  virtos-cluster recommend --cpu 2 --ram 4096
+  virtos-cluster vms --all
+
+Configuration: $CLUSTER_CONF
+Cluster: $CLUSTER_NAME
+Discovery: $DISCOVERY_METHOD
+
+EOF
+}
+
+# Discover cluster members
+discover_members() {
+    mkdir -p "$CACHE_DIR"
+
+    case "$DISCOVERY_METHOD" in
+        avahi)
+            # Use Avahi to find VirtOS hosts
+            if command -v avahi-browse >/dev/null 2>&1; then
+                avahi-browse -t _virtos._tcp --resolve -p 2>/dev/null | \
+                grep "^=" | \
+                awk -F';' '{print $4 " " $8}' > "$CLUSTER_CACHE.new"
+
+                # Also try simple .local resolution
+                for i in 1 2 3 4 5 6 7 8 9 10; do
+                    host="virtos-$i"
+                    if ping -c 1 -W 1 "${host}.local" >/dev/null 2>&1; then
+                        ip=$(getent hosts "${host}.local" | awk '{print $1}')
+                        echo "$host $ip" >> "$CLUSTER_CACHE.new"
+                    fi
+                done
+
+                sort -u "$CLUSTER_CACHE.new" > "$CLUSTER_CACHE"
+                rm -f "$CLUSTER_CACHE.new"
+            else
+                echo "${YELLOW}Warning: avahi-browse not found${NC}" >&2
+                return 1
+            fi
+            ;;
+        static)
+            # Read from static configuration
+            if [ -f "/etc/virtos/cluster-members.conf" ]; then
+                cat "/etc/virtos/cluster-members.conf" > "$CLUSTER_CACHE"
+            fi
+            ;;
+        multicast)
+            # TODO: Implement multicast discovery
+            echo "${YELLOW}Multicast discovery not yet implemented${NC}" >&2
+            return 1
+            ;;
+    esac
+}
+
+# List cluster members
+list_members() {
+    echo "${BLUE}VirtOS Cluster: $CLUSTER_NAME${NC}"
+    echo "================================================"
+    echo ""
+
+    if [ ! -f "$CLUSTER_CACHE" ] || [ ! -s "$CLUSTER_CACHE" ]; then
+        echo "Discovering cluster members..."
+        discover_members
+    fi
+
+    if [ ! -f "$CLUSTER_CACHE" ] || [ ! -s "$CLUSTER_CACHE" ]; then
+        echo "${YELLOW}No cluster members found${NC}"
+        echo ""
+        echo "Try:"
+        echo "  1. Check Avahi is running: ps aux | grep avahi"
+        echo "  2. Verify network connectivity"
+        echo "  3. Ensure other nodes are up"
+        echo "  4. Run: virtos-cluster refresh"
+        return
+    fi
+
+    printf "%-15s %-18s %-8s %-10s %-5s %-8s %-8s\n" \
+        "Hostname" "IP" "Status" "Uptime" "VMs" "CPU" "RAM"
+
+    while read -r hostname ip; do
+        # Check if host is reachable
+        if ping -c 1 -W 1 "$ip" >/dev/null 2>&1; then
+            status="${GREEN}up${NC}"
+
+            # Try to get VM count via SSH (if accessible)
+            vms="-"
+            if ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
+                "root@$ip" "command -v virsh" >/dev/null 2>&1; then
+                vms=$(ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
+                    "root@$ip" "virsh list --all --name 2>/dev/null | wc -l" 2>/dev/null || echo "-")
+            fi
+
+            # Get uptime
+            uptime=$(ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
+                "root@$ip" "uptime -p 2>/dev/null | sed 's/up //'" 2>/dev/null || echo "-")
+
+            cpu="-"
+            ram="-"
+        else
+            status="${RED}down${NC}"
+            uptime="-"
+            vms="-"
+            cpu="-"
+            ram="-"
+        fi
+
+        printf "%-15s %-18s %-8s %-10s %-5s %-8s %-8s\n" \
+            "$hostname" "$ip" "$(echo -e $status)" "$uptime" "$vms" "$cpu" "$ram"
+    done < "$CLUSTER_CACHE"
+
+    echo ""
+}
+
+# Show node info
+show_info() {
+    node="$1"
+    if [ -z "$node" ]; then
+        echo "Error: Node name required"
+        echo "Usage: virtos-cluster info <node>"
+        return 1
+    fi
+
+    # Find node in cache
+    if [ ! -f "$CLUSTER_CACHE" ]; then
+        discover_members
+    fi
+
+    ip=$(grep "^$node " "$CLUSTER_CACHE" | awk '{print $2}')
+
+    if [ -z "$ip" ]; then
+        echo "${RED}Error: Node '$node' not found in cluster${NC}"
+        return 1
+    fi
+
+    echo "${BLUE}Node Information: $node${NC}"
+    echo "================================================"
+    echo ""
+    echo "IP Address:  $ip"
+
+    # Check if reachable
+    if ! ping -c 1 -W 1 "$ip" >/dev/null 2>&1; then
+        echo "Status:      ${RED}DOWN${NC}"
+        return
+    fi
+
+    echo "Status:      ${GREEN}UP${NC}"
+
+    # Get detailed info via SSH (if accessible)
+    if ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
+        "root@$ip" "echo" >/dev/null 2>&1; then
+
+        echo ""
+        echo "System:"
+        ssh -o ConnectTimeout=2 "root@$ip" "uname -sr" 2>/dev/null
+
+        echo ""
+        echo "Uptime:"
+        ssh -o ConnectTimeout=2 "root@$ip" "uptime" 2>/dev/null
+
+        echo ""
+        echo "Resources:"
+        ssh -o ConnectTimeout=2 "root@$ip" "free -h | grep Mem" 2>/dev/null
+        ssh -o ConnectTimeout=2 "root@$ip" "nproc" 2>/dev/null | \
+            awk '{print "CPU Cores: " $1}'
+
+        echo ""
+        echo "VMs:"
+        ssh -o ConnectTimeout=2 "root@$ip" "virsh list --all" 2>/dev/null
+    else
+        echo "${YELLOW}Cannot get detailed info (SSH not available)${NC}"
+    fi
+
+    echo ""
+}
+
+# Refresh cluster cache
+refresh_cache() {
+    echo "Refreshing cluster member cache..."
+    rm -f "$CLUSTER_CACHE"
+    discover_members
+    echo "${GREEN}Cache refreshed${NC}"
+    list_members
+}
+
+# Show cluster resources
+show_resources() {
+    echo "${BLUE}Cluster Resources: $CLUSTER_NAME${NC}"
+    echo "================================================"
+    echo ""
+
+    if [ ! -f "$CLUSTER_CACHE" ]; then
+        discover_members
+    fi
+
+    total_nodes=0
+    up_nodes=0
+
+    while read -r hostname ip; do
+        total_nodes=$((total_nodes + 1))
+        if ping -c 1 -W 1 "$ip" >/dev/null 2>&1; then
+            up_nodes=$((up_nodes + 1))
+        fi
+    done < "$CLUSTER_CACHE"
+
+    echo "Nodes:       $up_nodes / $total_nodes online"
+    echo ""
+    echo "Per-Node Resources:"
+    echo ""
+
+    while read -r hostname ip; do
+        if ping -c 1 -W 1 "$ip" >/dev/null 2>&1; then
+            echo "  ${GREEN}●${NC} $hostname ($ip)"
+
+            if ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
+                "root@$ip" "echo" >/dev/null 2>&1; then
+
+                # Get CPU count
+                cpus=$(ssh -o ConnectTimeout=2 "root@$ip" "nproc" 2>/dev/null)
+
+                # Get RAM
+                ram=$(ssh -o ConnectTimeout=2 "root@$ip" \
+                    "free -h | grep Mem | awk '{print \$2}'" 2>/dev/null)
+
+                # Get VM count
+                vms=$(ssh -o ConnectTimeout=2 "root@$ip" \
+                    "virsh list --name 2>/dev/null | grep -v '^$' | wc -l" 2>/dev/null)
+
+                echo "    CPUs: ${cpus:-?}"
+                echo "    RAM:  ${ram:-?}"
+                echo "    VMs:  ${vms:-0} running"
+            else
+                echo "    ${YELLOW}(SSH unavailable)${NC}"
+            fi
+            echo ""
+        else
+            echo "  ${RED}●${NC} $hostname ($ip) - DOWN"
+            echo ""
+        fi
+    done < "$CLUSTER_CACHE"
+}
+
+# Main command dispatcher
+case "${1:-help}" in
+    list|ls)
+        list_members
+        ;;
+    info|show)
+        show_info "$2"
+        ;;
+    resources|res)
+        show_resources
+        ;;
+    health)
+        echo "Health check not yet implemented"
+        ;;
+    recommend|rec)
+        echo "VM placement recommendation not yet implemented"
+        ;;
+    vms)
+        echo "VM listing not yet implemented"
+        ;;
+    refresh)
+        refresh_cache
+        ;;
+    add)
+        if [ -z "$2" ] || [ -z "$3" ]; then
+            echo "Usage: virtos-cluster add <hostname> <ip>"
+            exit 1
+        fi
+        echo "$2 $3" >> /etc/virtos/cluster-members.conf
+        echo "${GREEN}Added $2 ($3) to static cluster members${NC}"
+        ;;
+    remove|rm)
+        if [ -z "$2" ]; then
+            echo "Usage: virtos-cluster remove <hostname>"
+            exit 1
+        fi
+        if [ -f /etc/virtos/cluster-members.conf ]; then
+            sed -i "/^$2 /d" /etc/virtos/cluster-members.conf
+            echo "${GREEN}Removed $2 from static cluster members${NC}"
+        fi
+        ;;
+    version|-v|--version)
+        echo "virtos-cluster version $VERSION"
+        ;;
+    help|-h|--help|*)
+        usage
+        ;;
+esac

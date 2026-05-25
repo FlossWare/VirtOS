@@ -1,0 +1,56 @@
+VirtOS Management Tools
+=======================
+
+This package contains the complete set of VirtOS management utilities.
+
+Quick Start
+-----------
+
+1. Run the setup wizard:
+   sudo virtos-setup
+
+2. Launch the TUI:
+   virtos-tui
+
+3. Check cluster status:
+   virtos-cluster status
+
+Management Tools
+----------------
+
+System Setup:
+  virtos-setup        - Initial system configuration
+  virtos-tui          - Text-based management interface
+
+Virtualization:
+  virtos-create-vm    - Create new virtual machines
+  virtos-template     - VM template management
+  virtos-snapshot     - VM snapshot management
+  virtos-migrate      - Live VM migration
+
+Clustering:
+  virtos-cluster      - Cluster management
+  virtos-ha           - High availability configuration
+
+Backup & Recovery:
+  virtos-backup       - Backup and restore VMs
+  virtos-dr           - Disaster recovery management
+
+Monitoring:
+  virtos-monitor      - System monitoring
+  virtos-telemetry    - Metrics collection
+
+Security:
+  virtos-auth         - Authentication management
+  virtos-security     - Security hardening
+  virtos-secrets      - Secrets management
+
+Storage:
+  virtos-storage      - Storage pool management
+
+Networking:
+  virtos-network      - Network configuration
+
+And many more! Run any command with --help for usage information.
+
+Documentation: https://github.com/FlossWare/VirtOS/tree/main/docs

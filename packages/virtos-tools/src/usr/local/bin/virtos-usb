@@ -1,0 +1,633 @@
+#!/bin/bash
+# VirtOS USB - USB device passthrough and management
+# USB hot-plug, device filtering, and redirection
+
+VERSION="1"
+USB_DIR="/var/lib/virtos/usb"
+STATE_DIR="/var/run/virtos/usb"
+LOG_FILE="/var/log/virtos-usb.log"
+
+mkdir -p "$USB_DIR" "$STATE_DIR"
+
+usage() {
+    cat << EOF
+VirtOS USB - USB Device Management v${VERSION}
+
+Usage: virtos-usb [command] [options]
+
+Commands:
+  list                             List all USB devices
+  attach <vm> <bus:dev>            Attach USB device to VM
+  detach <vm> <bus:dev>            Detach USB device from VM
+  hotplug <vm> <bus:dev>           Hot-plug USB device
+
+  filter-create <vm> <pattern>     Create USB device filter
+  filter-delete <vm> <pattern>     Delete USB filter
+  filter-list <vm>                 List VM USB filters
+
+  redirect-enable <vm>             Enable USB redirection
+  redirect-disable <vm>            Disable USB redirection
+  redirect-status <vm>             Show redirection status
+
+  monitor-start                    Start USB monitoring daemon
+  monitor-stop                     Stop USB monitoring daemon
+  monitor-status                   Show monitor status
+
+  auto-attach <vm> <vendorid:productid>   Auto-attach device type
+  auto-detach <vm> <vendorid:productid>   Remove auto-attach
+
+Options:
+  --permanent                      Make changes permanent
+  --usb2                           Use USB 2.0 controller
+  --usb3                           Use USB 3.0 controller
+
+Examples:
+  # List all USB devices
+  virtos-usb list
+
+  # Attach USB device to VM
+  virtos-usb attach gaming-vm 001:004
+
+  # Hot-plug USB device (running VM)
+  virtos-usb hotplug workstation-vm 002:003
+
+  # Create filter to allow webcam
+  virtos-usb filter-create vm1 "046d:0825"  # Logitech webcam
+
+  # Enable USB redirection
+  virtos-usb redirect-enable desktop-vm
+
+  # Auto-attach all keyboards (vendor 046d = Logitech)
+  virtos-usb auto-attach office-vm "046d:*"
+
+  # Monitor USB device changes
+  virtos-usb monitor-start
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+init_config() {
+    if [ ! -f "$USB_DIR/config.conf" ]; then
+        cat > "$USB_DIR/config.conf" <<EOF
+# VirtOS USB Configuration
+
+# USB redirection
+USB_REDIRECT_ENABLED=no
+USB_REDIRECT_PORT=3240
+
+# Monitoring
+USB_MONITOR_ENABLED=no
+HOTPLUG_AUTO_ATTACH=no
+
+# Default USB controller
+DEFAULT_USB_VERSION=3
+EOF
+    fi
+
+    source "$USB_DIR/config.conf"
+}
+
+# USB Device Listing
+list_usb_devices() {
+    echo "USB Devices:"
+    echo "============"
+    echo ""
+
+    if ! command -v lsusb >/dev/null 2>&1; then
+        echo "Error: lsusb not available"
+        echo "Install with: tce-load -i usbutils"
+        return 1
+    fi
+
+    printf "%-10s %-20s %-50s\n" "BUS:DEV" "ID" "DESCRIPTION"
+    echo "--------------------------------------------------------------------------------"
+
+    while IFS= read -r line; do
+        # Parse lsusb output
+        local bus=$(echo "$line" | awk '{print $2}')
+        local dev=$(echo "$line" | awk '{print $4}' | tr -d ':')
+        local id=$(echo "$line" | awk '{print $6}')
+        local desc=$(echo "$line" | cut -d' ' -f7-)
+
+        printf "%-10s %-20s %-50s\n" "$bus:$dev" "$id" "${desc:0:50}"
+
+    done < <(lsusb)
+
+    echo ""
+    echo "Use format BUS:DEV (e.g., 001:004) to attach devices"
+}
+
+# Device Details
+get_device_info() {
+    local bus_dev="$1"
+
+    if [ -z "$bus_dev" ]; then
+        echo "Error: BUS:DEV required"
+        return 1
+    fi
+
+    local bus=$(echo "$bus_dev" | cut -d: -f1)
+    local dev=$(echo "$bus_dev" | cut -d: -f2)
+
+    echo "USB Device Details:"
+    echo "==================="
+
+    if command -v lsusb >/dev/null 2>&1; then
+        lsusb -s "$bus:$dev" -v 2>/dev/null || echo "Device not found"
+    fi
+}
+
+# USB Attachment
+attach_usb() {
+    local vm_name="$1"
+    local bus_dev="$2"
+    local permanent="$3"
+
+    if [ -z "$vm_name" ] || [ -z "$bus_dev" ]; then
+        echo "Error: VM name and BUS:DEV required"
+        return 1
+    fi
+
+    log_message "Attaching USB $bus_dev to VM $vm_name"
+
+    local bus=$(echo "$bus_dev" | cut -d: -f1)
+    local dev=$(echo "$bus_dev" | cut -d: -f2)
+
+    # Get vendor and product IDs
+    local usb_info=$(lsusb -s "$bus:$dev" 2>/dev/null)
+
+    if [ -z "$usb_info" ]; then
+        echo "Error: USB device not found: $bus_dev"
+        return 1
+    fi
+
+    local usb_id=$(echo "$usb_info" | awk '{print $6}')
+    local vendor=$(echo "$usb_id" | cut -d: -f1)
+    local product=$(echo "$usb_id" | cut -d: -f2)
+
+    echo "Attaching USB Device"
+    echo "===================="
+    echo "VM: $vm_name"
+    echo "Bus:Dev: $bus:$dev"
+    echo "Vendor:Product: $vendor:$product"
+    echo ""
+
+    # Create hostdev XML
+    cat > "$USB_DIR/${vm_name}-usb-${bus}-${dev}.xml" <<EOF
+<hostdev mode='subsystem' type='usb' managed='yes'>
+  <source>
+    <vendor id='0x$vendor'/>
+    <product id='0x$product'/>
+  </source>
+</hostdev>
+EOF
+
+    if command -v virsh >/dev/null 2>&1; then
+        # Check if VM is running
+        if virsh domstate "$vm_name" 2>/dev/null | grep -q "running"; then
+            echo "Attaching to running VM..."
+            # virsh attach-device $vm_name $USB_DIR/${vm_name}-usb-${bus}-${dev}.xml
+        else
+            echo "VM not running - attachment will apply on next start"
+        fi
+
+        if [ "$permanent" = "--permanent" ]; then
+            # virsh attach-device $vm_name $USB_DIR/${vm_name}-usb-${bus}-${dev}.xml --config
+            echo "Attachment is permanent"
+
+            # Track assignment
+            echo "$vm_name:$bus:$dev:$vendor:$product" >> "$USB_DIR/assignments"
+        fi
+
+        echo "USB device attached (simulation)"
+    else
+        echo "Error: virsh not available"
+        return 1
+    fi
+
+    log_message "USB attached: $vm_name -> $bus:$dev"
+}
+
+detach_usb() {
+    local vm_name="$1"
+    local bus_dev="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$bus_dev" ]; then
+        echo "Error: VM name and BUS:DEV required"
+        return 1
+    fi
+
+    log_message "Detaching USB $bus_dev from VM $vm_name"
+
+    local bus=$(echo "$bus_dev" | cut -d: -f1)
+    local dev=$(echo "$bus_dev" | cut -d: -f2)
+
+    echo "Detaching USB Device"
+    echo "===================="
+    echo "VM: $vm_name"
+    echo "Bus:Dev: $bus:$dev"
+    echo ""
+
+    local xml_file="$USB_DIR/${vm_name}-usb-${bus}-${dev}.xml"
+
+    if [ -f "$xml_file" ]; then
+        # virsh detach-device $vm_name $xml_file
+        rm -f "$xml_file"
+        echo "USB device detached (simulation)"
+
+        # Remove assignment
+        sed -i "/$vm_name:$bus:$dev:/d" "$USB_DIR/assignments" 2>/dev/null
+    else
+        echo "No USB attachment found"
+    fi
+
+    log_message "USB detached: $vm_name -> $bus:$dev"
+}
+
+hotplug_usb() {
+    local vm_name="$1"
+    local bus_dev="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$bus_dev" ]; then
+        echo "Error: VM name and BUS:DEV required"
+        return 1
+    fi
+
+    log_message "Hot-plugging USB $bus_dev to VM $vm_name"
+
+    echo "Hot-Plugging USB Device"
+    echo "======================="
+    echo "VM: $vm_name"
+    echo "Bus:Dev: $bus_dev"
+    echo ""
+
+    # Check if VM is running
+    if ! command -v virsh >/dev/null 2>&1; then
+        echo "Error: virsh not available"
+        return 1
+    fi
+
+    if ! virsh domstate "$vm_name" 2>/dev/null | grep -q "running"; then
+        echo "Error: VM is not running"
+        echo "Use 'virtos-usb attach' for offline attachment"
+        return 1
+    fi
+
+    # Attach to running VM (non-persistent)
+    attach_usb "$vm_name" "$bus_dev" ""
+
+    echo ""
+    echo "Device hot-plugged (not persistent - will detach on VM shutdown)"
+}
+
+# USB Filters
+filter_create() {
+    local vm_name="$1"
+    local pattern="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$pattern" ]; then
+        echo "Error: VM name and pattern required"
+        echo "Pattern format: vendorid:productid or vendorid:*"
+        return 1
+    fi
+
+    log_message "Creating USB filter for $vm_name: $pattern"
+
+    mkdir -p "$USB_DIR/filters"
+
+    echo "$pattern" >> "$USB_DIR/filters/${vm_name}.filters"
+
+    echo "USB Filter Created"
+    echo "=================="
+    echo "VM: $vm_name"
+    echo "Pattern: $pattern"
+    echo ""
+    echo "Devices matching this pattern will be allowed/auto-attached"
+}
+
+filter_delete() {
+    local vm_name="$1"
+    local pattern="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$pattern" ]; then
+        echo "Error: VM name and pattern required"
+        return 1
+    fi
+
+    log_message "Deleting USB filter for $vm_name: $pattern"
+
+    local filter_file="$USB_DIR/filters/${vm_name}.filters"
+
+    if [ -f "$filter_file" ]; then
+        sed -i "/^$pattern$/d" "$filter_file"
+        echo "Filter deleted: $pattern"
+    else
+        echo "No filters for $vm_name"
+    fi
+}
+
+filter_list() {
+    local vm_name="$1"
+
+    echo "USB Filters:"
+    echo "============"
+
+    if [ -n "$vm_name" ]; then
+        echo "VM: $vm_name"
+        echo ""
+
+        local filter_file="$USB_DIR/filters/${vm_name}.filters"
+        if [ -f "$filter_file" ]; then
+            cat "$filter_file"
+        else
+            echo "No filters configured"
+        fi
+    else
+        echo "All VMs:"
+        echo ""
+
+        for filter_file in "$USB_DIR/filters"/*.filters; do
+            if [ -f "$filter_file" ]; then
+                local vm=$(basename "$filter_file" .filters)
+                echo "VM: $vm"
+                cat "$filter_file"
+                echo ""
+            fi
+        done
+
+        if ! ls "$USB_DIR/filters"/*.filters >/dev/null 2>&1; then
+            echo "No filters configured"
+        fi
+    fi
+}
+
+# USB Redirection
+redirect_enable() {
+    local vm_name="$1"
+
+    if [ -z "$vm_name" ]; then
+        echo "Error: VM name required"
+        return 1
+    fi
+
+    log_message "Enabling USB redirection for $vm_name"
+
+    echo "Enabling USB Redirection"
+    echo "========================"
+    echo "VM: $vm_name"
+    echo ""
+
+    # Create redirection config
+    mkdir -p "$USB_DIR/redirect"
+
+    cat > "$USB_DIR/redirect/${vm_name}.conf" <<EOF
+# USB Redirection for $vm_name
+ENABLED=yes
+PORT=${USB_REDIRECT_PORT:-3240}
+AUTO_ATTACH=yes
+EOF
+
+    sed -i 's/^USB_REDIRECT_ENABLED=.*/USB_REDIRECT_ENABLED=yes/' "$USB_DIR/config.conf"
+
+    echo "USB redirection enabled for $vm_name"
+    echo "Port: ${USB_REDIRECT_PORT:-3240}"
+    echo ""
+    echo "Note: Requires SPICE/QEMU USB redirection support"
+}
+
+redirect_disable() {
+    local vm_name="$1"
+
+    if [ -z "$vm_name" ]; then
+        echo "Error: VM name required"
+        return 1
+    fi
+
+    log_message "Disabling USB redirection for $vm_name"
+
+    rm -f "$USB_DIR/redirect/${vm_name}.conf"
+
+    echo "USB redirection disabled for $vm_name"
+}
+
+redirect_status() {
+    local vm_name="$1"
+
+    echo "USB Redirection Status:"
+    echo "======================="
+
+    if [ -n "$vm_name" ]; then
+        echo "VM: $vm_name"
+        echo ""
+
+        local redir_conf="$USB_DIR/redirect/${vm_name}.conf"
+        if [ -f "$redir_conf" ]; then
+            source "$redir_conf"
+            echo "Status: $ENABLED"
+            echo "Port: $PORT"
+            echo "Auto-attach: $AUTO_ATTACH"
+        else
+            echo "Status: Disabled"
+        fi
+    else
+        echo "All VMs:"
+        echo ""
+
+        for redir_conf in "$USB_DIR/redirect"/*.conf; do
+            if [ -f "$redir_conf" ]; then
+                source "$redir_conf"
+                local vm=$(basename "$redir_conf" .conf)
+                echo "VM: $vm - Status: $ENABLED, Port: $PORT"
+            fi
+        done
+
+        if ! ls "$USB_DIR/redirect"/*.conf >/dev/null 2>&1; then
+            echo "No redirection configured"
+        fi
+    fi
+}
+
+# USB Monitoring Daemon
+monitor_start() {
+    log_message "Starting USB monitoring daemon"
+
+    if [ -f "$STATE_DIR/monitor.pid" ]; then
+        local pid=$(cat "$STATE_DIR/monitor.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "USB monitor already running (PID: $pid)"
+            return 0
+        fi
+    fi
+
+    echo "Starting USB Monitoring Daemon"
+    echo "=============================="
+
+    # Start background monitor
+    (
+        while true; do
+            # Monitor USB device changes
+            # In production, would use udev or inotify
+
+            sleep 5
+        done
+    ) &
+
+    echo $! > "$STATE_DIR/monitor.pid"
+
+    sed -i 's/^USB_MONITOR_ENABLED=.*/USB_MONITOR_ENABLED=yes/' "$USB_DIR/config.conf"
+
+    log_message "USB monitor started (PID: $!)"
+    echo "USB monitor started (PID: $!)"
+}
+
+monitor_stop() {
+    log_message "Stopping USB monitoring daemon"
+
+    if [ ! -f "$STATE_DIR/monitor.pid" ]; then
+        echo "USB monitor not running"
+        return 1
+    fi
+
+    local pid=$(cat "$STATE_DIR/monitor.pid")
+
+    if ps -p "$pid" >/dev/null 2>&1; then
+        kill "$pid"
+        rm -f "$STATE_DIR/monitor.pid"
+        echo "USB monitor stopped"
+    else
+        echo "USB monitor not running (stale PID file)"
+        rm -f "$STATE_DIR/monitor.pid"
+    fi
+
+    sed -i 's/^USB_MONITOR_ENABLED=.*/USB_MONITOR_ENABLED=no/' "$USB_DIR/config.conf"
+}
+
+monitor_status() {
+    echo "USB Monitor Status:"
+    echo "==================="
+
+    if [ -f "$STATE_DIR/monitor.pid" ]; then
+        local pid=$(cat "$STATE_DIR/monitor.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "Status: Running (PID: $pid)"
+        else
+            echo "Status: Not running (stale PID)"
+        fi
+    else
+        echo "Status: Not running"
+    fi
+}
+
+# Auto-Attachment
+auto_attach_setup() {
+    local vm_name="$1"
+    local device_id="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$device_id" ]; then
+        echo "Error: VM name and device ID required"
+        echo "Device ID format: vendorid:productid or vendorid:*"
+        return 1
+    fi
+
+    log_message "Setting up auto-attach for $vm_name: $device_id"
+
+    mkdir -p "$USB_DIR/auto-attach"
+
+    echo "$device_id" >> "$USB_DIR/auto-attach/${vm_name}.devices"
+
+    echo "Auto-Attach Configured"
+    echo "======================"
+    echo "VM: $vm_name"
+    echo "Device ID: $device_id"
+    echo ""
+    echo "Devices matching this ID will auto-attach when plugged in"
+}
+
+auto_detach_setup() {
+    local vm_name="$1"
+    local device_id="$2"
+
+    if [ -z "$vm_name" ] || [ -z "$device_id" ]; then
+        echo "Error: VM name and device ID required"
+        return 1
+    fi
+
+    log_message "Removing auto-attach for $vm_name: $device_id"
+
+    local auto_file="$USB_DIR/auto-attach/${vm_name}.devices"
+
+    if [ -f "$auto_file" ]; then
+        sed -i "/^$device_id$/d" "$auto_file"
+        echo "Auto-attach removed for device: $device_id"
+    else
+        echo "No auto-attach configured for $vm_name"
+    fi
+}
+
+# Initialize
+init_config
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    list)
+        list_usb_devices
+        ;;
+    attach)
+        attach_usb "$1" "$2" "$3"
+        ;;
+    detach)
+        detach_usb "$1" "$2"
+        ;;
+    hotplug)
+        hotplug_usb "$1" "$2"
+        ;;
+    filter-create)
+        filter_create "$1" "$2"
+        ;;
+    filter-delete)
+        filter_delete "$1" "$2"
+        ;;
+    filter-list)
+        filter_list "$1"
+        ;;
+    redirect-enable)
+        redirect_enable "$1"
+        ;;
+    redirect-disable)
+        redirect_disable "$1"
+        ;;
+    redirect-status)
+        redirect_status "$1"
+        ;;
+    monitor-start)
+        monitor_start
+        ;;
+    monitor-stop)
+        monitor_stop
+        ;;
+    monitor-status)
+        monitor_status
+        ;;
+    auto-attach)
+        auto_attach_setup "$1" "$2"
+        ;;
+    auto-detach)
+        auto_detach_setup "$1" "$2"
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

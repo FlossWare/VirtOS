@@ -120,9 +120,32 @@ More info: https://github.com/FlossWare/VirtOS
 EOF
 sudo mv /tmp/README usr/local/share/doc/virtos/README
 
+# Add VirtOS management scripts
+echo "  Adding VirtOS management scripts..."
+sudo mkdir -p usr/local/bin
+
+if [ -d "$CONFIG_DIR/custom-scripts" ]; then
+    echo "  Copying virtos-* management tools..."
+    SCRIPT_COUNT=0
+    for script in "$CONFIG_DIR"/custom-scripts/virtos-*; do
+        if [ -f "$script" ] && [ -x "$script" ]; then
+            sudo cp "$script" usr/local/bin/
+            SCRIPT_COUNT=$((SCRIPT_COUNT + 1))
+        fi
+    done
+    echo "  Added $SCRIPT_COUNT management scripts"
+
+    # Also copy add-user.sh if present
+    if [ -f "$CONFIG_DIR/custom-scripts/add-user.sh" ]; then
+        sudo cp "$CONFIG_DIR/custom-scripts/add-user.sh" usr/local/bin/
+        echo "  Added add-user.sh utility"
+    fi
+else
+    echo "  WARNING: custom-scripts directory not found at $CONFIG_DIR/custom-scripts"
+fi
+
 # Create helper scripts
 echo "  Adding helper scripts..."
-sudo mkdir -p usr/local/bin
 
 # KVM check script
 cat > /tmp/check-kvm << 'EOF'

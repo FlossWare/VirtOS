@@ -1,0 +1,695 @@
+#!/bin/bash
+# VirtOS Advanced Networking
+# SDN, NFV, service discovery, advanced load balancing
+
+VERSION="1"
+
+# Configuration
+NETWORK_CONFIG_DIR="/etc/virtos/networking-advanced"
+NETWORK_LOG="/var/log/virtos-networking-advanced.log"
+
+# Ensure config directory exists
+mkdir -p "$NETWORK_CONFIG_DIR"
+
+# Logging function
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$NETWORK_LOG"
+}
+
+# Setup Software Defined Networking (SDN)
+setup_sdn() {
+    local controller_type="$1"  # ovs, onos, floodlight
+
+    log_message "Setting up SDN with $controller_type controller..."
+
+    case "$controller_type" in
+        ovs)
+            # Open vSwitch setup
+            log_message "Installing Open vSwitch..."
+
+            tce-load -wi openvswitch 2>/dev/null || {
+                wget https://www.openvswitch.org/releases/openvswitch-3.1.0.tar.gz
+                tar -xzf openvswitch-3.1.0.tar.gz
+                cd openvswitch-3.1.0
+                ./configure --prefix=/usr/local
+                make && make install
+                cd ..
+            }
+
+            # Create OVS bridge
+            ovs-vsctl add-br br-sdn
+            ovs-vsctl set-controller br-sdn tcp:127.0.0.1:6653
+
+            # Configure flow tables
+            cat > "$NETWORK_CONFIG_DIR/ovs-flows.txt" <<EOF
+# Default flows for OVS
+priority=100,in_port=1,actions=output:2
+priority=100,in_port=2,actions=output:1
+priority=0,actions=drop
+EOF
+
+            ovs-ofctl add-flows br-sdn "$NETWORK_CONFIG_DIR/ovs-flows.txt"
+
+            log_message "Open vSwitch configured"
+            ;;
+
+        onos)
+            # ONOS SDN controller
+            log_message "Installing ONOS controller..."
+
+            wget -q https://repo1.maven.org/maven2/org/onosproject/onos-releases/2.7.0/onos-2.7.0.tar.gz
+            tar -xzf onos-2.7.0.tar.gz -C /opt/
+            ln -sf /opt/onos-2.7.0 /opt/onos
+
+            # Create ONOS config
+            cat > "$NETWORK_CONFIG_DIR/onos-config.json" <<EOF
+{
+  "apps": {
+    "org.onosproject.fwd": {
+      "enabled": true
+    },
+    "org.onosproject.openflow": {
+      "enabled": true
+    }
+  },
+  "devices": {},
+  "links": {}
+}
+EOF
+
+            log_message "ONOS controller installed"
+            ;;
+
+        floodlight)
+            # Floodlight controller
+            log_message "Installing Floodlight controller..."
+
+            # Java required
+            command -v java &>/dev/null || tce-load -wi openjdk
+
+            git clone https://github.com/floodlight/floodlight.git /opt/floodlight
+            cd /opt/floodlight
+            ant
+
+            log_message "Floodlight controller installed"
+            ;;
+    esac
+
+    echo "$controller_type" > "$NETWORK_CONFIG_DIR/sdn-controller.conf"
+    log_message "SDN setup complete"
+}
+
+# Network Function Virtualization (NFV)
+setup_nfv() {
+    local vnf_type="$1"  # firewall, lb, router, ids
+
+    log_message "Setting up NFV: $vnf_type..."
+
+    case "$vnf_type" in
+        firewall)
+            # Virtual Firewall
+            cat > "$NETWORK_CONFIG_DIR/vnf-firewall.conf" <<EOF
+# Virtual Firewall Configuration
+chain INPUT {
+    policy DROP;
+    rule 1 { allow ssh from 10.0.0.0/8; }
+    rule 2 { allow http from any; }
+    rule 3 { allow https from any; }
+}
+
+chain FORWARD {
+    policy DROP;
+    rule 1 { allow established; }
+    rule 2 { allow related; }
+}
+
+chain OUTPUT {
+    policy ACCEPT;
+}
+EOF
+            log_message "Virtual firewall configured"
+            ;;
+
+        lb)
+            # Virtual Load Balancer
+            cat > "$NETWORK_CONFIG_DIR/vnf-loadbalancer.conf" <<EOF
+# Virtual Load Balancer Configuration
+frontend http
+    bind *:80
+    mode http
+    default_backend web_servers
+
+backend web_servers
+    balance roundrobin
+    server web1 10.0.1.10:8080 check
+    server web2 10.0.1.11:8080 check
+    server web3 10.0.1.12:8080 check
+
+health_check
+    interval 5s
+    timeout 3s
+    rise 2
+    fall 3
+EOF
+            log_message "Virtual load balancer configured"
+            ;;
+
+        router)
+            # Virtual Router
+            cat > "$NETWORK_CONFIG_DIR/vnf-router.conf" <<EOF
+# Virtual Router Configuration
+interfaces:
+    eth0:
+        ip: 192.168.1.1/24
+        gateway: true
+    eth1:
+        ip: 10.0.0.1/24
+        gateway: true
+
+routing:
+    - dest: 0.0.0.0/0
+      via: 192.168.1.254
+    - dest: 10.0.0.0/8
+      dev: eth1
+
+nat:
+    - source: 10.0.0.0/24
+      masquerade: true
+EOF
+            log_message "Virtual router configured"
+            ;;
+
+        ids)
+            # Virtual IDS/IPS
+            cat > "$NETWORK_CONFIG_DIR/vnf-ids.conf" <<EOF
+# Virtual IDS Configuration
+detection_engine: suricata
+
+rules:
+    - alert tcp any any -> any 80 (msg:"HTTP traffic"; sid:1;)
+    - alert tcp any any -> any 22 (msg:"SSH connection"; sid:2;)
+    - drop tcp any any -> any 23 (msg:"Telnet blocked"; sid:3;)
+
+actions:
+    alert: log_and_notify
+    drop: block_and_log
+EOF
+            log_message "Virtual IDS configured"
+            ;;
+    esac
+}
+
+# Service discovery
+setup_service_discovery() {
+    local backend="$1"  # consul, etcd, zookeeper
+
+    log_message "Setting up service discovery with $backend..."
+
+    case "$backend" in
+        consul)
+            # Install Consul
+            wget -q https://releases.hashicorp.com/consul/1.15.0/consul_1.15.0_linux_amd64.zip
+            unzip -o consul_1.15.0_linux_amd64.zip -d /usr/local/bin/
+            chmod +x /usr/local/bin/consul
+
+            # Create Consul config
+            mkdir -p /etc/consul.d
+
+            cat > /etc/consul.d/config.json <<EOF
+{
+  "datacenter": "dc1",
+  "data_dir": "/var/lib/consul",
+  "log_level": "INFO",
+  "node_name": "$(hostname)",
+  "server": true,
+  "bootstrap_expect": 1,
+  "ui": true,
+  "client_addr": "0.0.0.0",
+  "bind_addr": "0.0.0.0"
+}
+EOF
+
+            # Start Consul
+            consul agent -config-dir=/etc/consul.d &
+            echo $! > "$NETWORK_CONFIG_DIR/consul.pid"
+
+            log_message "Consul started on http://localhost:8500"
+            ;;
+
+        etcd)
+            # Install etcd
+            wget -q https://github.com/etcd-io/etcd/releases/download/v3.5.9/etcd-v3.5.9-linux-amd64.tar.gz
+            tar -xzf etcd-v3.5.9-linux-amd64.tar.gz
+            cp etcd-v3.5.9-linux-amd64/etcd* /usr/local/bin/
+
+            # Start etcd
+            etcd --name virtos-node \
+                 --data-dir /var/lib/etcd \
+                 --listen-client-urls http://0.0.0.0:2379 \
+                 --advertise-client-urls http://localhost:2379 &
+            echo $! > "$NETWORK_CONFIG_DIR/etcd.pid"
+
+            log_message "etcd started on http://localhost:2379"
+            ;;
+
+        zookeeper)
+            # Install ZooKeeper
+            wget -q https://dlcdn.apache.org/zookeeper/zookeeper-3.8.1/apache-zookeeper-3.8.1-bin.tar.gz
+            tar -xzf apache-zookeeper-3.8.1-bin.tar.gz -C /opt/
+            ln -sf /opt/apache-zookeeper-3.8.1-bin /opt/zookeeper
+
+            # Configure ZooKeeper
+            cat > /opt/zookeeper/conf/zoo.cfg <<EOF
+tickTime=2000
+dataDir=/var/lib/zookeeper
+clientPort=2181
+maxClientCnxns=60
+EOF
+
+            # Start ZooKeeper
+            /opt/zookeeper/bin/zkServer.sh start
+
+            log_message "ZooKeeper started on localhost:2181"
+            ;;
+    esac
+
+    echo "$backend" > "$NETWORK_CONFIG_DIR/service-discovery.conf"
+}
+
+# Register service
+register_service() {
+    local service_name="$1"
+    local service_ip="$2"
+    local service_port="$3"
+
+    log_message "Registering service: $service_name at $service_ip:$service_port..."
+
+    local backend=$(cat "$NETWORK_CONFIG_DIR/service-discovery.conf" 2>/dev/null || echo "consul")
+
+    case "$backend" in
+        consul)
+            curl -X PUT http://localhost:8500/v1/agent/service/register -d @- <<EOF
+{
+  "ID": "$service_name",
+  "Name": "$service_name",
+  "Address": "$service_ip",
+  "Port": $service_port,
+  "Check": {
+    "HTTP": "http://$service_ip:$service_port/health",
+    "Interval": "10s"
+  }
+}
+EOF
+            ;;
+
+        etcd)
+            etcdctl put "/services/$service_name" "{\"ip\":\"$service_ip\",\"port\":$service_port}"
+            ;;
+
+        zookeeper)
+            /opt/zookeeper/bin/zkCli.sh create "/services/$service_name" "{\"ip\":\"$service_ip\",\"port\":$service_port}"
+            ;;
+    esac
+
+    log_message "Service registered: $service_name"
+}
+
+# Advanced load balancing
+setup_load_balancer() {
+    local lb_type="$1"  # haproxy, nginx, envoy
+    local algorithm="$2"  # roundrobin, leastconn, iphash
+
+    log_message "Setting up $lb_type load balancer with $algorithm algorithm..."
+
+    case "$lb_type" in
+        haproxy)
+            cat > "$NETWORK_CONFIG_DIR/haproxy.cfg" <<EOF
+global
+    log stdout format raw local0
+    maxconn 4096
+
+defaults
+    log global
+    mode http
+    timeout connect 5000ms
+    timeout client 50000ms
+    timeout server 50000ms
+
+frontend http-in
+    bind *:80
+    default_backend servers
+
+backend servers
+    balance $algorithm
+    option httpchk GET /health
+    server server1 10.0.1.10:8080 check
+    server server2 10.0.1.11:8080 check
+    server server3 10.0.1.12:8080 check
+
+listen stats
+    bind *:8404
+    stats enable
+    stats uri /stats
+    stats refresh 30s
+EOF
+
+            # Start HAProxy
+            haproxy -f "$NETWORK_CONFIG_DIR/haproxy.cfg" &
+            echo $! > "$NETWORK_CONFIG_DIR/haproxy.pid"
+
+            log_message "HAProxy started on port 80 (stats: http://localhost:8404/stats)"
+            ;;
+
+        nginx)
+            cat > "$NETWORK_CONFIG_DIR/nginx-lb.conf" <<EOF
+upstream backend {
+    $([ "$algorithm" = "iphash" ] && echo "ip_hash;")
+    $([ "$algorithm" = "leastconn" ] && echo "least_conn;")
+    server 10.0.1.10:8080;
+    server 10.0.1.11:8080;
+    server 10.0.1.12:8080;
+}
+
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+
+    location /health {
+        access_log off;
+        return 200 "OK\n";
+    }
+}
+EOF
+
+            # Start Nginx
+            nginx -c "$NETWORK_CONFIG_DIR/nginx-lb.conf"
+
+            log_message "Nginx load balancer started on port 80"
+            ;;
+
+        envoy)
+            cat > "$NETWORK_CONFIG_DIR/envoy.yaml" <<EOF
+static_resources:
+  listeners:
+  - address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 80
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: backend
+              domains: ["*"]
+              routes:
+              - match: { prefix: "/" }
+                route:
+                  cluster: service_backend
+          http_filters:
+          - name: envoy.filters.http.router
+
+  clusters:
+  - name: service_backend
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    lb_policy: $([ "$algorithm" = "roundrobin" ] && echo "ROUND_ROBIN" || echo "LEAST_REQUEST")
+    load_assignment:
+      cluster_name: service_backend
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 10.0.1.10
+                port_value: 8080
+        - endpoint:
+            address:
+              socket_address:
+                address: 10.0.1.11
+                port_value: 8080
+
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
+EOF
+
+            # Start Envoy
+            envoy -c "$NETWORK_CONFIG_DIR/envoy.yaml" &
+            echo $! > "$NETWORK_CONFIG_DIR/envoy.pid"
+
+            log_message "Envoy started on port 80 (admin: http://localhost:9901)"
+            ;;
+    esac
+}
+
+# Network segmentation
+create_network_segment() {
+    local segment_name="$1"
+    local vlan_id="$2"
+    local subnet="$3"
+
+    log_message "Creating network segment: $segment_name (VLAN $vlan_id, $subnet)..."
+
+    # Create VLAN interface
+    ip link add link eth0 name eth0.$vlan_id type vlan id $vlan_id
+    ip addr add $subnet dev eth0.$vlan_id
+    ip link set dev eth0.$vlan_id up
+
+    # Configure segment
+    cat > "$NETWORK_CONFIG_DIR/segment-$segment_name.conf" <<EOF
+name: $segment_name
+vlan_id: $vlan_id
+subnet: $subnet
+created: $(date -Iseconds)
+
+firewall_rules:
+    - allow traffic within segment
+    - deny traffic to other segments by default
+
+isolation_level: strict
+EOF
+
+    log_message "Network segment created: $segment_name"
+}
+
+# Traffic shaping
+setup_traffic_shaping() {
+    local interface="$1"
+    local bandwidth_limit="$2"  # e.g., 100mbit
+
+    log_message "Setting up traffic shaping on $interface ($bandwidth_limit)..."
+
+    # Setup tc (traffic control)
+    tc qdisc add dev $interface root handle 1: htb default 10
+    tc class add dev $interface parent 1: classid 1:1 htb rate $bandwidth_limit
+
+    # Priority classes
+    tc class add dev $interface parent 1:1 classid 1:10 htb rate $(echo "$bandwidth_limit * 0.5" | bc)mbit prio 0  # High priority
+    tc class add dev $interface parent 1:1 classid 1:20 htb rate $(echo "$bandwidth_limit * 0.3" | bc)mbit prio 1  # Medium priority
+    tc class add dev $interface parent 1:1 classid 1:30 htb rate $(echo "$bandwidth_limit * 0.2" | bc)mbit prio 2  # Low priority
+
+    # Filters
+    tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip sport 22 0xffff flowid 1:10    # SSH - high
+    tc filter add dev $interface protocol ip parent 1:0 prio 2 u32 match ip sport 80 0xffff flowid 1:20    # HTTP - medium
+    tc filter add dev $interface protocol ip parent 1:0 prio 3 u32 match ip sport 443 0xffff flowid 1:20   # HTTPS - medium
+
+    log_message "Traffic shaping configured on $interface"
+}
+
+# Network status
+network_advanced_status() {
+    echo "=== VirtOS Advanced Networking Status ==="
+    echo
+
+    # SDN controller
+    if [ -f "$NETWORK_CONFIG_DIR/sdn-controller.conf" ]; then
+        local controller=$(cat "$NETWORK_CONFIG_DIR/sdn-controller.conf")
+        echo "SDN Controller: $controller"
+    else
+        echo "SDN Controller: Not configured"
+    fi
+
+    # Service discovery
+    if [ -f "$NETWORK_CONFIG_DIR/service-discovery.conf" ]; then
+        local sd=$(cat "$NETWORK_CONFIG_DIR/service-discovery.conf")
+        echo "Service Discovery: $sd"
+    else
+        echo "Service Discovery: Not configured"
+    fi
+
+    # Load balancers
+    echo
+    echo "Load Balancers:"
+    [ -f "$NETWORK_CONFIG_DIR/haproxy.pid" ] && echo "  ✓ HAProxy (PID: $(cat $NETWORK_CONFIG_DIR/haproxy.pid))"
+    [ -f "$NETWORK_CONFIG_DIR/envoy.pid" ] && echo "  ✓ Envoy (PID: $(cat $NETWORK_CONFIG_DIR/envoy.pid))"
+
+    # Network segments
+    echo
+    echo "Network Segments: $(ls -1 "$NETWORK_CONFIG_DIR"/segment-*.conf 2>/dev/null | wc -l)"
+
+    echo
+    echo "Configuration: $NETWORK_CONFIG_DIR"
+    echo "Logs: $NETWORK_LOG"
+}
+
+# Interactive wizard
+network_wizard() {
+    dialog --title "VirtOS Advanced Networking" \
+        --msgbox "This wizard will help you set up advanced networking.\n\nConfigure SDN, NFV, service discovery, and load balancing." 12 60
+
+    local choice=$(dialog --title "Choose Action" \
+        --menu "Select networking action:" 16 60 5 \
+        1 "Setup SDN Controller" \
+        2 "Setup NFV Function" \
+        3 "Setup Service Discovery" \
+        4 "Setup Load Balancer" \
+        5 "Create Network Segment" \
+        2>&1 >/dev/tty)
+
+    case "$choice" in
+        1)
+            local controller=$(dialog --menu "SDN Controller:" 12 60 3 \
+                ovs "Open vSwitch" \
+                onos "ONOS" \
+                floodlight "Floodlight" \
+                2>&1 >/dev/tty)
+            setup_sdn "$controller"
+            ;;
+
+        2)
+            local vnf=$(dialog --menu "Network Function:" 13 60 4 \
+                firewall "Virtual Firewall" \
+                lb "Virtual Load Balancer" \
+                router "Virtual Router" \
+                ids "Virtual IDS/IPS" \
+                2>&1 >/dev/tty)
+            setup_nfv "$vnf"
+            ;;
+
+        3)
+            local sd=$(dialog --menu "Service Discovery:" 12 60 3 \
+                consul "Consul" \
+                etcd "etcd" \
+                zookeeper "Apache ZooKeeper" \
+                2>&1 >/dev/tty)
+            setup_service_discovery "$sd"
+            ;;
+
+        4)
+            local lb=$(dialog --menu "Load Balancer:" 12 60 3 \
+                haproxy "HAProxy" \
+                nginx "Nginx" \
+                envoy "Envoy" \
+                2>&1 >/dev/tty)
+
+            local algo=$(dialog --menu "Algorithm:" 12 60 3 \
+                roundrobin "Round Robin" \
+                leastconn "Least Connections" \
+                iphash "IP Hash" \
+                2>&1 >/dev/tty)
+
+            setup_load_balancer "$lb" "$algo"
+            ;;
+
+        5)
+            local name=$(dialog --inputbox "Segment name:" 10 60 2>&1 >/dev/tty)
+            local vlan=$(dialog --inputbox "VLAN ID:" 10 60 "100" 2>&1 >/dev/tty)
+            local subnet=$(dialog --inputbox "Subnet:" 10 60 "10.100.0.0/24" 2>&1 >/dev/tty)
+
+            create_network_segment "$name" "$vlan" "$subnet"
+            ;;
+    esac
+
+    dialog --title "Setup Complete" \
+        --msgbox "Advanced networking configured!" 8 40
+}
+
+# Show usage
+usage() {
+    cat <<EOF
+VirtOS Advanced Networking - SDN, NFV, service discovery, load balancing
+
+Usage: virtos-networking-advanced <command> [options]
+
+SDN Commands:
+  setup-sdn <controller>                       Setup SDN controller (ovs/onos/floodlight)
+
+NFV Commands:
+  setup-nfv <type>                             Setup network function (firewall/lb/router/ids)
+
+Service Discovery Commands:
+  setup-service-discovery <backend>            Setup service discovery (consul/etcd/zookeeper)
+  register-service <name> <ip> <port>          Register service
+
+Load Balancing Commands:
+  setup-load-balancer <type> <algorithm>       Setup load balancer (haproxy/nginx/envoy)
+
+Network Segmentation Commands:
+  create-segment <name> <vlan_id> <subnet>     Create network segment
+
+Traffic Shaping Commands:
+  setup-traffic-shaping <iface> <bandwidth>    Setup traffic shaping
+
+Status Commands:
+  status                                       Show networking status
+  wizard                                       Interactive setup wizard
+
+Examples:
+  virtos-networking-advanced setup-sdn ovs
+  virtos-networking-advanced setup-nfv firewall
+  virtos-networking-advanced setup-service-discovery consul
+  virtos-networking-advanced register-service api 10.0.1.10 8080
+  virtos-networking-advanced setup-load-balancer haproxy roundrobin
+  virtos-networking-advanced create-segment dmz 100 10.100.0.0/24
+  virtos-networking-advanced setup-traffic-shaping eth0 100mbit
+  virtos-networking-advanced wizard
+
+Version: $VERSION
+EOF
+}
+
+# Main command dispatcher
+case "$1" in
+    setup-sdn)
+        setup_sdn "$2"
+        ;;
+    setup-nfv)
+        setup_nfv "$2"
+        ;;
+    setup-service-discovery)
+        setup_service_discovery "$2"
+        ;;
+    register-service)
+        register_service "$2" "$3" "$4"
+        ;;
+    setup-load-balancer)
+        setup_load_balancer "$2" "$3"
+        ;;
+    create-segment)
+        create_network_segment "$2" "$3" "$4"
+        ;;
+    setup-traffic-shaping)
+        setup_traffic_shaping "$2" "$3"
+        ;;
+    status)
+        network_advanced_status
+        ;;
+    wizard)
+        network_wizard
+        ;;
+    *)
+        usage
+        ;;
+esac
