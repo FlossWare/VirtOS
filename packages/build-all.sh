@@ -17,6 +17,10 @@ echo
 PACKAGES=(
     # Core VirtOS management tools
     "virtos-tools"
+
+    # JPlatform integration
+    "virtos-jplatform"
+
     # Future packages:
     # "qemu-kvm"
     # "libvirt"
