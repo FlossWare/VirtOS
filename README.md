@@ -363,6 +363,22 @@ The project has prioritized **comprehensive design and documentation** over impl
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
+## Examples
+
+Ready-to-deploy examples and patterns for VirtOS:
+
+**[VirtOS-Examples Repository](https://github.com/FlossWare/VirtOS-Examples)**
+
+Includes:
+- Microservices with docker-compose
+- Kubernetes deployments
+- API Gateway patterns
+- Observability stacks
+- Service mesh examples
+- CI/CD pipelines
+
+All examples are tested and production-ready starting points.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
