@@ -1,0 +1,141 @@
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.pusher.email != 'version-bump@flossware.org'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .gitconfig for version bumps
+        uses: oleksiyrudenko/gha-git-credentials@latest
+        with:
+          global: true
+          name: 'Version Bump'
+          email: 'version-bump@flossware.org'
+          actor: 'VersionBump'
+          token: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools curl
+
+      - name: Read current version
+        id: version
+        run: |
+          CURRENT_VERSION=$(cat VERSION)
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Increment version
+        id: new_version
+        run: |
+          CURRENT_VERSION=$(cat VERSION)
+          MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+          NEXT_MINOR=$((MINOR + 1))
+          NEXT_VERSION="${MAJOR}.${NEXT_MINOR}"
+          
+          echo "$NEXT_VERSION" > VERSION
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "Bumped version from $CURRENT_VERSION to $NEXT_VERSION"
+
+      - name: Update package versions
+        run: |
+          VERSION=${{ steps.new_version.outputs.version }}
+          
+          # Update all package info files
+          for info_file in packages/*/virtos-*.tcz.info; do
+            if [ -f "$info_file" ]; then
+              sed -i "s/^Version:.*/Version:        $VERSION/" "$info_file"
+              echo "Updated $(basename $info_file) to version $VERSION"
+            fi
+          done
+
+      - name: Build all packages
+        run: |
+          cd packages
+          ./build-all.sh
+          
+          # Verify packages were built
+          if [ ! -d output ] || [ -z "$(ls -A output/*.tcz 2>/dev/null)" ]; then
+            echo "❌ No packages built"
+            exit 1
+          fi
+          
+          echo "✅ Packages built:"
+          ls -lh output/*.tcz
+
+      - name: Deploy to packagecloud.io
+        env:
+          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+        run: |
+          if [ -z "$PACKAGECLOUD_TOKEN" ]; then
+            echo "⚠️ PACKAGECLOUD_TOKEN not set, skipping deployment"
+            exit 0
+          fi
+          
+          # Install packagecloud CLI
+          gem install package_cloud
+          
+          # Deploy each package
+          for package in packages/output/*.tcz; do
+            if [ -f "$package" ]; then
+              echo "Deploying $(basename $package) to packagecloud.io..."
+              package_cloud push flossware/virtos/alpine/3.20 "$package" || echo "⚠️ Deploy failed for $package"
+            fi
+          done
+
+      - name: Commit version bump
+        run: |
+          VERSION=${{ steps.new_version.outputs.version }}
+          git add VERSION packages/*/virtos-*.tcz.info
+          git commit -m "chore: bump version to ${VERSION} [ci skip]"
+
+      - name: Create release tag
+        run: |
+          VERSION=${{ steps.new_version.outputs.version }}
+          git tag -a "v${VERSION}" -m "Release version ${VERSION}"
+
+      - name: Push version bump and tag
+        run: |
+          VERSION=${{ steps.new_version.outputs.version }}
+          git push origin main
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.new_version.outputs.version }}
+          name: VirtOS v${{ steps.new_version.outputs.version }}
+          body: |
+            ## VirtOS v${{ steps.new_version.outputs.version }}
+            
+            ### Packages
+            - virtos-tools.tcz - Core VirtOS management tools
+            - virtos-jplatform.tcz - JPlatform integration
+            
+            ### Installation
+            ```bash
+            # On Tiny Core Linux / VirtOS
+            tce-load -wi virtos-tools
+            tce-load -wi virtos-jplatform
+            ```
+            
+            ### packagecloud.io
+            Packages are available at: https://packagecloud.io/flossware/virtos
+          files: |
+            packages/output/*.tcz
+            packages/output/*.tcz.md5.txt
+            packages/output/*.tcz.info
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

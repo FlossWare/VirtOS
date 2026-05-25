@@ -1,0 +1,13 @@
+Title:          virtos-jplatform.tcz
+Description:    JPlatform integration for VirtOS - unified VM/container/app orchestration
+Version:        0.1
+Author:         FlossWare
+Original-site:  https://github.com/FlossWare/jplatform
+Copying-policy: MIT
+Size:           24K
+Extension_by:   FlossWare
+Tags:           virtualization orchestration java vm container
+Comments:       Integrates JPlatform with VirtOS for managing VMs, containers, Java apps
+                and native binaries through a unified API. Requires Java and libvirt.
+Change-log:     2026-05-25 Initial release
+Current:        2026-05-25 First version
