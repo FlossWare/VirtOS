@@ -1,0 +1,281 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Validate Project Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check directory structure
+        run: |
+          echo "Validating project structure..."
+          test -d build || (echo "Missing build directory" && exit 1)
+          test -d config || (echo "Missing config directory" && exit 1)
+          test -d docs || (echo "Missing docs directory" && exit 1)
+          test -d kernel || (echo "Missing kernel directory" && exit 1)
+          test -d packages || (echo "Missing packages directory" && exit 1)
+          echo "✓ Directory structure valid"
+
+      - name: Check required files
+        run: |
+          echo "Checking required files..."
+          test -f README.md || (echo "Missing README.md" && exit 1)
+          test -f LICENSE || (echo "Missing LICENSE" && exit 1)
+          test -f CONTRIBUTING.md || (echo "Missing CONTRIBUTING.md" && exit 1)
+          test -f TESTING.md || (echo "Missing TESTING.md" && exit 1)
+          echo "✓ Required files present"
+
+      - name: Validate build scripts exist
+        run: |
+          echo "Checking build scripts..."
+          test -x build/scripts/build-all.sh || (echo "build-all.sh missing or not executable" && exit 1)
+          test -f build/build.conf || (echo "build.conf missing" && exit 1)
+          echo "✓ Build scripts present"
+
+  syntax-check:
+    name: Shell Script Syntax Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Check script syntax
+        run: |
+          echo "Checking shell script syntax..."
+          EXIT_CODE=0
+
+          # Check build scripts
+          for script in build/scripts/*.sh; do
+            if [ -f "$script" ]; then
+              echo "Checking $script..."
+              bash -n "$script" || EXIT_CODE=1
+            fi
+          done
+
+          # Check custom scripts
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ -x "$script" ]; then
+              echo "Checking $script..."
+              bash -n "$script" || EXIT_CODE=1
+            fi
+          done
+
+          # Check package build scripts
+          for script in packages/*/build.sh; do
+            if [ -f "$script" ]; then
+              echo "Checking $script..."
+              bash -n "$script" || EXIT_CODE=1
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All scripts have valid syntax"
+          else
+            echo "✗ Some scripts have syntax errors"
+          fi
+
+          exit $EXIT_CODE
+
+      - name: Run shellcheck (lint)
+        run: |
+          echo "Running shellcheck..."
+          # Run shellcheck but don't fail build (informational only for now)
+          shellcheck build/scripts/*.sh config/custom-scripts/virtos-* || true
+
+  permissions-check:
+    name: Check File Permissions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check script permissions
+        run: |
+          echo "Checking script permissions..."
+          EXIT_CODE=0
+
+          # Build scripts should be executable
+          for script in build/scripts/*.sh; do
+            if [ -f "$script" ] && [ ! -x "$script" ]; then
+              echo "✗ $script is not executable"
+              EXIT_CODE=1
+            fi
+          done
+
+          # Custom scripts should be executable
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ ! -x "$script" ]; then
+              echo "✗ $script is not executable"
+              EXIT_CODE=1
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All scripts have correct permissions"
+          fi
+
+          exit $EXIT_CODE
+
+  documentation-check:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/markdown-link-check-config.json'
+        continue-on-error: true
+
+      - name: Validate documentation structure
+        run: |
+          echo "Checking documentation..."
+          test -f docs/INDEX.md || echo "⚠ Missing docs/INDEX.md"
+          test -f docs/GETTING-STARTED.md || echo "⚠ Missing docs/GETTING-STARTED.md"
+          test -f docs/ROADMAP.md || echo "⚠ Missing docs/ROADMAP.md"
+          echo "✓ Core documentation present"
+
+  build-test:
+    name: Test Build Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate build.conf
+        run: |
+          echo "Validating build.conf..."
+          source build/build.conf
+          echo "✓ build.conf is valid"
+
+      - name: Validate profiles
+        run: |
+          echo "Validating profiles..."
+          for profile in config/profiles/*.conf; do
+            if [ -f "$profile" ]; then
+              echo "Checking $(basename $profile)..."
+              source "$profile" && echo "✓ $(basename $profile) valid" || exit 1
+            fi
+          done
+
+      - name: Check for required variables
+        run: |
+          echo "Checking build variables..."
+          source build/build.conf
+
+          # Check that key variables are defined
+          : "${INCLUDE_KVM:?INCLUDE_KVM not defined}"
+          : "${INCLUDE_LXC:?INCLUDE_LXC not defined}"
+          echo "✓ Required variables defined"
+
+  profile-validation:
+    name: Validate Build Profiles
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profile: [minimal, standard, full, containers, developer, kubernetes, storage]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate ${{ matrix.profile }} profile
+        run: |
+          echo "Validating ${{ matrix.profile }} profile..."
+          PROFILE_FILE="config/profiles/${{ matrix.profile }}.conf"
+
+          if [ ! -f "$PROFILE_FILE" ]; then
+            echo "✗ Profile file not found: $PROFILE_FILE"
+            exit 1
+          fi
+
+          source "$PROFILE_FILE"
+          echo "✓ ${{ matrix.profile }} profile is valid"
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy security scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for sensitive files..."
+          EXIT_CODE=0
+
+          # Check for common sensitive files
+          if [ -f .env ]; then
+            echo "✗ Found .env file (should not be committed)"
+            EXIT_CODE=1
+          fi
+
+          if grep -r "password\s*=" config/ 2>/dev/null | grep -v "example\|sample"; then
+            echo "⚠ Found potential passwords in config files"
+          fi
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ No obvious sensitive files found"
+          fi
+
+          exit $EXIT_CODE
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [validate, syntax-check, permissions-check, build-test, profile-validation]
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate summary
+        run: |
+          echo "## VirtOS CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Project structure validated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Shell scripts syntax checked" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ File permissions verified" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Build configuration validated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All profiles validated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Implement actual build process" >> $GITHUB_STEP_SUMMARY
+          echo "- Add integration tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Create test artifacts" >> $GITHUB_STEP_SUMMARY

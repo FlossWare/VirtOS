@@ -1,0 +1,78 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '**.md'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '**.md'
+
+jobs:
+  markdown-lint:
+    name: Markdown Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint markdown files
+        uses: articulate/actions-markdownlint@v1
+        with:
+          config: .markdownlint.json
+          files: '**/*.md'
+          ignore: node_modules
+        continue-on-error: true
+
+  spell-check:
+    name: Spell Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Spell check documentation
+        uses: rojopolis/spellcheck-github-actions@0.36.0
+        with:
+          config_path: .github/spellcheck-config.yml
+        continue-on-error: true
+
+  doc-count:
+    name: Documentation Statistics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Count documentation
+        run: |
+          echo "## Documentation Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count markdown files
+          DOC_COUNT=$(find docs -name "*.md" | wc -l)
+          echo "- Documentation files: $DOC_COUNT" >> $GITHUB_STEP_SUMMARY
+
+          # Count total lines
+          TOTAL_LINES=$(cat docs/*.md | wc -l)
+          echo "- Total lines: $TOTAL_LINES" >> $GITHUB_STEP_SUMMARY
+
+          # Count scripts
+          SCRIPT_COUNT=$(ls -1 config/custom-scripts/virtos-* | wc -l)
+          echo "- Management scripts: $SCRIPT_COUNT" >> $GITHUB_STEP_SUMMARY
+
+          # List all docs
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Documentation Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for doc in docs/*.md; do
+            LINES=$(wc -l < "$doc")
+            echo "- $(basename $doc): $LINES lines" >> $GITHUB_STEP_SUMMARY
+          done

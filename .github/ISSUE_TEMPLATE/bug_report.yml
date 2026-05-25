@@ -1,0 +1,129 @@
+name: Bug Report
+description: Report a bug or issue with VirtOS
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the sections below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear description of what the bug is
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Run command '...'
+        2. See error '...'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: profile
+    attributes:
+      label: VirtOS Profile
+      description: Which build profile are you using?
+      options:
+        - minimal
+        - standard
+        - full
+        - containers
+        - developer
+        - kubernetes
+        - storage
+        - custom
+        - not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: VirtOS Version
+      description: Version or commit hash
+      placeholder: "e.g., v1.0, commit abc123"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component is affected?
+      multiple: true
+      options:
+        - Build System
+        - KVM/QEMU
+        - LXC
+        - Docker
+        - Podman
+        - containerd
+        - Clustering
+        - Networking
+        - Storage
+        - TUI
+        - Management Scripts
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: System information
+      placeholder: |
+        - CPU: Intel i7-9700K
+        - RAM: 32GB
+        - Disk: 500GB SSD
+        - Host OS (if testing in VM): Ubuntu 22.04
+        - Hardware virtualization enabled: Yes
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant log output
+      placeholder: Paste relevant logs here
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: Screenshots, related issues, etc.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues
+          required: true
+        - label: I have read the documentation
+          required: true
+        - label: I am using the latest version
+          required: false
