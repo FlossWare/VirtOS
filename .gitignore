@@ -16,6 +16,11 @@ build/output/
 packages/build/
 packages/*.tcz
 packages/*.tcz.md5.txt
+packages/*/src/
+packages/*/*.tcz
+packages/*/*.tcz.*
+packages/output/*.tcz
+packages/output/*.tcz.*
 
 # Test VMs and containers
 test-vms/
