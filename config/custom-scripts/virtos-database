@@ -1,0 +1,422 @@
+#!/bin/bash
+# VirtOS Database Management
+# Database replication, optimization, backups
+
+VERSION="1"
+
+# Configuration
+DB_CONFIG_DIR="/etc/virtos/database"
+DB_LOG="/var/log/virtos-database.log"
+
+# Ensure config directory exists
+mkdir -p "$DB_CONFIG_DIR"
+
+# Logging function
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$DB_LOG"
+}
+
+# Setup database replication
+setup_replication() {
+    local db_type="$1"  # mysql, postgres, mongodb
+    local role="$2"     # primary, replica
+    local primary_host="$3"
+
+    log_message "Setting up $db_type replication ($role)..."
+
+    case "$db_type" in
+        mysql)
+            if [ "$role" = "primary" ]; then
+                cat >> /etc/mysql/my.cnf <<EOF
+
+[mysqld]
+server-id = 1
+log_bin = /var/log/mysql/mysql-bin.log
+binlog_do_db = production
+EOF
+                systemctl restart mysql
+
+                # Create replication user
+                mysql -e "CREATE USER 'repl'@'%' IDENTIFIED BY 'repl_password';"
+                mysql -e "GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';"
+                mysql -e "FLUSH PRIVILEGES;"
+
+            else
+                cat >> /etc/mysql/my.cnf <<EOF
+
+[mysqld]
+server-id = 2
+relay-log = /var/log/mysql/mysql-relay-bin.log
+read_only = 1
+EOF
+                systemctl restart mysql
+
+                # Configure replica
+                mysql -e "CHANGE MASTER TO MASTER_HOST='$primary_host', MASTER_USER='repl', MASTER_PASSWORD='repl_password', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=0;"
+                mysql -e "START SLAVE;"
+            fi
+            ;;
+
+        postgres)
+            if [ "$role" = "primary" ]; then
+                cat >> /var/lib/postgresql/data/postgresql.conf <<EOF
+wal_level = replica
+max_wal_senders = 3
+wal_keep_size = 64
+EOF
+                echo "host replication all $primary_host/32 md5" >> /var/lib/postgresql/data/pg_hba.conf
+                systemctl restart postgresql
+
+            else
+                # Create standby
+                pg_basebackup -h $primary_host -D /var/lib/postgresql/data -U replication -P --wal-method=stream
+                touch /var/lib/postgresql/data/standby.signal
+                systemctl start postgresql
+            fi
+            ;;
+
+        mongodb)
+            # Configure replica set
+            mongo --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: '$(hostname):27017'}]})"
+            ;;
+    esac
+
+    log_message "$db_type replication configured as $role"
+}
+
+# Database backup
+backup_database() {
+    local db_type="$1"
+    local db_name="$2"
+    local backup_dir="${3:-/var/backups/databases}"
+
+    mkdir -p "$backup_dir"
+    local backup_file="$backup_dir/${db_name}_$(date +%Y%m%d_%H%M%S).sql"
+
+    log_message "Backing up $db_type database: $db_name..."
+
+    case "$db_type" in
+        mysql)
+            mysqldump --single-transaction --routines --triggers "$db_name" | gzip > "${backup_file}.gz"
+            ;;
+
+        postgres)
+            pg_dump "$db_name" | gzip > "${backup_file}.gz"
+            ;;
+
+        mongodb)
+            mongodump --db "$db_name" --out "$backup_dir/mongodb_$(date +%Y%m%d_%H%M%S)"
+            ;;
+    esac
+
+    log_message "Backup saved to ${backup_file}.gz"
+    echo "${backup_file}.gz"
+}
+
+# Restore database
+restore_database() {
+    local db_type="$1"
+    local db_name="$2"
+    local backup_file="$3"
+
+    log_message "Restoring $db_type database: $db_name from $backup_file..."
+
+    case "$db_type" in
+        mysql)
+            gunzip < "$backup_file" | mysql "$db_name"
+            ;;
+
+        postgres)
+            gunzip < "$backup_file" | psql "$db_name"
+            ;;
+
+        mongodb)
+            mongorestore --db "$db_name" "$backup_file"
+            ;;
+    esac
+
+    log_message "Database restored successfully"
+}
+
+# Optimize database
+optimize_database() {
+    local db_type="$1"
+    local db_name="$2"
+
+    log_message "Optimizing $db_type database: $db_name..."
+
+    case "$db_type" in
+        mysql)
+            mysqlcheck --optimize "$db_name"
+            mysql -e "ANALYZE TABLE \`$db_name\`.*;"
+            ;;
+
+        postgres)
+            psql "$db_name" -c "VACUUM ANALYZE;"
+            psql "$db_name" -c "REINDEX DATABASE $db_name;"
+            ;;
+
+        mongodb)
+            mongo "$db_name" --eval "db.runCommand({compact: 'collection'})"
+            ;;
+    esac
+
+    log_message "Database optimized"
+}
+
+# Query performance analysis
+analyze_queries() {
+    local db_type="$1"
+
+    log_message "Analyzing query performance for $db_type..."
+
+    case "$db_type" in
+        mysql)
+            mysql -e "SELECT * FROM sys.statements_with_runtimes_in_95th_percentile LIMIT 10;" | tee "$DB_CONFIG_DIR/slow-queries.txt"
+            ;;
+
+        postgres)
+            psql -c "SELECT query, calls, total_time, mean_time FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10;" | tee "$DB_CONFIG_DIR/slow-queries.txt"
+            ;;
+
+        mongodb)
+            mongo --eval "db.system.profile.find().sort({millis:-1}).limit(10).pretty()" | tee "$DB_CONFIG_DIR/slow-queries.txt"
+            ;;
+    esac
+
+    cat "$DB_CONFIG_DIR/slow-queries.txt"
+}
+
+# Setup monitoring
+setup_db_monitoring() {
+    local db_type="$1"
+
+    log_message "Setting up monitoring for $db_type..."
+
+    cat > "$DB_CONFIG_DIR/monitor-$db_type.sh" <<EOF
+#!/bin/bash
+# Database monitoring script
+
+case "$db_type" in
+    mysql)
+        echo "=== MySQL Status ==="
+        mysql -e "SHOW STATUS LIKE 'Threads_connected';"
+        mysql -e "SHOW STATUS LIKE 'Slow_queries';"
+        mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master"
+        ;;
+    postgres)
+        echo "=== PostgreSQL Status ==="
+        psql -c "SELECT count(*) as connections FROM pg_stat_activity;"
+        psql -c "SELECT pg_size_pretty(pg_database_size(current_database()));"
+        ;;
+    mongodb)
+        echo "=== MongoDB Status ==="
+        mongo --eval "db.serverStatus().connections"
+        mongo --eval "rs.status()"
+        ;;
+esac
+EOF
+
+    chmod +x "$DB_CONFIG_DIR/monitor-$db_type.sh"
+    log_message "Monitoring configured: $DB_CONFIG_DIR/monitor-$db_type.sh"
+}
+
+# Connection pool management
+configure_connection_pool() {
+    local db_type="$1"
+    local max_connections="$2"
+
+    log_message "Configuring connection pool for $db_type (max: $max_connections)..."
+
+    case "$db_type" in
+        mysql)
+            mysql -e "SET GLOBAL max_connections = $max_connections;"
+            ;;
+
+        postgres)
+            psql -c "ALTER SYSTEM SET max_connections = $max_connections;"
+            systemctl reload postgresql
+            ;;
+
+        mongodb)
+            # Edit mongod.conf
+            sed -i "s/maxIncomingConnections:.*/maxIncomingConnections: $max_connections/" /etc/mongod.conf
+            systemctl restart mongod
+            ;;
+    esac
+
+    log_message "Connection pool configured"
+}
+
+# Database status
+database_status() {
+    echo "=== VirtOS Database Management Status ==="
+    echo
+
+    # Check for databases
+    command -v mysql &>/dev/null && echo "MySQL: Installed ($(mysql --version | awk '{print $5}' | sed 's/,//'))"
+    command -v psql &>/dev/null && echo "PostgreSQL: Installed ($(psql --version | awk '{print $3}'))"
+    command -v mongo &>/dev/null && echo "MongoDB: Installed ($(mongo --version | grep "MongoDB shell" | awk '{print $4}'))"
+
+    echo
+    echo "Backups: $(find /var/backups/databases -name "*.gz" 2>/dev/null | wc -l)"
+    echo "Monitoring scripts: $(ls -1 "$DB_CONFIG_DIR"/monitor-*.sh 2>/dev/null | wc -l)"
+
+    echo
+    echo "Configuration: $DB_CONFIG_DIR"
+    echo "Logs: $DB_LOG"
+}
+
+# Interactive wizard
+database_wizard() {
+    dialog --title "VirtOS Database Management" \
+        --msgbox "This wizard will help you manage databases.\n\nConfigure replication, backups, and optimization." 12 60
+
+    local choice=$(dialog --title "Choose Action" \
+        --menu "Select database action:" 16 60 5 \
+        1 "Setup Replication" \
+        2 "Backup Database" \
+        3 "Optimize Database" \
+        4 "Analyze Queries" \
+        5 "Setup Monitoring" \
+        2>&1 >/dev/tty)
+
+    case "$choice" in
+        1)
+            local dbtype=$(dialog --menu "Database type:" 12 60 3 \
+                mysql "MySQL" \
+                postgres "PostgreSQL" \
+                mongodb "MongoDB" \
+                2>&1 >/dev/tty)
+
+            local role=$(dialog --menu "Role:" 10 60 2 \
+                primary "Primary" \
+                replica "Replica" \
+                2>&1 >/dev/tty)
+
+            local primary=""
+            [ "$role" = "replica" ] && primary=$(dialog --inputbox "Primary host:" 10 60 2>&1 >/dev/tty)
+
+            setup_replication "$dbtype" "$role" "$primary"
+            ;;
+
+        2)
+            local dbtype=$(dialog --menu "Database type:" 12 60 3 \
+                mysql "MySQL" \
+                postgres "PostgreSQL" \
+                mongodb "MongoDB" \
+                2>&1 >/dev/tty)
+
+            local dbname=$(dialog --inputbox "Database name:" 10 60 2>&1 >/dev/tty)
+
+            backup_database "$dbtype" "$dbname"
+            ;;
+
+        3)
+            local dbtype=$(dialog --menu "Database type:" 12 60 3 \
+                mysql "MySQL" \
+                postgres "PostgreSQL" \
+                mongodb "MongoDB" \
+                2>&1 >/dev/tty)
+
+            local dbname=$(dialog --inputbox "Database name:" 10 60 2>&1 >/dev/tty)
+
+            optimize_database "$dbtype" "$dbname"
+            ;;
+
+        4)
+            local dbtype=$(dialog --menu "Database type:" 12 60 3 \
+                mysql "MySQL" \
+                postgres "PostgreSQL" \
+                mongodb "MongoDB" \
+                2>&1 >/dev/tty)
+
+            analyze_queries "$dbtype" | dialog --title "Slow Queries" --programbox 30 100
+            ;;
+
+        5)
+            local dbtype=$(dialog --menu "Database type:" 12 60 3 \
+                mysql "MySQL" \
+                postgres "PostgreSQL" \
+                mongodb "MongoDB" \
+                2>&1 >/dev/tty)
+
+            setup_db_monitoring "$dbtype"
+            ;;
+    esac
+
+    dialog --title "Complete" \
+        --msgbox "Database management complete!" 8 40
+}
+
+# Show usage
+usage() {
+    cat <<EOF
+VirtOS Database Management - Replication, backups, optimization
+
+Usage: virtos-database <command> [options]
+
+Replication Commands:
+  setup-replication <type> <role> [primary_host]  Setup replication (mysql/postgres/mongodb)
+
+Backup Commands:
+  backup-database <type> <name> [dir]             Backup database
+  restore-database <type> <name> <backup_file>    Restore database
+
+Optimization Commands:
+  optimize-database <type> <name>                 Optimize database
+  analyze-queries <type>                          Analyze slow queries
+
+Configuration Commands:
+  configure-connection-pool <type> <max>          Configure connection pool
+  setup-monitoring <type>                         Setup database monitoring
+
+Status Commands:
+  status                                          Show database status
+  wizard                                          Interactive wizard
+
+Examples:
+  virtos-database setup-replication mysql primary
+  virtos-database setup-replication mysql replica 192.168.1.10
+  virtos-database backup-database postgres mydb /backups
+  virtos-database optimize-database mysql production
+  virtos-database analyze-queries postgres
+  virtos-database wizard
+
+Version: $VERSION
+EOF
+}
+
+# Main command dispatcher
+case "$1" in
+    setup-replication)
+        setup_replication "$2" "$3" "$4"
+        ;;
+    backup-database)
+        backup_database "$2" "$3" "$4"
+        ;;
+    restore-database)
+        restore_database "$2" "$3" "$4"
+        ;;
+    optimize-database)
+        optimize_database "$2" "$3"
+        ;;
+    analyze-queries)
+        analyze_queries "$2"
+        ;;
+    configure-connection-pool)
+        configure_connection_pool "$2" "$3"
+        ;;
+    setup-monitoring)
+        setup_db_monitoring "$2"
+        ;;
+    status)
+        database_status
+        ;;
+    wizard)
+        database_wizard
+        ;;
+    *)
+        usage
+        ;;
+esac
