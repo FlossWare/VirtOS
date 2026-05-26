@@ -7,6 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.67] - 2026-05-26
+
+### Added
+- MIT license headers to all 54 management scripts (#74)
+  - Copyright notice: "Copyright (c) 2026 FlossWare"
+  - License reference to LICENSE file in project root
+  - Covers all 53 virtos-* scripts plus virtos-common.sh library
+
+### Changed
+- STATUS.md updated to v0.67
+  - Added recent achievements section (v0.59 → v0.67)
+  - Documented security hardening, license compliance, documentation fixes
+
+## [0.66] - 2026-05-26
+
+### Security
+- Added `set -e` error handling to all 52 virtos-* scripts (#71)
+  - Scripts now exit immediately on first error
+  - Prevents silent failures and improves reliability
+  - Systematic addition after shebang line in all scripts
+
+### Fixed
+- Unsafe eval/exec usage in management scripts (#72)
+  - virtos-tui: Removed eval, replaced with direct virtos-create-vm calls
+  - virtos-automation: Added file permission validation for workflow files
+  - virtos-setup: Added security documentation for required eval usage
+  - All eval usage now has security justification comments
+
+## [0.65] - 2026-05-26
+
+### Security
+- Replaced AWS credential examples with safe placeholders (#65)
+  - Changed AKIAXXXX to <YOUR_AWS_ACCESS_KEY> format
+  - Updated docs/QUICK-REFERENCE.md and docs/FEDERATION.md
+  - Prevents false positives from security credential scanners
+
+## [0.64] - 2026-05-26
+
+### Fixed
+- CLAUDE.md directory structure references (#66)
+  - Removed references to non-existent config/bootloader/ directory
+  - Removed references to non-existent config/network/ directory
+  - Updated to show actual structure: custom-scripts/, lib/, profiles/
+
+## [0.63] - 2026-05-26
+
+### Fixed
+- README.md kernel directory reference verified (#67)
+  - Confirmed kernel/ directory exists with README.md
+  - Contains virtos-base.config.example kernel configuration
+
+## [0.62] - 2026-05-26
+
+### Changed
+- kernel/README.md status clarification (#68)
+  - Added status note at top: custom kernel building is documentation-only
+  - Clarified build system does NOT build custom kernels
+  - Added "Current Status" and "Integration Status" sections
+  - Documented what's working vs. what's planned
+
+## [0.61] - 2026-05-26
+
+### Fixed
+- Removed spellcheck-config.yml reference from CI (#70)
+  - Deleted spell-check job from .github/workflows/documentation.yml
+  - Config file doesn't exist, job was failing (continue-on-error)
+
+## [0.60] - 2026-05-26
+
+### Changed
+- docs/ROADMAP.md updated with accurate implementation status (#73)
+  - Phases 1-5 marked as COMPLETE with status notes
+  - Phases 12-13 changed from "COMPLETE" to "EXPERIMENTAL"
+  - Updated Current Status section with percentages:
+    - 56% Production-Ready (30/54 scripts)
+    - 28% Experimental (15/54 scripts)
+    - 17% Partial (9/54 scripts)
+  - Updated success criteria to reflect actual features
+
 ## [0.59] - 2026-05-26
 
 ### Changed
@@ -275,6 +354,14 @@ This release series focused on **comprehensive test coverage expansion** and **V
 ---
 
 [Unreleased]: https://github.com/FlossWare/VirtOS/compare/v0.59...HEAD
+[0.67]: https://github.com/FlossWare/VirtOS/compare/v0.66...v0.67
+[0.66]: https://github.com/FlossWare/VirtOS/compare/v0.65...v0.66
+[0.65]: https://github.com/FlossWare/VirtOS/compare/v0.64...v0.65
+[0.64]: https://github.com/FlossWare/VirtOS/compare/v0.63...v0.64
+[0.63]: https://github.com/FlossWare/VirtOS/compare/v0.62...v0.63
+[0.62]: https://github.com/FlossWare/VirtOS/compare/v0.61...v0.62
+[0.61]: https://github.com/FlossWare/VirtOS/compare/v0.60...v0.61
+[0.60]: https://github.com/FlossWare/VirtOS/compare/v0.59...v0.60
 [0.59]: https://github.com/FlossWare/VirtOS/compare/v0.58...v0.59
 [0.58]: https://github.com/FlossWare/VirtOS/compare/v0.57...v0.58
 [0.57]: https://github.com/FlossWare/VirtOS/compare/v0.56...v0.57
