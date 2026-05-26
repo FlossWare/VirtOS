@@ -3,7 +3,7 @@
 [![CI](https://github.com/FlossWare/VirtOS/workflows/CI/badge.svg)](https://github.com/FlossWare/VirtOS/actions/workflows/ci.yml)
 [![CD](https://github.com/FlossWare/VirtOS/workflows/CD/badge.svg)](https://github.com/FlossWare/VirtOS/actions/workflows/cd.yml)
 [![Test Coverage](https://img.shields.io/badge/test%20coverage-100%25-success)](https://github.com/FlossWare/VirtOS/tree/main/tests)
-[![Version](https://img.shields.io/badge/version-0.51-blue)](https://github.com/FlossWare/VirtOS/releases)
+[![Version](https://img.shields.io/github/v/release/FlossWare/VirtOS)](https://github.com/FlossWare/VirtOS/releases/latest)
 
 A minimal, purpose-built virtualization operating system based on Tiny Core Linux.
 
