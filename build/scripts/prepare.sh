@@ -59,14 +59,26 @@ TC_ISO="CorePure64-current.iso"
 TC_URL="$TC_MIRROR/$TC_VERSION/$TC_ARCH/release/$TC_ISO"
 
 if [ -f "$TC_ISO" ]; then
-    echo "  $TC_ISO already exists, skipping download"
+    echo "  ✓ $TC_ISO already exists, skipping download"
 else
     echo "  Downloading from $TC_URL"
-    wget -c "$TC_URL" || {
-        echo "ERROR: Failed to download Tiny Core"
-        echo "Please check version/URL at http://tinycorelinux.net"
+    if ! wget -c "$TC_URL" 2>&1; then
+        echo ""
+        echo "ERROR: Failed to download Tiny Core Linux"
+        echo ""
+        echo "Possible solutions:"
+        echo "  1. Check internet connection"
+        echo "  2. Verify tinycorelinux.net is accessible"
+        echo "  3. Try alternative mirror (edit build/build.conf: TC_MIRROR=...)"
+        echo ""
+        echo "For offline builds:"
+        echo "  1. Download manually: $TC_URL"
+        echo "  2. Place in: $DOWNLOAD_DIR/"
+        echo "  3. Re-run this script"
+        echo ""
+        echo "See docs/BUILD.md section 'Offline Builds' for details"
         exit 1
-    }
+    fi
 fi
 
 # Download checksums

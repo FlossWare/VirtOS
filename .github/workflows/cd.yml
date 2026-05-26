@@ -187,7 +187,30 @@ jobs:
       - name: Push version bump and tag
         run: |
           VERSION=${{ steps.new_version.outputs.version }}
-          git push origin main
+
+          # Try to push with retry and rebase on rejection
+          MAX_RETRIES=3
+          RETRY=0
+
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            if git push origin main; then
+              echo "✅ Version bump pushed successfully"
+              break
+            else
+              RETRY=$((RETRY + 1))
+              if [ $RETRY -lt $MAX_RETRIES ]; then
+                echo "⚠️ Push rejected (attempt $RETRY/$MAX_RETRIES), rebasing..."
+                git fetch origin main
+                git rebase origin/main
+                sleep 2
+              else
+                echo "❌ Failed to push after $MAX_RETRIES attempts"
+                exit 1
+              fi
+            fi
+          done
+
+          # Push tag
           git push origin "v${VERSION}"
 
       - name: Create GitHub Release
