@@ -3,7 +3,7 @@
 
 setup() {
     # Source the common library
-    source "${BATS_TEST_DIRNAME}/../packages/virtos-tools/src/usr/local/lib/virtos-common.sh"
+    source "${BATS_TEST_DIRNAME}/../config/custom-scripts/lib/virtos-common.sh"
 }
 
 # Hostname Validation Tests
