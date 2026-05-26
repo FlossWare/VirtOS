@@ -2,7 +2,12 @@
 # VirtOS Multi-Cloud Management
 # Advanced multi-cloud cost optimization and workload placement
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.27")
 
 # Configuration
 MULTICLOUD_CONFIG_DIR="/etc/virtos/multicloud"
@@ -606,6 +611,9 @@ case "$1" in
         ;;
     wizard)
         multicloud_wizard
+        ;;
+    version|--version|-v)
+        echo "virtos-multicloud version $VERSION"
         ;;
     *)
         usage

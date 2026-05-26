@@ -2,7 +2,12 @@
 # virtos-federation-extended - Extended cloud federation for VirtOS
 # Part of Phase 13: Advanced AI, Quantum Hardware, Blockchain DeFi, Extended Federation
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.27")
 SCRIPT_NAME="virtos-federation-extended"
 LOG_FILE="/var/log/virtos-federation-extended.log"
 CONFIG_FILE="/etc/virtos/federation-extended.conf"
@@ -577,7 +582,7 @@ main() {
         wizard)
             federation_ext_wizard
             ;;
-        version)
+        version|--version|-v)
             echo "$SCRIPT_NAME version $VERSION"
             ;;
         help|--help|-h)

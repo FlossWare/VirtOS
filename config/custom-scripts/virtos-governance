@@ -2,7 +2,12 @@
 # VirtOS Governance and Policy Management
 # Policy enforcement, compliance automation, change management
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.27")
 
 # Configuration
 GOVERNANCE_CONFIG_DIR="/etc/virtos/governance"
@@ -704,6 +709,9 @@ case "$1" in
         ;;
     wizard)
         governance_wizard
+        ;;
+    version|--version|-v)
+        echo "virtos-governance version $VERSION"
         ;;
     *)
         usage

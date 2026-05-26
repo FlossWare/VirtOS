@@ -2,7 +2,12 @@
 # VirtOS Site Reliability Engineering
 # SLOs, SLIs, error budgets, incident management
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.27")
 
 # Configuration
 SRE_CONFIG_DIR="/etc/virtos/sre"
@@ -747,6 +752,9 @@ case "$1" in
         ;;
     wizard)
         sre_wizard
+        ;;
+    version|--version|-v)
+        echo "virtos-sre version $VERSION"
         ;;
     *)
         usage
