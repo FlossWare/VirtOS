@@ -29,7 +29,7 @@ DEFAULT_BACKUP_DIR="/var/backups/orchestrated"
 
 # Ensure directories exist
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$BACKUP_CONFIG_DIR" "$DEFAULT_BACKUP_DIR"
+mkdir -p "$BACKUP_CONFIG_DIR" "$DEFAULT_BACKUP_DIR" || true
 fi
 
 # Logging function

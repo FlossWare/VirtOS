@@ -26,7 +26,7 @@ STATE_DIR="/var/run/virtos/update"
 LOG_FILE="/var/log/virtos-update.log"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$UPDATE_DIR" "$STATE_DIR"
+mkdir -p "$UPDATE_DIR" "$STATE_DIR" || true
 fi
 
 usage() {
@@ -159,7 +159,7 @@ install_update() {
     if [ "$BACKUP_BEFORE_UPDATE" = "yes" ]; then
         echo "Creating backup..."
         local backup_dir="$UPDATE_DIR/backups/$(date +%Y%m%d-%H%M%S)"
-        mkdir -p "$backup_dir"
+        mkdir -p "$backup_dir" || true
 
         # Backup virtos scripts
         for script in /usr/local/bin/virtos-*; do

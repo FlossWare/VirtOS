@@ -26,7 +26,7 @@ API_DIR="/var/run/virtos/api"
 LOG_FILE="/var/log/virtos-api.log"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$API_DIR"
+mkdir -p "$API_DIR" || true
 fi
 
 usage() {

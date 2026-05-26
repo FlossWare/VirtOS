@@ -26,7 +26,7 @@ STATE_DIR="/var/run/virtos/storage"
 LOG_FILE="/var/log/virtos-storage.log"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$STORAGE_DIR" "$STATE_DIR"
+mkdir -p "$STORAGE_DIR" "$STATE_DIR" || true
 fi
 
 usage() {
@@ -148,7 +148,7 @@ ceph_init() {
     echo ""
 
     # Create directories
-    mkdir -p /var/lib/ceph/mon /var/lib/ceph/osd /var/lib/ceph/mds
+    mkdir -p /var/lib/ceph/mon /var/lib/ceph/osd /var/lib/ceph/mds || true
 
     # In production, would:
     # 1. Generate cluster UUID
@@ -345,7 +345,7 @@ gluster_volume_create() {
     # In production, would collect brick paths from cluster nodes
     if [ -z "$bricks" ]; then
         echo "Note: Using local brick for demonstration"
-        mkdir -p "/var/lib/glusterfs/$volume_name"
+        mkdir -p "/var/lib/glusterfs/$volume_name" || true
         bricks="localhost:/var/lib/glusterfs/$volume_name"
     fi
 
@@ -424,7 +424,7 @@ nfs_cluster_init() {
         return 1
     fi
 
-    mkdir -p /etc/exports.d
+    mkdir -p /etc/exports.d || true
 
     # Configure NFS for cluster use
     if [ ! -f /etc/nfs.conf ]; then
@@ -568,7 +568,7 @@ pool_create() {
             # Create libvirt pool
             if command -v virsh >/dev/null 2>&1; then
                 local pool_path="/var/lib/virtos/pools/$pool_name"
-                mkdir -p "$pool_path"
+                mkdir -p "$pool_path" || true
 
                 virsh pool-define-as "$pool_name" "$pool_type" \
                     --target "$pool_path" 2>/dev/null || true

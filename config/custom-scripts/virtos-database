@@ -28,7 +28,7 @@ DB_LOG="/var/log/virtos-database.log"
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$DB_CONFIG_DIR"
+mkdir -p "$DB_CONFIG_DIR" || true
 fi
 
 # Logging function
@@ -110,7 +110,7 @@ backup_database() {
     local db_name="$2"
     local backup_dir="${3:-/var/backups/databases}"
 
-    mkdir -p "$backup_dir"
+    mkdir -p "$backup_dir" || true
     local backup_file="$backup_dir/${db_name}_$(date +%Y%m%d_%H%M%S).sql"
 
     log_message "Backing up $db_type database: $db_name..."

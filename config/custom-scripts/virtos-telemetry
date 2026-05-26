@@ -26,7 +26,7 @@ STATE_DIR="/var/run/virtos/telemetry"
 LOG_FILE="/var/log/virtos-telemetry.log"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$TELEMETRY_DIR" "$STATE_DIR"
+mkdir -p "$TELEMETRY_DIR" "$STATE_DIR" || true
 fi
 
 usage() {
@@ -151,8 +151,8 @@ prometheus_init() {
         return 1
     fi
 
-    mkdir -p "$TELEMETRY_DIR/prometheus"
-    mkdir -p "$TELEMETRY_DIR/prometheus/data"
+    mkdir -p "$TELEMETRY_DIR/prometheus" || true
+    mkdir -p "$TELEMETRY_DIR/prometheus/data" || true
 
     # Create Prometheus configuration
     cat > "$TELEMETRY_DIR/prometheus/prometheus.yml" <<EOF
@@ -304,10 +304,10 @@ grafana_init() {
         return 1
     fi
 
-    mkdir -p "$TELEMETRY_DIR/grafana/data"
-    mkdir -p "$TELEMETRY_DIR/grafana/dashboards"
-    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/datasources"
-    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/dashboards"
+    mkdir -p "$TELEMETRY_DIR/grafana/data" || true
+    mkdir -p "$TELEMETRY_DIR/grafana/dashboards" || true
+    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/datasources" || true
+    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/dashboards" || true
 
     # Create Grafana config
     cat > "$TELEMETRY_DIR/grafana/grafana.ini" <<EOF

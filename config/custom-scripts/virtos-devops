@@ -28,7 +28,7 @@ DEVOPS_LOG="/var/log/virtos-devops.log"
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$DEVOPS_CONFIG_DIR"
+mkdir -p "$DEVOPS_CONFIG_DIR" || true
 fi
 
 # Logging function
@@ -173,7 +173,7 @@ install_github_actions_runner() {
 
     log_message "Installing GitHub Actions self-hosted runner..."
 
-    mkdir -p /opt/github-actions-runner
+    mkdir -p /opt/github-actions-runner || true
     cd /opt/github-actions-runner
 
     # Download latest runner
@@ -210,7 +210,7 @@ install_terraform() {
     terraform version
 
     # Create example Terraform config for VirtOS
-    mkdir -p "$DEVOPS_CONFIG_DIR/terraform-examples"
+    mkdir -p "$DEVOPS_CONFIG_DIR/terraform-examples" || true
 
     cat > "$DEVOPS_CONFIG_DIR/terraform-examples/vm.tf" <<'EOF'
 # Example Terraform configuration for VirtOS VM
@@ -268,7 +268,7 @@ install_ansible() {
     ansible --version
 
     # Create Ansible inventory for VirtOS
-    mkdir -p "$DEVOPS_CONFIG_DIR/ansible"
+    mkdir -p "$DEVOPS_CONFIG_DIR/ansible" || true
 
     cat > "$DEVOPS_CONFIG_DIR/ansible/inventory.ini" <<'EOF'
 [virtos_hosts]
@@ -332,7 +332,7 @@ install_pulumi() {
     export PATH=$PATH:$HOME/.pulumi/bin
 
     # Create example Pulumi project
-    mkdir -p "$DEVOPS_CONFIG_DIR/pulumi-examples"
+    mkdir -p "$DEVOPS_CONFIG_DIR/pulumi-examples" || true
     cd "$DEVOPS_CONFIG_DIR/pulumi-examples"
 
     pulumi new python -y --name virtos-infra
@@ -355,7 +355,7 @@ install_harbor() {
     fi
 
     # Download Harbor installer
-    mkdir -p /opt/harbor
+    mkdir -p /opt/harbor || true
     cd /opt/harbor
 
     wget -q https://github.com/goharbor/harbor/releases/download/v2.8.0/harbor-offline-installer-v2.8.0.tgz
@@ -382,11 +382,11 @@ create_ci_pipeline() {
 
     log_message "Creating $pipeline_type CI pipeline in $project_dir..."
 
-    mkdir -p "$project_dir"
+    mkdir -p "$project_dir" || true
 
     case "$pipeline_type" in
         github-actions)
-            mkdir -p "$project_dir/.github/workflows"
+            mkdir -p "$project_dir/.github/workflows" || true
             cat > "$project_dir/.github/workflows/virtos-build.yml" <<'EOF'
 name: VirtOS Build
 

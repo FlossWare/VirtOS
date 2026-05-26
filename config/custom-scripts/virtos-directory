@@ -28,7 +28,7 @@ DIRECTORY_LOG="/var/log/virtos-directory.log"
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$DIRECTORY_CONFIG_DIR"
+mkdir -p "$DIRECTORY_CONFIG_DIR" || true
 fi
 
 # Logging function

@@ -25,9 +25,9 @@ CONFIG_DIR="/etc/virtos/auth"
 STATE_DIR="/var/run/virtos/auth"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$CONFIG_DIR" "$STATE_DIR"
+    mkdir -p "$CONFIG_DIR" "$STATE_DIR" || true
+    mkdir -p "$CONFIG_DIR/users" "$CONFIG_DIR/roles" || true
 fi
-mkdir -p "$CONFIG_DIR/users" "$CONFIG_DIR/roles"
 
 usage() {
     cat << EOF

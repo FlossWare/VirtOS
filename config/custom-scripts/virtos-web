@@ -31,7 +31,7 @@ CUSTOM_UI_PORT=8080
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$WEB_CONFIG_DIR"
+mkdir -p "$WEB_CONFIG_DIR" || true
 fi
 
 # Logging function
@@ -52,7 +52,7 @@ install_cockpit() {
     }
 
     # Configure Cockpit
-    mkdir -p /etc/cockpit
+    mkdir -p /etc/cockpit || true
     cat > /etc/cockpit/cockpit.conf <<EOF
 [WebService]
 Origins = https://$(hostname):$COCKPIT_PORT wss://$(hostname):$COCKPIT_PORT
@@ -67,7 +67,7 @@ Banner = /etc/virtos/banner.txt
 EOF
 
     # Enable Cockpit modules
-    mkdir -p /etc/cockpit/modules.d
+    mkdir -p /etc/cockpit/modules.d || true
     echo "enabled=true" > /etc/cockpit/modules.d/machines.conf    # VM management
     echo "enabled=true" > /etc/cockpit/modules.d/podman.conf      # Container management
     echo "enabled=true" > /etc/cockpit/modules.d/storaged.conf    # Storage management
@@ -156,7 +156,7 @@ install_custom_ui() {
     log_message "Installing custom VirtOS web UI..."
 
     # Create simple web UI directory
-    mkdir -p /opt/virtos-web-ui/{static,templates,api}
+    mkdir -p /opt/virtos-web-ui/{static,templates,api} || true
 
     # Create index.html
     cat > /opt/virtos-web-ui/static/index.html <<'EOF'

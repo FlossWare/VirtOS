@@ -26,7 +26,7 @@ STATE_DIR="/var/run/virtos/dr"
 LOG_FILE="/var/log/virtos-dr.log"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$DR_DIR" "$STATE_DIR"
+mkdir -p "$DR_DIR" "$STATE_DIR" || true
 fi
 
 usage() {
@@ -86,7 +86,7 @@ log_message() {
 }
 
 init_config() {
-    mkdir -p "$DR_DIR/plans" "$DR_DIR/replicas" "$DR_DIR/backups"
+    mkdir -p "$DR_DIR/plans" "$DR_DIR/replicas" "$DR_DIR/backups" || true
 
     if [ ! -f "$DR_DIR/config.conf" ]; then
         cat > "$DR_DIR/config.conf" <<EOF
@@ -392,7 +392,7 @@ cluster_backup() {
     local backup_id="cluster-$(date +%Y%m%d-%H%M%S)"
     local backup_dir="$DR_DIR/backups/$backup_id"
 
-    mkdir -p "$backup_dir"
+    mkdir -p "$backup_dir" || true
 
     log_message "Starting cluster backup: $backup_id"
 

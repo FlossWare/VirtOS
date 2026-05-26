@@ -28,7 +28,7 @@ APM_LOG="/var/log/virtos-apm.log"
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$APM_CONFIG_DIR"
+mkdir -p "$APM_CONFIG_DIR" || true
 fi
 
 # Logging function

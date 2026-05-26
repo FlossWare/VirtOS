@@ -31,7 +31,7 @@ POSTMORTEM_DIR="$SRE_CONFIG_DIR/postmortems"
 
 # Ensure directories exist
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$SRE_CONFIG_DIR" "$SLO_DIR" "$INCIDENT_DIR" "$POSTMORTEM_DIR"
+mkdir -p "$SRE_CONFIG_DIR" "$SLO_DIR" "$INCIDENT_DIR" "$POSTMORTEM_DIR" || true
 fi
 
 # Logging function

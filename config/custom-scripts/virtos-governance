@@ -30,7 +30,7 @@ CHANGE_LOG_DIR="$GOVERNANCE_CONFIG_DIR/changes"
 
 # Ensure directories exist
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$GOVERNANCE_CONFIG_DIR" "$POLICY_DIR" "$CHANGE_LOG_DIR"
+mkdir -p "$GOVERNANCE_CONFIG_DIR" "$POLICY_DIR" "$CHANGE_LOG_DIR" || true
 fi
 
 # Logging function

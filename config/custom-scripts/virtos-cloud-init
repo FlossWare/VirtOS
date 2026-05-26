@@ -24,7 +24,7 @@ fi
 CLOUD_INIT_DIR="/var/lib/virtos/cloud-init"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$CLOUD_INIT_DIR"
+mkdir -p "$CLOUD_INIT_DIR" || true
 fi
 
 usage() {
@@ -88,7 +88,7 @@ create_cloud_init() {
     local vm_name="$1"
     local config_dir="$CLOUD_INIT_DIR/$vm_name"
 
-    mkdir -p "$config_dir"
+    mkdir -p "$config_dir" || true
 
     log_message "Creating cloud-init configuration for $vm_name"
 

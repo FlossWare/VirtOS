@@ -28,7 +28,7 @@ SECURITY_LOG="/var/log/virtos-container-security.log"
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$SECURITY_CONFIG_DIR"
+mkdir -p "$SECURITY_CONFIG_DIR" || true
 fi
 
 # Logging function

@@ -25,7 +25,7 @@ CONFIG_DIR="/etc/virtos/quota"
 STATE_DIR="/var/run/virtos/quota"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$CONFIG_DIR" "$STATE_DIR"
+mkdir -p "$CONFIG_DIR" "$STATE_DIR" || true
 fi
 
 usage() {
@@ -96,7 +96,7 @@ EOF
     source "$CONFIG_DIR/cluster.conf"
 
     # Create VM quotas directory
-    mkdir -p "$CONFIG_DIR/vms"
+    mkdir -p "$CONFIG_DIR/vms" || true
 }
 
 set_vm_quota() {

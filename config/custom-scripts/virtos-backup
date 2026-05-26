@@ -108,7 +108,7 @@ warn() {
 
 # Ensure backup directory exists (skip for --help/--version)
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-    mkdir -p "$BACKUP_DIR"
+    mkdir -p "$BACKUP_DIR" || true
 fi
 
 #==============================================================================
@@ -130,7 +130,7 @@ backup_vm() {
     fi
 
     # Create backup directory
-    mkdir -p "$backup_path"
+    mkdir -p "$backup_path" || true
 
     # Save VM state
     local vm_state=$(virsh domstate "$vm_name")
@@ -358,7 +358,7 @@ restore_vm() {
 
         # Determine restore location
         local restore_disk="/var/lib/vms/$target_name-disk-$disk_num.qcow2"
-        mkdir -p "$(dirname "$restore_disk")"
+        mkdir -p "$(dirname "$restore_disk")" || true
 
         log "Restoring disk $disk_num to: $restore_disk"
 

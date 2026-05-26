@@ -28,7 +28,7 @@ NETWORK_LOG="/var/log/virtos-networking-advanced.log"
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$NETWORK_CONFIG_DIR"
+mkdir -p "$NETWORK_CONFIG_DIR" || true
 fi
 
 # Logging function
@@ -233,7 +233,7 @@ setup_service_discovery() {
             chmod +x /usr/local/bin/consul
 
             # Create Consul config
-            mkdir -p /etc/consul.d
+            mkdir -p /etc/consul.d || true
 
             cat > /etc/consul.d/config.json <<EOF
 {
