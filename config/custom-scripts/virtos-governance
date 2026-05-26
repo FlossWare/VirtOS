@@ -19,17 +19,6 @@ POLICY_DIR="$GOVERNANCE_CONFIG_DIR/policies"
 CHANGE_LOG_DIR="$GOVERNANCE_CONFIG_DIR/changes"
 
 # Ensure directories exist
-# Handle --help and --version before any filesystem operations
-case "${1:-}" in
-    --help|-h|help|"")
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-governance version $VERSION"
-        exit 0
-        ;;
-    *)
-        # Only create directories for actual commands
 mkdir -p "$GOVERNANCE_CONFIG_DIR" "$POLICY_DIR" "$CHANGE_LOG_DIR"
 
 # Logging function
@@ -217,9 +206,6 @@ create_compliance_policy() {
     local framework="$2"  # pci-dss, hipaa, gdpr, sox
 
     log_message "Creating compliance policy: $policy_name ($framework)..."
-
-        ;;
-esac
 
     case "$framework" in
         pci-dss)

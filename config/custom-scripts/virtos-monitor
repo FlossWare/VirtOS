@@ -15,17 +15,6 @@ CONFIG_DIR="/etc/virtos/monitor"
 STATE_DIR="/var/run/virtos/monitor"
 LOG_FILE="/var/log/virtos-monitor.log"
 
-# Handle --help and --version before any filesystem operations
-case "${1:-}" in
-    --help|-h|help|"")
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-monitor version $VERSION"
-        exit 0
-        ;;
-    *)
-        # Only create directories for actual commands
 mkdir -p "$CONFIG_DIR" "$STATE_DIR"
 
 usage() {
@@ -439,9 +428,6 @@ show_alerts() {
 configure_threshold() {
     local check_type="$1"
     local threshold="$2"
-
-        ;;
-esac
 
     case "$check_type" in
         cpu)

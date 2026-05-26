@@ -17,17 +17,6 @@ MULTICLOUD_CONFIG_DIR="/etc/virtos/multicloud"
 MULTICLOUD_LOG="/var/log/virtos-multicloud.log"
 
 # Ensure config directory exists
-# Handle --help and --version before any filesystem operations
-case "${1:-}" in
-    --help|-h|help|"")
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-multicloud version $VERSION"
-        exit 0
-        ;;
-    *)
-        # Only create directories for actual commands
 mkdir -p "$MULTICLOUD_CONFIG_DIR"
 
 # Logging function
@@ -207,9 +196,6 @@ optimize_resources() {
     local optimization_type="$1"  # rightsizing, reserved, spot, storage
 
     log_message "Running resource optimization: $optimization_type..."
-
-        ;;
-esac
 
     case "$optimization_type" in
         rightsizing)

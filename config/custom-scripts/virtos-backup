@@ -97,17 +97,6 @@ warn() {
 }
 
 # Ensure backup directory exists
-# Handle --help and --version before any filesystem operations
-case "${1:-}" in
-    --help|-h|help|"")
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-backup version $VERSION"
-        exit 0
-        ;;
-    *)
-        # Only create directories for actual commands
 mkdir -p "$BACKUP_DIR"
 
 #==============================================================================
@@ -493,9 +482,6 @@ EOF
         local minute=$(echo "$schedule_time" | cut -d: -f2)
 
         # Convert day name to number (0=Sunday)
-        ;;
-esac
-
         case "$schedule_day" in
             sun*) day_num=0 ;;
             mon*) day_num=1 ;;

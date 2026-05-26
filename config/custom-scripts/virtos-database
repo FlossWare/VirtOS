@@ -17,17 +17,6 @@ DB_CONFIG_DIR="/etc/virtos/database"
 DB_LOG="/var/log/virtos-database.log"
 
 # Ensure config directory exists
-# Handle --help and --version before any filesystem operations
-case "${1:-}" in
-    --help|-h|help|"")
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-database version $VERSION"
-        exit 0
-        ;;
-    *)
-        # Only create directories for actual commands
 mkdir -p "$DB_CONFIG_DIR"
 
 # Logging function
@@ -42,9 +31,6 @@ setup_replication() {
     local primary_host="$3"
 
     log_message "Setting up $db_type replication ($role)..."
-
-        ;;
-esac
 
     case "$db_type" in
         mysql)

@@ -18,17 +18,6 @@ BACKUP_LOG="/var/log/virtos-backup-orchestration.log"
 DEFAULT_BACKUP_DIR="/var/backups/orchestrated"
 
 # Ensure directories exist
-# Handle --help and --version before any filesystem operations
-case "${1:-}" in
-    --help|-h|help|"")
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-backup-orchestration version $VERSION"
-        exit 0
-        ;;
-    *)
-        # Only create directories for actual commands
 mkdir -p "$BACKUP_CONFIG_DIR" "$DEFAULT_BACKUP_DIR"
 
 # Logging function
@@ -354,9 +343,6 @@ orchestration_wizard() {
         5 "Apply Retention Policy" \
         6 "List Backups" \
         2>&1 >/dev/tty)
-
-        ;;
-esac
 
     case "$choice" in
         1)

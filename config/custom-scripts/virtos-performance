@@ -175,23 +175,10 @@ EOF
 }
 
 main() {
-    # Handle help/version first (before init to avoid permission issues in tests)
-    case "${1:-}" in
-        version|--version|-v)
-            echo "$SCRIPT_NAME version $VERSION"
-            exit 0
-            ;;
-        help|--help|-h|"")
-            usage
-            exit 0
-            ;;
-    esac
-
-    # Now safe to init (only for actual commands)
     init_logging
     load_config
 
-    case "${1}" in
+    case "${1:-help}" in
         system-benchmark) system_benchmark ;;
         auto-tune) auto_tune ;;
         bottleneck-detect) bottleneck_detect ;;

@@ -15,17 +15,6 @@ DR_DIR="/var/lib/virtos/dr"
 STATE_DIR="/var/run/virtos/dr"
 LOG_FILE="/var/log/virtos-dr.log"
 
-# Handle --help and --version before any filesystem operations
-case "${1:-}" in
-    --help|-h|help|"")
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-dr version $VERSION"
-        exit 0
-        ;;
-    *)
-        # Only create directories for actual commands
 mkdir -p "$DR_DIR" "$STATE_DIR"
 
 usage() {
@@ -124,9 +113,6 @@ create_dr_plan() {
 
     # Parse options
     while [ $# -gt 0 ]; do
-        ;;
-esac
-
         case "$1" in
             --priority)
                 priority="$2"

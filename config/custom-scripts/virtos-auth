@@ -14,17 +14,6 @@ VERSION=$(get_version 2>/dev/null || echo "0.23")
 CONFIG_DIR="/etc/virtos/auth"
 STATE_DIR="/var/run/virtos/auth"
 
-# Handle --help and --version before any filesystem operations
-case "${1:-}" in
-    --help|-h|help|"")
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-auth version $VERSION"
-        exit 0
-        ;;
-    *)
-        # Only create directories for actual commands
 mkdir -p "$CONFIG_DIR" "$STATE_DIR"
 mkdir -p "$CONFIG_DIR/users" "$CONFIG_DIR/roles"
 
@@ -109,9 +98,6 @@ EOF
     # Create default roles
     for role in operator viewer backup-admin; do
         if [ ! -f "$CONFIG_DIR/roles/${role}.role" ]; then
-        ;;
-esac
-
             case "$role" in
                 operator)
                     cat > "$CONFIG_DIR/roles/operator.role" <<EOF
