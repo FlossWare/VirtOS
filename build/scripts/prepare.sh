@@ -8,10 +8,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$(dirname "$SCRIPT_DIR")"
 PROJECT_ROOT="$(dirname "$BUILD_DIR")"
 
-# Configuration
-TC_VERSION="15.x"  # Adjust to latest stable
-TC_ARCH="x86_64"
-TC_MIRROR="http://tinycorelinux.net"
+# Source build configuration for TC version and other settings
+if [ -f "$BUILD_DIR/build.conf" ]; then
+    source "$BUILD_DIR/build.conf"
+else
+    echo "ERROR: build.conf not found at $BUILD_DIR/build.conf" >&2
+    exit 1
+fi
+
+# Additional configuration
+TC_MIRROR="${TC_MIRROR:-http://tinycorelinux.net}"
 DOWNLOAD_DIR="$BUILD_DIR/downloads"
 WORKSPACE_DIR="$BUILD_DIR/workspace"
 
