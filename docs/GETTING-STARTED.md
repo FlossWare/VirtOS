@@ -223,6 +223,6 @@ qemu-system-x86_64 -enable-kvm -m 512 -nographic -serial mon:stdio
 
 ## Resources
 
-- Tiny Core Wiki: http://wiki.tinycorelinux.net
+- Tiny Core Wiki: https://wiki.tinycorelinux.net
 - KVM Documentation: https://www.linux-kvm.org
 - This project's docs: See `/docs` directory

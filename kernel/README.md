@@ -309,7 +309,7 @@ To contribute kernel configurations:
 - [KVM Documentation](https://www.kernel.org/doc/html/latest/virt/kvm/)
 - [Cgroups Documentation](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html)
 - [VFIO Documentation](https://www.kernel.org/doc/Documentation/vfio.txt)
-- [Tiny Core Linux Wiki](http://wiki.tinycorelinux.net/)
+- [Tiny Core Linux Wiki](https://wiki.tinycorelinux.net/)
 
 ## Integration Status
 

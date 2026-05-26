@@ -394,9 +394,9 @@ unsquashfs -l package.tcz
 
 ## References
 
-- [Tiny Core Extension Building](http://wiki.tinycorelinux.net/wiki:creating_extensions)
-- [TCZ Format Specification](http://wiki.tinycorelinux.net/wiki:tcz_format)
-- [Package Guidelines](http://wiki.tinycorelinux.net/wiki:extension_guidelines)
+- [Tiny Core Extension Building](https://wiki.tinycorelinux.net/wiki:creating_extensions)
+- [TCZ Format Specification](https://wiki.tinycorelinux.net/wiki:tcz_format)
+- [Package Guidelines](https://wiki.tinycorelinux.net/wiki:extension_guidelines)
 
 ## Status
 
