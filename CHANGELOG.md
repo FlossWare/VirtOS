@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.46] - 2026-05-26
+
+### Fixed
+- virtos-setup and virtos-tui now parse arguments before checking for dialog/whiptail
+  - Allows --help and --version flags to work without dialog/whiptail installed
+  - Fixes CI test failures in environments without TUI dependencies
+- virtos-jplatform package version synchronized with VERSION file
+
 ## [0.42] - 2026-05-26
 
 ### Added
