@@ -12,7 +12,12 @@ WORKSPACE_DIR="$BUILD_DIR/workspace"
 ISO_CONTENTS="$WORKSPACE_DIR/iso-contents"
 OUTPUT_DIR="$BUILD_DIR/output"
 
-VERSION="0.1-alpha"
+# Read version from VERSION file
+if [ -f "$PROJECT_ROOT/VERSION" ]; then
+    VERSION="$(cat "$PROJECT_ROOT/VERSION")-alpha"
+else
+    VERSION="0.1-alpha"
+fi
 ISO_NAME="VirtOS-${VERSION}-$(date +%Y%m%d).iso"
 
 echo "=== FlossWare VirtOS - ISO Build ==="
@@ -63,10 +68,10 @@ cd "$ISO_CONTENTS"
 # Update boot message
 if [ -d "boot/isolinux" ]; then
     echo "Updating boot message..."
-    cat > boot/isolinux/boot.msg << 'EOF'
+    cat > boot/isolinux/boot.msg << EOF
 
 
-  FlossWare VirtOS v0.1-alpha
+  FlossWare VirtOS v${VERSION}
 
   Press <Enter> to boot
 

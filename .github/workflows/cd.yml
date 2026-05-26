@@ -81,15 +81,16 @@ jobs:
             echo "⚠️ PACKAGECLOUD_TOKEN not set, skipping deployment"
             exit 0
           fi
-          
+
           # Install packagecloud CLI
-          gem install package_cloud
-          
-          # Deploy each package
+          sudo gem install package_cloud
+
+          # Deploy each package (TCZ packages as generic files)
           for package in packages/output/*.tcz; do
             if [ -f "$package" ]; then
               echo "Deploying $(basename $package) to packagecloud.io..."
-              package_cloud push flossware/virtos/alpine/3.20 "$package" || echo "⚠️ Deploy failed for $package"
+              # TCZ packages are uploaded as generic files (no distro versioning)
+              package_cloud push flossware/virtos "$package" || echo "⚠️ Deploy failed for $package"
             fi
           done
 
