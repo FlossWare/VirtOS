@@ -725,9 +725,9 @@ Examples:
   $SCRIPT_NAME federation-init my-federation
 
   # Register cloud providers
-  $SCRIPT_NAME provider-register aws aws us-east-1.amazonaws.com AKIAXXXX secret
-  $SCRIPT_NAME provider-register azure azure eastus.azure.com sub-123 secret
-  $SCRIPT_NAME provider-register gcp gcp us-central1.googleapis.com project-456 secret
+  $SCRIPT_NAME provider-register aws aws us-east-1.amazonaws.com <YOUR_AWS_ACCESS_KEY> <YOUR_AWS_SECRET_KEY>
+  $SCRIPT_NAME provider-register azure azure eastus.azure.com <YOUR_SUBSCRIPTION_ID> <YOUR_CLIENT_SECRET>
+  $SCRIPT_NAME provider-register gcp gcp us-central1.googleapis.com <YOUR_PROJECT_ID> <YOUR_SERVICE_ACCOUNT_KEY>
 
   # List providers
   $SCRIPT_NAME provider-list
