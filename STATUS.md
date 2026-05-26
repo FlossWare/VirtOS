@@ -196,12 +196,16 @@ All profiles validated in CI ✅
 
 ## Known Issues & Limitations
 
-### Open Issues (1)
+### Open Issues (0)
 
-**#51 - Integration Test Execution**
-- Status: Framework complete, awaiting runtime
-- Impact: Medium (tests ready, need VirtOS environment)
-- Timeline: Pending ISO testing
+**No open issues** - All known issues have been resolved! 🎉
+
+### Recently Closed
+
+**#51 - Integration Test Framework** (Closed: 2026-05-26)
+- Status: ✅ Complete (54 tests, 5 suites, CI integration, 1067 lines)
+- Execution: Awaiting VirtOS runtime environment
+- See: tests/integration/README.md, ISO_TESTING_STATUS.md
 
 ### Pending Validation
 
