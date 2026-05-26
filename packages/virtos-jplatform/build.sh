@@ -410,10 +410,19 @@ DOC_EOF
 
 # Create package info
 echo "Creating package metadata..."
-cat > "$SCRIPT_DIR/${PACKAGE}.tcz.info" << 'INFO_EOF'
+
+# Read version from VERSION file (single source of truth)
+if [ -f "$SCRIPT_DIR/../../VERSION" ]; then
+    PACKAGE_VERSION=$(cat "$SCRIPT_DIR/../../VERSION")
+else
+    PACKAGE_VERSION="0.1-alpha"
+    echo "Warning: VERSION file not found, using default version $PACKAGE_VERSION"
+fi
+
+cat > "$SCRIPT_DIR/${PACKAGE}.tcz.info" << INFO_EOF
 Title:          virtos-jplatform.tcz
 Description:    JPlatform integration for VirtOS - unified VM/container/app orchestration
-Version:        0.1-alpha
+Version:        ${PACKAGE_VERSION}
 Author:         FlossWare
 Original-site:  https://github.com/FlossWare/jplatform
 Copying-policy: MIT

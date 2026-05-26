@@ -34,3 +34,4 @@ test-containers/
 # OS
 .DS_Store
 Thumbs.db
+packages/output/*.info
