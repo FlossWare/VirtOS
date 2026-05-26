@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # virtos-analytics - Advanced analytics and reporting for VirtOS
 # Part of Phase 11: Multi-Datacenter and Advanced Features
 

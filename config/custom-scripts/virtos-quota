@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Quota - Resource quotas and limits
 # Per-VM and cluster-wide resource management
 

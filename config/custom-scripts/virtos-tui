@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS TUI - Text User Interface for VirtOS Management
 # ncurses-based management console
 
@@ -2060,21 +2061,19 @@ iaas_vm_create_menu() {
         2> $TEMP_FILE
     OS_TEMPLATE=$(cat $TEMP_FILE)
 
-    # Build command
-    CMD="virtos-create-vm --name \"$VM_NAME\" --cpu $CPU_COUNT --ram $RAM_MB --disk $DISK_SIZE --policy $POLICY --priority $PRIORITY"
-
-    if [ -n "$OS_TEMPLATE" ]; then
-        CMD="$CMD --os \"$OS_TEMPLATE\""
-    fi
-
     # Dry run first
     $DIALOG $DIALOG_OPTS \
         --title "Preview Placement" \
         --yesno "Run a dry-run to see where the VM would be placed?\n\n(Recommended before creating)" 10 70
 
     if [ $? -eq 0 ]; then
-        eval "$CMD --dry-run" 2>&1 | \
-            $DIALOG $DIALOG_OPTS --title "Placement Preview" --programbox 20 100
+        if [ -n "$OS_TEMPLATE" ]; then
+            virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" --os "$OS_TEMPLATE" --dry-run 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Placement Preview" --programbox 20 100
+        else
+            virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" --dry-run 2>&1 | \
+                $DIALOG $DIALOG_OPTS --title "Placement Preview" --programbox 20 100
+        fi
 
         $DIALOG $DIALOG_OPTS \
             --title "Create VM" \
@@ -2091,7 +2090,11 @@ iaas_vm_create_menu() {
         --title "Creating VM" \
         --infobox "Creating VM '$VM_NAME' on optimal host...\n\nPlease wait..." 8 60
 
-    eval "$CMD" > /tmp/iaas-result.txt 2>&1
+    if [ -n "$OS_TEMPLATE" ]; then
+        virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" --os "$OS_TEMPLATE" > /tmp/iaas-result.txt 2>&1
+    else
+        virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" > /tmp/iaas-result.txt 2>&1
+    fi
 
     # Show result
     RESULT=$(cat /tmp/iaas-result.txt)

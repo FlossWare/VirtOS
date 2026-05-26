@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Web UI Integration
 # Provides web-based management interfaces (optional)
 

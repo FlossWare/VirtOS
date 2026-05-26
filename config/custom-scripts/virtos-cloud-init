@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Cloud-Init - Cloud-init integration for VMs
 # Configure VMs with cloud-init on first boot
 

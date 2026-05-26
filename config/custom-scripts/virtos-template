@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Template - VM template management and cloning
 # Create, manage, and clone from VM templates
 

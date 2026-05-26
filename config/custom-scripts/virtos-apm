@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Application Performance Monitoring
 # APM integration, profiling, transaction tracing
 

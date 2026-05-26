@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS DevOps Integration
 # GitOps, CI/CD, and Infrastructure as Code tools
 

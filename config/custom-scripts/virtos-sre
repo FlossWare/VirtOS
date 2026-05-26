@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Site Reliability Engineering
 # SLOs, SLIs, error budgets, incident management
 

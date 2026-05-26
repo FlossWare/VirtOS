@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS API - REST API server for VirtOS management
 # Lightweight HTTP API using netcat or socat
 

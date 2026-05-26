@@ -1,6 +1,8 @@
 # Kernel Configuration
 
-VirtOS requires a custom Linux kernel with virtualization support enabled.
+**Status**: Documentation only - custom kernel building is not yet integrated into the automated build system.
+
+VirtOS requires a Linux kernel with virtualization support enabled. By default, VirtOS uses the standard Tiny Core Linux kernel. This directory contains reference configurations for building a custom kernel with optimized virtualization support.
 
 ## Requirements
 
@@ -31,16 +33,18 @@ The VirtOS kernel must include:
 
 ## Kernel Configuration Files
 
-###virtos-base.config
-Base kernel configuration with all required options. Use this as a starting point for building a VirtOS kernel.
+### virtos-base.config.example
+Example kernel configuration with all required virtualization options. This is a reference/starting point for manual kernel builds.
 
-### virtos-minimal.config
-Minimal configuration for size-optimized builds (~100MB target).
+**Note**: Additional configurations (virtos-minimal.config, virtos-full.config) are planned but not yet implemented.
 
-### virtos-full.config
-Full-featured configuration with all optional drivers and features.
+## Current Status
 
-## Building a VirtOS Kernel
+**The VirtOS build system does NOT currently build custom kernels.** It uses the standard Tiny Core Linux kernel which already includes KVM support.
+
+## Manual Kernel Building (Advanced)
+
+If you need custom kernel features, you can build manually:
 
 ### For Tiny Core Linux
 
@@ -306,3 +310,22 @@ To contribute kernel configurations:
 - [Cgroups Documentation](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html)
 - [VFIO Documentation](https://www.kernel.org/doc/Documentation/vfio.txt)
 - [Tiny Core Linux Wiki](http://wiki.tinycorelinux.net/)
+
+## Integration Status
+
+**Custom kernel building is not integrated into the automated build system.** The build scripts in `build/scripts/` currently:
+- ✅ Check for KVM kernel module availability
+- ❌ Do NOT build custom kernels
+- ❌ Do NOT package custom kernels
+- ❌ Do NOT integrate with ISO build
+
+This directory provides reference configurations for advanced users who want to manually build optimized kernels.
+
+## Future Work
+
+- Integrate kernel building into `build/scripts/`
+- Create TCZ packages for custom kernels
+- Add kernel building to CI/CD pipeline
+- Provide pre-built kernel packages
+
+For now, VirtOS relies on the standard Tiny Core Linux kernel with KVM support.

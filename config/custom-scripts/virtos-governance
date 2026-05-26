@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Governance and Policy Management
 # Policy enforcement, compliance automation, change management
 

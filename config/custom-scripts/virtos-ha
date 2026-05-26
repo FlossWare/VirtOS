@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS HA - High Availability and automatic failover
 # Detect failures and automatically restart VMs on healthy hosts
 

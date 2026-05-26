@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Database Management
 # Database replication, optimization, backups
 

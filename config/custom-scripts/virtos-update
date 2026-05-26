@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Update - Automated update system
 # Check for updates, apply patches, and rollback if needed
 

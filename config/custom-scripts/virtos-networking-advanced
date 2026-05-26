@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Advanced Networking
 # SDN, NFV, service discovery, advanced load balancing
 

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS DR - Enhanced disaster recovery
 # Cluster-wide backup, replication, and recovery orchestration
 

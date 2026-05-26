@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Backup Orchestration
 # Automated backup workflows, retention, verification
 

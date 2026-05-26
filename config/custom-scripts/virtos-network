@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Network - Network virtualization and SDN
 # VLAN management, OVN, network policies, and software-defined networking
 

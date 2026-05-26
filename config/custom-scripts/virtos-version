@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 # virtos-version - Display VirtOS version information
 #
 # Shows unified version info for VirtOS, packages, and system components

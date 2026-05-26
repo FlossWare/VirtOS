@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # virtos-observability - Advanced observability for VirtOS
 # Part of Phase 14: Advanced Security, Performance, Observability, DR
 

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Storage - Distributed storage management
 # Ceph, GlusterFS, and clustered NFS management
 

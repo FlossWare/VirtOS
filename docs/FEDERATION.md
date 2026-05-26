@@ -93,7 +93,7 @@ virtos-federation provider-register \
   aws \
   aws \
   ec2.amazonaws.com \
-  AKIAIOSFODNN7EXAMPLE \
+  <YOUR_AWS_ACCESS_KEY> \
   wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 ```
 
@@ -357,7 +357,7 @@ Example: `aws.provider`
   "registered": "2026-05-25T10:30:00Z",
   "status": "active",
   "credentials": {
-    "access_key": "AKIAIOSFODNN7EXAMPLE",
+    "access_key": "<YOUR_AWS_ACCESS_KEY>",
     "secret": "***REDACTED***"
   },
   "capabilities": {

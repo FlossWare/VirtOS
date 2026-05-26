@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Telemetry - Metrics and monitoring integration
 # Prometheus, Grafana, and metrics exporters
 

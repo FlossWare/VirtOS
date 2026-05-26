@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Multi-Cloud Management
 # Advanced multi-cloud cost optimization and workload placement
 

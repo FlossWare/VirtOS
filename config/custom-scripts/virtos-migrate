@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Migrate - Live VM migration with and without shared storage
 # Enhanced migration capabilities including block migration
 

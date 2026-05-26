@@ -1127,7 +1127,7 @@ virtos-blockchain wizard
 virtos-federation federation-init my-hybrid-cloud
 
 # Register cloud providers
-virtos-federation provider-register aws aws us-east-1.amazonaws.com AKIAXXXX secret
+virtos-federation provider-register aws aws us-east-1.amazonaws.com <YOUR_AWS_ACCESS_KEY> <YOUR_AWS_SECRET_KEY>
 virtos-federation provider-register azure azure eastus.azure.com sub-12345 secret
 virtos-federation provider-register gcp gcp us-central1.googleapis.com proj-456 secret
 virtos-federation provider-register on-prem on-prem 192.168.1.100 "" ""

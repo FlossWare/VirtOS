@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS GPU - GPU passthrough wizard and management
 # PCI passthrough, VFIO configuration, and GPU scheduling
 

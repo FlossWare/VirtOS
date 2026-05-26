@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # virtos-billing - Cost tracking and billing management for VirtOS
 # Part of Phase 10: Metrics, Telemetry, and Advanced Features
 

@@ -83,9 +83,9 @@ VirtOS/
 │   ├── scripts/           # Build automation scripts
 │   └── profiles/          # Build profiles (minimal, standard, full, etc.)
 ├── config/                # System configuration templates
-│   ├── bootloader/        # Bootloader configs
-│   ├── network/           # Network configs
-│   └── custom-scripts/    # virtos-tui and other runtime scripts
+│   ├── custom-scripts/    # virtos-* management scripts (source of truth)
+│   │   └── lib/           # Common libraries (virtos-common.sh)
+│   └── profiles/          # Build profile configurations
 ├── docs/                  # Comprehensive documentation
 │   ├── architecture/      # Architecture diagrams and design
 │   └── guides/            # User and developer guides

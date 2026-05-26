@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # virtos-dr-advanced - Advanced disaster recovery for VirtOS
 # Part of Phase 14: Advanced Security, Performance, Observability, DR
 

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Monitor - Automated monitoring and alerting
 # Health checks, resource tracking, and alert notifications
 

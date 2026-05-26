@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # virtos-mesh - Service mesh integration for VirtOS
 # Part of Phase 10: Metrics, Telemetry, and Advanced Features
 

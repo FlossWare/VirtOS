@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Container Security
 # Container image scanning, runtime security, compliance
 

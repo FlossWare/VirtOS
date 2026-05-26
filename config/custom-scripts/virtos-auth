@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # VirtOS Auth - User authentication and RBAC
 # Manage users, roles, and permissions for VirtOS resources
 
