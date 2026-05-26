@@ -108,7 +108,7 @@ clean-all: clean
 # Install build dependencies (system-specific)
 install-deps-fedora:
 	@echo "Installing build dependencies for Fedora..."
-	sudo dnf install -y squashfs-tools mkisofs syslinux wget cpio gzip qemu-kvm
+	sudo dnf install -y squashfs-tools genisoimage syslinux wget cpio gzip qemu-kvm
 
 install-deps-ubuntu:
 	@echo "Installing build dependencies for Ubuntu/Debian..."

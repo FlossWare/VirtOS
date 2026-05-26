@@ -37,7 +37,7 @@ Key modules verified:
 - **Size**: 4.0K
 - **Files**: 6 (wrapper scripts, install scripts, documentation)
 - **Version**: 0.1-alpha
-- **Dependencies**: compiletc, openjdk-17, libvirt (defined in .dep file)
+- **Dependencies**: compiletc, openjdk-21-jre, libvirt (defined in .dep file)
 
 Package contents verified:
 ```
@@ -149,7 +149,7 @@ All features implemented with:
 - ✓ Workload deployment, management, monitoring options
 
 ### 2. Package Dependencies
-- ✓ virtos-jplatform depends on: compiletc, openjdk-17, libvirt
+- ✓ virtos-jplatform depends on: compiletc, openjdk-21-jre, libvirt
 - ✓ Dependency chain properly defined in .dep files
 
 ### 3. Cross-Workload Orchestration

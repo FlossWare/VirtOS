@@ -17,10 +17,22 @@ else
     echo "  WARNING: No virtualization extensions detected!"
 fi
 
-# Verify KVM is available
+# Verify KVM is available and set secure permissions
 if [ -c /dev/kvm ]; then
     echo "  KVM ready: /dev/kvm"
-    chmod 666 /dev/kvm  # Allow non-root access (adjust for security needs)
+
+    # Create kvm group if it doesn't exist
+    if ! grep -q '^kvm:' /etc/group; then
+        addgroup -g 108 kvm 2>/dev/null || true
+        echo "  Created kvm group"
+    fi
+
+    # Set restrictive permissions (only kvm group can access)
+    chown root:kvm /dev/kvm
+    chmod 660 /dev/kvm
+
+    echo "  KVM permissions: root:kvm 660"
+    echo "  To grant VM access: adduser USERNAME kvm"
 else
     echo "  ERROR: /dev/kvm not available"
 fi

@@ -308,9 +308,29 @@ jobs:
       - name: Run BATS tests
         run: |
           cd tests
-          bats virtos-common.bats || true
-          bats virtos-create-vm.bats || true
-          echo "✓ Unit tests executed (some may be skipped)"
+          echo "Running BATS test suite..."
+          EXIT_CODE=0
+
+          # Run all test files
+          for test_file in virtos-*.bats; do
+            if [ -f "$test_file" ]; then
+              echo "Running $test_file..."
+              if ! bats "$test_file"; then
+                EXIT_CODE=1
+                echo "✗ $test_file failed"
+              else
+                echo "✓ $test_file passed"
+              fi
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All unit tests passed"
+          else
+            echo "✗ Some unit tests failed"
+          fi
+
+          exit $EXIT_CODE
 
   package-build:
     name: Build Packages
