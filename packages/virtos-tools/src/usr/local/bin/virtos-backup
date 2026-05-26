@@ -2,7 +2,12 @@
 # VirtOS Backup - Automated VM backup and restore
 # Supports scheduling, retention, compression, and remote destinations
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.21")
 
 # Configuration
 BACKUP_DIR="${BACKUP_DIR:-/var/lib/virtos/backups}"
@@ -350,7 +355,7 @@ restore_vm() {
 
             # Update XML with new disk path
             # This is simplified - in production would need proper XML parsing
-            sed -i "s|source file='[^']*disk-$disk_num[^']*'|source file='$restore_disk'|" "$vm_xml"
+            sed -i "s|source file='[^']*disk-${disk_num}[^']*'|source file='$restore_disk'|" "$vm_xml"
         else
             error "Failed to restore disk $disk_num"
             return 1
@@ -632,6 +637,11 @@ case "$COMMAND" in
             error "No checksums found"
             exit 1
         fi
+        ;;
+
+    --version|-v|version)
+        echo "virtos-backup version $VERSION"
+        exit 0
         ;;
 
     --help|-h|help|"")

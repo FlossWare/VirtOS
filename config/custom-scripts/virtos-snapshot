@@ -2,7 +2,12 @@
 # VirtOS Snapshot - Automated VM snapshot management
 # Create, manage, schedule, and cleanup VM snapshots
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.21")
 
 usage() {
     cat << EOF
@@ -376,6 +381,10 @@ case "$COMMAND" in
         ;;
     lvm)
         lvm_snapshot "$1" "$2"
+        ;;
+    --version|-v|version)
+        echo "virtos-snapshot version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage
