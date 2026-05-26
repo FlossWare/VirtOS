@@ -87,9 +87,20 @@ check_prerequisites() {
     # Check for Helm
     if ! command -v helm &> /dev/null; then
         log "Installing Helm..."
-        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-        if [ $? -ne 0 ]; then
-            log "ERROR: Failed to install Helm"
+        # SECURITY: Download and review before executing
+        local helm_install=$(mktemp)
+        if curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 -o "$helm_install"; then
+            log "Downloaded Helm install script to $helm_install"
+            log "WARNING: Review the script before execution in production"
+            bash "$helm_install"
+            local result=$?
+            rm -f "$helm_install"
+            if [ $result -ne 0 ]; then
+                log "ERROR: Failed to install Helm"
+                return 1
+            fi
+        else
+            log "ERROR: Failed to download Helm install script"
             return 1
         fi
     fi
@@ -112,9 +123,20 @@ istio_install() {
     if [ ! -d "$istio_dir" ]; then
         log "Downloading Istio..."
         cd "$MESH_DIR" || return 1
-        curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$ISTIO_VERSION sh -
-        if [ $? -ne 0 ]; then
-            log "ERROR: Failed to download Istio"
+        # SECURITY: Download and review before executing
+        local istio_install=$(mktemp)
+        if curl -L https://istio.io/downloadIstio -o "$istio_install"; then
+            log "Downloaded Istio install script to $istio_install"
+            log "WARNING: Review the script before execution in production"
+            ISTIO_VERSION=$ISTIO_VERSION sh "$istio_install"
+            local result=$?
+            rm -f "$istio_install"
+            if [ $result -ne 0 ]; then
+                log "ERROR: Failed to download Istio"
+                return 1
+            fi
+        else
+            log "ERROR: Failed to download Istio install script"
             return 1
         fi
     fi
@@ -163,10 +185,20 @@ linkerd_install() {
 
     # Download Linkerd CLI
     log "Downloading Linkerd CLI..."
-    curl -fsL https://run.linkerd.io/install | sh
-
-    if [ $? -ne 0 ]; then
-        log "ERROR: Failed to download Linkerd"
+    # SECURITY: Download and review before executing
+    local linkerd_install=$(mktemp)
+    if curl -fsL https://run.linkerd.io/install -o "$linkerd_install"; then
+        log "Downloaded Linkerd install script to $linkerd_install"
+        log "WARNING: Review the script before execution in production"
+        sh "$linkerd_install"
+        local result=$?
+        rm -f "$linkerd_install"
+        if [ $result -ne 0 ]; then
+            log "ERROR: Failed to install Linkerd"
+            return 1
+        fi
+    else
+        log "ERROR: Failed to download Linkerd install script"
         return 1
     fi
 

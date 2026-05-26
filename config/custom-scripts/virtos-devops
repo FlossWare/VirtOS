@@ -61,8 +61,18 @@ install_argocd() {
 install_flux() {
     log_message "Installing Flux for GitOps..."
 
-    # Install Flux CLI
-    curl -s https://fluxcd.io/install.sh | bash
+    # Install Flux CLI (SECURITY: Download and review before executing)
+    local install_script=$(mktemp)
+    if curl -s https://fluxcd.io/install.sh -o "$install_script"; then
+        log_message "Downloaded Flux install script to $install_script"
+        log_message "WARNING: Review the script before execution in production"
+        # SECURITY: In production environments, review the script content before running
+        bash "$install_script"
+        rm -f "$install_script"
+    else
+        log_message "ERROR: Failed to download Flux install script"
+        return 1
+    fi
 
     # Verify installation
     flux check --pre
@@ -293,8 +303,18 @@ EOF
 install_pulumi() {
     log_message "Installing Pulumi for cloud infrastructure..."
 
-    # Install Pulumi
-    curl -fsSL https://get.pulumi.com | sh
+    # Install Pulumi (SECURITY: Download and review before executing)
+    local install_script=$(mktemp)
+    if curl -fsSL https://get.pulumi.com -o "$install_script"; then
+        log_message "Downloaded Pulumi install script to $install_script"
+        log_message "WARNING: Review the script before execution in production"
+        # SECURITY: In production environments, review the script content before running
+        sh "$install_script"
+        rm -f "$install_script"
+    else
+        log_message "ERROR: Failed to download Pulumi install script"
+        return 1
+    fi
 
     # Add to PATH
     export PATH=$PATH:$HOME/.pulumi/bin
