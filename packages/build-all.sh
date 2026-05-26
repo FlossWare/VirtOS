@@ -37,10 +37,33 @@ for package in "${PACKAGES[@]}"; do
         if [ -x "./build.sh" ]; then
             ./build.sh
 
-            # Copy to output directory
-            cp -v *.tcz* "$OUTPUT_DIR/" 2>/dev/null || true
+            # Validate package was built
+            TCZ_FILES=("$package"*.tcz)
+            if [ ! -f "${TCZ_FILES[0]}" ]; then
+                echo "❌ Build failed: No .tcz file created for $package"
+                exit 1
+            fi
 
-            echo "✓ $package built successfully"
+            # Copy to output directory with validation
+            echo "Copying package files to $OUTPUT_DIR..."
+            COPIED_COUNT=0
+            for file in "$package"*.tcz*; do
+                if [ -f "$file" ]; then
+                    if cp -v "$file" "$OUTPUT_DIR/"; then
+                        COPIED_COUNT=$((COPIED_COUNT + 1))
+                    else
+                        echo "❌ Failed to copy $file"
+                        exit 1
+                    fi
+                fi
+            done
+
+            if [ $COPIED_COUNT -eq 0 ]; then
+                echo "❌ No files copied for $package"
+                exit 1
+            fi
+
+            echo "✓ $package built successfully ($COPIED_COUNT files)"
         else
             echo "⚠ No build.sh found for $package (skipping)"
         fi

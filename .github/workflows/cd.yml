@@ -73,6 +73,82 @@ jobs:
           echo "✅ Packages built:"
           ls -lh output/*.tcz
 
+      - name: Validate packages before deployment
+        run: |
+          echo "Validating packages before deployment..."
+          EXIT_CODE=0
+
+          # 1. Verify package contents
+          echo "Checking package contents..."
+          for package in packages/output/*.tcz; do
+            if [ -f "$package" ]; then
+              echo "  Checking $(basename $package)..."
+
+              # Verify it's a valid squashfs
+              if ! unsquashfs -l "$package" >/dev/null 2>&1; then
+                echo "    ❌ Invalid squashfs format"
+                EXIT_CODE=1
+              fi
+
+              # Check for expected files
+              if [[ "$package" == *"virtos-tools"* ]]; then
+                if ! unsquashfs -l "$package" | grep -q "usr/local/bin/virtos-"; then
+                  echo "    ❌ Missing virtos-* scripts"
+                  EXIT_CODE=1
+                fi
+              fi
+
+              echo "    ✓ Valid"
+            fi
+          done
+
+          # 2. Check package metadata
+          echo "Checking package metadata..."
+          for info_file in packages/output/*.tcz.info; do
+            if [ -f "$info_file" ]; then
+              echo "  Checking $(basename $info_file)..."
+
+              # Verify required fields
+              if ! grep -q "^Title:" "$info_file"; then
+                echo "    ❌ Missing Title field"
+                EXIT_CODE=1
+              fi
+              if ! grep -q "^Version:" "$info_file"; then
+                echo "    ❌ Missing Version field"
+                EXIT_CODE=1
+              fi
+
+              echo "    ✓ Valid"
+            fi
+          done
+
+          # 3. Run syntax checks on packaged scripts
+          echo "Running syntax checks..."
+          for package in packages/output/virtos-tools*.tcz; do
+            if [ -f "$package" ]; then
+              TEMP_DIR=$(mktemp -d)
+              unsquashfs -d "$TEMP_DIR" "$package" >/dev/null 2>&1
+
+              for script in "$TEMP_DIR"/usr/local/bin/virtos-*; do
+                if [ -f "$script" ] && [ -x "$script" ]; then
+                  if ! bash -n "$script" 2>/dev/null; then
+                    echo "  ❌ Syntax error in $(basename $script)"
+                    EXIT_CODE=1
+                  fi
+                fi
+              done
+
+              rm -rf "$TEMP_DIR"
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ All package validations passed"
+          else
+            echo "❌ Package validation failed"
+            exit 1
+          fi
+
       - name: Deploy to packagecloud.io
         env:
           PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
