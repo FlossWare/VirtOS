@@ -52,6 +52,47 @@ virtualization/
 └── iso/                # ISO build output
 ```
 
+## Build Requirements
+
+### System Requirements
+
+- **OS**: Linux (tested on Fedora 44+, Ubuntu 24.04+, Debian 12+, Arch Linux)
+- **Disk**: 20GB free space (for downloads and builds)
+- **RAM**: 4GB minimum, 8GB recommended
+- **Network**: Internet connection (first build downloads ~500MB Tiny Core Linux)
+
+### Required Packages
+
+**Fedora/RHEL**:
+```bash
+sudo dnf install -y genisoimage syslinux wget bash cpio gzip squashfs-tools
+```
+
+**Debian/Ubuntu**:
+```bash
+sudo apt install -y genisoimage syslinux-utils wget bash cpio gzip squashfs-tools
+```
+
+**Arch Linux**:
+```bash
+sudo pacman -S --needed cdrtools syslinux wget bash cpio gzip squashfs-tools
+```
+
+Or use the Makefile:
+```bash
+make install-deps-fedora   # For Fedora
+make install-deps-ubuntu   # For Ubuntu/Debian
+make install-deps-arch     # For Arch Linux
+```
+
+### Optional (But Recommended)
+
+- **shellcheck** - Shell script linting
+- **bats** - Unit testing framework
+- **qemu-kvm** - For testing ISOs locally
+
+**Note**: See [docs/BUILD.md](docs/BUILD.md) for complete build guide including troubleshooting.
+
 ## Getting Started
 
 ### 🎯 What Works Right Now

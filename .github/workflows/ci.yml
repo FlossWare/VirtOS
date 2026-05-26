@@ -227,26 +227,61 @@ jobs:
   profile-validation:
     name: Validate Build Profiles
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        profile: [minimal, standard, full, containers, developer, kubernetes, storage]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate ${{ matrix.profile }} profile
+      - name: Discover and validate all profiles
         run: |
-          echo "Validating ${{ matrix.profile }} profile..."
-          PROFILE_FILE="config/profiles/${{ matrix.profile }}.conf"
+          echo "Discovering profiles in build/profiles/"
+          EXIT_CODE=0
+          PROFILE_COUNT=0
 
-          if [ ! -f "$PROFILE_FILE" ]; then
-            echo "✗ Profile file not found: $PROFILE_FILE"
+          if [ ! -d "build/profiles" ]; then
+            echo "ERROR: build/profiles directory not found" >&2
             exit 1
           fi
 
-          source "$PROFILE_FILE"
-          echo "✓ ${{ matrix.profile }} profile is valid"
+          for profile_file in build/profiles/*.conf; do
+            if [ -f "$profile_file" ]; then
+              PROFILE=$(basename "$profile_file" .conf)
+              PROFILE_COUNT=$((PROFILE_COUNT + 1))
+
+              echo ""
+              echo "=== Validating profile: $PROFILE ==="
+
+              # Check syntax by sourcing
+              if source "$profile_file" 2>/dev/null; then
+                echo "✅ $PROFILE: Valid syntax"
+              else
+                echo "❌ $PROFILE: Syntax error"
+                EXIT_CODE=1
+              fi
+
+              # Check for required variables (optional)
+              if [ -n "${INCLUDE_KVM:-}" ]; then
+                echo "  KVM: $INCLUDE_KVM"
+              fi
+            fi
+          done
+
+          if [ $PROFILE_COUNT -eq 0 ]; then
+            echo "ERROR: No profile files found in build/profiles/" >&2
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Summary ==="
+          echo "Validated $PROFILE_COUNT profile(s)"
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ All profiles valid"
+          else
+            echo "❌ Some profiles have errors"
+          fi
+
+          exit $EXIT_CODE
 
   security-scan:
     name: Security Scanning
@@ -401,21 +436,60 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate summary
+        env:
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          SYNTAX_RESULT: ${{ needs.syntax-check.result }}
+          PERMISSIONS_RESULT: ${{ needs.permissions-check.result }}
+          VERSION_RESULT: ${{ needs.version-check.result }}
+          BUILD_TEST_RESULT: ${{ needs.build-test.result }}
+          PROFILE_RESULT: ${{ needs.profile-validation.result }}
+          UNIT_TESTS_RESULT: ${{ needs.unit-tests.result }}
+          PACKAGE_RESULT: ${{ needs.package-build.result }}
         run: |
+          # Helper function to get status icon
+          get_icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              cancelled) echo "⚠️" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❓" ;;
+            esac
+          }
+
           echo "## VirtOS CI Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Validation" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Project structure validated" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Shell scripts syntax checked" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ File permissions verified" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Build configuration validated" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ All 7 profiles validated" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $VALIDATE_RESULT) Project structure: $VALIDATE_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $SYNTAX_RESULT) Shell script syntax: $SYNTAX_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $PERMISSIONS_RESULT) File permissions: $PERMISSIONS_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $VERSION_RESULT) Version sync: $VERSION_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $BUILD_TEST_RESULT) Build config: $BUILD_TEST_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $PROFILE_RESULT) Build profiles: $PROFILE_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Testing" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $UNIT_TESTS_RESULT) Unit tests: $UNIT_TESTS_RESULT" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Build" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Package build successful" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ virtos-tools.tcz created (~332KB)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Checksums verified" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $PACKAGE_RESULT) Package build: $PACKAGE_RESULT" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- 📦 virtos-tools package available for download" >> $GITHUB_STEP_SUMMARY
-          echo "- ⏱️ Artifacts retained for 30 days" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          if [ "$VALIDATE_RESULT" = "success" ] && \
+             [ "$SYNTAX_RESULT" = "success" ] && \
+             [ "$PERMISSIONS_RESULT" = "success" ] && \
+             [ "$VERSION_RESULT" = "success" ] && \
+             [ "$BUILD_TEST_RESULT" = "success" ] && \
+             [ "$PROFILE_RESULT" = "success" ] && \
+             [ "$UNIT_TESTS_RESULT" = "success" ] && \
+             [ "$PACKAGE_RESULT" = "success" ]; then
+            echo "### ✅ Overall: All checks passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "- 📦 virtos-tools package available for download" >> $GITHUB_STEP_SUMMARY
+            echo "- ⏱️ Artifacts retained for 30 days" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Overall: Some checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the failed jobs above." >> $GITHUB_STEP_SUMMARY
+          fi
