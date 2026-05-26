@@ -2,7 +2,12 @@
 # VirtOS USB - USB device passthrough and management
 # USB hot-plug, device filtering, and redirection
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.25")
 USB_DIR="/var/lib/virtos/usb"
 STATE_DIR="/var/run/virtos/usb"
 LOG_FILE="/var/log/virtos-usb.log"
@@ -620,6 +625,10 @@ case "$COMMAND" in
         ;;
     auto-detach)
         auto_detach_setup "$1" "$2"
+        ;;
+    --version|-v|version)
+        echo "virtos-usb version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

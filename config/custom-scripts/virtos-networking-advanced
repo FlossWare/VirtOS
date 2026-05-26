@@ -2,7 +2,12 @@
 # VirtOS Advanced Networking
 # SDN, NFV, service discovery, advanced load balancing
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.25")
 
 # Configuration
 NETWORK_CONFIG_DIR="/etc/virtos/networking-advanced"
@@ -688,6 +693,9 @@ case "$1" in
         ;;
     wizard)
         network_wizard
+        ;;
+    version|--version|-v)
+        echo "virtos-networking-advanced version $VERSION"
         ;;
     *)
         usage
