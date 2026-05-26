@@ -2,7 +2,12 @@
 # VirtOS DevOps Integration
 # GitOps, CI/CD, and Infrastructure as Code tools
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.23")
 
 # Configuration
 DEVOPS_CONFIG_DIR="/etc/virtos/devops"
@@ -739,7 +744,16 @@ case "$1" in
     wizard)
         devops_wizard
         ;;
+    --version|-v|version)
+        echo "virtos-devops version $VERSION"
+        exit 0
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
     *)
         usage
+        exit 1
         ;;
 esac

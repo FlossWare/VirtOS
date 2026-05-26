@@ -2,7 +2,12 @@
 # VirtOS Auth - User authentication and RBAC
 # Manage users, roles, and permissions for VirtOS resources
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.23")
 CONFIG_DIR="/etc/virtos/auth"
 STATE_DIR="/var/run/virtos/auth"
 
@@ -534,6 +539,10 @@ case "$COMMAND" in
         ;;
     check)
         check_permission "$1" "$2"
+        ;;
+    --version|-v|version)
+        echo "virtos-auth version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

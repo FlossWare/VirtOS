@@ -2,7 +2,12 @@
 # virtos-analytics - Advanced analytics and reporting for VirtOS
 # Part of Phase 11: Multi-Datacenter and Advanced Features
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.23")
 SCRIPT_NAME="virtos-analytics"
 LOG_FILE="/var/log/virtos-analytics.log"
 CONFIG_FILE="/etc/virtos/analytics.conf"
@@ -617,7 +622,7 @@ main() {
         wizard)
             analytics_wizard
             ;;
-        version)
+        version|--version|-v)
             echo "$SCRIPT_NAME version $VERSION"
             ;;
         help|--help|-h)

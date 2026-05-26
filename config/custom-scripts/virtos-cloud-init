@@ -2,7 +2,12 @@
 # VirtOS Cloud-Init - Cloud-init integration for VMs
 # Configure VMs with cloud-init on first boot
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.23")
 CLOUD_INIT_DIR="/var/lib/virtos/cloud-init"
 
 mkdir -p "$CLOUD_INIT_DIR"
@@ -435,6 +440,10 @@ case "$COMMAND" in
         ;;
     template-show)
         show_template "$1"
+        ;;
+    --version|-v|version)
+        echo "virtos-cloud-init version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

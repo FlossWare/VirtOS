@@ -2,7 +2,12 @@
 # virtos-billing - Cost tracking and billing management for VirtOS
 # Part of Phase 10: Metrics, Telemetry, and Advanced Features
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.23")
 SCRIPT_NAME="virtos-billing"
 LOG_FILE="/var/log/virtos-billing.log"
 CONFIG_FILE="/etc/virtos/billing.conf"
@@ -678,7 +683,7 @@ main() {
         show-pricing)
             show_pricing
             ;;
-        version)
+        version|--version|-v)
             echo "$SCRIPT_NAME version $VERSION"
             ;;
         help|--help|-h)
