@@ -3,22 +3,53 @@
 # This packages all VirtOS management scripts
 
 set -e
+set -u  # Fail on unset variables
 
 PACKAGE="virtos-tools"
-VERSION="0.1-alpha"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-echo "Building $PACKAGE v$VERSION"
+# Validate critical paths before destructive operations
+if [ -z "$SCRIPT_DIR" ] || [ ! -d "$SCRIPT_DIR" ]; then
+    echo "ERROR: SCRIPT_DIR not set correctly: '$SCRIPT_DIR'" >&2
+    exit 1
+fi
+
+if [ -z "$PROJECT_ROOT" ] || [ ! -d "$PROJECT_ROOT" ]; then
+    echo "ERROR: PROJECT_ROOT not set correctly: '$PROJECT_ROOT'" >&2
+    exit 1
+fi
+
+# Validate we're in expected location
+if [[ ! "$SCRIPT_DIR" =~ packages/virtos-tools$ ]]; then
+    echo "ERROR: SCRIPT_DIR doesn't match expected pattern: $SCRIPT_DIR" >&2
+    echo "Expected: */packages/virtos-tools" >&2
+    exit 1
+fi
+
+# Read version from VERSION file
+if [ -f "$PROJECT_ROOT/VERSION" ]; then
+    VERSION="$(cat "$PROJECT_ROOT/VERSION")"
+    echo "Building $PACKAGE v$VERSION (from VERSION file)"
+else
+    VERSION="0.1"
+    echo "Building $PACKAGE v$VERSION (fallback - VERSION file missing)"
+fi
+
 echo "=============================="
 echo ""
 
-# Clean previous build
+# Clean previous build (validated paths)
 echo "Cleaning previous build..."
 rm -f "$SCRIPT_DIR/${PACKAGE}.tcz"
 rm -f "$SCRIPT_DIR/${PACKAGE}.tcz.md5.txt"
 rm -f "$SCRIPT_DIR/${PACKAGE}.tcz.list"
-rm -rf "$SCRIPT_DIR/src"
+
+if [ -d "$SCRIPT_DIR/src" ]; then
+    rm -rf "$SCRIPT_DIR/src"
+else
+    echo "  (no previous src/ to clean)"
+fi
 
 # Create directory structure
 echo "Creating package structure..."
