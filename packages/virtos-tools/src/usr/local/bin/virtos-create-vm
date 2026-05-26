@@ -3,15 +3,24 @@
 
 VERSION="1"
 
-# Colors
-if [ -t 1 ]; then
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    BLUE='\033[0;34m'
-    NC='\033[0m'
+# Load common functions
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
 else
-    RED='' GREEN='' YELLOW='' BLUE='' NC=''
+    # Fallback color definitions if common lib not available
+    if [ -t 1 ]; then
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        BLUE='\033[0;34m'
+        NC='\033[0m'
+    else
+        RED='' GREEN='' YELLOW='' BLUE='' NC=''
+    fi
+    die() { echo "Error: $1" >&2; exit "${2:-1}"; }
+    validate_vm_name() { echo "$1" | grep -qE '^[a-zA-Z0-9_-]{1,64}$'; }
+    validate_number() { echo "$1" | grep -qE '^[0-9]+$'; }
+    validate_disk_size() { echo "$1" | grep -qE '^[0-9]+[KMGT]$'; }
 fi
 
 usage() {
@@ -105,10 +114,52 @@ done
 
 # Validate required arguments
 if [ -z "$NAME" ] || [ -z "$CPU" ] || [ -z "$RAM" ] || [ -z "$DISK" ]; then
-    echo "${RED}Error: Missing required arguments${NC}"
-    echo ""
-    usage
-    exit 1
+    die "Missing required arguments. Use --help for usage."
+fi
+
+# Security: Validate VM name (prevent command injection)
+if ! validate_vm_name "$NAME"; then
+    die "Invalid VM name '$NAME'. Use only alphanumeric, dash, underscore (max 64 chars)"
+fi
+
+# Validate CPU count
+if ! validate_number "$CPU"; then
+    die "Invalid CPU count '$CPU'. Must be a positive number"
+fi
+if [ "$CPU" -lt 1 ] || [ "$CPU" -gt 128 ]; then
+    die "CPU count must be between 1 and 128"
+fi
+
+# Validate RAM size
+if ! validate_number "$RAM"; then
+    die "Invalid RAM size '$RAM'. Must be a positive number (in MB)"
+fi
+if [ "$RAM" -lt 128 ]; then
+    die "RAM must be at least 128 MB"
+fi
+
+# Validate disk size format
+if ! validate_disk_size "$DISK"; then
+    die "Invalid disk size '$DISK'. Format: <number>[KMGT] (e.g., 20G, 500M, 1T)"
+fi
+
+# Validate network type if specified
+if [ -n "$NETWORK" ]; then
+    case "$NETWORK" in
+        bridged|nat|isolated|none) ;;
+        *) die "Invalid network type '$NETWORK'. Use: bridged, nat, isolated, or none" ;;
+    esac
+fi
+
+# Validate hostnames if specified (prevent command injection)
+if [ -n "$PREFER" ] && ! validate_hostname "$PREFER"; then
+    die "Invalid hostname '$PREFER'"
+fi
+if [ -n "$AVOID" ] && ! validate_hostname "$AVOID"; then
+    die "Invalid hostname '$AVOID'"
+fi
+if [ -n "$REQUIRE" ] && ! validate_hostname "$REQUIRE"; then
+    die "Invalid hostname '$REQUIRE'"
 fi
 
 echo "${BLUE}VirtOS IaaS - Automated VM Placement${NC}"

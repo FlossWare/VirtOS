@@ -217,7 +217,8 @@ setup_hostname() {
 
     SETUP_HOSTNAME=$(cat $TEMP_FILE)
 
-    if [ -z "$SETUP_HOSTNAME" ]; then
+    # Validate hostname (alphanumeric, dash, no special chars)
+    if [ -z "$SETUP_HOSTNAME" ] || ! echo "$SETUP_HOSTNAME" | grep -qE '^[a-zA-Z0-9-]+$'; then
         SETUP_HOSTNAME="virtos"
     fi
 
