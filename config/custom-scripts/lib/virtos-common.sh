@@ -18,6 +18,36 @@ else
 fi
 
 #==============================================================================
+# Version Management
+#==============================================================================
+
+# Get VirtOS version from system
+# Tries multiple locations to find version information
+# Returns: Version string (e.g., "0.13")
+get_version() {
+    # Try package metadata first (installed system)
+    if [ -f /usr/local/share/virtos/VERSION ]; then
+        cat /usr/local/share/virtos/VERSION
+        return 0
+    fi
+
+    # Try system version file
+    if [ -f /etc/virtos/version.txt ]; then
+        grep '^Version:' /etc/virtos/version.txt | awk '{print $2}' | head -1
+        return 0
+    fi
+
+    # Try TCE installed package info
+    if [ -f /usr/local/tce.installed/virtos-tools ]; then
+        grep 'Version' /usr/local/tce.installed/virtos-tools | head -1 | awk '{print $2}'
+        return 0
+    fi
+
+    # Fallback version
+    echo "0.13"
+}
+
+#==============================================================================
 # Input Validation Functions
 #==============================================================================
 

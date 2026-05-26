@@ -2,8 +2,23 @@
 # BATS tests for virtos-common.sh library
 
 setup() {
-    # Source the common library
-    source "${BATS_TEST_DIRNAME}/../config/custom-scripts/lib/virtos-common.sh"
+    # Locate virtos-common.sh library with fallback locations
+    local VIRTOS_LIB="${BATS_TEST_DIRNAME}/../config/custom-scripts/lib/virtos-common.sh"
+
+    # Try relative path first
+    if [ ! -f "$VIRTOS_LIB" ]; then
+        # Try installed location
+        if [ -f "/usr/local/lib/virtos-common.sh" ]; then
+            VIRTOS_LIB="/usr/local/lib/virtos-common.sh"
+        # Try environment variable
+        elif [ -n "${VIRTOS_LIB_PATH:-}" ] && [ -f "${VIRTOS_LIB_PATH}/virtos-common.sh" ]; then
+            VIRTOS_LIB="${VIRTOS_LIB_PATH}/virtos-common.sh"
+        else
+            skip "virtos-common.sh library not found at: $VIRTOS_LIB"
+        fi
+    fi
+
+    source "$VIRTOS_LIB"
 }
 
 # Hostname Validation Tests
