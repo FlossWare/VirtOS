@@ -1,7 +1,7 @@
 # VirtOS Project Status Dashboard
 
 **Last Updated**: 2026-05-26  
-**Current Version**: v0.56  
+**Current Version**: v0.57  
 **Build Status**: ✅ All Systems Operational
 
 ## Quick Status Overview
