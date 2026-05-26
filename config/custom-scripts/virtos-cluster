@@ -97,9 +97,114 @@ discover_members() {
             fi
             ;;
         multicast)
-            # TODO: Implement multicast discovery
-            echo "${YELLOW}Multicast discovery not yet implemented${NC}" >&2
-            return 1
+            # Multicast discovery using UDP
+            # Uses multicast group 239.255.86.84 (239.255.V.T) port 5684
+            #
+            # NOTE: For multicast to work, each VirtOS node should run a responder daemon.
+            # Example responder (add to bootlocal.sh or systemd):
+            #   while true; do
+            #     socat -u UDP4-RECVFROM:5684,ip-add-membership=239.255.86.84:0.0.0.0,fork EXEC:'/bin/sh -c "
+            #       read line; if echo \$line | grep -q VIRTOS_DISCOVERY; then
+            #         cluster=\$(echo \$line | cut -d: -f2);
+            #         echo \"VIRTOS_RESPONSE:\$cluster:\$(hostname):\$(hostname -I | awk \"{print \\\$1}\")\" |
+            #         socat - UDP4-DATAGRAM:239.255.86.84:5684,broadcast;
+            #       fi"'
+            #   done &
+
+            local MCAST_GROUP="239.255.86.84"
+            local MCAST_PORT="5684"
+            local TIMEOUT=3
+
+            echo "Performing multicast discovery..." >&2
+
+            # Check if socat is available (preferred)
+            if command -v socat >/dev/null 2>&1; then
+                # Send multicast query
+                echo "VIRTOS_DISCOVERY:$CLUSTER_NAME:$(hostname)" | \
+                    socat - UDP4-DATAGRAM:${MCAST_GROUP}:${MCAST_PORT},broadcast &
+
+                # Listen for responses
+                timeout "$TIMEOUT" socat -u UDP4-RECVFROM:${MCAST_PORT},ip-add-membership=${MCAST_GROUP}:0.0.0.0,fork - 2>/dev/null | \
+                while read -r line; do
+                    if echo "$line" | grep -q "^VIRTOS_RESPONSE:"; then
+                        # Parse response: VIRTOS_RESPONSE:cluster:hostname:ip
+                        local cluster=$(echo "$line" | cut -d: -f2)
+                        local host=$(echo "$line" | cut -d: -f3)
+                        local ip=$(echo "$line" | cut -d: -f4)
+
+                        if [ "$cluster" = "$CLUSTER_NAME" ]; then
+                            echo "$host $ip" >> "$CLUSTER_CACHE.new"
+                        fi
+                    fi
+                done
+
+            # Fallback to netcat if socat not available
+            elif command -v nc >/dev/null 2>&1; then
+                # Create temporary FIFO for responses
+                local fifo="/tmp/virtos-mcast-$$"
+                mktemp -u > /dev/null && mkfifo "$fifo" 2>/dev/null || { echo "${RED}Cannot create FIFO${NC}" >&2; return 1; }
+
+                # Listen for responses in background
+                (
+                    nc -u -l -p "$MCAST_PORT" > "$fifo" 2>/dev/null &
+                    local nc_pid=$!
+                    sleep "$TIMEOUT"
+                    kill "$nc_pid" 2>/dev/null
+                ) &
+
+                # Send multicast query
+                echo "VIRTOS_DISCOVERY:$CLUSTER_NAME:$(hostname)" | nc -u -w 1 "$MCAST_GROUP" "$MCAST_PORT" 2>/dev/null
+
+                # Process responses
+                timeout "$TIMEOUT" cat "$fifo" 2>/dev/null | while read -r line; do
+                    if echo "$line" | grep -q "^VIRTOS_RESPONSE:"; then
+                        local cluster=$(echo "$line" | cut -d: -f2)
+                        local host=$(echo "$line" | cut -d: -f3)
+                        local ip=$(echo "$line" | cut -d: -f4)
+
+                        if [ "$cluster" = "$CLUSTER_NAME" ]; then
+                            echo "$host $ip" >> "$CLUSTER_CACHE.new"
+                        fi
+                    fi
+                done
+
+                rm -f "$fifo"
+
+            # Fallback to static network scan if no multicast tools available
+            else
+                echo "${YELLOW}Warning: socat/nc not found, falling back to network scan${NC}" >&2
+
+                # Get local network from routing table
+                local local_net=$(ip route | grep -v default | grep -E '^[0-9]' | head -1 | awk '{print $1}')
+
+                if [ -n "$local_net" ] && command -v nmap >/dev/null 2>&1; then
+                    # Use nmap for fast network scan
+                    nmap -sn -T4 "$local_net" -oG - 2>/dev/null | \
+                    grep "Up" | awk '{print $2}' | while read -r ip; do
+                        # Quick check if it's a VirtOS host
+                        if ssh -o ConnectTimeout=1 -o StrictHostKeyChecking=no \
+                            "root@$ip" "test -f /etc/virtos/cluster.conf" 2>/dev/null; then
+                            local host=$(ssh -o ConnectTimeout=1 "root@$ip" "hostname" 2>/dev/null)
+                            echo "$host $ip" >> "$CLUSTER_CACHE.new"
+                        fi
+                    done
+                else
+                    echo "${RED}Error: No suitable discovery method available${NC}" >&2
+                    echo "Install: socat, nc, or nmap" >&2
+                    return 1
+                fi
+            fi
+
+            # Finalize cache
+            if [ -f "$CLUSTER_CACHE.new" ]; then
+                sort -u "$CLUSTER_CACHE.new" > "$CLUSTER_CACHE"
+                rm -f "$CLUSTER_CACHE.new"
+                local count=$(wc -l < "$CLUSTER_CACHE")
+                echo "Found $count cluster member(s) via multicast" >&2
+            else
+                echo "${YELLOW}No cluster members discovered${NC}" >&2
+                touch "$CLUSTER_CACHE"
+            fi
             ;;
     esac
 }

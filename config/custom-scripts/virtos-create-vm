@@ -290,12 +290,36 @@ fi
 # Create the VM
 echo "Creating VM on $SELECTED_HOST..."
 
-# Generate basic VM XML
-# TODO: Use proper templates, this is simplified
+# Generate VM XML using templates or built-in profiles
 VM_DIR="/var/lib/virtos/vms/$NAME"
 mkdir -p "$VM_DIR"
 
-cat > "$VM_DIR/$NAME.xml" << EOF
+# Check if we should use virtos-template for cloning
+if [ -n "$OS_TEMPLATE" ] && command -v virtos-template >/dev/null 2>&1; then
+    TEMPLATE_DIR="${TEMPLATE_DIR:-/var/lib/virtos/templates}"
+
+    if [ -d "$TEMPLATE_DIR/$OS_TEMPLATE" ]; then
+        echo "Using template: $OS_TEMPLATE"
+        virtos-template clone "$OS_TEMPLATE" "$NAME"
+
+        # Adjust resources if needed
+        virsh setvcpus "$NAME" "$CPU" --config --maximum
+        virsh setvcpus "$NAME" "$CPU" --config
+        virsh setmaxmem "$NAME" "$RAM" --config
+        virsh setmem "$NAME" "$RAM" --config
+
+        echo "${GREEN}VM created from template: $OS_TEMPLATE${NC}"
+        exit 0
+    else
+        echo "${YELLOW}Warning: Template '$OS_TEMPLATE' not found, using built-in profile${NC}"
+    fi
+fi
+
+# Use built-in VM profiles if OS template specified
+case "${OS_TEMPLATE:-default}" in
+    minimal)
+        # Minimal VM profile - console only, no graphics
+        cat > "$VM_DIR/$NAME.xml" << EOF
 <domain type='kvm'>
   <name>$NAME</name>
   <memory unit='MiB'>$RAM</memory>
@@ -310,14 +334,123 @@ cat > "$VM_DIR/$NAME.xml" << EOF
       <source file='$VM_DIR/$NAME.qcow2'/>
       <target dev='vda' bus='virtio'/>
     </disk>
-    <interface type='bridge'>
-      <source bridge='br0'/>
+    <interface type='$NETWORK'>
+      <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
+      <model type='virtio'/>
+    </interface>
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
+  </devices>
+</domain>
+EOF
+        ;;
+
+    performance)
+        # Performance-optimized VM profile
+        cat > "$VM_DIR/$NAME.xml" << EOF
+<domain type='kvm'>
+  <name>$NAME</name>
+  <memory unit='MiB'>$RAM</memory>
+  <vcpu placement='static'>$CPU</vcpu>
+  <cpu mode='host-passthrough' check='none'/>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+  </features>
+  <devices>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='none' io='native'/>
+      <source file='$VM_DIR/$NAME.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    <interface type='$NETWORK'>
+      <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
+      <model type='virtio'/>
+      <driver name='vhost' queues='$CPU'/>
+    </interface>
+    <graphics type='vnc' port='-1'/>
+  </devices>
+</domain>
+EOF
+        ;;
+
+    secure)
+        # Security-hardened VM profile
+        cat > "$VM_DIR/$NAME.xml" << EOF
+<domain type='kvm'>
+  <name>$NAME</name>
+  <memory unit='MiB'>$RAM</memory>
+  <vcpu>$CPU</vcpu>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <smm state='on'>
+      <tseg unit='MiB'>16</tseg>
+    </smm>
+  </features>
+  <devices>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' discard='unmap'/>
+      <source file='$VM_DIR/$NAME.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+      <encryption format='luks'>
+        <secret type='passphrase'/>
+      </encryption>
+    </disk>
+    <interface type='$NETWORK'>
+      <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
+      <model type='virtio'/>
+      <filterref filter='clean-traffic'/>
+    </interface>
+    <graphics type='vnc' port='-1'>
+      <listen type='address' address='127.0.0.1'/>
+    </graphics>
+    <rng model='virtio'>
+      <backend model='random'>/dev/urandom</backend>
+    </rng>
+  </devices>
+</domain>
+EOF
+        ;;
+
+    default|*)
+        # Standard VM profile - balanced configuration
+        cat > "$VM_DIR/$NAME.xml" << EOF
+<domain type='kvm'>
+  <name>$NAME</name>
+  <memory unit='MiB'>$RAM</memory>
+  <vcpu>$CPU</vcpu>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <devices>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='$VM_DIR/$NAME.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    <interface type='$NETWORK'>
+      <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
       <model type='virtio'/>
     </interface>
     <graphics type='vnc' port='-1'/>
   </devices>
 </domain>
 EOF
+        ;;
+esac
 
 # Create disk
 echo "Creating disk..."
