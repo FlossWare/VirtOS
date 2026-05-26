@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # BATS tests for virtos-create-vm
 
-SCRIPT="${BATS_TEST_DIRNAME}/../packages/virtos-tools/src/usr/local/bin/virtos-create-vm"
+SCRIPT="${BATS_TEST_DIRNAME}/../config/custom-scripts/virtos-create-vm"
 
 @test "virtos-create-vm: --help shows usage" {
     run "$SCRIPT" --help
