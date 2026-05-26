@@ -16,12 +16,32 @@ else
     exit 1
 fi
 
+# Validate profile if set
+if [ -n "${PROFILE:-}" ]; then
+    VALID_PROFILES="minimal standard full containers developer kubernetes storage"
+
+    if ! echo " $VALID_PROFILES " | grep -q " $PROFILE "; then
+        echo "ERROR: Invalid profile '$PROFILE'" >&2
+        echo "" >&2
+        echo "Valid profiles:" >&2
+        for p in $VALID_PROFILES; do
+            echo "  - $p" >&2
+        done
+        echo "" >&2
+        echo "Edit build/build.conf and select a valid PROFILE" >&2
+        exit 1
+    fi
+fi
+
 # Additional configuration
 TC_MIRROR="${TC_MIRROR:-http://tinycorelinux.net}"
 DOWNLOAD_DIR="$BUILD_DIR/downloads"
 WORKSPACE_DIR="$BUILD_DIR/workspace"
 
 echo "=== FlossWare VirtOS - Prepare Build Environment ==="
+if [ -n "${PROFILE:-}" ]; then
+    echo "Profile: $PROFILE"
+fi
 echo ""
 
 # Create directories
