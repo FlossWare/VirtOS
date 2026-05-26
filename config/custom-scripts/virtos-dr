@@ -471,8 +471,10 @@ cluster_restore() {
     echo "Cluster restore completed"
 }
 
-# Initialize
-init_config
+# Initialize (skip for --help/--version)
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+    init_config
+fi
 
 # Main command handler
 COMMAND="${1:-}"
