@@ -50,9 +50,19 @@ sudo cp "$CONFIG_DIR/sysctl.conf" etc/sysctl.conf
 # Create version file
 echo "  Adding version information..."
 sudo mkdir -p etc/virtos
+
+# Read version from VERSION file
+if [ -f "$PROJECT_ROOT/VERSION" ]; then
+    FW_VERSION="$(cat "$PROJECT_ROOT/VERSION")"
+    echo "  Using version from VERSION file: $FW_VERSION"
+else
+    FW_VERSION="0.1"
+    echo "  WARNING: VERSION file not found, using default: $FW_VERSION"
+fi
+
 cat > /tmp/version.txt << EOF
 FlossWare VirtOS
-Version: 0.1-alpha
+Version: $FW_VERSION
 Build Date: $(date)
 Based on: Tiny Core Linux $(cat "$WORKSPACE_DIR/.tc-version")
 EOF

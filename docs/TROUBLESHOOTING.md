@@ -133,14 +133,26 @@ Error: Could not access KVM kernel module: Permission denied
 ```bash
 # Check permissions
 ls -l /dev/kvm
-
-# Fix permissions
-sudo chmod 666 /dev/kvm
+# Should show: crw-rw---- 1 root kvm ...
 
 # Add user to kvm group
 sudo usermod -aG kvm $USER
-# Log out and back in
+
+# Log out and back in for group membership to take effect
+# Or use: newgrp kvm
 ```
+
+**Verify**:
+```bash
+groups
+# Should include: kvm
+
+# Test KVM access
+kvm-ok
+# Or: qemu-system-x86_64 -enable-kvm -version
+```
+
+**⚠️ Security Note**: NEVER use `chmod 666 /dev/kvm` - this allows any user/process to access the hypervisor, which is a severe security risk. Always use group-based access control (`chmod 660` with `kvm` group).
 
 ---
 

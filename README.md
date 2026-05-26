@@ -100,7 +100,7 @@ qemu-system-x86_64 -enable-kvm -m 2048 \
     -cdrom ../output/VirtOS-*.iso
 ```
 
-**Note:** ISO building framework is complete but untested (requires download). See [BUILD.md](BUILD.md) for details.
+**Note:** ISO building framework is complete but untested (requires download). See [docs/BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 
 ### First-Time Setup
 
