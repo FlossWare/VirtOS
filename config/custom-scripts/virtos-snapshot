@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 # VirtOS Snapshot - Automated VM snapshot management
 # Create, manage, schedule, and cleanup VM snapshots
 

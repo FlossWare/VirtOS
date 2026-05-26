@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 set -e
 # VirtOS Multi-Cloud Management
 # Advanced multi-cloud cost optimization and workload placement

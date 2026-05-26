@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 set -e
 # virtos-blockchain-advanced - Advanced blockchain features for VirtOS
 # Part of Phase 13: Advanced AI, Quantum Hardware, Blockchain DeFi, Extended Federation

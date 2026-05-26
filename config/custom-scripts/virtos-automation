@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 set -e
 # virtos-automation - Workflow automation and orchestration for VirtOS
 # Part of Phase 11: Multi-Datacenter and Advanced Features

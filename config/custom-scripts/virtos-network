@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 set -e
 # VirtOS Network - Network virtualization and SDN
 # VLAN management, OVN, network policies, and software-defined networking

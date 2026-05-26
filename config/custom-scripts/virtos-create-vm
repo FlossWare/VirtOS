@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 set -e
 # VirtOS - Automated VM Creation with IaaS Placement
 

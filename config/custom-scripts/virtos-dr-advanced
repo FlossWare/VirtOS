@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 set -e
 # virtos-dr-advanced - Advanced disaster recovery for VirtOS
 # Part of Phase 14: Advanced Security, Performance, Observability, DR

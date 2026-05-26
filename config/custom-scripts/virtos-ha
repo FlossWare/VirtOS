@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 set -e
 # VirtOS HA - High Availability and automatic failover
 # Detect failures and automatically restart VMs on healthy hosts

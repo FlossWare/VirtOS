@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 set -e
 # VirtOS Cloud-Init - Cloud-init integration for VMs
 # Configure VMs with cloud-init on first boot

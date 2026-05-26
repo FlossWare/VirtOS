@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (c) 2026 FlossWare
+# Licensed under the MIT License. See LICENSE file in the project root.
 # VirtOS Common Functions Library
 # Shared validation, error handling, and utility functions for virtos-* scripts
 #
