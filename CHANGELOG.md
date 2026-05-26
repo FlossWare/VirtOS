@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- CRITICAL: Removed curl | bash patterns (#79)
+  - Fixed Remote Code Execution vulnerability
+  - virtos-devops: Flux and Pulumi now download to temp files
+  - virtos-mesh: Helm, Istio, and Linkerd now download to temp files
+  - Scripts log download locations and warn about reviewing before execution
+
+- Path traversal prevention (#81)
+  - virtos-template: Added validate_template_name() function
+  - Prevents directory traversal attacks with '../' sequences
+  - All template operations now validated before filesystem access
+
+- Binary download security (#77, #80)
+  - Added warnings for unverified downloads in virtos-container-security
+  - Documented need for checksum verification (TODO comments)
+  - Note: Package manager installs already include signature verification
+
+- Input validation improvements (#82)
+  - virtos-common.sh: Added comprehensive validation function documentation
+  - virtos-migrate: Added VM name and hostname validation as example
+  - Documented 8 available validation functions for gradual improvement
+
+### Fixed
+- Data loss bugs in virtos-secrets:
+  - #75: Crontab now appends instead of replacing (preserves existing entries)
+  - #76: OpenSSL encryption now uses password-based with pbkdf2 (data recoverable)
+  - #78: Age key extraction more robust with fallback parsing
+
 ### Added
 - CODE_OF_CONDUCT.md - Contributor Covenant v2.1
   - Establishes community standards and behavior expectations

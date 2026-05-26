@@ -1,7 +1,7 @@
 # VirtOS Project Status Dashboard
 
 **Last Updated**: 2026-05-26  
-**Current Version**: v0.67  
+**Current Version**: v0.74  
 **Build Status**: ✅ All Systems Operational
 
 ## Quick Status Overview
@@ -13,7 +13,7 @@
 | **Integration Tests** | ⏸️ Framework Ready | 54 tests | Awaiting VirtOS runtime |
 | **Documentation** | ✅ Current | 60+ files | Comprehensive coverage |
 | **Build System** | ✅ Working | 7 profiles | TCZ packages building |
-| **Version Sync** | ✅ Perfect | 0.67 | All packages synchronized |
+| **Version Sync** | ✅ Perfect | 0.74 | All packages synchronized |
 | **Security** | ✅ Clean | 0 issues | Trivy scanning passing |
 
 ## Implementation Status
