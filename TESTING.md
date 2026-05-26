@@ -1,6 +1,28 @@
 # Testing Guide for VirtOS
 
+**Last Updated**: 2026-05-26 | **Version**: 0.33
+
 This document describes how to test VirtOS at various stages of development.
+
+## Current Testing Status
+
+| Test Level | Status | Coverage | Location |
+|------------|--------|----------|----------|
+| **Unit Tests** | ✅ Complete | 250+ tests | `tests/virtos-common.bats` |
+| **Integration Tests** | ✅ Framework | 54 tests (9 active, 45 pending runtime) | `tests/integration/*.bats` |
+| **Syntax Validation** | ✅ Automated | All 52 scripts | CI: `ci.yml` |
+| **Build Validation** | ✅ Automated | Package building | CI: `ci.yml`, `cd.yml` |
+| **ISO Testing** | ⏸️ Pending | 0/47 checks | `ISO_TESTING_STATUS.md` |
+| **Runtime Testing** | ⏸️ Pending | Awaiting environment | `RUNTIME_TESTING_PLAN.md` |
+
+**Legend**: ✅ Complete | ⏸️ Pending | ❌ Not Started
+
+**Key Achievements**:
+- 250+ unit tests for security library (virtos-common.sh)
+- 54 integration tests across 5 comprehensive suites
+- 3 CI workflows validating every commit
+- Test fixtures for JPlatform workloads
+- Automated test coverage reporting
 
 ## Testing Levels
 
@@ -239,29 +261,77 @@ Test system under load.
 
 ## Automated Testing
 
-### Unit Tests (To Be Added)
+### Unit Tests ✅
+
+**Status**: Implemented (250+ tests)
 
 ```bash
-# Test individual functions in scripts
-# Uses BATS (Bash Automated Testing System)
+# Test virtos-common.sh security library
+cd tests
+bats virtos-common.bats
 
-# bats tests/unit/virtos-cluster.bats
-# bats tests/unit/virtos-backup.bats
+# Test coverage:
+# - Input validation (10+ functions)
+# - Command injection prevention
+# - Path traversal protection
+# - Sanitization functions
+# - Error handling
 ```
 
-### Integration Tests (To Be Added)
+**Location**: `tests/virtos-common.bats`  
+**Framework**: BATS (Bash Automated Testing System)  
+**Coverage**: Security library functions  
+**CI Integration**: Runs on every commit via `.github/workflows/ci.yml`
+
+### Integration Tests ✅
+
+**Status**: Framework complete (54 tests across 5 suites)
 
 ```bash
-# Test component interactions
-# Uses custom test framework
+# Install BATS
+sudo apt-get install -y bats
 
-# tests/integration/vm-lifecycle.sh
-# tests/integration/container-networking.sh
+# Run all integration tests
+cd tests/integration
+bats *.bats
+
+# Run specific test suite
+bats 01-vm-lifecycle.bats      # VM creation, snapshots, backup
+bats 02-jplatform.bats         # JPlatform workload deployment
+bats 03-networking.bats        # Network bridges, NAT, DHCP
+bats 04-storage.bats           # Storage pools and volumes
+bats 05-cluster.bats           # Multi-host operations
 ```
 
-### CI/CD Tests
+**Test Suites**:
+- **01-vm-lifecycle.bats** (7 tests): VM creation, start/stop, snapshots, backup/restore, migration
+- **02-jplatform.bats** (8 tests): JPlatform workload deployment, dependencies
+- **03-networking.bats** (11 tests): Network bridges, VLANs, NAT, port forwarding
+- **04-storage.bats** (13 tests): Storage pools, volumes, snapshots, cloning
+- **05-cluster.bats** (15 tests): Multi-host clustering, migration, HA
 
-See `.github/workflows/ci.yml` for automated testing on every commit.
+**Test Fixtures**:
+- `fixtures/test-vm.yaml` - Basic VM workload
+- `fixtures/test-container.yaml` - NGINX container
+- `fixtures/multi-tier-*.yaml` - 3-tier application (DB + App + Web)
+
+**Current State**: Tests use `skip` statements and require:
+- VirtOS runtime environment
+- libvirt/QEMU installed
+- virtos-* scripts functional
+
+**CI Integration**: `.github/workflows/integration-tests.yml` validates test structure and counts coverage
+
+**Documentation**: See [tests/integration/README.md](tests/integration/README.md)
+
+### CI/CD Tests ✅
+
+**Workflows**:
+- **ci.yml** - Build validation, syntax checking, unit tests
+- **cd.yml** - Auto-versioning, package deployment
+- **integration-tests.yml** - Integration test validation
+
+All workflows run on every commit. See `.github/workflows/` for details.
 
 ## Test Environments
 
@@ -302,22 +372,64 @@ Before each release:
 
 ## Known Issues
 
-Track testing issues here:
+**Last Updated**: 2026-05-26
 
-- **Build system**: Not yet fully implemented - requires Tiny Core build environment
-- **KVM module**: Needs kernel configuration in `kernel/` directory
-- **Management scripts**: Interfaces defined, backend integration pending
-- **Clustering**: mDNS discovery needs Avahi configuration
-- **Backup**: virtos-backup needs libvirt integration
+### Resolved ✅
+
+- ~~**Management scripts**: Interfaces defined, backend integration pending~~ → **FIXED**: 29/52 scripts have working libvirt/QEMU backends
+- ~~**Backup**: virtos-backup needs libvirt integration~~ → **FIXED**: virtos-backup functional with virsh + qemu-img
+- ~~**Clustering**: mDNS discovery needs Avahi configuration~~ → **FIXED**: virtos-cluster uses Avahi/mDNS for discovery
+
+### Open Issues
+
+- **ISO Building**: Code complete, awaiting hardware/VM testing
+  - See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for 47-point validation checklist
+  - Issue #52 (documentation complete, execution pending)
+
+- **Integration Test Execution**: Framework complete, awaiting VirtOS runtime
+  - 54 tests defined across 5 suites
+  - Test fixtures created
+  - CI validation active
+  - Issue #51 (tests ready, need runtime environment)
+
+- **Infrastructure Scripts**: 9 scripts need additional backend work
+  - virtos-auth (LDAP/auth integration)
+  - virtos-database (DB backends)
+  - virtos-secrets (Vault integration)
+  - virtos-update (package backend)
+  - Others documented in CLAUDE.md
 
 ## Contributing Tests
 
-We need help with:
-1. Creating BATS unit tests for individual scripts
-2. Writing integration tests for VM/container workflows
-3. Performance benchmarking scripts
-4. Multi-host cluster testing procedures
-5. Automated ISO build validation
+**Completed** ✅:
+- ~~Creating BATS unit tests~~ → 250+ tests in tests/virtos-common.bats
+- ~~Writing integration tests~~ → 54 tests across 5 suites in tests/integration/
+
+**Still Needed**:
+1. **Execute integration tests in VirtOS runtime environment**
+   - Remove `skip` statements as scripts become testable
+   - Validate tests actually work in VirtOS
+   - See tests/integration/README.md
+
+2. **ISO build validation**
+   - Execute 47-point validation checklist
+   - Test on real hardware
+   - See ISO_TESTING_STATUS.md
+
+3. **Performance benchmarking scripts**
+   - Boot time measurements
+   - VM/container creation benchmarks
+   - Resource usage profiling
+
+4. **Multi-host cluster testing**
+   - Test virtos-cluster in real multi-host setup
+   - Validate live migration
+   - Test HA failover scenarios
+
+5. **Additional unit tests**
+   - Expand coverage beyond virtos-common.sh
+   - Add tests for individual virtos-* scripts
+   - Test edge cases and error conditions
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
