@@ -2,7 +2,12 @@
 # virtos-observability - Advanced observability for VirtOS
 # Part of Phase 14: Advanced Security, Performance, Observability, DR
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.24")
 SCRIPT_NAME="virtos-observability"
 LOG_FILE="/var/log/virtos-observability.log"
 CONFIG_FILE="/etc/virtos/observability.conf"
@@ -188,7 +193,7 @@ main() {
         metrics-dashboard) metrics_dashboard ;;
         create-alert) create_alert "$2" "$3" ;;
         observability-status) observability_status ;;
-        version) echo "$SCRIPT_NAME version $VERSION" ;;
+        version|--version|-v) echo "$SCRIPT_NAME version $VERSION" ;;
         help|--help|-h) usage ;;
         *) echo "Unknown command: $1"; echo "Run '$SCRIPT_NAME help' for usage"; exit 1 ;;
     esac

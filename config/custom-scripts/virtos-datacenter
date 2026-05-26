@@ -2,7 +2,12 @@
 # virtos-datacenter - Multi-datacenter management for VirtOS
 # Part of Phase 11: Multi-Datacenter and Advanced Features
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.24")
 SCRIPT_NAME="virtos-datacenter"
 LOG_FILE="/var/log/virtos-datacenter.log"
 CONFIG_FILE="/etc/virtos/datacenter.conf"
@@ -667,7 +672,7 @@ main() {
         wizard)
             datacenter_wizard
             ;;
-        version)
+        version|--version|-v)
             echo "$SCRIPT_NAME version $VERSION"
             ;;
         help|--help|-h)

@@ -2,7 +2,12 @@
 # VirtOS Telemetry - Metrics and monitoring integration
 # Prometheus, Grafana, and metrics exporters
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.24")
 TELEMETRY_DIR="/var/lib/virtos/telemetry"
 STATE_DIR="/var/run/virtos/telemetry"
 LOG_FILE="/var/log/virtos-telemetry.log"
@@ -730,6 +735,10 @@ case "$COMMAND" in
         ;;
     dashboard-list)
         dashboard_list
+        ;;
+    --version|-v|version)
+        echo "virtos-telemetry version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

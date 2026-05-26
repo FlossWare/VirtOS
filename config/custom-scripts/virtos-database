@@ -2,7 +2,12 @@
 # VirtOS Database Management
 # Database replication, optimization, backups
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.24")
 
 # Configuration
 DB_CONFIG_DIR="/etc/virtos/database"
@@ -416,7 +421,16 @@ case "$1" in
     wizard)
         database_wizard
         ;;
+    --version|-v|version)
+        echo "virtos-database version $VERSION"
+        exit 0
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
     *)
         usage
+        exit 1
         ;;
 esac

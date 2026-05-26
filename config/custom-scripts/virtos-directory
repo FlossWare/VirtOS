@@ -2,7 +2,12 @@
 # VirtOS Enterprise Directory Integration
 # LDAP, Active Directory, and FreeIPA integration
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.24")
 
 # Configuration
 DIRECTORY_CONFIG_DIR="/etc/virtos/directory"
@@ -538,7 +543,16 @@ case "$1" in
     wizard)
         directory_wizard
         ;;
+    --version|-v|version)
+        echo "virtos-directory version $VERSION"
+        exit 0
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
     *)
         usage
+        exit 1
         ;;
 esac
