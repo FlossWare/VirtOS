@@ -404,16 +404,20 @@ jobs:
 
       - name: Check package size
         run: |
-          SIZE=$(stat -f%z packages/output/virtos-tools.tcz 2>/dev/null || stat -c%s packages/output/virtos-tools.tcz)
+          # Use portable wc -c for file size (works on Linux, macOS, BSD)
+          SIZE=$(wc -c < packages/output/virtos-tools.tcz | tr -d ' ')
           echo "Package size: $SIZE bytes"
-          if [ $SIZE -lt 100000 ]; then
-            echo "✗ Package too small, likely incomplete"
+
+          if [ "$SIZE" -lt 100000 ]; then
+            echo "✗ Package too small ($SIZE bytes), likely incomplete"
             exit 1
           fi
-          if [ $SIZE -gt 1000000 ]; then
-            echo "⚠ Package larger than expected"
+
+          if [ "$SIZE" -gt 1000000 ]; then
+            echo "⚠ Package larger than expected ($SIZE bytes)"
           fi
-          echo "✓ Package size acceptable"
+
+          echo "✓ Package size acceptable ($SIZE bytes)"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
