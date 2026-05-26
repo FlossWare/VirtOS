@@ -350,7 +350,7 @@ restore_vm() {
 
             # Update XML with new disk path
             # This is simplified - in production would need proper XML parsing
-            sed -i "s|source file='[^']*disk-$disk_num[^']*'|source file='$restore_disk'|" "$vm_xml"
+            sed -i "s|source file='[^']*disk-${disk_num}[^']*'|source file='$restore_disk'|" "$vm_xml"
         else
             error "Failed to restore disk $disk_num"
             return 1
