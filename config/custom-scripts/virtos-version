@@ -1,0 +1,274 @@
+#!/bin/sh
+# virtos-version - Display VirtOS version information
+#
+# Shows unified version info for VirtOS, packages, and system components
+
+VERSION_FILE="${VERSION_FILE:-/usr/local/share/virtos/VERSION}"
+BUILD_DATE_FILE="${BUILD_DATE_FILE:-/usr/local/share/virtos/BUILD_DATE}"
+GIT_COMMIT_FILE="${GIT_COMMIT_FILE:-/usr/local/share/virtos/GIT_COMMIT}"
+
+# Fallback to repo files if installed files don't exist
+if [ ! -f "$VERSION_FILE" ]; then
+    VERSION_FILE="/etc/virtos/VERSION"
+fi
+if [ ! -f "$VERSION_FILE" ]; then
+    VERSION_FILE="$(dirname "$0")/../../VERSION"
+fi
+
+show_help() {
+    cat << 'EOF'
+VirtOS Version Information Tool
+
+Usage: virtos-version [OPTIONS]
+
+Display version information for VirtOS and all components.
+
+Options:
+  --help, -h       Show this help message
+  --short, -s      Show only VirtOS version number
+  --json, -j       Output in JSON format
+  --system         Include detailed system information
+
+Examples:
+  virtos-version                  # Show full version info
+  virtos-version --short          # Just the version number
+  virtos-version --json           # JSON output for scripts
+
+EOF
+}
+
+show_short() {
+    if [ -f "$VERSION_FILE" ]; then
+        cat "$VERSION_FILE"
+    else
+        echo "unknown"
+    fi
+}
+
+show_json() {
+    local version="unknown"
+    local build_date="unknown"
+    local git_commit="unknown"
+
+    [ -f "$VERSION_FILE" ] && version=$(cat "$VERSION_FILE")
+    [ -f "$BUILD_DATE_FILE" ] && build_date=$(cat "$BUILD_DATE_FILE")
+    [ -f "$GIT_COMMIT_FILE" ] && git_commit=$(cat "$GIT_COMMIT_FILE")
+
+    cat << EOF
+{
+  "virtos": {
+    "version": "$version",
+    "build_date": "$build_date",
+    "git_commit": "$git_commit"
+  },
+  "system": {
+    "kernel": "$(uname -r)",
+    "architecture": "$(uname -m)",
+    "hostname": "$(hostname)"
+  }
+}
+EOF
+}
+
+show_version() {
+    echo "VirtOS Version Information"
+    echo "═══════════════════════════════════════"
+    echo ""
+
+    # VirtOS Release Version
+    if [ -f "$VERSION_FILE" ]; then
+        local version=$(cat "$VERSION_FILE")
+        echo "VirtOS Release:        $version"
+    else
+        echo "VirtOS Release:        Unknown"
+    fi
+
+    # Build Metadata
+    if [ -f "$BUILD_DATE_FILE" ]; then
+        echo "Build Date:            $(cat "$BUILD_DATE_FILE")"
+    fi
+
+    if [ -f "$GIT_COMMIT_FILE" ]; then
+        local commit=$(cat "$GIT_COMMIT_FILE")
+        echo "Git Commit:            ${commit:0:7}"
+    fi
+
+    echo ""
+
+    # Package Information
+    echo "Packages:"
+
+    # virtos-tools
+    if [ -f /usr/local/tce.installed/virtos-tools ] || \
+       [ -f /tmp/tcloop/virtos-tools/usr/local/bin/virtos-tui ]; then
+        local tools_version="$version"
+        local tools_size="unknown"
+
+        if [ -f /etc/sysconfig/tcedir/optional/virtos-tools.tcz ]; then
+            tools_size=$(du -h /etc/sysconfig/tcedir/optional/virtos-tools.tcz 2>/dev/null | awk '{print $1}')
+        fi
+
+        echo "  virtos-tools:        $tools_version ($tools_size)"
+    fi
+
+    # virtos-jplatform
+    if [ -f /usr/local/tce.installed/virtos-jplatform ] || command -v jplatform >/dev/null 2>&1; then
+        local jplatform_version="$version"
+        local jplatform_size="unknown"
+
+        if [ -f /etc/sysconfig/tcedir/optional/virtos-jplatform.tcz ]; then
+            jplatform_size=$(du -h /etc/sysconfig/tcedir/optional/virtos-jplatform.tcz 2>/dev/null | awk '{print $1}')
+        fi
+
+        echo "  virtos-jplatform:    $jplatform_version ($jplatform_size)"
+    fi
+
+    echo ""
+
+    # Component Versions
+    echo "Components:"
+
+    # Kernel
+    echo "  Kernel:              $(uname -r)"
+
+    # Tiny Core Linux
+    if [ -f /etc/os-release ]; then
+        local tc_version=$(grep "^VERSION=" /etc/os-release | cut -d'"' -f2)
+        [ -n "$tc_version" ] && echo "  Tiny Core:           $tc_version"
+    fi
+
+    # libvirt
+    if command -v virsh >/dev/null 2>&1; then
+        local libvirt_ver=$(virsh version --daemon 2>/dev/null | grep "libvirt" | head -1 | awk '{print $2}')
+        [ -n "$libvirt_ver" ] && echo "  libvirt:             $libvirt_ver"
+    fi
+
+    # QEMU
+    if command -v qemu-system-x86_64 >/dev/null 2>&1; then
+        local qemu_ver=$(qemu-system-x86_64 --version | head -1 | sed 's/QEMU emulator version //')
+        [ -n "$qemu_ver" ] && echo "  QEMU:                $qemu_ver"
+    fi
+
+    # Docker
+    if command -v docker >/dev/null 2>&1; then
+        local docker_ver=$(docker --version 2>/dev/null | awk '{print $3}' | tr -d ',')
+        [ -n "$docker_ver" ] && echo "  Docker:              $docker_ver"
+    fi
+
+    # Java (for JPlatform)
+    if command -v java >/dev/null 2>&1; then
+        local java_ver=$(java -version 2>&1 | head -1 | awk -F'"' '{print $2}')
+        [ -n "$java_ver" ] && echo "  Java:                $java_ver"
+    fi
+
+    echo ""
+
+    # Script Statistics
+    local script_count=0
+    if [ -d /usr/local/bin ]; then
+        script_count=$(find /usr/local/bin -name "virtos-*" -type f -executable 2>/dev/null | wc -l)
+    fi
+    [ "$script_count" -gt 0 ] && echo "Scripts:               $script_count management tools"
+
+    # Test Coverage
+    local test_files=0
+    if [ -d /usr/local/share/virtos/tests ]; then
+        test_files=$(find /usr/local/share/virtos/tests -name "*.bats" 2>/dev/null | wc -l)
+        [ "$test_files" -gt 0 ] && echo "Tests:                 $test_files test files"
+    fi
+
+    echo ""
+
+    # System Information
+    echo "System:"
+    echo "  Architecture:        $(uname -m)"
+    echo "  Hostname:            $(hostname)"
+
+    # Check for KVM support
+    if [ -c /dev/kvm ]; then
+        echo "  Virtualization:      KVM enabled"
+    else
+        echo "  Virtualization:      KVM not available"
+    fi
+
+    # Memory
+    if command -v free >/dev/null 2>&1; then
+        local total_mem=$(free -h | awk '/^Mem:/{print $2}')
+        [ -n "$total_mem" ] && echo "  Memory:              $total_mem"
+    fi
+
+    # CPU
+    if [ -f /proc/cpuinfo ]; then
+        local cpu_count=$(grep -c "^processor" /proc/cpuinfo)
+        local cpu_model=$(grep "^model name" /proc/cpuinfo | head -1 | cut -d: -f2 | xargs)
+        echo "  CPU Cores:           $cpu_count"
+        [ -n "$cpu_model" ] && echo "  CPU Model:           $cpu_model"
+    fi
+
+    echo ""
+    echo "For more information: https://github.com/FlossWare/VirtOS"
+}
+
+show_system() {
+    show_version
+
+    echo ""
+    echo "Extended System Information"
+    echo "═══════════════════════════════════════"
+    echo ""
+
+    # Disk Usage
+    echo "Storage:"
+    df -h / 2>/dev/null | tail -1 | awk '{print "  Root:                "$2" total, "$4" available"}'
+
+    # Network
+    echo ""
+    echo "Network:"
+    local primary_ip=$(ip route get 1 2>/dev/null | awk '{print $7; exit}')
+    [ -n "$primary_ip" ] && echo "  Primary IP:          $primary_ip"
+
+    # Cluster
+    if [ -f /var/run/virtos/cluster-members ]; then
+        local cluster_size=$(wc -l < /var/run/virtos/cluster-members)
+        echo "  Cluster Members:     $cluster_size"
+    fi
+
+    # Running VMs
+    if command -v virsh >/dev/null 2>&1; then
+        local running_vms=$(virsh list --state-running 2>/dev/null | grep -c "running")
+        local total_vms=$(virsh list --all 2>/dev/null | grep -v "^-" | tail -n +3 | wc -l)
+        echo ""
+        echo "Virtual Machines:"
+        echo "  Running:             $running_vms"
+        echo "  Total:               $total_vms"
+    fi
+
+    # Running Containers
+    if command -v docker >/dev/null 2>&1; then
+        local running_containers=$(docker ps -q 2>/dev/null | wc -l)
+        local total_containers=$(docker ps -aq 2>/dev/null | wc -l)
+        echo ""
+        echo "Containers:"
+        echo "  Running:             $running_containers"
+        echo "  Total:               $total_containers"
+    fi
+}
+
+# Main
+case "${1:-}" in
+    --help|-h)
+        show_help
+        ;;
+    --short|-s)
+        show_short
+        ;;
+    --json|-j)
+        show_json
+        ;;
+    --system)
+        show_system
+        ;;
+    *)
+        show_version
+        ;;
+esac

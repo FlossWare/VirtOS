@@ -26,6 +26,7 @@ mkdir -p "$SCRIPT_DIR/src/usr/local/bin"
 mkdir -p "$SCRIPT_DIR/src/usr/local/lib"
 mkdir -p "$SCRIPT_DIR/src/usr/local/tce.installed"
 mkdir -p "$SCRIPT_DIR/src/usr/local/share/doc/virtos"
+mkdir -p "$SCRIPT_DIR/src/usr/local/share/virtos"
 
 # Copy virtos scripts
 echo "Copying VirtOS management scripts..."
@@ -49,6 +50,28 @@ echo "Copying common library..."
 if [ -d "$PROJECT_ROOT/config/custom-scripts/lib" ]; then
     cp -r "$PROJECT_ROOT/config/custom-scripts/lib"/* "$SCRIPT_DIR/src/usr/local/lib/" 2>/dev/null || true
     echo "  Copied library files"
+fi
+
+# Create build metadata files
+echo "Creating build metadata..."
+if [ -f "$PROJECT_ROOT/VERSION" ]; then
+    cp "$PROJECT_ROOT/VERSION" "$SCRIPT_DIR/src/usr/local/share/virtos/VERSION"
+    echo "  VERSION: $(cat "$PROJECT_ROOT/VERSION")"
+else
+    echo "$VERSION" > "$SCRIPT_DIR/src/usr/local/share/virtos/VERSION"
+    echo "  VERSION: $VERSION (fallback)"
+fi
+
+date -u +"%Y-%m-%d %H:%M:%S UTC" > "$SCRIPT_DIR/src/usr/local/share/virtos/BUILD_DATE"
+echo "  BUILD_DATE: $(cat "$SCRIPT_DIR/src/usr/local/share/virtos/BUILD_DATE")"
+
+if command -v git >/dev/null 2>&1 && [ -d "$PROJECT_ROOT/.git" ]; then
+    cd "$PROJECT_ROOT"
+    git rev-parse HEAD > "$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT"
+    echo "  GIT_COMMIT: $(cat "$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT" | cut -c1-7)"
+else
+    echo "unknown" > "$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT"
+    echo "  GIT_COMMIT: unknown"
 fi
 
 # Create post-install script
