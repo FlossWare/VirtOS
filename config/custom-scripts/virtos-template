@@ -2,7 +2,12 @@
 # VirtOS Template - VM template management and cloning
 # Create, manage, and clone from VM templates
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.22")
 TEMPLATE_DIR="${TEMPLATE_DIR:-/var/lib/virtos/templates}"
 
 usage() {
@@ -264,6 +269,10 @@ case "$COMMAND" in
         ;;
     import)
         import_cloud_image "$1" "$2"
+        ;;
+    --version|-v|version)
+        echo "virtos-template version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

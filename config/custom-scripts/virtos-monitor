@@ -2,7 +2,12 @@
 # VirtOS Monitor - Automated monitoring and alerting
 # Health checks, resource tracking, and alert notifications
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.22")
 CONFIG_DIR="/etc/virtos/monitor"
 STATE_DIR="/var/run/virtos/monitor"
 LOG_FILE="/var/log/virtos-monitor.log"
@@ -482,6 +487,10 @@ case "$COMMAND" in
     enable|disable)
         CHECK_NAME="$1"
         echo "Enable/disable not yet implemented"
+        ;;
+    --version|-v|version)
+        echo "virtos-monitor version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage
