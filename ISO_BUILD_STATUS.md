@@ -1,8 +1,10 @@
 # VirtOS ISO Build System Status
 
-**Last Updated**: 2026-05-25  
-**Status**: ✅ **Structurally Valid** | ⚠️ **Untested in Execution**  
-**Version**: 0.1-alpha
+**Last Updated**: 2026-05-26  
+**Status**: ✅ **Structurally Valid** | ⏳ **Awaiting Validation Testing**  
+**Version**: 0.18
+
+> **Testing Status**: See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for validation checklist and [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md) for test procedures.
 
 ---
 

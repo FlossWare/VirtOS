@@ -67,9 +67,9 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 - Advanced: virtos-mesh (819 lines), virtos-governance (711 lines), virtos-sre (754 lines), virtos-apm (614 lines)
 
 #### ⚠️ Untested (Working Code, No Runtime Validation)
-- ISO building system (untested)
-- VirtOS on real hardware
-- JPlatform integration in VirtOS environment
+- ISO building system - See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for validation checklist
+- VirtOS on real hardware - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
+- JPlatform integration in VirtOS environment - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
 
 ### Key Directories
 
@@ -79,7 +79,7 @@ VirtOS/
 │   ├── virtos-tools/      # Core management scripts (52 scripts)
 │   ├── virtos-jplatform/  # JPlatform integration
 │   └── output/            # Built TCZ packages (ignored in git)
-├── build/                 # ISO build system (untested)
+├── build/                 # ISO build system (awaiting testing - see ISO_TESTING_STATUS.md)
 │   ├── scripts/           # Build automation scripts
 │   └── profiles/          # Build profiles (minimal, standard, full, etc.)
 ├── config/                # System configuration templates
@@ -328,9 +328,9 @@ See [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) for current work
 - **Issue #7**: Backend integration for libvirt/QEMU connectivity
 
 ### High Priority (P1)
-- **Issue #3**: ISO build system untested
-- **Issue #4**: Unit tests for management scripts
-- **Issue #5**: CI/CD workflows don't run actual tests
+- **Issue #52**: ISO testing validation checklist - See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md)
+- **Issue #51**: Integration test suite - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
+- **Issue #37**: Standardize version handling (partially complete)
 
 ### Medium Priority (P2)
 - **Issue #2**: Documentation claims need accuracy review
@@ -455,7 +455,7 @@ Fixes #X, Addresses #Y
    - Verify ISO builds successfully
    - Test ISO boots on real hardware
    - Validate package installation
-   - **Gap**: Build system untested
+   - **Gap**: Build system awaiting validation - See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md)
 
 3. **Test Coverage Expansion** (Issue #15) - HIGH 📈
    - Current: 4% (2/52 scripts)

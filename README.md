@@ -117,7 +117,9 @@ cd packages
 
 **Result:** A working Tiny Core Linux package with all VirtOS management tools!
 
-### 📋 Full ISO Build (Framework Ready, Untested)
+### 📋 Full ISO Build
+
+**Status**: Code complete, validation in progress. See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for testing checklist.
 
 ```bash
 # 1. Clone repository
@@ -141,7 +143,9 @@ qemu-system-x86_64 -enable-kvm -m 2048 \
     -cdrom ../output/VirtOS-*.iso
 ```
 
-**Note:** ISO building framework is complete but untested (requires download). See [docs/BUILD.md](docs/BUILD.md) for comprehensive build instructions.
+**Build Documentation**: See [docs/BUILD.md](docs/BUILD.md) for comprehensive build instructions.
+
+**Testing Status**: 0/47 validation checks completed. See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) and [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md) for detailed testing procedures.
 
 ### First-Time Setup
 
