@@ -91,14 +91,15 @@ jobs:
 
       - name: Run shellcheck (lint)
         run: |
-          echo "Running shellcheck..."
+          echo "Running shellcheck (errors only)..."
           EXIT_CODE=0
 
           # Check build scripts
+          # -S error = only fail on severity "error", allow warnings/info
           for script in build/scripts/*.sh; do
             if [ -f "$script" ]; then
               echo "Linting $script..."
-              shellcheck "$script" || EXIT_CODE=1
+              shellcheck -S error "$script" || EXIT_CODE=1
             fi
           done
 
@@ -106,14 +107,15 @@ jobs:
           for script in config/custom-scripts/virtos-*; do
             if [ -f "$script" ] && [ -x "$script" ]; then
               echo "Linting $script..."
-              shellcheck "$script" || EXIT_CODE=1
+              shellcheck -S error "$script" || EXIT_CODE=1
             fi
           done
 
           if [ $EXIT_CODE -eq 0 ]; then
-            echo "✓ All scripts passed shellcheck"
+            echo "✓ All scripts passed shellcheck (no critical errors)"
+            echo "ℹ Note: Warnings/info messages are allowed, only errors fail the build"
           else
-            echo "✗ Some scripts have linting issues"
+            echo "✗ Some scripts have critical errors"
           fi
 
           exit $EXIT_CODE

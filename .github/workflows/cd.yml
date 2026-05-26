@@ -97,7 +97,10 @@ jobs:
       - name: Commit version bump
         run: |
           VERSION=${{ steps.new_version.outputs.version }}
-          git add VERSION packages/*/virtos-*.tcz.info
+          # Add VERSION file and source .tcz.info files (not output/)
+          git add VERSION
+          git add packages/virtos-tools/virtos-tools.tcz.info
+          git add packages/virtos-jplatform/virtos-jplatform.tcz.info
           git commit -m "chore: bump version to ${VERSION} [ci skip]"
 
       - name: Create release tag
