@@ -2,7 +2,12 @@
 # virtos-quantum-hardware - Real quantum hardware integration for VirtOS
 # Part of Phase 13: Advanced AI, Quantum Hardware, Blockchain DeFi, Extended Federation
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.26")
 SCRIPT_NAME="virtos-quantum-hardware"
 LOG_FILE="/var/log/virtos-quantum-hardware.log"
 CONFIG_FILE="/etc/virtos/quantum-hardware.conf"
@@ -811,7 +816,7 @@ main() {
         wizard)
             quantum_hw_wizard
             ;;
-        version)
+        version|--version|-v)
             echo "$SCRIPT_NAME version $VERSION"
             ;;
         help|--help|-h)

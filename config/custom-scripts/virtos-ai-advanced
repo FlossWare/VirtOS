@@ -2,7 +2,12 @@
 # virtos-ai-advanced - Advanced AI capabilities for VirtOS
 # Part of Phase 13: Advanced AI, Quantum Hardware, Blockchain DeFi, Extended Federation
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.26")
 SCRIPT_NAME="virtos-ai-advanced"
 LOG_FILE="/var/log/virtos-ai-advanced.log"
 CONFIG_FILE="/etc/virtos/ai-advanced.conf"
@@ -942,7 +947,7 @@ main() {
         wizard)
             ai_advanced_wizard
             ;;
-        version)
+        version|--version|-v)
             echo "$SCRIPT_NAME version $VERSION"
             ;;
         help|--help|-h)
