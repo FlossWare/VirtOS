@@ -4,7 +4,22 @@
 # VirtOS Common Functions Library
 # Shared validation, error handling, and utility functions for virtos-* scripts
 #
-# Usage: source /usr/local/lib/virtos-common.sh
+# Usage:
+#   if [ -f /usr/local/lib/virtos-common.sh ]; then
+#       . /usr/local/lib/virtos-common.sh
+#   fi
+#
+# Available Validation Functions (use these to prevent injection attacks):
+#   validate_hostname()      - Validates hostnames/domain names
+#   validate_vm_name()       - Validates VM names (alphanumeric, hyphens, underscores)
+#   validate_ip()            - Validates IPv4 addresses
+#   validate_number()        - Validates positive integers
+#   validate_disk_size()     - Validates disk sizes (e.g., 10G, 500M)
+#   validate_path()          - Validates file paths (prevents command injection)
+#   validate_network_mode()  - Validates network modes (nat, bridge, isolated)
+#   sanitize_input()         - Removes dangerous characters from input
+#
+# See: https://github.com/FlossWare/VirtOS/issues/82
 
 VERSION="1.0"
 

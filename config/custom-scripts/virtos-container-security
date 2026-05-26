@@ -33,12 +33,17 @@ setup_image_scanner() {
     case "$scanner" in
         trivy)
             # Install Trivy
+            # NOTE: Package manager installations (apt/yum) include built-in signature verification
             wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
             echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
             apt-get update && apt-get install -y trivy || {
                 # Fallback to binary install
+                log_message "WARNING: Installing Trivy from binary without checksum verification"
+                log_message "In production, verify checksums from https://github.com/aquasecurity/trivy/releases"
                 wget -q https://github.com/aquasecurity/trivy/releases/download/v0.40.0/trivy_0.40.0_Linux-64bit.tar.gz
+                # TODO: Add checksum verification - see https://github.com/aquasecurity/trivy/releases for SHA256SUMS
                 tar -xzf trivy_0.40.0_Linux-64bit.tar.gz -C /usr/local/bin/
+                rm -f trivy_0.40.0_Linux-64bit.tar.gz
             }
 
             cat > "$SECURITY_CONFIG_DIR/trivy-config.yaml" <<EOF
@@ -89,8 +94,12 @@ EOF
 
         snyk)
             # Install Snyk CLI
+            # NOTE: npm install includes package signature verification
             npm install -g snyk || {
+                log_message "WARNING: Installing Snyk from binary without checksum verification"
+                log_message "In production, verify checksums from https://github.com/snyk/cli/releases"
                 wget -q https://static.snyk.io/cli/latest/snyk-linux -O /usr/local/bin/snyk
+                # TODO: Add checksum verification - see https://github.com/snyk/cli/releases for checksums
                 chmod +x /usr/local/bin/snyk
             }
 
@@ -143,12 +152,16 @@ setup_runtime_security() {
     case "$tool" in
         falco)
             # Install Falco
+            # NOTE: Package manager installations (apt/yum) include built-in signature verification
             curl -s https://falco.org/repo/falcosecurity-3672BA8F.asc | apt-key add -
             echo "deb https://download.falco.org/packages/deb stable main" | tee -a /etc/apt/sources.list.d/falcosecurity.list
             apt-get update && apt-get install -y linux-headers-$(uname -r) falco || {
-                log_message "Installing Falco manually..."
+                log_message "WARNING: Installing Falco from binary without checksum verification"
+                log_message "In production, verify checksums from https://github.com/falcosecurity/falco/releases"
                 wget -q https://download.falco.org/packages/bin/x86_64/falco-0.34.0-x86_64.tar.gz
+                # TODO: Add checksum verification - see Falco releases for SHA256SUMS
                 tar -xzf falco-0.34.0-x86_64.tar.gz -C /usr/local
+                rm -f falco-0.34.0-x86_64.tar.gz
             }
 
             # Configure Falco rules
