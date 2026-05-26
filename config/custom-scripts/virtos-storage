@@ -11,6 +11,18 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
 fi
 
 VERSION=$(get_version 2>/dev/null || echo "0.21")
+
+# Handle --help and --version early (before any filesystem operations)
+case "${1:-}" in
+    --help|-h|help)
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-storage version $VERSION"
+        exit 0
+        ;;
+esac
+
 STORAGE_DIR="/var/lib/virtos/storage"
 STATE_DIR="/var/run/virtos/storage"
 LOG_FILE="/var/log/virtos-storage.log"

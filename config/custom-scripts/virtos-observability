@@ -186,9 +186,22 @@ EOF
 }
 
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now init for actual commands
     init_logging
 
-    case "${1:-help}" in
+    case "${1}" in
         setup-tracing) setup_tracing ;;
         view-traces) view_traces ;;
         setup-log-aggregation) setup_log_aggregation ;;

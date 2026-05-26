@@ -12,6 +12,18 @@ fi
 
 VERSION=$(get_version 2>/dev/null || echo "0.22")
 
+# Handle --help and --version early (before any filesystem operations)
+case "${1:-}" in
+    --help|-h|help)
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-container-security version $VERSION"
+        exit 0
+        ;;
+esac
+
+
 # Configuration
 SECURITY_CONFIG_DIR="/etc/virtos/container-security"
 SECURITY_LOG="/var/log/virtos-container-security.log"
