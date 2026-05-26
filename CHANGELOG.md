@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.59] - 2026-05-26
+
+### Changed
+- Documentation version references updated to v0.59
+- All documentation synchronized with current release
+
 ## [0.58] - 2026-05-26
 
 ### Changed
@@ -268,7 +274,8 @@ This release series focused on **comprehensive test coverage expansion** and **V
 
 ---
 
-[Unreleased]: https://github.com/FlossWare/VirtOS/compare/v0.58...HEAD
+[Unreleased]: https://github.com/FlossWare/VirtOS/compare/v0.59...HEAD
+[0.59]: https://github.com/FlossWare/VirtOS/compare/v0.58...v0.59
 [0.58]: https://github.com/FlossWare/VirtOS/compare/v0.57...v0.58
 [0.57]: https://github.com/FlossWare/VirtOS/compare/v0.56...v0.57
 [0.56]: https://github.com/FlossWare/VirtOS/compare/v0.55...v0.56
