@@ -13,21 +13,21 @@ fi
 VERSION=$(get_version 2>/dev/null || echo "0.21")
 
 # Handle --help and --version early (before any filesystem operations)
-case "${1:-}" in
-    --help|-h|help)
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-network version $VERSION"
-        exit 0
-        ;;
-esac
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-network version $VERSION"
+    exit 0
+fi
 
 NETWORK_DIR="/var/lib/virtos/network"
 STATE_DIR="/var/run/virtos/network"
 LOG_FILE="/var/log/virtos-network.log"
 
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
 mkdir -p "$NETWORK_DIR" "$STATE_DIR"
+fi
 
 usage() {
     cat << EOF

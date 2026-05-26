@@ -13,15 +13,13 @@ fi
 VERSION=$(get_version 2>/dev/null || echo "0.27")
 
 # Handle --help and --version early (before any filesystem operations)
-case "${1:-}" in
-    --help|-h|help)
-        # Will show usage at end of script
-        ;;
-    --version|-v|version)
-        echo "virtos-sre version $VERSION"
-        exit 0
-        ;;
-esac
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-sre version $VERSION"
+    exit 0
+fi
 
 
 # Configuration
@@ -32,7 +30,9 @@ INCIDENT_DIR="$SRE_CONFIG_DIR/incidents"
 POSTMORTEM_DIR="$SRE_CONFIG_DIR/postmortems"
 
 # Ensure directories exist
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
 mkdir -p "$SRE_CONFIG_DIR" "$SLO_DIR" "$INCIDENT_DIR" "$POSTMORTEM_DIR"
+fi
 
 # Logging function
 log_message() {
