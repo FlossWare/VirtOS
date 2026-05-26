@@ -2,14 +2,12 @@
 # VirtOS Setup Wizard - First-time configuration TUI
 # Interactive ncurses-based setup for VirtOS
 
-# Read version from system or package
-if [ -f /usr/local/share/virtos/VERSION ]; then
-    VERSION=$(cat /usr/local/share/virtos/VERSION)
-elif [ -f /etc/virtos/version.txt ]; then
-    VERSION=$(grep '^Version:' /etc/virtos/version.txt | awk '{print $2}')
-else
-    VERSION="0.13"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
 fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.17")
 
 # Check for dialog/whiptail
 if command -v dialog >/dev/null 2>&1; then

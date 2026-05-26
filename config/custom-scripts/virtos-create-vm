@@ -1,18 +1,23 @@
 #!/bin/sh
 # VirtOS - Automated VM Creation with IaaS Placement
 
-VERSION="1"
-
-# Colors
-if [ -t 1 ]; then
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    BLUE='\033[0;34m'
-    NC='\033[0m'
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
 else
-    RED='' GREEN='' YELLOW='' BLUE='' NC=''
+    # Fallback color definitions if common lib not available
+    if [ -t 1 ]; then
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        BLUE='\033[0;34m'
+        NC='\033[0m'
+    else
+        RED='' GREEN='' YELLOW='' BLUE='' NC=''
+    fi
 fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.17")
 
 usage() {
     cat << EOF
@@ -97,8 +102,9 @@ while [ $# -gt 0 ]; do
         --priority) PRIORITY="$2"; shift 2 ;;
         --auto-start) AUTO_START="yes"; shift ;;
         --dry-run) DRY_RUN="yes"; shift ;;
-        --verbose|-v) VERBOSE="yes"; shift ;;
+        --verbose) VERBOSE="yes"; shift ;;
         --help|-h) usage; exit 0 ;;
+        --version) echo "virtos-create-vm version $VERSION"; exit 0 ;;
         *) echo "Unknown option: $1"; usage; exit 1 ;;
     esac
 done

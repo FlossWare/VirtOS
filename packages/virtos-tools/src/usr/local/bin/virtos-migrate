@@ -2,7 +2,12 @@
 # VirtOS Migrate - Live VM migration with and without shared storage
 # Enhanced migration capabilities including block migration
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.17")
 
 usage() {
     cat << EOF
@@ -319,6 +324,10 @@ while [ $# -gt 0 ]; do
             ;;
         --help|-h)
             usage
+            exit 0
+            ;;
+        --version)
+            echo "virtos-migrate version $VERSION"
             exit 0
             ;;
         *)
