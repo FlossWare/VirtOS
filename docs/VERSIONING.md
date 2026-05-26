@@ -8,10 +8,10 @@ VirtOS uses **X.Y semantic versioning** where:
 
 ## Current Version
 
-**v0.57** (as of 2026-05-26)
+**v0.58** (as of 2026-05-26)
 
 - **Major**: 0 (pre-1.0 alpha/beta phase)
-- **Minor**: 57 (auto-incremented by CD workflow)
+- **Minor**: 58 (auto-incremented by CD workflow)
 
 ## Version Management
 
@@ -21,7 +21,7 @@ The `VERSION` file at repository root contains the canonical version:
 
 ```
 $ cat VERSION
-0.57
+0.58
 ```
 
 All package metadata files sync from this single source.
@@ -39,7 +39,7 @@ All package metadata files sync from this single source.
 ### Example Version Progression
 
 ```
-0.50 → 0.51 → 0.52 → 0.53 → 0.54 → 0.55 → 0.56 → 0.57 ...
+0.50 → 0.51 → 0.52 → ... → 0.55 → 0.56 → 0.57 → 0.58 ...
 ```
 
 Minor version increments on every merged PR to `main` branch.
@@ -50,11 +50,11 @@ All version references stay synchronized:
 
 | File | Version Reference |
 |------|-------------------|
-| `VERSION` | 0.57 |
-| `packages/virtos-tools/virtos-tools.tcz.info` | Version: 0.57 |
-| `packages/virtos-jplatform/virtos-jplatform.tcz.info` | Version: 0.57 |
-| Git tag | v0.57 |
-| GitHub Release | VirtOS v0.57 |
+| `VERSION` | 0.58 |
+| `packages/virtos-tools/virtos-tools.tcz.info` | Version: 0.58 |
+| `packages/virtos-jplatform/virtos-jplatform.tcz.info` | Version: 0.58 |
+| Git tag | v0.58 |
+| GitHub Release | VirtOS v0.58 |
 
 ### Validation
 
@@ -146,10 +146,10 @@ All virtos-* scripts support `--version`:
 
 ```bash
 $ virtos-create-vm --version
-virtos-create-vm version 0.57
+virtos-create-vm version 0.58
 
 $ virtos-tui --version
-virtos-tui version 0.57
+virtos-tui version 0.58
 ```
 
 ### Package Metadata
@@ -159,7 +159,7 @@ TCZ package info files show version:
 ```bash
 $ cat /tmp/tcloop/virtos-tools/virtos-tools.tcz.info
 Title:          virtos-tools.tcz
-Version:        0.57
+Version:        0.58
 ...
 ```
 
@@ -169,11 +169,11 @@ All releases tagged as `vX.Y`:
 
 ```bash
 $ git tag | tail -5
-v0.53
 v0.54
 v0.55
 v0.56
 v0.57
+v0.58
 ```
 
 ## Historical Versions
@@ -185,7 +185,7 @@ v0.57
 | 0.30-0.35 | 2026-05-26 | Test expansion begins |
 | 0.36-0.40 | 2026-05-26 | Advanced script tests |
 | 0.41-0.42 | 2026-05-26 | 100% test coverage achieved |
-| 0.44-0.57 | 2026-05-26 | CI/CD fixes and enhancements |
+| 0.44-0.58 | 2026-05-26 | CI/CD fixes and enhancements |
 
 ## Version Queries
 

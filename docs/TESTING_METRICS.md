@@ -1,7 +1,7 @@
 # VirtOS Testing Metrics
 
 **Last Updated**: 2026-05-26  
-**Version**: v0.57  
+**Version**: v0.58  
 **Status**: ✅ 100% Unit Test Coverage Achieved
 
 ## Overview
@@ -251,7 +251,7 @@ v0.22-0.29: VERSION standardization
 v0.30-0.35: Initial test expansion  
 v0.36-0.40: Advanced script tests  
 v0.41-0.42: Test coverage reporting  
-v0.44-0.57: CI fixes and enhancements  
+v0.44-0.58: CI fixes and enhancements  
 
 ## Testing Best Practices
 
