@@ -46,9 +46,40 @@ EOF
 
 mkdir -p "$TEMPLATE_DIR"
 
+# Validate template name to prevent path traversal attacks
+validate_template_name() {
+    local name="$1"
+
+    if [ -z "$name" ]; then
+        echo "ERROR: Template name cannot be empty" >&2
+        return 1
+    fi
+
+    # SECURITY: Prevent path traversal
+    if echo "$name" | grep -qE '\.\.|/'; then
+        echo "ERROR: Invalid template name '$name'" >&2
+        echo "Template names cannot contain '..' or '/' characters" >&2
+        return 1
+    fi
+
+    # Must be alphanumeric with hyphens/underscores only
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "ERROR: Invalid template name '$name'" >&2
+        echo "Template names must contain only letters, numbers, hyphens, and underscores" >&2
+        return 1
+    fi
+
+    return 0
+}
+
 create_template() {
     local vm_name="$1"
     local template_name="$2"
+
+    # SECURITY: Validate template name
+    if ! validate_template_name "$template_name"; then
+        return 1
+    fi
 
     echo "Creating template '$template_name' from VM '$vm_name'..."
 
@@ -98,6 +129,11 @@ EOF
 clone_from_template() {
     local template_name="$1"
     local new_vm_name="$2"
+
+    # SECURITY: Validate template name
+    if ! validate_template_name "$template_name"; then
+        return 1
+    fi
 
     echo "Cloning VM '$new_vm_name' from template '$template_name'..."
 
@@ -184,6 +220,12 @@ list_templates() {
 
 delete_template() {
     local template_name="$1"
+
+    # SECURITY: Validate template name
+    if ! validate_template_name "$template_name"; then
+        return 1
+    fi
+
     local template_path="$TEMPLATE_DIR/$template_name"
 
     if [ ! -d "$template_path" ]; then
@@ -199,6 +241,11 @@ delete_template() {
 import_cloud_image() {
     local image_url="$1"
     local template_name="$2"
+
+    # SECURITY: Validate template name
+    if ! validate_template_name "$template_name"; then
+        return 1
+    fi
 
     echo "Importing cloud image as template '$template_name'..."
 
