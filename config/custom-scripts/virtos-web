@@ -20,6 +20,17 @@ PORTAINER_PORT=9000
 CUSTOM_UI_PORT=8080
 
 # Ensure config directory exists
+# Handle --help and --version before any filesystem operations
+case "${1:-}" in
+    --help|-h|help|"")
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-web version $VERSION"
+        exit 0
+        ;;
+    *)
+        # Only create directories for actual commands
 mkdir -p "$WEB_CONFIG_DIR"
 
 # Logging function
@@ -329,6 +340,9 @@ enable_auth() {
     local auth_method="$2"  # basic, ldap, oauth
 
     log_message "Enabling $auth_method authentication for $ui_type..."
+
+        ;;
+esac
 
     case "$auth_method" in
         basic)

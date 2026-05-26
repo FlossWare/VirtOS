@@ -13,6 +13,17 @@ fi
 VERSION=$(get_version 2>/dev/null || echo "0.23")
 CLOUD_INIT_DIR="/var/lib/virtos/cloud-init"
 
+# Handle --help and --version before any filesystem operations
+case "${1:-}" in
+    --help|-h|help|"")
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-cloud-init version $VERSION"
+        exit 0
+        ;;
+    *)
+        # Only create directories for actual commands
 mkdir -p "$CLOUD_INIT_DIR"
 
 usage() {
@@ -95,6 +106,9 @@ create_cloud_init() {
     shift  # Skip vm_name
 
     while [ $# -gt 0 ]; do
+        ;;
+esac
+
         case "$1" in
             --hostname)
                 hostname="$2"

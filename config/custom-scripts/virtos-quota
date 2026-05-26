@@ -14,6 +14,17 @@ VERSION=$(get_version 2>/dev/null || echo "0.25")
 CONFIG_DIR="/etc/virtos/quota"
 STATE_DIR="/var/run/virtos/quota"
 
+# Handle --help and --version before any filesystem operations
+case "${1:-}" in
+    --help|-h|help|"")
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-quota version $VERSION"
+        exit 0
+        ;;
+    *)
+        # Only create directories for actual commands
 mkdir -p "$CONFIG_DIR" "$STATE_DIR"
 
 usage() {
@@ -111,6 +122,9 @@ EOF
     fi
 
     # Update limit
+        ;;
+esac
+
     case "$resource" in
         cpu)
             sed -i "s/^CPU_LIMIT=.*/CPU_LIMIT=$limit/" "$quota_file"

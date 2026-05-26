@@ -636,10 +636,23 @@ EOF
 
 # Main
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now safe to init (only for actual commands)
     init_logging
     load_config
 
-    case "${1:-help}" in
+    case "${1}" in
         blockchain-adv-init)
             blockchain_adv_init
             ;;
@@ -678,14 +691,7 @@ main() {
             ;;
         wizard)
             blockchain_adv_wizard
-            ;;
-        version|--version|-v)
-            echo "$SCRIPT_NAME version $VERSION"
-            ;;
-        help|--help|-h)
-            usage
-            ;;
-        *)
+            ;;        *)
             echo "Unknown command: $1"
             echo "Run '$SCRIPT_NAME help' for usage"
             exit 1

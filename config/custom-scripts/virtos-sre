@@ -20,6 +20,17 @@ INCIDENT_DIR="$SRE_CONFIG_DIR/incidents"
 POSTMORTEM_DIR="$SRE_CONFIG_DIR/postmortems"
 
 # Ensure directories exist
+# Handle --help and --version before any filesystem operations
+case "${1:-}" in
+    --help|-h|help|"")
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-sre version $VERSION"
+        exit 0
+        ;;
+    *)
+        # Only create directories for actual commands
 mkdir -p "$SRE_CONFIG_DIR" "$SLO_DIR" "$INCIDENT_DIR" "$POSTMORTEM_DIR"
 
 # Logging function
@@ -208,6 +219,9 @@ update_incident() {
         log_message "ERROR: Incident not found: $incident_id"
         return 1
     fi
+
+        ;;
+esac
 
     case "$update_type" in
         timeline)

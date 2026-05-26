@@ -15,6 +15,17 @@ UPDATE_DIR="/var/lib/virtos/updates"
 STATE_DIR="/var/run/virtos/update"
 LOG_FILE="/var/log/virtos-update.log"
 
+# Handle --help and --version before any filesystem operations
+case "${1:-}" in
+    --help|-h|help|"")
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-update version $VERSION"
+        exit 0
+        ;;
+    *)
+        # Only create directories for actual commands
 mkdir -p "$UPDATE_DIR" "$STATE_DIR"
 
 usage() {
@@ -291,6 +302,9 @@ NO_BACKUP="no"
 DRY_RUN="no"
 
 while [ $# -gt 0 ]; do
+        ;;
+esac
+
     case "$1" in
         --force)
             FORCE="yes"

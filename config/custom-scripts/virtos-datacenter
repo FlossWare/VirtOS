@@ -674,14 +674,7 @@ main() {
             ;;
         wizard)
             datacenter_wizard
-            ;;
-        version|--version|-v)
-            echo "$SCRIPT_NAME version $VERSION"
-            ;;
-        help|--help|-h)
-            usage
-            ;;
-        *)
+            ;;        *)
             echo "Unknown command: $1"
             echo "Run '$SCRIPT_NAME help' for usage"
             exit 1

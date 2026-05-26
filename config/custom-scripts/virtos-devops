@@ -17,6 +17,17 @@ DEVOPS_CONFIG_DIR="/etc/virtos/devops"
 DEVOPS_LOG="/var/log/virtos-devops.log"
 
 # Ensure config directory exists
+# Handle --help and --version before any filesystem operations
+case "${1:-}" in
+    --help|-h|help|"")
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-devops version $VERSION"
+        exit 0
+        ;;
+    *)
+        # Only create directories for actual commands
 mkdir -p "$DEVOPS_CONFIG_DIR"
 
 # Logging function
@@ -371,6 +382,9 @@ create_ci_pipeline() {
     log_message "Creating $pipeline_type CI pipeline in $project_dir..."
 
     mkdir -p "$project_dir"
+
+        ;;
+esac
 
     case "$pipeline_type" in
         github-actions)

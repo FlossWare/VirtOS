@@ -15,6 +15,17 @@ TELEMETRY_DIR="/var/lib/virtos/telemetry"
 STATE_DIR="/var/run/virtos/telemetry"
 LOG_FILE="/var/log/virtos-telemetry.log"
 
+# Handle --help and --version before any filesystem operations
+case "${1:-}" in
+    --help|-h|help|"")
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-telemetry version $VERSION"
+        exit 0
+        ;;
+    *)
+        # Only create directories for actual commands
 mkdir -p "$TELEMETRY_DIR" "$STATE_DIR"
 
 usage() {
@@ -425,6 +436,9 @@ exporter_install() {
 
     echo "Installing Exporter: $exporter_type"
     echo "==================================="
+
+        ;;
+esac
 
     case "$exporter_type" in
         node)

@@ -17,6 +17,17 @@ APM_CONFIG_DIR="/etc/virtos/apm"
 APM_LOG="/var/log/virtos-apm.log"
 
 # Ensure config directory exists
+# Handle --help and --version before any filesystem operations
+case "${1:-}" in
+    --help|-h|help|"")
+        # Will show usage at end of script
+        ;;
+    --version|-v|version)
+        echo "virtos-apm version $VERSION"
+        exit 0
+        ;;
+    *)
+        # Only create directories for actual commands
 mkdir -p "$APM_CONFIG_DIR"
 
 # Logging function
@@ -29,6 +40,9 @@ setup_apm_platform() {
     local platform="$1"  # newrelic, datadog, appdynamics, dynatrace, elastic
 
     log_message "Setting up APM platform: $platform..."
+
+        ;;
+esac
 
     case "$platform" in
         newrelic)
