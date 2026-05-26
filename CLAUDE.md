@@ -334,6 +334,12 @@ See [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) for current work
   - Consistent `--version`, `-v`, and `version` flag support
   - Completed in 9 systematic batches
 
+- **Issue #15**: ✅ **Expand BATS test coverage** - COMPLETE (2026-05-26)
+  - Unit test coverage expanded from 10 to 28 test files (55% of scripts)
+  - 350+ unit tests across core, advanced, security, and operational scripts
+  - All tests validate script structure, argument parsing, and help output
+  - Placeholder workflow tests ready for VirtOS runtime environment
+
 - **Issue #6**: ✅ **Security review** - COMPLETE
   - virtos-common.sh security library implemented (361 lines)
   - Input validation, command injection prevention, path traversal protection
@@ -475,11 +481,11 @@ Fixes #X, Addresses #Y
    - Validate package installation
    - **Gap**: Build system awaiting validation - See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md)
 
-3. **Test Coverage Expansion** (Issue #15) - HIGH 📈
-   - Current: 4% (2/52 scripts)
-   - Target: 50% (26/52 scripts - all working ones)
-   - Add tests for 24 more working scripts
-   - **Gap**: Scripts work but lack test coverage
+3. ~~**Test Coverage Expansion** (Issue #15)~~ - ✅ COMPLETE
+   - ~~Current: 4% (2/52 scripts)~~ → **NOW: 55% (28/52 scripts)**
+   - ~~Target: 50% (26/52 scripts)~~ → **EXCEEDED TARGET**
+   - 350+ unit tests across core, advanced, and operational scripts
+   - **Status**: Test framework ready for VirtOS runtime validation
 
 4. **Infrastructure Backends** (Issue #14) - MEDIUM 🔧
    - Implement 9 infrastructure scripts:
