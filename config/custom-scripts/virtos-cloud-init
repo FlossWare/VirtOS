@@ -437,8 +437,8 @@ EOF
 }
 
 # Main command handler
-COMMAND="$1"
-shift
+COMMAND="${1:-}"
+[ -n "$COMMAND" ] && shift
 
 case "$COMMAND" in
     create)
