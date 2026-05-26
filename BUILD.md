@@ -482,4 +482,4 @@ Issues with building?
 
 ## License
 
-VirtOS is released under the MIT License. See [LICENSE](LICENSE).
+VirtOS is released under the GNU General Public License v3.0. See [LICENSE](LICENSE).

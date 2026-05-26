@@ -200,8 +200,9 @@ All profiles validated in CI ✅
 - Replaced AWS credential examples with safe placeholders (#65)
 - Added security validation to workflow automation
 
-**6. License Compliance** (v0.67): ✅
-- Added MIT license headers to all 54 files (#74)
+**6. License Compliance** (v0.67 → current): ✅
+- Added license headers to all 54 files (#74)
+- Changed from MIT to GNU General Public License v3.0
 - Proper copyright and license notices on all scripts
 
 **7. Documentation Accuracy** (v0.59 → v0.67): ✅

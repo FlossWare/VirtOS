@@ -465,4 +465,4 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for build system contribution guidelin
 
 ## License
 
-VirtOS is released under the MIT License. See [LICENSE](../LICENSE) for details.
+VirtOS is released under the GNU General Public License v3.0. See [LICENSE](../LICENSE) for details.

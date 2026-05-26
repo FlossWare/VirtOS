@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright (c) 2026 FlossWare
-# Licensed under the MIT License. See LICENSE file in the project root.
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
 # VirtOS Update - Automated update system
 # Check for updates, apply patches, and rollback if needed

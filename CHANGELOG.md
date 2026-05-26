@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- License changed from MIT to GNU General Public License v3.0
+  - Updated LICENSE file with full GPLv3.0 text
+  - Updated all 54 script headers (53 virtos-* + virtos-common.sh)
+  - Updated documentation references (README.md, BUILD.md, docs/BUILD.md, CONTRIBUTING.md)
+  - All new contributions will be under GPLv3.0
+
 ## [0.67] - 2026-05-26
 
 ### Added
