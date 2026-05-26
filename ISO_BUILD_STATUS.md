@@ -102,13 +102,13 @@ Features Enabled:
 ```
 
 **7 Available Profiles**:
-1. `minimal` - Base system only, no virtualization
-2. `containers` - Docker, LXC, Podman
-3. `kubernetes` - K3s + container tools
-4. `standard` - VMs + containers (default)
-5. `developer` - Standard + dev tools
-6. `enterprise` - Full feature set + HA
-7. `custom` - User-defined
+1. `minimal` - Base system only, minimal footprint
+2. `standard` - VMs + containers (default)
+3. `full` - All VirtOS features and tools
+4. `containers` - Container-focused (Docker, LXC, Podman)
+5. `developer` - Development tools included
+6. `kubernetes` - K8s management (K3s + tools)
+7. `storage` - Storage-optimized (NFS, Ceph, iSCSI)
 
 ---
 
@@ -370,7 +370,7 @@ fi
 
 **Add profile validation**:
 ```bash
-VALID_PROFILES="minimal containers kubernetes standard developer enterprise custom"
+VALID_PROFILES="minimal standard full containers developer kubernetes storage"
 if ! echo "$VALID_PROFILES" | grep -q "\b$PROFILE\b"; then
     echo "ERROR: Invalid profile '$PROFILE'"
     echo "Valid profiles: $VALID_PROFILES"
