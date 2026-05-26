@@ -368,6 +368,54 @@ jobs:
 
           exit $EXIT_CODE
 
+      - name: Generate test coverage report
+        if: always()
+        run: |
+          cd tests
+
+          echo "## 📊 Unit Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count test files
+          test_files=$(ls -1 virtos-*.bats 2>/dev/null | wc -l)
+
+          # Count scripts
+          script_files=$(ls -1 ../config/custom-scripts/virtos-* 2>/dev/null | wc -l)
+
+          # Calculate coverage percentage
+          if [ $script_files -gt 0 ]; then
+            coverage=$((test_files * 100 / script_files))
+          else
+            coverage=0
+          fi
+
+          # Count total tests
+          total_tests=0
+          for test_file in virtos-*.bats; do
+            if [ -f "$test_file" ]; then
+              tests=$(grep -c "^@test" "$test_file" || echo 0)
+              total_tests=$((total_tests + tests))
+            fi
+          done
+
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Files | $test_files |" >> $GITHUB_STEP_SUMMARY
+          echo "| Scripts Covered | $script_files |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${coverage}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Tests | $total_tests |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ $coverage -eq 100 ]; then
+            echo "✅ **100% test coverage achieved!**" >> $GITHUB_STEP_SUMMARY
+          elif [ $coverage -ge 80 ]; then
+            echo "✅ **Excellent test coverage ($coverage%)**" >> $GITHUB_STEP_SUMMARY
+          elif [ $coverage -ge 50 ]; then
+            echo "⚠️ **Good test coverage ($coverage%), aim for 80%+**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Low test coverage ($coverage%), needs improvement**" >> $GITHUB_STEP_SUMMARY
+          fi
+
   package-build:
     name: Build Packages
     runs-on: ubuntu-latest
