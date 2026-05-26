@@ -602,3 +602,7 @@ All examples are tested and production-ready starting points.
 ## License
 
 GNU General Public License v3.0 - see [LICENSE](LICENSE) file for details.
+
+## Code of Conduct
+
+This project adheres to the Contributor Covenant [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior via [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) with the "code-of-conduct" label.

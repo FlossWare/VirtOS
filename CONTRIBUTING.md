@@ -2,6 +2,10 @@
 
 Thank you for considering contributing! This project aims to create a minimal, efficient virtualization platform based on Tiny Core Linux.
 
+## Code of Conduct
+
+This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to https://github.com/FlossWare/VirtOS/issues (use the "code-of-conduct" label).
+
 ## Project Philosophy
 
 - **Minimal**: Only include what's necessary

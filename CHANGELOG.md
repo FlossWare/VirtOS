@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CODE_OF_CONDUCT.md - Contributor Covenant v2.1
+  - Establishes community standards and behavior expectations
+  - Defines enforcement responsibilities and guidelines
+  - Provides reporting mechanism via GitHub Issues
+  - Referenced in CONTRIBUTING.md and README.md
+
 ### Changed
 - License changed from MIT to GNU General Public License v3.0
   - Updated LICENSE file with full GPLv3.0 text
