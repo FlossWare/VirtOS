@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.51] - 2026-05-26
+
+### Added
+- Build profile configuration files in `build/profiles/`
+  - minimal.conf - Smallest system (~100MB, KVM only)
+  - standard.conf - Balanced home lab (~200MB, default)
+  - full.conf - Everything included (~400MB)
+  - containers.conf - Container-focused (~150MB)
+  - developer.conf - Dev-friendly (~250MB)
+  - kubernetes.conf - K3s orchestration (~250MB)
+  - storage.conf - Advanced storage (~350MB)
+
+### Fixed
+- CD workflow version synchronization bug
+  - virtos-jplatform build script now reads version from VERSION file
+  - Prevents version reversion to "0.1-alpha" during builds
+- Build profiles validation CI job now passes
+- Added `packages/output/*.info` to .gitignore
+
 ## [0.46] - 2026-05-26
 
 ### Fixed
