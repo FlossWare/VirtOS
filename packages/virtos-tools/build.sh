@@ -23,6 +23,7 @@ rm -rf "$SCRIPT_DIR/src"
 # Create directory structure
 echo "Creating package structure..."
 mkdir -p "$SCRIPT_DIR/src/usr/local/bin"
+mkdir -p "$SCRIPT_DIR/src/usr/local/lib"
 mkdir -p "$SCRIPT_DIR/src/usr/local/tce.installed"
 mkdir -p "$SCRIPT_DIR/src/usr/local/share/doc/virtos"
 
@@ -41,6 +42,13 @@ echo "  Copied $SCRIPT_COUNT scripts"
 if [ -f "$PROJECT_ROOT/config/custom-scripts/add-user.sh" ]; then
     cp "$PROJECT_ROOT/config/custom-scripts/add-user.sh" "$SCRIPT_DIR/src/usr/local/bin/"
     echo "  Copied add-user.sh"
+fi
+
+# Copy common library
+echo "Copying common library..."
+if [ -d "$PROJECT_ROOT/config/custom-scripts/lib" ]; then
+    cp -r "$PROJECT_ROOT/config/custom-scripts/lib"/* "$SCRIPT_DIR/src/usr/local/lib/" 2>/dev/null || true
+    echo "  Copied library files"
 fi
 
 # Create post-install script
