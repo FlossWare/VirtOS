@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Container
+metadata:
+  name: web-tier
+  labels:
+    app: webapp
+    tier: web
+    environment: integration
+spec:
+  image: nginx:latest
+  ports:
+    - containerPort: 80
+      hostPort: 80
+    - containerPort: 443
+      hostPort: 443
+  environment:
+    - name: APP_HOST
+      value: application-tier
+    - name: APP_PORT
+      value: "8080"
+  volumes:
+    - name: nginx-config
+      mountPath: /etc/nginx/nginx.conf
+      content: |
+        events {}
+        http {
+          upstream app {
+            server application-tier:8080;
+          }
+          server {
+            listen 80;
+            location / {
+              proxy_pass http://app;
+            }
+          }
+        }
+  resources:
+    limits:
+      memory: 256M
+      cpu: 0.5
+    requests:
+      memory: 128M
+      cpu: 0.25
+  depends_on:
+    - application-tier

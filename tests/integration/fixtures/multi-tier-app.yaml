@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Container
+metadata:
+  name: application-tier
+  labels:
+    app: webapp
+    tier: application
+    environment: integration
+spec:
+  image: openjdk:17-slim
+  ports:
+    - containerPort: 8080
+      hostPort: 8080
+  environment:
+    - name: DB_HOST
+      value: database-tier
+    - name: DB_PORT
+      value: "5432"
+    - name: DB_NAME
+      value: webapp
+  resources:
+    limits:
+      memory: 512M
+      cpu: 1
+    requests:
+      memory: 256M
+      cpu: 0.5
+  depends_on:
+    - database-tier

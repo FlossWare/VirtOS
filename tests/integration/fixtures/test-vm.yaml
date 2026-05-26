@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: VirtualMachine
+metadata:
+  name: test-vm
+  labels:
+    app: test
+    environment: integration
+spec:
+  memory: 512M
+  cpu: 1
+  disk: 5G
+  network:
+    - type: nat
+      name: default
+  autostart: false

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: VirtualMachine
+metadata:
+  name: database-tier
+  labels:
+    app: webapp
+    tier: database
+    environment: integration
+spec:
+  memory: 1024M
+  cpu: 2
+  disk: 20G
+  network:
+    - type: nat
+      name: default
+  # Simulated PostgreSQL database
+  userdata: |
+    #!/bin/bash
+    # Database initialization would go here
+    echo "Database tier ready"
+  autostart: false
