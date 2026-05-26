@@ -146,9 +146,6 @@ else
     [ -n "$AFFINITY" ] && SCHED_ARGS="$SCHED_ARGS --affinity $AFFINITY"
     [ "$VERBOSE" = "yes" ] && SCHED_ARGS="$SCHED_ARGS --verbose"
 
-    # TODO: Call actual virtos-schedule script
-    # For now, simple implementation
-
     # Get cluster members
     if [ ! -f /var/run/virtos/cluster-members ]; then
         echo "${RED}Error: Cluster information not available${NC}"
@@ -156,17 +153,128 @@ else
         exit 1
     fi
 
-    # Simple scheduling: pick first available host
-    # TODO: Implement actual scoring algorithm
-    SELECTED_HOST=$(head -1 /var/run/virtos/cluster-members | awk '{print $1}')
+    # Implement scoring algorithm for VM placement
+    BEST_SCORE=-1
+    SELECTED_HOST=""
+    SELECTION_REASON=""
+
+    [ "$VERBOSE" = "yes" ] && echo "Evaluating hosts..."
+
+    while IFS= read -r line; do
+        HOST=$(echo "$line" | awk '{print $1}')
+        [ -z "$HOST" ] && continue
+
+        # Skip avoided hosts
+        if [ -n "$AVOID" ]; then
+            echo "$AVOID" | grep -q "$HOST" && continue
+        fi
+
+        # Get host resources via virsh or SSH
+        if [ "$HOST" = "localhost" ] || [ "$HOST" = "$(hostname)" ]; then
+            # Local host - use virsh directly
+            TOTAL_MEM=$(free -m | awk '/^Mem:/{print $2}')
+            USED_MEM=$(free -m | awk '/^Mem:/{print $3}')
+            TOTAL_CPU=$(nproc)
+            # Get CPU load average (1 min)
+            CPU_LOAD=$(awk '{print int($1 * 100)}' /proc/loadavg)
+        else
+            # Remote host - use SSH
+            TOTAL_MEM=$(ssh -o ConnectTimeout=2 "$HOST" 'free -m | awk "/^Mem:/{print \$2}"' 2>/dev/null || echo "0")
+            USED_MEM=$(ssh -o ConnectTimeout=2 "$HOST" 'free -m | awk "/^Mem:/{print \$3}"' 2>/dev/null || echo "0")
+            TOTAL_CPU=$(ssh -o ConnectTimeout=2 "$HOST" 'nproc' 2>/dev/null || echo "1")
+            CPU_LOAD=$(ssh -o ConnectTimeout=2 "$HOST" 'awk "{print int(\$1 * 100)}" /proc/loadavg' 2>/dev/null || echo "100")
+        fi
+
+        # Skip if we couldn't get stats
+        [ "$TOTAL_MEM" = "0" ] && continue
+
+        # Calculate available resources
+        AVAIL_MEM=$((TOTAL_MEM - USED_MEM))
+        AVAIL_CPU_PCT=$((100 - CPU_LOAD / TOTAL_CPU))
+
+        # Check if host has enough resources
+        if [ "$AVAIL_MEM" -lt "$RAM" ]; then
+            [ "$VERBOSE" = "yes" ] && echo "  $HOST: Insufficient memory ($AVAIL_MEM MB < $RAM MB)"
+            continue
+        fi
+
+        # Calculate score based on policy
+        case "$POLICY" in
+            balanced)
+                # Balanced: prefer hosts with ~50% utilization
+                MEM_UTIL=$((USED_MEM * 100 / TOTAL_MEM))
+                MEM_SCORE=$((100 - (MEM_UTIL - 50) * (MEM_UTIL - 50) / 25))  # Peak at 50%
+                CPU_SCORE=$AVAIL_CPU_PCT
+                SCORE=$(((MEM_SCORE + CPU_SCORE) / 2))
+                REASON="balanced load (CPU: ${AVAIL_CPU_PCT}%, MEM: ${AVAIL_MEM}MB)"
+                ;;
+            pack)
+                # Pack: prefer most utilized hosts (bin packing)
+                MEM_UTIL=$((USED_MEM * 100 / TOTAL_MEM))
+                SCORE=$MEM_UTIL
+                REASON="pack strategy (MEM util: ${MEM_UTIL}%)"
+                ;;
+            spread)
+                # Spread: prefer least utilized hosts
+                MEM_UTIL=$((USED_MEM * 100 / TOTAL_MEM))
+                SCORE=$((100 - MEM_UTIL))
+                REASON="spread strategy (MEM avail: ${AVAIL_MEM}MB)"
+                ;;
+            *)
+                # Default: maximize available resources
+                MEM_SCORE=$((AVAIL_MEM * 100 / TOTAL_MEM))
+                CPU_SCORE=$AVAIL_CPU_PCT
+                SCORE=$(((MEM_SCORE + CPU_SCORE) / 2))
+                REASON="max available resources"
+                ;;
+        esac
+
+        # Apply preference bonus
+        if [ -n "$PREFER" ]; then
+            echo "$PREFER" | grep -q "$HOST" && SCORE=$((SCORE + 20))
+        fi
+
+        # Apply affinity bonus
+        if [ -n "$AFFINITY" ]; then
+            # Check if affinity VM is on this host
+            if virsh -c "qemu+ssh://$HOST/system" list --all 2>/dev/null | grep -q "$AFFINITY"; then
+                SCORE=$((SCORE + 30))
+                REASON="$REASON + affinity with $AFFINITY"
+            fi
+        fi
+
+        # Apply anti-affinity penalty
+        if [ -n "$ANTI_AFFINITY" ]; then
+            # Check if anti-affinity VM is on this host
+            if virsh -c "qemu+ssh://$HOST/system" list --all 2>/dev/null | grep -q "$ANTI_AFFINITY"; then
+                SCORE=$((SCORE - 50))
+                [ "$SCORE" -lt 0 ] && SCORE=0
+                REASON="$REASON - anti-affinity penalty"
+            fi
+        fi
+
+        [ "$VERBOSE" = "yes" ] && echo "  $HOST: score=$SCORE ($REASON)"
+
+        # Track best host
+        if [ "$SCORE" -gt "$BEST_SCORE" ]; then
+            BEST_SCORE=$SCORE
+            SELECTED_HOST=$HOST
+            SELECTION_REASON=$REASON
+        fi
+    done < /var/run/virtos/cluster-members
 
     if [ -z "$SELECTED_HOST" ]; then
         echo "${RED}Error: No suitable host found${NC}"
+        echo "Possible reasons:"
+        echo "  - All hosts avoided or excluded by constraints"
+        echo "  - Insufficient resources on all hosts"
+        echo "  - Unable to contact cluster members"
         exit 1
     fi
 
     echo "${GREEN}Selected host: $SELECTED_HOST${NC}"
-    echo "  Reason: Simple first-available (full scheduler TODO)"
+    echo "  Score:  $BEST_SCORE/100"
+    echo "  Reason: $SELECTION_REASON"
 fi
 
 echo ""

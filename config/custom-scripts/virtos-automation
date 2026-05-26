@@ -406,8 +406,78 @@ autoscale_up() {
 
     log "Scaled up $service to $CURRENT_INSTANCES instances"
 
-    # Trigger actual scaling (placeholder - would call VM/container creation)
-    log "TODO: Create new instance of $service"
+    # Create new instance
+    local instance_name="${service}-${CURRENT_INSTANCES}"
+    local instance_type="${SERVICE_TYPE:-vm}"  # Default to VM if not specified
+
+    case "$instance_type" in
+        vm)
+            # Create VM instance
+            log "Creating VM instance: $instance_name"
+
+            # Use service template if exists, otherwise use defaults
+            local cpu="${SERVICE_CPU:-2}"
+            local ram="${SERVICE_RAM:-2048}"
+            local disk="${SERVICE_DISK:-20G}"
+            local network="${SERVICE_NETWORK:-bridge}"
+
+            if command -v virtos-create-vm >/dev/null 2>&1; then
+                virtos-create-vm \
+                    --name "$instance_name" \
+                    --cpu "$cpu" \
+                    --ram "$ram" \
+                    --disk "$disk" \
+                    --network "$network" \
+                    --auto-start \
+                    2>&1 | tee -a "$AUTOMATION_DIR/autoscale/${service}.log"
+
+                if [ $? -eq 0 ]; then
+                    log "VM instance created: $instance_name"
+                    echo "$instance_name" >> "$AUTOMATION_DIR/autoscale/${service}.instances"
+                else
+                    log "ERROR: Failed to create VM instance: $instance_name"
+                    CURRENT_INSTANCES=$((CURRENT_INSTANCES - 1))
+                    sed -i "s/CURRENT_INSTANCES=.*/CURRENT_INSTANCES=$CURRENT_INSTANCES/" "$conf_file"
+                    return 1
+                fi
+            else
+                log "ERROR: virtos-create-vm not found"
+                return 1
+            fi
+            ;;
+
+        container)
+            # Create container instance
+            log "Creating container instance: $instance_name"
+
+            local image="${SERVICE_IMAGE:-alpine:latest}"
+            local ports="${SERVICE_PORTS:-}"
+
+            if command -v docker >/dev/null 2>&1; then
+                docker run -d --name "$instance_name" \
+                    ${ports:+-p $ports} \
+                    "$image" 2>&1 | tee -a "$AUTOMATION_DIR/autoscale/${service}.log"
+
+                if [ $? -eq 0 ]; then
+                    log "Container instance created: $instance_name"
+                    echo "$instance_name" >> "$AUTOMATION_DIR/autoscale/${service}.instances"
+                else
+                    log "ERROR: Failed to create container instance: $instance_name"
+                    CURRENT_INSTANCES=$((CURRENT_INSTANCES - 1))
+                    sed -i "s/CURRENT_INSTANCES=.*/CURRENT_INSTANCES=$CURRENT_INSTANCES/" "$conf_file"
+                    return 1
+                fi
+            else
+                log "ERROR: docker not found"
+                return 1
+            fi
+            ;;
+
+        *)
+            log "ERROR: Unknown service type: $instance_type"
+            return 1
+            ;;
+    esac
 }
 
 # Trigger scale down
@@ -442,8 +512,78 @@ autoscale_down() {
 
     log "Scaled down $service to $CURRENT_INSTANCES instances"
 
-    # Trigger actual scaling (placeholder - would call VM/container removal)
-    log "TODO: Remove instance of $service"
+    # Remove the most recent instance
+    local instance_file="$AUTOMATION_DIR/autoscale/${service}.instances"
+    local instance_type="${SERVICE_TYPE:-vm}"
+
+    if [ ! -f "$instance_file" ]; then
+        log "ERROR: No instances file found for: $service"
+        return 1
+    fi
+
+    # Get the last instance from the list
+    local instance_name=$(tail -1 "$instance_file")
+
+    if [ -z "$instance_name" ]; then
+        log "ERROR: No instances found to remove"
+        return 1
+    fi
+
+    case "$instance_type" in
+        vm)
+            # Remove VM instance
+            log "Removing VM instance: $instance_name"
+
+            # Stop and undefine the VM
+            if command -v virsh >/dev/null 2>&1; then
+                virsh destroy "$instance_name" 2>/dev/null || true
+                virsh undefine "$instance_name" --remove-all-storage 2>&1 | tee -a "$AUTOMATION_DIR/autoscale/${service}.log"
+
+                if [ $? -eq 0 ]; then
+                    log "VM instance removed: $instance_name"
+                    # Remove from instances list
+                    sed -i "/$instance_name/d" "$instance_file"
+                else
+                    log "ERROR: Failed to remove VM instance: $instance_name"
+                    CURRENT_INSTANCES=$((CURRENT_INSTANCES + 1))
+                    sed -i "s/CURRENT_INSTANCES=.*/CURRENT_INSTANCES=$CURRENT_INSTANCES/" "$conf_file"
+                    return 1
+                fi
+            else
+                log "ERROR: virsh not found"
+                return 1
+            fi
+            ;;
+
+        container)
+            # Remove container instance
+            log "Removing container instance: $instance_name"
+
+            if command -v docker >/dev/null 2>&1; then
+                docker stop "$instance_name" 2>/dev/null || true
+                docker rm "$instance_name" 2>&1 | tee -a "$AUTOMATION_DIR/autoscale/${service}.log"
+
+                if [ $? -eq 0 ]; then
+                    log "Container instance removed: $instance_name"
+                    # Remove from instances list
+                    sed -i "/$instance_name/d" "$instance_file"
+                else
+                    log "ERROR: Failed to remove container instance: $instance_name"
+                    CURRENT_INSTANCES=$((CURRENT_INSTANCES + 1))
+                    sed -i "s/CURRENT_INSTANCES=.*/CURRENT_INSTANCES=$CURRENT_INSTANCES/" "$conf_file"
+                    return 1
+                fi
+            else
+                log "ERROR: docker not found"
+                return 1
+            fi
+            ;;
+
+        *)
+            log "ERROR: Unknown service type: $instance_type"
+            return 1
+            ;;
+    esac
 }
 
 # Enable self-healing
