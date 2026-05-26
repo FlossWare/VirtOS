@@ -2,7 +2,12 @@
 # virtos-security - Security hardening and policy management for VirtOS
 # Part of Phase 10: Metrics, Telemetry, and Advanced Features
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.25")
 SCRIPT_NAME="virtos-security"
 LOG_FILE="/var/log/virtos-security.log"
 CONFIG_FILE="/etc/virtos/security.conf"
@@ -792,7 +797,7 @@ main() {
         wizard)
             security_wizard
             ;;
-        version)
+        version|--version|-v)
             echo "$SCRIPT_NAME version $VERSION"
             ;;
         help|--help|-h)

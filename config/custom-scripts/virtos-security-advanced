@@ -2,7 +2,12 @@
 # virtos-security-advanced - Advanced security features for VirtOS
 # Part of Phase 14: Advanced Security, Performance, Observability, DR
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.25")
 SCRIPT_NAME="virtos-security-advanced"
 LOG_FILE="/var/log/virtos-security-advanced.log"
 CONFIG_FILE="/etc/virtos/security-advanced.conf"
@@ -659,7 +664,7 @@ main() {
         wizard)
             security_adv_wizard
             ;;
-        version)
+        version|--version|-v)
             echo "$SCRIPT_NAME version $VERSION"
             ;;
         help|--help|-h)

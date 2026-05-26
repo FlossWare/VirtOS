@@ -2,7 +2,12 @@
 # VirtOS Quota - Resource quotas and limits
 # Per-VM and cluster-wide resource management
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.25")
 CONFIG_DIR="/etc/virtos/quota"
 STATE_DIR="/var/run/virtos/quota"
 
@@ -382,6 +387,10 @@ case "$COMMAND" in
         ;;
     enforce)
         set_enforcement "$1"
+        ;;
+    --version|-v|version)
+        echo "virtos-quota version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

@@ -2,7 +2,12 @@
 # VirtOS Web UI Integration
 # Provides web-based management interfaces (optional)
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.25")
 
 # Configuration
 WEB_CONFIG_DIR="/etc/virtos/web"
@@ -536,6 +541,9 @@ case "$1" in
         ;;
     wizard)
         web_wizard
+        ;;
+    version|--version|-v)
+        echo "virtos-web version $VERSION"
         ;;
     *)
         usage
