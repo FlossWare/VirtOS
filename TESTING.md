@@ -1,6 +1,6 @@
 # Testing Guide for VirtOS
 
-**Last Updated**: 2026-05-26 | **Version**: 0.60
+**Last Updated**: 2026-05-28 | **Version**: 0.87
 
 This document describes how to test VirtOS at various stages of development.
 

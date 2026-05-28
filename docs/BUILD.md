@@ -406,8 +406,8 @@ Version is auto-managed from `VERSION` file:
 # Current version
 cat VERSION
 
-# Update version
-echo "0.14" > VERSION
+# Update version (example - actual version is auto-managed)
+echo "0.87" > VERSION
 
 # Build with new version
 make build

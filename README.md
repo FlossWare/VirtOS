@@ -434,7 +434,7 @@ See [BUILD.md](BUILD.md) for complete build guide and status.
 
 ## Project Status
 
-**Last Updated**: 2026-05-28 | **Version**: 0.84 | **Status**: Alpha - Functional Core
+**Last Updated**: 2026-05-28 | **Version**: 0.87 | **Status**: Alpha - Functional Core
 
 > **⚠️ IMPORTANT**: VirtOS is in **alpha** status. Core VM management functionality works, but the system has **never been tested on real hardware**. ISO boot testing and runtime validation are incomplete. See [limitations](#current-limitations) below.
 
@@ -487,7 +487,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 **Infrastructure**:
 - ✅ Build system and package validation
 - ✅ CI/CD pipelines (GitHub Actions)
-- ✅ Auto-versioning (v0.84)
+- ✅ Auto-versioning (v0.87)
 - ✅ Security library (virtos-common.sh, 361 lines)
 - ✅ VERSION standardization (all 54 scripts use `get_version()`)
 - ✅ Unit test coverage (54 test files - 100% of all scripts, 450+ tests)

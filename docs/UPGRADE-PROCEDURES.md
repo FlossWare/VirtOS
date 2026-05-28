@@ -1,6 +1,6 @@
 # VirtOS Upgrade Procedures
 
-**Last Updated**: 2026-05-26  
+**Last Updated**: 2026-05-28  
 **Applies to**: VirtOS 0.80+
 
 ## Overview

@@ -266,7 +266,7 @@ The wizard will guide you through:
 ```bash
 # Check version
 virtos-version
-# Output: VirtOS 0.83
+# Output: VirtOS 0.87
 
 # Check services
 sudo systemctl status libvirtd
@@ -395,7 +395,7 @@ virtos-tui --help
 
 Expected output:
 ```
-✓ VirtOS version: 0.83
+✓ VirtOS version: 0.87
 ✓ libvirt version: 9.0.0
 ✓ QEMU version: 7.2.0
 ✓ Virtualization: enabled (vmx)
