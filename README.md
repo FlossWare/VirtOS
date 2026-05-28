@@ -4,8 +4,36 @@
 [![CD](https://github.com/FlossWare/VirtOS/workflows/CD/badge.svg)](https://github.com/FlossWare/VirtOS/actions/workflows/cd.yml)
 [![Test Coverage](https://img.shields.io/badge/test%20coverage-100%25-success)](https://github.com/FlossWare/VirtOS/tree/main/tests)
 [![Version](https://img.shields.io/github/v/release/FlossWare/VirtOS)](https://github.com/FlossWare/VirtOS/releases/latest)
+[![Status](https://img.shields.io/badge/status-alpha--functional-yellow)](https://github.com/FlossWare/VirtOS#project-status)
+
+**Status**: Alpha - Functional Core | **Use Case**: Development & Testing | **Production**: Not Recommended
 
 A minimal, purpose-built virtualization operating system based on Tiny Core Linux.
+
+---
+
+## ⚠️ Project Status: Alpha - Functional Core
+
+**TL;DR**: VirtOS has **working code** for core VM management, but has **never been tested on real hardware**. Great for learning and development, **not ready for production**.
+
+**What Works** ✅:
+- 29/54 management scripts with functional backends (54%)
+- Core VM lifecycle: create, start, stop, migrate, snapshot, backup
+- Storage and network management
+- Build system and packaging
+
+**What's Missing** ❌:
+- ISO boot testing: 0/47 checks completed
+- Runtime validation: Never tested in actual VirtOS environment
+- Infrastructure backends: 9 scripts need implementation
+- Security audit: External penetration testing needed
+
+**Use VirtOS for**: Learning, development, testing, home labs  
+**Don't use for**: Production, critical systems, anything requiring uptime SLAs
+
+See [Project Status](#project-status) section below for complete details.
+
+---
 
 ## Overview
 
@@ -331,36 +359,49 @@ VirtOS occupies a unique niche:
 
 See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 major platforms.
 
-## What's Missing?
+## Feature Comparison with Mature Platforms
 
-**VirtOS is alpha software.** Many features found in mature platforms are missing or incomplete:
+**VirtOS is alpha software.** Compared to mature platforms (Proxmox, VMware, OpenStack):
 
-**Critical gaps:**
-- ✅ Automated backup/restore (virtos-backup - Phase 6)
-- ✅ Automatic HA/failover (virtos-ha - Phase 7)
-- ❌ Web UI (by design - TUI only)
-- ✅ Live migration (virtos-migrate - Phase 7)
-- ✅ Distributed storage (virtos-storage - Phase 9)
+**✅ Already Implemented**:
+- ✅ Automated backup/restore (`virtos-backup` - 649 lines, working)
+- ✅ VM snapshots (`virtos-snapshot` - 389 lines, working)
+- ✅ Live migration (`virtos-migrate` - 363 lines, working)
+- ✅ Storage management (`virtos-storage` - 700 lines, working)
+- ✅ Network management (`virtos-network` - 860 lines, working)
+- ✅ Monitoring and metrics (`virtos-monitor` - 495 lines, working)
+- ✅ Resource quotas (`virtos-quota` - working)
+- ✅ REST API (`virtos-api` - working)
+- ✅ Cloud-init integration (`virtos-cloud-init` - working)
+- ✅ Disaster recovery (`virtos-dr` - working)
+- ✅ GPU passthrough (`virtos-gpu` - working)
+- ✅ USB management (`virtos-usb` - working)
+- ✅ VM templates (`virtos-template` - working)
 
-**Important gaps:**
-- ✅ Monitoring and alerting (virtos-monitor - Phase 7)
-- ✅ User authentication/RBAC (virtos-auth - Phase 8)
-- ✅ VM templates & snapshots (virtos-template, virtos-snapshot - Phase 6)
-- ✅ Resource quotas (virtos-quota - Phase 7)
-- ✅ REST API (virtos-api - Phase 8)
-- ✅ Cloud-init integration (virtos-cloud-init - Phase 8)
-- ✅ Update mechanism (virtos-update - Phase 8)
-- ✅ Disaster recovery (virtos-dr - Phase 8)
-- ✅ Network virtualization (virtos-network - Phase 9)
-- ✅ GPU passthrough (virtos-gpu - Phase 9)
-- ✅ USB management (virtos-usb - Phase 9)
+**🟡 Partial Implementation**:
+- 🟡 User authentication/RBAC (`virtos-auth` - interface only, needs LDAP backend)
+- 🟡 HA/failover (`virtos-ha` - basic features working, advanced needs testing)
+- 🟡 Update mechanism (`virtos-update` - interface only, needs TCZ backend)
+
+**📅 Planned / Not Started**:
+- 📅 Multi-datacenter federation (research prototype exists)
+- 📅 AI-powered optimization (research prototype exists)
+- 📅 Kubernetes integration (planned)
+- 📅 Commercial support (not planned)
+- 📅 Web UI (by design - TUI only)
+
+**❌ Critical Gaps (Blocking Production)**:
+- ❌ Hardware testing (0/47 ISO boot checks)
+- ❌ Runtime validation (never tested end-to-end)
+- ❌ External security audit
+- ❌ 90-day stability validation
 
 **VirtOS is good for:** Home labs, learning, edge computing, dev/test  
 **VirtOS is NOT ready for:** Production with SLAs, mission-critical workloads, large enterprises
 
-See [docs/MISSING-FEATURES.md](docs/MISSING-FEATURES.md) for complete list and roadmap.
+See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complete implementation details.
 
-**Being honest:** It will take years to match platforms with 10+ years of development. But VirtOS offers unique advantages (size, flexibility, container support) that may matter more for your use case.
+**Reality Check:** VirtOS has more implemented features than the roadmap suggested, but lacks the **validation and testing** needed for production use. The code works, but hasn't been proven in real environments.
 
 ## Build System Status
 
@@ -391,13 +432,36 @@ cd packages && ./build-all.sh  # Build the package
 
 See [BUILD.md](BUILD.md) for complete build guide and status.
 
-## Implementation Status
+## Project Status
 
-**Last Updated**: 2026-05-26 | **Version**: 0.40
+**Last Updated**: 2026-05-28 | **Version**: 0.84 | **Status**: Alpha - Functional Core
 
-VirtOS has progressed from prototype to **working implementation** for core functionality. See [CLAUDE.md](CLAUDE.md) for complete implementation audit.
+> **⚠️ IMPORTANT**: VirtOS is in **alpha** status. Core VM management functionality works, but the system has **never been tested on real hardware**. ISO boot testing and runtime validation are incomplete. See [limitations](#current-limitations) below.
 
-### ✅ Production Ready (56% of scripts - 29/53)
+### 📊 Implementation Status
+
+**Last Audited**: 2026-05-25 | **Scripts Reviewed**: 54 | **Lines of Code**: 36,425
+
+See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complete audit details.
+
+| Category | Scripts | Backend | Tests | Status |
+|----------|---------|---------|-------|--------|
+| **Core VM (10)** | ✅ | ✅ | ✅ | **WORKING** |
+| **Advanced (19)** | ✅ | ✅ | ✅ | **WORKING** |
+| **Infrastructure (9)** | ✅ | 🟡 | ✅ | **PARTIAL** |
+| **Experimental (14)** | ✅ | 🔬 | ✅ | **DEMO** |
+| Package building | ✅ | ✅ | ✅ | **WORKING** |
+| JPlatform integration | ✅ | ✅ | ✅ | **WORKING** |
+| ISO building | ✅ | ⚠️ | ❌ | **UNTESTED** |
+
+**Status Icon Legend**:
+- ✅ **Complete** - Implemented, tested, working
+- 🟡 **Partial** - Interface complete, backend needed
+- 🔬 **Demo** - Prototype/research only
+- ⚠️ **Unknown** - Exists but not validated
+- ❌ **Not Started** - Not implemented
+
+### ✅ Working Features (29/54 scripts - 54%)
 
 **Core VM Management** (10 scripts - libvirt/QEMU backends):
 - `virtos-setup` - Complete system setup wizard with dialog UI
@@ -423,67 +487,55 @@ VirtOS has progressed from prototype to **working implementation** for core func
 **Infrastructure**:
 - ✅ Build system and package validation
 - ✅ CI/CD pipelines (GitHub Actions)
-- ✅ Auto-versioning (v0.40)
+- ✅ Auto-versioning (v0.84)
 - ✅ Security library (virtos-common.sh, 361 lines)
 - ✅ VERSION standardization (all 54 scripts use `get_version()`)
 - ✅ Unit test coverage (54 test files - 100% of all scripts, 450+ tests)
 - ✅ Integration test framework (54 tests across 5 suites)
+- ✅ Production documentation (installation, security, DR, monitoring)
 
 ### 🟡 Partial Implementation (9 scripts)
 
-**Infrastructure Components** (need additional backend work):
-- virtos-auth (LDAP/auth integration needed)
-- virtos-database (DB backend needed)
-- virtos-directory (directory service needed)
-- virtos-secrets (Vault integration needed)
-- virtos-update (package backend needed)
-- virtos-backup-orchestration, virtos-dr-advanced
-- virtos-networking-advanced, virtos-performance
+**Infrastructure Components** (interface complete, need backends):
+- `virtos-auth` (547 lines) - LDAP/Active Directory/OAuth integration needed
+- `virtos-database` (422 lines) - PostgreSQL/MySQL/MongoDB backends needed
+- `virtos-directory` (544 lines) - OpenLDAP/FreeIPA integration needed
+- `virtos-secrets` (563 lines) - HashiCorp Vault/AWS Secrets integration needed
+- `virtos-update` (344 lines) - TCZ package backend needed
+- `virtos-backup-orchestration` (452 lines) - Workflow engine needed
+- `virtos-dr-advanced` (250 lines) - DR automation needed
+- `virtos-networking-advanced` (695 lines) - SDN/OVN integration needed
+- `virtos-performance` (185 lines) - Tuning backends needed
 
-### 🔷 Experimental/Future (14 scripts)
+See [Issue #87](https://github.com/FlossWare/VirtOS/issues/87) for backend implementation plan.
 
-**Demonstration Scripts** (intentional prototypes for future work):
-- AI: virtos-ai, virtos-ai-advanced
-- Quantum: virtos-quantum, virtos-quantum-hardware
-- Blockchain: virtos-blockchain, virtos-blockchain-advanced
-- Enterprise: virtos-federation, virtos-federation-extended
-- Multi-cloud: virtos-multicloud, virtos-edge
-- Advanced: virtos-mesh, virtos-governance, virtos-sre, virtos-apm
+### 🔬 Experimental/Demo (14 scripts)
 
-### ⚠️ Untested (Working Code, No Runtime Validation)
+**Research Prototypes** (intentional demonstrations, not production features):
+- **AI**: virtos-ai (684 lines), virtos-ai-advanced (959 lines)
+- **Quantum**: virtos-quantum (594 lines), virtos-quantum-hardware (828 lines)
+- **Blockchain**: virtos-blockchain (719 lines), virtos-blockchain-advanced (688 lines)
+- **Federation**: virtos-federation (820 lines), virtos-federation-extended (594 lines)
+- **Multi-cloud**: virtos-multicloud (613 lines), virtos-edge (706 lines)
+- **Advanced**: virtos-mesh (819 lines), virtos-governance (711 lines), virtos-sre (754 lines), virtos-apm (614 lines)
 
-**ISO Building System**:
-- Framework complete, awaiting hardware/VM testing
-- See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for 47-point validation checklist
+These scripts demonstrate interface design for potential future features.
 
-**Unit Tests**:
-- ✅ 100% test coverage achieved (59 test files, 581 tests total)
-- 450+ unit tests validating script structure, arguments, and interfaces
-- All tests pass syntax validation and structural checks
-- Tests ready for runtime execution in VirtOS environment
-- See [TESTING.md](TESTING.md) for complete test documentation
+### ⚠️ Critical Gaps (Blocking Production Use)
 
-**Integration Tests**:
-- 54 tests defined across 5 suites (VM, JPlatform, networking, storage, cluster)
-- Test fixtures created (5 JPlatform workloads)
-- CI validation workflow active
-- Awaiting VirtOS runtime environment for execution
-- See [tests/integration/README.md](tests/integration/README.md)
+**Never Tested on Real Hardware**:
+- ❌ ISO boot testing: 0/47 validation checks completed ([Issue #86](https://github.com/FlossWare/VirtOS/issues/86))
+- ❌ Runtime validation: Never executed in actual VirtOS environment ([Issue #1](https://github.com/FlossWare/VirtOS/issues/1))
+- ❌ Hardware compatibility: No physical hardware testing
+- ❌ VM lifecycle: Core operations never validated end-to-end
 
-### 📊 Summary
+**Production Requirements Not Met**:
+- Infrastructure backends incomplete (9 scripts, [Issue #87](https://github.com/FlossWare/VirtOS/issues/87))
+- Security audit incomplete (external penetration testing needed)
+- Stability testing: No 90-day validation
+- Performance benchmarking: Not performed
 
-| Component | Scripts | Backend | Tests | Status |
-|-----------|---------|---------|-------|--------|
-| **Core VM (10)** | ✅ | ✅ | ✅ | **WORKING** |
-| **Advanced (19)** | ✅ | ✅ | ✅ | **WORKING** |
-| **Infrastructure (9)** | ✅ | 🟡 | ✅ | **PARTIAL** |
-| **Experimental (14)** | ✅ | ❌ | ✅ | **DEMO** |
-| Package building | ✅ | ✅ | ✅ | **WORKING** |
-| JPlatform integration | ✅ | ✅ | ✅ | **WORKING** |
-| **Unit test coverage** | ✅ | ✅ | ✅ | **100%** |
-| ISO building | ✅ | ⚠️ | ❌ | **UNTESTED** |
-
-**Legend**: ✅ Complete | 🟡 Partial | ⚠️ Unknown | ❌ Not Started
+See [Production Readiness Checklist](https://github.com/FlossWare/VirtOS/issues/95) for complete requirements.
 
 ### Recent Accomplishments (2026-05-26)
 
@@ -494,33 +546,38 @@ VirtOS has progressed from prototype to **working implementation** for core func
 - ✅ **Issue #1**: Runtime testing documentation
 - ✅ **Issue #52**: ISO testing checklist
 
-**Remaining**: Issue #51 execution (awaiting VirtOS runtime environment)
-- No security review of sudo scripts
-- No input validation on user data
-- Potential command injection vulnerabilities
+### Backend Implementation Detail
 
-❌ **Unit Tests** (Issue #4)
-- No BATS tests for management scripts
-- Only syntax validation in CI
-- Integration tests missing
+**Fully Functional Backends (29 scripts)**:
+- **libvirt/virsh** for VM management (create, start, stop, migrate, snapshot)
+- **qemu-img** for disk operations (create, resize, convert)
+- **Avahi/mDNS** for cluster discovery and coordination
+- **Dialog/whiptail** for TUI interfaces
+- **SSH** for remote operations
+- **Docker/LXC** integration (partial, container-security only)
 
-### Feature Implementation Detail
+**Backend Technologies Used**:
+```bash
+# VM Management
+virsh create/start/stop/migrate/snapshot
+qemu-img create/resize/convert/snapshot
 
-| Component | Interface | Backend | Tests | Working? |
-|-----------|-----------|---------|-------|----------|
-| Package Building | ✅ | ✅ | ✅ | **YES** |
-| Documentation | ✅ | N/A | ✅ | **YES** |
-| JPlatform Package | ✅ | ✅ | ⚠️ | **Build Only** |
-| VM Management | ✅ | ❌ | ❌ | **NO** |
-| Container Mgmt | ✅ | ❌ | ❌ | **NO** |
-| Clustering | ✅ | ❌ | ❌ | **NO** |
-| Backup/Restore | ✅ | ❌ | ❌ | **NO** |
-| HA/Monitoring | ✅ | ❌ | ❌ | **NO** |
-| Storage Mgmt | ✅ | ❌ | ❌ | **NO** |
-| ISO Building | ✅ | ⚠️ | ❌ | **UNKNOWN** |
-| Advanced Features | ✅ | ❌ | ❌ | **NO** |
+# Networking
+virsh net-define/net-start/net-stop
+ip addr/link/route
+brctl addbr/addif
 
-**Legend**: ✅ Complete | ⚠️ Partial/Untested | ❌ Not Started | N/A Not Applicable
+# Storage
+virsh pool-define/pool-create/vol-create
+lvcreate/vgcreate (LVM)
+btrfs subvolume create
+
+# Monitoring
+virsh domstats/dominfo
+virsh vcpuinfo/memorystat
+```
+
+See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for detailed per-script analysis.
 
 ### 🎯 Development Philosophy
 
@@ -550,18 +607,48 @@ To make VirtOS actually functional:
 
 ### ⚠️ Current Limitations
 
+**VirtOS Alpha Status - Use With Caution**:
+
+**✅ What Works**:
+- Package building and TCZ creation
+- Management script interfaces (54 scripts)
+- Core VM backend integration (29 scripts with libvirt/QEMU)
+- Documentation and architecture
+- CI/CD pipelines
+- Security library and input validation
+
+**❌ What's Not Ready**:
+- **ISO boot testing**: Never tested on real hardware (0/47 checks)
+- **Runtime validation**: Scripts never executed in actual VirtOS environment
+- **Production deployment**: No stability, security, or performance validation
+- **Infrastructure backends**: 9 scripts need implementation (auth, secrets, database)
+
 **DO NOT use VirtOS for:**
-- Production environments
-- Managing real VMs/containers
-- Critical infrastructure
-- Any scenario requiring working virtualization
+- ❌ Production environments with SLAs
+- ❌ Mission-critical workloads
+- ❌ Any deployment requiring guaranteed uptime
+- ❌ Systems managing sensitive data (until security audit complete)
 
 **VirtOS IS suitable for:**
-- Reviewing system architecture
-- Contributing to interface design
-- Implementing backend integration
-- Documentation improvements
-- Package building development
+- ✅ Development and testing environments
+- ✅ Proof-of-concept deployments
+- ✅ Learning virtualization concepts
+- ✅ Contributing to development
+- ✅ Architecture review and feedback
+
+**Path to Production Readiness**:
+
+See [Production Readiness Master Checklist](https://github.com/FlossWare/VirtOS/issues/95) for detailed requirements. Key milestones:
+
+1. **ISO Boot Validation** ([Issue #86](https://github.com/FlossWare/VirtOS/issues/86)) - 0% complete
+2. **Runtime Testing** ([Issue #1](https://github.com/FlossWare/VirtOS/issues/1)) - Not started
+3. **Infrastructure Backends** ([Issue #87](https://github.com/FlossWare/VirtOS/issues/87)) - 9 scripts pending
+4. **Security Audit** ([Issue #90](https://github.com/FlossWare/VirtOS/issues/90)) - External audit needed
+5. **DR Testing** ([Issue #91](https://github.com/FlossWare/VirtOS/issues/91)) - Procedures documented, not tested
+6. **90-Day Stability** - Not started
+7. **Performance Benchmarking** - Not started
+
+**Current Progress**: ~44% toward production readiness
 
 ### 🚀 Contributing
 
