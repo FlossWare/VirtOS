@@ -8,7 +8,7 @@ VirtOS uses **X.Y semantic versioning** where:
 
 ## Current Version
 
-**v0.74** (as of 2026-05-26)
+**v0.85** (as of 2026-05-28)
 
 - **Major**: 0 (pre-1.0 alpha/beta phase)
 - **Minor**: 74 (auto-incremented by CD workflow)
@@ -21,7 +21,7 @@ The `VERSION` file at repository root contains the canonical version:
 
 ```
 $ cat VERSION
-0.74
+0.85
 ```
 
 All package metadata files sync from this single source.
@@ -50,11 +50,11 @@ All version references stay synchronized:
 
 | File | Version Reference |
 |------|-------------------|
-| `VERSION` | 0.74 |
-| `packages/virtos-tools/virtos-tools.tcz.info` | Version: 0.74 |
-| `packages/virtos-jplatform/virtos-jplatform.tcz.info` | Version: 0.74 |
-| Git tag | v0.74 |
-| GitHub Release | VirtOS v0.74 |
+| `VERSION` | 0.85 |
+| `packages/virtos-tools/virtos-tools.tcz.info` | Version: 0.85 |
+| `packages/virtos-jplatform/virtos-jplatform.tcz.info` | Version: 0.85 |
+| Git tag | v0.85 |
+| GitHub Release | VirtOS v0.85 |
 
 ### Validation
 
