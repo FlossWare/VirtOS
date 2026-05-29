@@ -32,6 +32,7 @@ Complete documentation for FlossWare VirtOS.
 
 ### Configuration
 - **[CONFIGURATION.md](CONFIGURATION.md)** - 30+ configuration options
+- **[BUILD-CONFIGURATOR.md](BUILD-CONFIGURATOR.md)** - Interactive TUI for build configuration
 - **[PROFILES.md](PROFILES.md)** - 7 build profiles comparison
 - **[BRANDING.md](BRANDING.md)** - VirtOS naming and branding
 - **[STORAGE.md](STORAGE.md)** - Storage options and filesystems
