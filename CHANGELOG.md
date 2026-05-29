@@ -44,6 +44,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses virtos-common.sh validation functions with fallbacks
   - Improved error messages for better user experience
 
+### Added
+- Pull Request Template (Issue #117) - 2026-05-29
+  - Created .github/pull_request_template.md
+  - Comprehensive PR checklist (code quality, security, testing, documentation)
+  - Type of change selection (bug fix, feature, breaking change, etc.)
+  - Test environment and results sections
+  - Security checklist (input validation, injection prevention)
+  - Breaking change guidelines (deprecation policy reference)
+  - Reviewer checklist
+  - Improves contributor onboarding and PR quality
+
 ### Documentation
 - Created Deprecation Policy (Issue #117) - 2026-05-29
   - Comprehensive docs/DEPRECATION_POLICY.md
