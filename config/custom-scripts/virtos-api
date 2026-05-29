@@ -1,33 +1,20 @@
 #!/bin/bash
-# Copyright (c) 2026 FlossWare
-# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
+
 # VirtOS API - REST API server for VirtOS management
 # Lightweight HTTP API using netcat or socat
 
-# Load common library
-if [ -f /usr/local/lib/virtos-common.sh ]; then
-    . /usr/local/lib/virtos-common.sh
-fi
-
-VERSION=$(get_version 2>/dev/null || echo "0.22")
-
-# Handle --help and --version early (before any filesystem operations)
-if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
-    # Skip mkdir - will show usage at end
-    SKIP_INIT=yes
-elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
-    echo "virtos-api version $VERSION"
-    exit 0
-fi
-
+VERSION="1"
 API_PORT="${API_PORT:-8080}"
 API_DIR="/var/run/virtos/api"
 LOG_FILE="/var/log/virtos-api.log"
 
-if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$API_DIR" || true
+# Load audit library
+if [ -f /usr/local/lib/virtos-audit.sh ]; then
+    . /usr/local/lib/virtos-audit.sh
 fi
+
+mkdir -p "$API_DIR"
 
 usage() {
     cat << EOF
@@ -99,8 +86,14 @@ EOF
 handle_request() {
     local method="$1"
     local path="$2"
+    local client_ip="${3:-unknown}"
 
-    log_message "$method $path"
+    log_message "$method $path from $client_ip"
+
+    # Audit log API request
+    if command -v audit_log >/dev/null 2>&1; then
+        audit_log "api.request" "$method $path" "success" "" "client_ip=$client_ip"
+    fi
 
     case "$path" in
         /api/v1/health)
@@ -138,11 +131,13 @@ handle_request() {
             local vm_name=$(echo "$path" | sed 's|/api/v1/vms/||' | cut -d'/' -f1)
             local action=$(echo "$path" | sed 's|/api/v1/vms/||' | cut -d'/' -f2)
 
-            # SECURITY: Validate VM name from URL to prevent command injection
+            # Validate VM name to prevent command injection
             if ! echo "$vm_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
-                log_message "SECURITY: Invalid VM name in request: $vm_name"
-                http_response "400 Bad Request" "application/json" '{"error":"Invalid VM name format"}'
-                return 1
+                if command -v audit_deny >/dev/null 2>&1; then
+                    audit_deny "api.vm.$action" "$vm_name" "invalid VM name format"
+                fi
+                http_response "400 Bad Request" "application/json" '{"error":"Invalid VM name"}'
+                return
             fi
 
             if [ -z "$action" ]; then
@@ -162,22 +157,31 @@ handle_request() {
                     http_response "503 Service Unavailable" "application/json" '{"error":"libvirt not available"}'
                 fi
             elif [ "$action" = "start" ] && [ "$method" = "POST" ]; then
-                # VM name already validated above
                 if virsh start "$vm_name" 2>/dev/null; then
+                    if command -v audit_success >/dev/null 2>&1; then
+                        audit_success "api.vm.start" "$vm_name" "via_api=true"
+                    fi
                     http_response "200 OK" "application/json" '{"status":"started","vm":"'$vm_name'"}'
                 else
+                    if command -v audit_fail >/dev/null 2>&1; then
+                        audit_fail "api.vm.start" "$vm_name" "virsh start failed"
+                    fi
                     http_response "500 Internal Server Error" "application/json" '{"error":"Failed to start VM"}'
                 fi
             elif [ "$action" = "stop" ] && [ "$method" = "POST" ]; then
-                # VM name already validated above
                 if virsh shutdown "$vm_name" 2>/dev/null; then
+                    if command -v audit_success >/dev/null 2>&1; then
+                        audit_success "api.vm.stop" "$vm_name" "via_api=true"
+                    fi
                     http_response "200 OK" "application/json" '{"status":"stopping","vm":"'$vm_name'"}'
                 else
+                    if command -v audit_fail >/dev/null 2>&1; then
+                        audit_fail "api.vm.stop" "$vm_name" "virsh shutdown failed"
+                    fi
                     http_response "500 Internal Server Error" "application/json" '{"error":"Failed to stop VM"}'
                 fi
             else
-                # Invalid action - already validated above or wrong method
-                http_response "404 Not Found" "application/json" '{"error":"Endpoint not found or invalid method"}'
+                http_response "404 Not Found" "application/json" '{"error":"Endpoint not found"}'
             fi
             ;;
 
@@ -219,10 +223,24 @@ start_server() {
         case "$1" in
             --port)
                 port="$2"
+                # Validate port number (1-65535)
+                if ! echo "$port" | grep -qE '^[0-9]+$'; then
+                    echo "Error: Port must be a number" >&2
+                    return 1
+                fi
+                if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+                    echo "Error: Port must be between 1 and 65535" >&2
+                    return 1
+                fi
                 shift 2
                 ;;
             --host)
                 host="$2"
+                # Validate host address (basic validation)
+                if [ -z "$host" ]; then
+                    echo "Error: Host address cannot be empty" >&2
+                    return 1
+                fi
                 shift 2
                 ;;
             *)
@@ -231,79 +249,21 @@ start_server() {
         esac
     done
 
-    # SECURITY: Validate port number
-    if ! echo "$port" | grep -qE '^[0-9]+$'; then
-        echo "Error: Invalid port number: $port" >&2
-        echo "" >&2
-        echo "Port must be a numeric value." >&2
-        echo "" >&2
-        echo "Examples:" >&2
-        echo "  virtos-api start --port 8080" >&2
-        echo "  virtos-api start --port 9090" >&2
-        return 1
-    fi
-    if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-        echo "Error: Port number out of valid range: $port" >&2
-        echo "" >&2
-        echo "Valid port range: 1-65535" >&2
-        echo "Provided port:    $port" >&2
-        echo "" >&2
-        echo "Common API ports:" >&2
-        echo "  8080  (default HTTP alternative)" >&2
-        echo "  8443  (HTTPS alternative)" >&2
-        echo "  9090  (common for monitoring/APIs)" >&2
-        return 1
-    fi
-    if [ "$port" -lt 1024 ] && [ "$(id -u)" -ne 0 ]; then
-        echo "Error: Insufficient privileges for port $port" >&2
-        echo "" >&2
-        echo "Ports below 1024 (privileged ports) require root access." >&2
-        echo "Current user: $(whoami)" >&2
-        echo "" >&2
-        echo "Options:" >&2
-        echo "  1. Run as root:" >&2
-        echo "     sudo virtos-api start --port $port" >&2
-        echo "" >&2
-        echo "  2. Use an unprivileged port (>= 1024):" >&2
-        echo "     virtos-api start --port 8080" >&2
-        return 1
-    fi
-
-    # SECURITY: Validate host address format
-    if ! echo "$host" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|^0\.0\.0\.0$|^localhost$'; then
-        echo "Error: Invalid bind address: $host" >&2
-        echo "" >&2
-        echo "Valid address formats:" >&2
-        echo "  0.0.0.0     Bind to all interfaces (allow external access)" >&2
-        echo "  127.0.0.1   Bind to localhost only (local access only)" >&2
-        echo "  <IP>        Bind to specific IP address" >&2
-        echo "" >&2
-        echo "Examples:" >&2
-        echo "  virtos-api start --host 0.0.0.0 --port 8080  # Allow external access" >&2
-        echo "  virtos-api start --host 127.0.0.1 --port 8080  # Local only" >&2
-        return 1
-    fi
-
     if [ -f "$API_DIR/api.pid" ]; then
         local pid=$(cat "$API_DIR/api.pid")
         if ps -p "$pid" >/dev/null 2>&1; then
-            echo "Error: API server is already running" >&2
-            echo "" >&2
-            echo "PID:  $pid" >&2
-            echo "Port: $API_PORT (likely)" >&2
-            echo "" >&2
-            echo "To stop the running server:" >&2
-            echo "  virtos-api stop" >&2
-            echo "" >&2
-            echo "To check server status:" >&2
-            echo "  virtos-api status" >&2
-            echo "  curl http://localhost:$API_PORT/api/v1/health" >&2
+            echo "API server already running (PID: $pid)"
             return 1
         fi
     fi
 
     echo "Starting VirtOS API server on $host:$port..."
     log_message "Starting API server on $host:$port"
+
+    # Audit log server startup
+    if command -v audit_success >/dev/null 2>&1; then
+        audit_success "api.server.start" "$host:$port" "version=$VERSION"
+    fi
 
     # Start server in background
     (
@@ -337,16 +297,8 @@ start_server() {
                     /usr/local/bin/virtos-api handle "$method" "$path"
                 '
             else
-                echo "Error: HTTP server backend not available" >&2
-                echo "" >&2
-                echo "The API server requires either 'netcat' or 'socat'." >&2
-                echo "" >&2
-                echo "To install:" >&2
-                echo "  tce-load -wi netcat    # Lightweight option (recommended)" >&2
-                echo "  tce-load -wi socat     # Advanced option" >&2
-                echo "" >&2
-                echo "After installation, retry:" >&2
-                echo "  virtos-api start" >&2
+                echo "Error: netcat or socat required"
+                echo "Install with: tce-load -i netcat"
                 exit 1
             fi
             sleep 1
@@ -373,6 +325,11 @@ stop_server() {
         rm -f "$API_DIR/api.pid"
         log_message "API server stopped"
         echo "API server stopped"
+
+        # Audit log server shutdown
+        if command -v audit_success >/dev/null 2>&1; then
+            audit_success "api.server.stop" "pid=$pid" ""
+        fi
     else
         echo "API server not running (stale PID file)"
         rm -f "$API_DIR/api.pid"
@@ -423,8 +380,8 @@ test_api() {
 }
 
 # Main command handler
-COMMAND="${1:-}"
-[ -n "$COMMAND" ] && shift
+COMMAND="$1"
+shift
 
 case "$COMMAND" in
     start)
@@ -442,10 +399,6 @@ case "$COMMAND" in
     handle)
         # Internal use for socat backend
         handle_request "$1" "$2"
-        ;;
-    --version|-v|version)
-        echo "virtos-api version $VERSION"
-        exit 0
         ;;
     --help|-h|help|"")
         usage
