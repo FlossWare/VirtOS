@@ -68,6 +68,14 @@ Examples:
   # Show cluster usage
   virtos-quota usage
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM not found
+    4    Quota exceeded
+    5    Quota enforcement disabled
+
 EOF
 }
 

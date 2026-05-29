@@ -488,6 +488,14 @@ Security Score Grading:
   70-84%   = C   (Needs Improvement)
   < 70%    = D   (Poor)
 
+EXIT CODES:
+    0    Success - all checks passed
+    1    General error
+    2    Invalid arguments
+    3    Some checks failed (check score)
+    4    Critical security issues found
+    5    Permission denied
+
 Version: $VERSION
 EOF
 }

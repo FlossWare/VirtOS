@@ -628,6 +628,14 @@ Examples:
   # Status
   $SCRIPT_NAME security-adv-status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Security component not available
+    4    Scan/test failed
+    5    Compliance check failed
+
 EOF
 }
 

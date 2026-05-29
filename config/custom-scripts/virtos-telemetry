@@ -100,6 +100,14 @@ Examples:
   # Import Grafana dashboard
   virtos-telemetry grafana-dashboard node-exporter
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Prometheus/Grafana not initialized
+    4    Exporter not found
+    5    Service start/stop failed
+
 EOF
 }
 
