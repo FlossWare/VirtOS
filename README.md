@@ -573,7 +573,7 @@ See [BUILD.md](BUILD.md) for complete build guide and status.
 
 ## Project Status
 
-**Last Updated**: 2026-05-28 | **Version: 0.89 | **Status**: Alpha - Functional Core
+**Last Updated**: 2026-05-29 | **Version: 0.89 | **Status**: Alpha - Functional Core
 
 > **⚠️ IMPORTANT**: VirtOS is in **alpha** status. Core VM management functionality works, but the system has **never been tested on real hardware**. ISO boot testing and runtime validation are incomplete. See [Current Limitations](#%EF%B8%8F-current-limitations) below.
 

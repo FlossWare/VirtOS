@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Code Quality Metrics Dashboard (Issue #117) - 2026-05-29
+  - Added code-metrics job to CI workflow (.github/workflows/ci.yml)
+  - Comprehensive metrics tracking:
+    - Test coverage percentage (from BATS unit tests)
+    - ShellCheck warnings/errors count by severity
+    - Code complexity metrics (lines per script, function count, largest script)
+    - Code pattern consistency analysis
+    - Documentation coverage (--help and --version flags)
+  - Quality score calculation (0-100) based on multiple factors
+  - GitHub Actions summary dashboard with visual status indicators
+  - Metrics saved as JSON artifact (90-day retention)
+  - Baseline for future trend tracking
+  - Addresses Maintainability Issue #117 Gap (Code Metrics Dashboard) worth +1 point
+
 ### Security
 - Enhanced input validation in virtos-quota and virtos-billing (Issue #116) - 2026-05-29
   - virtos-quota: VM name, resource type, and limit validation
