@@ -45,6 +45,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error messages for better user experience
 
 ### Documentation
+- Created Deprecation Policy (Issue #117) - 2026-05-29
+  - Comprehensive docs/DEPRECATION_POLICY.md
+  - 6-month standard deprecation timeline
+  - Clear communication requirements
+  - Semantic versioning integration
+  - Example deprecation walkthrough
+  - FAQ and migration guidance
+  - Protects users while enabling evolution
+
 - Enhanced TROUBLESHOOTING.md with Web UI and API sections (Issue #133) - 2026-05-29
   - Added Web UI troubleshooting: Cockpit startup, module issues, dashboard, certificates
   - Added API troubleshooting: Server startup, connection issues, 503 errors, validation errors
