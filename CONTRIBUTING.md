@@ -2,6 +2,14 @@
 
 Thank you for considering contributing! This project aims to create a minimal, efficient virtualization platform based on Tiny Core Linux.
 
+## Community Resources
+
+New to VirtOS? Check out our [Community Guide](docs/COMMUNITY.md) for:
+- 📢 Communication channels (GitHub Discussions, Issues)
+- 💬 How to ask questions and get help
+- 🙌 Community guidelines and Code of Conduct
+- 🎯 Recognition and contributor highlights
+
 ## Code of Conduct
 
 This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to https://github.com/FlossWare/VirtOS/issues (use the "code-of-conduct" label).
@@ -148,18 +156,31 @@ Before submitting a PR, ensure:
 
 ### Quick Validation
 
+**Using our validation tools** (recommended):
+```bash
+# Comprehensive script validation (8 quality checks per script)
+./ci/validate-scripts.sh --report
+
+# Check error handling compliance
+./ci/migrate-error-handling.sh --report
+
+# Validate specific script
+./ci/validate-scripts.sh packages/virtos-tools/src/usr/local/bin/virtos-yourscript
+```
+
+**Manual validation**:
 ```bash
 # Validate all scripts
-for script in config/custom-scripts/virtos-*; do
+for script in packages/virtos-tools/src/usr/local/bin/virtos-*; do
   bash -n "$script" && echo "✓ $script" || echo "✗ $script FAILED"
 done
 
 # Run shellcheck on all scripts
-shellcheck config/custom-scripts/virtos-*
+shellcheck packages/virtos-tools/src/usr/local/bin/virtos-*
 
 # Check for common issues
-grep -r "password\s*=" config/  # Should not find hardcoded passwords
-grep -r "TODO\|FIXME" config/   # Find items needing attention
+grep -r "password\s*=" packages/  # Should not find hardcoded passwords
+grep -r "TODO\|FIXME" packages/   # Find items needing attention
 ```
 
 ### Testing Levels
