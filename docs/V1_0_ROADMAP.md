@@ -61,7 +61,7 @@
 **Timeline**: 4-6 weeks  
 **Priority**: P0 (Blocker)
 
-See [TESTING_ROADMAP.md](TESTING_ROADMAP.md) for detailed execution plan.
+See [TESTING_ROADMAP.md](../TESTING_ROADMAP.md) for detailed execution plan.
 
 #### 2. Infrastructure Backend Implementation
 
