@@ -39,9 +39,11 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 - Package build system (working)
 - CI/CD pipelines (working)
 - Version management (working)
-- Documentation (51 markdown files)
+- Documentation (54+ markdown files)
 - BATS test framework (581 tests: 529 functional + 52 integration workflows)
 - Security library (virtos-common.sh, 361 lines)
+- Audit logging system (virtos-audit.sh, 360 lines + virtos-audit command)
+- Log rotation (logrotate configuration)
 
 #### 🟡 Partial Implementation (9 scripts)
 
@@ -90,7 +92,8 @@ VirtOS/
 │   └── profiles/          # Build profiles (minimal, standard, full, etc.)
 ├── config/                # System configuration templates
 │   ├── custom-scripts/    # virtos-* management scripts (source of truth)
-│   │   └── lib/           # Common libraries (virtos-common.sh)
+│   │   └── lib/           # Common libraries (virtos-common.sh, virtos-audit.sh)
+│   ├── logrotate.d/       # Log rotation configurations
 │   └── profiles/          # Build profile configurations
 ├── docs/                  # Comprehensive documentation
 │   ├── architecture/      # Architecture diagrams and design
@@ -333,6 +336,29 @@ See [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) for current work
 **No open issues** - All known issues have been resolved! 🎉
 
 ### Recently Completed Issues
+
+- **Issue #109**: ✅ **Experimental scripts confusion** - COMPLETE (2026-05-29)
+  - Created comprehensive EXPERIMENTAL_FEATURES.md guide
+  - Clarified 29 working vs 14 experimental scripts
+  - Added FAQ for evaluators and users
+  - Updated README.md with link to guide
+
+- **Issue #108**: ✅ **Audit logging system** - COMPLETE (2026-05-29)
+  - Implemented virtos-audit.sh library (360 lines)
+  - Created virtos-audit command-line tool
+  - Structured log format (machine-parseable)
+  - User attribution, source tracking, success/failure logging
+  - Query and analysis functions
+  - Automatic log rotation (logrotate configuration)
+  - Comprehensive AUDIT_LOGGING.md documentation
+  - Compliance mapping (PCI-DSS, HIPAA, SOX, GDPR)
+
+- **Issues #103, #85, #86**: ✅ **Testing roadmap** - DOCUMENTED (2026-05-29)
+  - Created comprehensive TESTING_ROADMAP.md
+  - Three-phase plan to unblock all testing issues
+  - Clear prerequisites, success criteria, timeline estimates
+  - Addresses false test confidence, integration test execution, ISO boot testing
+  - Provides actionable path forward (Phase 1 can start immediately)
 
 - **Issue #51**: ✅ **Integration test framework** - COMPLETE (2026-05-26)
   - Created comprehensive test framework with 54 tests across 5 suites (1067 lines)
