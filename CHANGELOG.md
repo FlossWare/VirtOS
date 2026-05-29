@@ -45,6 +45,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error messages for better user experience
 
 ### Added
+- Plugin API Documentation (Issue #111) - 2026-05-29
+  - Created comprehensive docs/PLUGIN_API.md
+  - Plugin architecture and conventions
+  - Complete plugin template (basic and advanced)
+  - Common library integration (virtos-common.sh, virtos-audit.sh)
+  - Security best practices for plugins
+  - TCZ packaging guide
+  - Testing guidelines (manual and BATS)
+  - Example plugins (Slack notifications, compliance checks)
+  - Enables third-party VirtOS extensions
+
 - Pull Request Template (Issue #117) - 2026-05-29
   - Created .github/pull_request_template.md
   - Comprehensive PR checklist (code quality, security, testing, documentation)
