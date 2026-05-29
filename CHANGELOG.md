@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Security hardening guide (Issue #116) - 2026-05-29
+  - Created comprehensive docs/SECURITY_HARDENING.md (500+ lines)
+  - System hardening (boot, filesystem, network)
+  - Access control and audit logging
+  - Compliance frameworks (CIS, PCI-DSS, HIPAA)
+  - Security monitoring and incident response
+  - Update management and benchmarking tools
+  - Quick start checklist and best practices
+  
 - v1.0 Roadmap and community infrastructure (Issue #101) - 2026-05-29
   - Created docs/V1_0_ROADMAP.md - Production-ready roadmap
   - Detailed timeline, milestones, and release criteria
