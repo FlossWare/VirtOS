@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- CVE monitoring and dependency scanning (Issue #116) - 2026-05-29
+  - Created .github/dependabot.yml - Automated dependency updates
+  - GitHub Actions updates (weekly)
+  - Docker dependencies monitoring
+  - Python dependencies monitoring
+  - Security-only updates for critical dependencies
+  - Created .github/workflows/security.yml - Comprehensive security scanning
+  - Trivy vulnerability scanning (CRITICAL, HIGH, MEDIUM)
+  - Gitleaks secret scanning
+  - ShellCheck security analysis
+  - OSSF Scorecard analysis
+  - Dependency review on PRs
+  - Weekly scheduled scans
+  - Automated security summaries
+  
 - Security hardening guide (Issue #116) - 2026-05-29
   - Created comprehensive docs/SECURITY_HARDENING.md (500+ lines)
   - System hardening (boot, filesystem, network)

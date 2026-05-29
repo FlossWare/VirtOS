@@ -1,0 +1,70 @@
+# Dependabot configuration for automated dependency updates and CVE monitoring
+# See: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "FlossWare/virtos-maintainers"
+
+  # Docker dependencies (if we add Dockerfile in future)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    open-pull-requests-limit: 3
+
+  # Python dependencies (for build scripts if any)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    open-pull-requests-limit: 3
+    # Only security updates for Python
+    open-pull-requests-limit: 0
+    # Enable security updates only
+    versioning-strategy: increase
+
+# Security updates configuration
+# Dependabot will automatically create PRs for:
+# - Critical and high severity CVEs
+# - Medium severity CVEs (with weekly interval)
+# - GitHub Actions updates (weekly)
+#
+# Manual review required for:
+# - Breaking changes
+# - Major version updates
+# - Infrastructure changes
+#
+# Related:
+# - Issue #116: Security roadmap (CVE monitoring gap)
+# - docs/SECURITY_HARDENING.md: Update management section
