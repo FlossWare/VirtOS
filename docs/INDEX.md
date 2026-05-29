@@ -47,6 +47,7 @@ Complete documentation for FlossWare VirtOS.
 - **[CLUSTERING.md](CLUSTERING.md)** - Multi-host discovery and coordination
 - **[IAAS.md](IAAS.md)** - Automated VM placement and scheduling
 - **[REMOTE-ACCESS.md](REMOTE-ACCESS.md)** - virt-manager and SSH setup
+- **[API.md](API.md)** - REST API reference (virtos-api endpoints)
 
 ## User Interface
 
