@@ -1,0 +1,475 @@
+#!/bin/bash
+set -e
+
+# VirtOS HA - High Availability and automatic failover
+# Detect failures and automatically restart VMs on healthy hosts
+
+VERSION="1"
+CONFIG_DIR="/etc/virtos/ha"
+STATE_DIR="/var/run/virtos/ha"
+LOG_FILE="/var/log/virtos-ha.log"
+
+mkdir -p "$CONFIG_DIR" "$STATE_DIR"
+
+usage() {
+    cat << EOF
+VirtOS HA - High Availability v${VERSION}
+
+Usage: virtos-ha [command] [options]
+
+Commands:
+  enable <vm-name>              Enable HA for VM
+  disable <vm-name>             Disable HA for VM
+  status                        Show HA status
+  list                          List HA-enabled VMs
+  failover <vm-name> <host>     Manual failover of VM to host
+  start-daemon                  Start HA monitoring daemon
+  stop-daemon                   Stop HA monitoring daemon
+  fence <host>                  Fence (isolate) a host
+
+HA Policies:
+  --priority <high|normal|low>  VM restart priority
+  --max-restarts <n>            Max automatic restart attempts
+  --restart-delay <seconds>     Delay between restart attempts
+
+Examples:
+  # Enable HA for a VM
+  virtos-ha enable web-server-1 --priority high
+
+  # List HA-enabled VMs
+  virtos-ha list
+
+  # Start HA daemon
+  virtos-ha start-daemon
+
+  # Manual failover
+  virtos-ha failover db-server virtos-2
+
+  # Check HA status
+  virtos-ha status
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# Default configuration
+init_config() {
+    if [ ! -f "$CONFIG_DIR/ha.conf" ]; then
+        cat > "$CONFIG_DIR/ha.conf" <<EOF
+# VirtOS HA Configuration
+
+# Check interval (seconds)
+CHECK_INTERVAL=30
+
+# Fence timeout (seconds)
+FENCE_TIMEOUT=60
+
+# Default restart policy
+DEFAULT_MAX_RESTARTS=3
+DEFAULT_RESTART_DELAY=30
+
+# Quorum
+REQUIRE_QUORUM=yes
+MIN_QUORUM_NODES=2
+
+# Fencing
+ENABLE_FENCING=yes
+FENCE_METHOD=network
+EOF
+    fi
+
+    source "$CONFIG_DIR/ha.conf"
+
+    # Create HA VMs directory
+    mkdir -p "$CONFIG_DIR/vms"
+}
+
+enable_ha() {
+    local vm_name="$1"
+    local priority="${2:-normal}"
+    local max_restarts="${3:-$DEFAULT_MAX_RESTARTS}"
+
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    # Create HA config for VM
+    cat > "$CONFIG_DIR/vms/${vm_name}.conf" <<EOF
+# HA Configuration for $vm_name
+VM_NAME="$vm_name"
+PRIORITY="$priority"
+MAX_RESTARTS=$max_restarts
+RESTART_DELAY=$DEFAULT_RESTART_DELAY
+ENABLED=yes
+CURRENT_HOST="$(hostname)"
+RESTART_COUNT=0
+LAST_RESTART=0
+EOF
+
+    # Enable autostart
+    virsh autostart "$vm_name" 2>/dev/null
+
+    log_message "HA enabled for VM: $vm_name (priority: $priority)"
+    echo "HA enabled for VM: $vm_name"
+}
+
+disable_ha() {
+    local vm_name="$1"
+
+    if [ ! -f "$CONFIG_DIR/vms/${vm_name}.conf" ]; then
+        echo "Error: HA not enabled for VM '$vm_name'"
+        return 1
+    fi
+
+    rm -f "$CONFIG_DIR/vms/${vm_name}.conf"
+
+    log_message "HA disabled for VM: $vm_name"
+    echo "HA disabled for VM: $vm_name"
+}
+
+list_ha_vms() {
+    echo "HA-Enabled VMs:"
+    echo "=============="
+    printf "%-20s %-10s %-15s %-10s\n" "VM NAME" "PRIORITY" "HOST" "RESTARTS"
+    echo "---------------------------------------------------------------"
+
+    for vm_conf in "$CONFIG_DIR/vms"/*.conf; do
+        if [ ! -f "$vm_conf" ]; then
+            echo "No HA-enabled VMs"
+            return 0
+        fi
+
+        source "$vm_conf"
+
+        printf "%-20s %-10s %-15s %-10s\n" \
+            "$VM_NAME" "$PRIORITY" "$CURRENT_HOST" "$RESTART_COUNT"
+    done
+}
+
+check_vm_health() {
+    local vm_name="$1"
+
+    # Check if VM is running
+    local state=$(virsh domstate "$vm_name" 2>/dev/null)
+
+    if [ "$state" = "running" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+check_host_health() {
+    local hostname="$1"
+    local ip="$2"
+
+    # Ping check
+    if ping -c 3 -W 2 "$ip" >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+find_failover_host() {
+    local vm_name="$1"
+    local current_host="$2"
+    local best_host=""
+    local best_score=0
+
+    if ! command -v virtos-cluster >/dev/null 2>&1; then
+        echo "Error: Clustering not available"
+        return 1
+    fi
+
+    # Get cluster members
+    if [ ! -f /var/run/virtos/cluster-members ]; then
+        echo "Error: No cluster members found"
+        return 1
+    fi
+
+    while read -r line; do
+        local host=$(echo "$line" | awk '{print $1}')
+        local ip=$(echo "$line" | awk '{print $2}')
+
+        # Skip current failed host
+        if [ "$host" = "$current_host" ]; then
+            continue
+        fi
+
+        # Skip self (we're already failed if looking for failover)
+        if [ "$host" = "$(hostname)" ]; then
+            # Check if we can run it locally
+            if check_host_health "$host" "$ip"; then
+                # Calculate score based on available resources
+                local cpu_count=$(grep -c processor /proc/cpuinfo)
+                local mem_free=$(free -m | grep Mem | awk '{print $4}')
+                local score=$((cpu_count * 100 + mem_free))
+
+                if [ $score -gt $best_score ]; then
+                    best_host="$host"
+                    best_score=$score
+                fi
+            fi
+        else
+            # Check if remote host is healthy
+            if check_host_health "$host" "$ip"; then
+                # For remote hosts, we'd need to query resources via SSH
+                # For now, just mark as available
+                if [ -z "$best_host" ]; then
+                    best_host="$host"
+                fi
+            fi
+        fi
+    done < /var/run/virtos/cluster-members
+
+    if [ -n "$best_host" ]; then
+        echo "$best_host"
+        return 0
+    else
+        return 1
+    fi
+}
+
+perform_failover() {
+    local vm_name="$1"
+    local target_host="$2"
+    local vm_conf="$CONFIG_DIR/vms/${vm_name}.conf"
+
+    if [ ! -f "$vm_conf" ]; then
+        echo "Error: VM not HA-enabled"
+        return 1
+    fi
+
+    source "$vm_conf"
+
+    # Check restart count
+    if [ "$RESTART_COUNT" -ge "$MAX_RESTARTS" ]; then
+        log_message "ERROR: Max restart attempts reached for $vm_name"
+        echo "Error: Max restart attempts ($MAX_RESTARTS) reached for $vm_name"
+        return 1
+    fi
+
+    log_message "Failing over VM $vm_name to host $target_host..."
+
+    # Stop VM on current host (force)
+    virsh destroy "$vm_name" 2>/dev/null
+
+    # If target is local, start here
+    if [ "$target_host" = "$(hostname)" ]; then
+        sleep "$RESTART_DELAY"
+        virsh start "$vm_name"
+
+        if [ $? -eq 0 ]; then
+            # Update config
+            sed -i "s/^CURRENT_HOST=.*/CURRENT_HOST=\"$(hostname)\"/" "$vm_conf"
+            sed -i "s/^RESTART_COUNT=.*/RESTART_COUNT=$((RESTART_COUNT + 1))/" "$vm_conf"
+            sed -i "s/^LAST_RESTART=.*/LAST_RESTART=$(date +%s)/" "$vm_conf"
+
+            log_message "VM $vm_name restarted on $(hostname)"
+            echo "VM $vm_name successfully failed over to $(hostname)"
+            return 0
+        else
+            log_message "ERROR: Failed to start $vm_name on $(hostname)"
+            return 1
+        fi
+    else
+        # Remote failover would require:
+        # 1. Copy VM disk to target host
+        # 2. Copy VM XML to target host
+        # 3. Start VM on target host
+        # For now, just log the attempt
+
+        log_message "Remote failover to $target_host not yet implemented"
+        echo "Note: Remote failover requires shared storage or migration"
+        echo "VM would be restarted on: $target_host"
+        return 1
+    fi
+}
+
+monitor_loop() {
+    log_message "HA monitoring daemon started"
+
+    while true; do
+        # Check each HA-enabled VM
+        for vm_conf in "$CONFIG_DIR/vms"/*.conf; do
+            if [ ! -f "$vm_conf" ]; then
+                continue
+            fi
+
+            source "$vm_conf"
+
+            if [ "$ENABLED" != "yes" ]; then
+                continue
+            fi
+
+            # Only monitor VMs on this host
+            if [ "$CURRENT_HOST" != "$(hostname)" ]; then
+                continue
+            fi
+
+            # Check VM health
+            if ! check_vm_health "$VM_NAME"; then
+                log_message "ALERT: VM $VM_NAME is not running (expected on $(hostname))"
+
+                # Find failover target
+                failover_host=$(find_failover_host "$VM_NAME" "$CURRENT_HOST")
+
+                if [ -n "$failover_host" ]; then
+                    log_message "Initiating automatic failover for $VM_NAME to $failover_host"
+                    perform_failover "$VM_NAME" "$failover_host"
+                else
+                    log_message "ERROR: No suitable failover host found for $VM_NAME"
+                fi
+            fi
+        done
+
+        sleep "$CHECK_INTERVAL"
+    done
+}
+
+start_daemon() {
+    if [ -f "$STATE_DIR/ha.pid" ]; then
+        local pid=$(cat "$STATE_DIR/ha.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "HA daemon already running (PID: $pid)"
+            return 1
+        fi
+    fi
+
+    echo "Starting VirtOS HA daemon..."
+
+    # Background daemon
+    monitor_loop &
+
+    echo $! > "$STATE_DIR/ha.pid"
+    log_message "HA daemon started (PID: $!)"
+    echo "HA daemon started (PID: $!)"
+}
+
+stop_daemon() {
+    if [ ! -f "$STATE_DIR/ha.pid" ]; then
+        echo "HA daemon not running"
+        return 1
+    fi
+
+    local pid=$(cat "$STATE_DIR/ha.pid")
+
+    if ps -p "$pid" >/dev/null 2>&1; then
+        kill "$pid"
+        rm -f "$STATE_DIR/ha.pid"
+        log_message "HA daemon stopped"
+        echo "HA daemon stopped"
+    else
+        echo "HA daemon not running (stale PID file)"
+        rm -f "$STATE_DIR/ha.pid"
+    fi
+}
+
+show_status() {
+    echo "VirtOS HA Status"
+    echo "================"
+    echo ""
+
+    # Daemon status
+    if [ -f "$STATE_DIR/ha.pid" ]; then
+        local pid=$(cat "$STATE_DIR/ha.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "HA Daemon: Running (PID: $pid)"
+        else
+            echo "HA Daemon: Not running (stale PID)"
+        fi
+    else
+        echo "HA Daemon: Not running"
+    fi
+
+    echo ""
+    list_ha_vms
+}
+
+fence_host() {
+    local host="$1"
+
+    log_message "Fencing host: $host"
+
+    # Network-based fencing: block communication
+    # In production, this would use STONITH or similar
+
+    echo "Host $host would be fenced (network isolation)"
+    echo "Note: Fencing requires STONITH or BMC integration"
+}
+
+# Initialize
+init_config
+
+# Parse options
+PRIORITY="normal"
+MAX_RESTARTS="$DEFAULT_MAX_RESTARTS"
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --priority)
+            PRIORITY="$2"
+            shift 2
+            ;;
+        --max-restarts)
+            MAX_RESTARTS="$2"
+            shift 2
+            ;;
+        --restart-delay)
+            RESTART_DELAY="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    enable)
+        enable_ha "$1" "$PRIORITY" "$MAX_RESTARTS"
+        ;;
+    disable)
+        disable_ha "$1"
+        ;;
+    status)
+        show_status
+        ;;
+    list)
+        list_ha_vms
+        ;;
+    failover)
+        if [ $# -lt 2 ]; then
+            echo "Usage: virtos-ha failover <vm-name> <target-host>"
+            exit 1
+        fi
+        perform_failover "$1" "$2"
+        ;;
+    start-daemon)
+        start_daemon
+        ;;
+    stop-daemon)
+        stop_daemon
+        ;;
+    fence)
+        fence_host "$1"
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

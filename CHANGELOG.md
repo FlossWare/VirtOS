@@ -7,7 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Checksum verification for security tool downloads (Issue #137) - 2026-05-29
+  - virtos-container-security: Added SHA256 verification for Trivy downloads
+  - virtos-security: Added SHA256 verification for Lynis downloads
+  - Download-verify-install pattern with cleanup on failure
+  - Prevents supply chain attacks via compromised downloads
+  - Documented in SECURITY_ENHANCEMENTS_SUMMARY.md
+
+- Enhanced input validation in virtos-network, virtos-storage, virtos-backup - 2026-05-29
+  - virtos-network: Network name, bridge name, IP address, CIDR validation
+  - virtos-storage: Pool name, volume name, path traversal prevention
+  - virtos-backup: VM name, backup name, destination path validation
+  - Command injection prevention in all parameters
+  - Path traversal prevention in file operations
+
 ### Added
+- Automated Code Review System - 2026-05-29
+  - Created .github/workflows/code-review.yml - Automated PR review workflow
+  - ShellCheck static analysis integration
+  - BATS test execution and validation
+  - Security scanning with pattern detection
+  - Complexity analysis (function length, nesting depth)
+  - Automated PR comments with findings
+  - Comprehensive review summary in GitHub Actions
+
 - Code Quality Metrics Dashboard (Issue #117) - 2026-05-29
   - Added code-metrics job to CI workflow (.github/workflows/ci.yml)
   - Comprehensive metrics tracking:
@@ -109,6 +133,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improves contributor onboarding and PR quality
 
 ### Documentation
+- Security Enhancements Summary (Issue #116) - 2026-05-29
+  - Created SECURITY_ENHANCEMENTS_SUMMARY.md
+  - Documents all security improvements in v0.90 release cycle
+  - Comprehensive coverage of input validation, CVE monitoring, hardening
+  - Checksum verification implementation details
+  - Security score progression (90 → 92 → 94 points)
+  - Compliance framework mapping
+
+- Complete Documentation Index (Issue #133) - 2026-05-29
+  - Added all missing files to docs/INDEX.md
+  - Organized by category (Core, Build, Security, Features, Testing, etc.)
+  - 61+ documentation files cataloged
+  - Cross-references and navigation improvements
+  - Documentation statistics updated (35,000+ lines)
+
+- TCZ Repository Configuration Instructions (Issue #140) - 2026-05-29
+  - Created docs/TCZ_REPOSITORY.md
+  - Step-by-step packagecloud.io setup
+  - Package installation and updates
+  - Repository configuration examples
+  - Troubleshooting guide
+  - Alternative download methods
+
+- TUI Technology Decision Documentation (Issue #129) - 2026-05-29
+  - Created docs/TUI_TECHNOLOGY.md
+  - Dialog vs. Whiptail comparison
+  - Architecture decision rationale
+  - Implementation patterns
+  - Alternative approaches considered
+
+- REST API Reference Documentation (Issue #132) - 2026-05-29
+  - Created docs/API_REFERENCE.md (already noted above)
+  - Enhanced with troubleshooting sections
+
+- Cockpit Module Design Document - 2026-05-29
+  - Created docs/COCKPIT_MODULE.md
+  - VirtOS integration with Cockpit Web UI
+  - Module architecture and features
+  - Installation and deployment guide
+  - Development roadmap
+
+- AI Architecture Design Documents - 2026-05-29
+  - Created docs/AI_ARCHITECTURE_SEPARATION.md - Separation of concerns
+  - Created docs/AI_MODULARITY.md - Modular AI integration design
+  - Plugin-based architecture for AI features
+  - Provider abstraction layer
+  - Configuration and deployment patterns
+
+- VirtOS-Examples Integration Plan - 2026-05-29
+  - Created docs/VIRTOS_EXAMPLES_INTEGRATION.md
+  - Integration with VirtOS-Examples repository
+  - Example workload catalog
+  - Testing and validation procedures
+
+- Interactive Build Configurator Design - 2026-05-29
+  - Created docs/INTERACTIVE_BUILD_CONFIGURATOR.md
+  - User-friendly build profile selection
+  - TUI-based configuration wizard
+  - Profile comparison and recommendations
+
+- Script Dependencies Documentation - 2026-05-29
+  - Created docs/SCRIPT_DEPENDENCIES.md
+  - Inter-script dependency mapping
+  - Common library usage patterns
+  - Dependency graph visualization
+
+- Platform-Java Integration Renamed - 2026-05-29
+  - Renamed JPLATFORM_INTEGRATION.md to PLATFORM-JAVA_INTEGRATION.md
+  - Updated all references across documentation
+  - Consistent naming throughout project
+
 - Updated Documentation Index (docs/INDEX.md) - 2026-05-29
   - Added API_REFERENCE.md to Multi-Host Features section
   - Added DEPRECATION_POLICY.md to Reference section
@@ -264,7 +359,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - virtos-migrate: Added VM name and hostname validation as example
   - Documented 8 available validation functions for gradual improvement
 
+### Changed
+- Enhanced error messages for better user experience - 2026-05-29
+  - virtos-setup: Improved error messages and user guidance
+  - virtos-create-vm: Enhanced parameter validation error messages
+  - virtos-network: Clearer error reporting for network operations
+  - virtos-storage: Better error context for storage operations
+  - virtos-backup: Improved backup failure diagnostics
+  - virtos-snapshot: Enhanced snapshot operation error messages
+  - virtos-cluster: Better cluster operation error reporting
+  - virtos-api: Clearer API error responses
+  - All messages now include suggested fixes and troubleshooting steps
+
 ### Fixed
+- Markdown linting issues in CONTRIBUTING.md - 2026-05-29
+  - Fixed line length violations
+  - Fixed heading style consistency
+  - Fixed list formatting
+  - All markdown files now pass markdownlint validation
+
+- YAML linting issues in CI workflow - 2026-05-29
+  - Fixed indentation in .github/workflows/ci.yml
+  - Corrected YAML syntax errors
+  - Workflow now passes yamllint validation
+
 - Data loss bugs in virtos-secrets:
   - #75: Crontab now appends instead of replacing (preserves existing entries)
   - #76: OpenSSL encryption now uses password-based with pbkdf2 (data recoverable)

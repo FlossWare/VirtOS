@@ -1,0 +1,545 @@
+#!/bin/bash
+set -e
+
+# VirtOS Web UI Integration
+# Provides web-based management interfaces (optional)
+
+VERSION="1"
+
+# Configuration
+WEB_CONFIG_DIR="/etc/virtos/web"
+WEB_LOG="/var/log/virtos-web.log"
+COCKPIT_PORT=9090
+PORTAINER_PORT=9000
+CUSTOM_UI_PORT=8080
+
+# Ensure config directory exists
+mkdir -p "$WEB_CONFIG_DIR"
+
+# Logging function
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$WEB_LOG"
+}
+
+# Cockpit installation and setup
+install_cockpit() {
+    log_message "Installing Cockpit web UI..."
+
+    # Cockpit is a Red Hat project for web-based system management
+    tce-load -wi cockpit 2>/dev/null || {
+        log_message "Cockpit not available in TCE, using manual install..."
+        wget -q https://cockpit-project.org/files/cockpit-latest.tar.gz
+        tar -xzf cockpit-latest.tar.gz -C /opt/
+        ln -sf /opt/cockpit/bin/cockpit-bridge /usr/local/bin/
+    }
+
+    # Configure Cockpit
+    mkdir -p /etc/cockpit
+    cat > /etc/cockpit/cockpit.conf <<EOF
+[WebService]
+Origins = https://$(hostname):$COCKPIT_PORT wss://$(hostname):$COCKPIT_PORT
+ProtocolHeader = X-Forwarded-Proto
+LoginTitle = VirtOS Management Console
+MaxStartups = 20
+AllowUnencrypted = false
+
+[Session]
+IdleTimeout = 15
+Banner = /etc/virtos/banner.txt
+EOF
+
+    # Enable Cockpit modules
+    mkdir -p /etc/cockpit/modules.d
+    echo "enabled=true" > /etc/cockpit/modules.d/machines.conf    # VM management
+    echo "enabled=true" > /etc/cockpit/modules.d/podman.conf      # Container management
+    echo "enabled=true" > /etc/cockpit/modules.d/storaged.conf    # Storage management
+    echo "enabled=true" > /etc/cockpit/modules.d/networkmanager.conf  # Network management
+
+    log_message "Cockpit installed on port $COCKPIT_PORT"
+    echo "$COCKPIT_PORT" > "$WEB_CONFIG_DIR/cockpit-port.conf"
+}
+
+# Start Cockpit service
+start_cockpit() {
+    log_message "Starting Cockpit service..."
+
+    if [ -f /usr/local/bin/cockpit-ws ]; then
+        /usr/local/bin/cockpit-ws --port=$COCKPIT_PORT &
+        echo $! > "$WEB_CONFIG_DIR/cockpit.pid"
+        log_message "Cockpit started on https://$(hostname):$COCKPIT_PORT"
+    else
+        log_message "ERROR: Cockpit not installed"
+        return 1
+    fi
+}
+
+# Stop Cockpit service
+stop_cockpit() {
+    log_message "Stopping Cockpit service..."
+
+    if [ -f "$WEB_CONFIG_DIR/cockpit.pid" ]; then
+        kill $(cat "$WEB_CONFIG_DIR/cockpit.pid") 2>/dev/null
+        rm "$WEB_CONFIG_DIR/cockpit.pid"
+        log_message "Cockpit stopped"
+    fi
+}
+
+# Portainer installation and setup
+install_portainer() {
+    log_message "Installing Portainer container management UI..."
+
+    # Portainer requires Docker or Podman
+    if ! command -v docker &> /dev/null && ! command -v podman &> /dev/null; then
+        log_message "ERROR: Docker or Podman required for Portainer"
+        return 1
+    fi
+
+    local runtime="docker"
+    command -v docker &> /dev/null || runtime="podman"
+
+    # Run Portainer container
+    $runtime run -d \
+        --name=portainer \
+        --restart=always \
+        -p $PORTAINER_PORT:9000 \
+        -p 9443:9443 \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v portainer_data:/data \
+        portainer/portainer-ce:latest
+
+    log_message "Portainer installed on port $PORTAINER_PORT"
+    echo "$PORTAINER_PORT" > "$WEB_CONFIG_DIR/portainer-port.conf"
+}
+
+# Start Portainer
+start_portainer() {
+    log_message "Starting Portainer..."
+
+    local runtime="docker"
+    command -v docker &> /dev/null || runtime="podman"
+
+    $runtime start portainer
+    log_message "Portainer started on http://$(hostname):$PORTAINER_PORT"
+}
+
+# Stop Portainer
+stop_portainer() {
+    log_message "Stopping Portainer..."
+
+    local runtime="docker"
+    command -v docker &> /dev/null || runtime="podman"
+
+    $runtime stop portainer
+    log_message "Portainer stopped"
+}
+
+# Custom VirtOS web UI
+install_custom_ui() {
+    log_message "Installing custom VirtOS web UI..."
+
+    # Create simple web UI directory
+    mkdir -p /opt/virtos-web-ui/{static,templates,api}
+
+    # Create index.html
+    cat > /opt/virtos-web-ui/static/index.html <<'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VirtOS Management Console</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #1e1e1e; color: #fff; }
+        .header { background: #2d2d2d; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: #2d2d2d; padding: 20px; border-radius: 5px; }
+        .card h3 { margin-top: 0; color: #4a9eff; }
+        .btn { background: #4a9eff; color: white; padding: 10px 20px; border: none; border-radius: 3px; cursor: pointer; }
+        .btn:hover { background: #357abd; }
+        .metric { font-size: 2em; font-weight: bold; color: #4a9eff; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>VirtOS Management Console</h1>
+        <p>Web-based management for your VirtOS infrastructure</p>
+    </div>
+    <div class="dashboard">
+        <div class="card">
+            <h3>Virtual Machines</h3>
+            <div class="metric" id="vm-count">0</div>
+            <button class="btn" onclick="location.href='/vms'">Manage VMs</button>
+        </div>
+        <div class="card">
+            <h3>Containers</h3>
+            <div class="metric" id="container-count">0</div>
+            <button class="btn" onclick="location.href='/containers'">Manage Containers</button>
+        </div>
+        <div class="card">
+            <h3>Storage</h3>
+            <div class="metric" id="storage-used">0 GB</div>
+            <button class="btn" onclick="location.href='/storage'">Manage Storage</button>
+        </div>
+        <div class="card">
+            <h3>Network</h3>
+            <div class="metric" id="network-traffic">0 Mbps</div>
+            <button class="btn" onclick="location.href='/network'">Manage Network</button>
+        </div>
+    </div>
+    <script>
+        // Fetch stats from API
+        fetch('/api/stats')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('vm-count').textContent = data.vms || 0;
+                document.getElementById('container-count').textContent = data.containers || 0;
+                document.getElementById('storage-used').textContent = (data.storage_gb || 0) + ' GB';
+                document.getElementById('network-traffic').textContent = (data.network_mbps || 0) + ' Mbps';
+            })
+            .catch(e => console.error('Failed to load stats:', e));
+    </script>
+</body>
+</html>
+EOF
+
+    # Create simple API server (Python)
+    cat > /opt/virtos-web-ui/api/server.py <<'EOF'
+#!/usr/bin/env python3
+import json
+import subprocess
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class VirtOSHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            with open('/opt/virtos-web-ui/static/index.html', 'rb') as f:
+                self.wfile.write(f.read())
+        elif self.path == '/api/stats':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            stats = self.get_stats()
+            self.wfile.write(json.dumps(stats).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def get_stats(self):
+        stats = {}
+        try:
+            # VM count
+            result = subprocess.run(['virsh', 'list', '--all'], capture_output=True, text=True)
+            stats['vms'] = len(result.stdout.strip().split('\n')) - 2 if result.returncode == 0 else 0
+        except:
+            stats['vms'] = 0
+
+        try:
+            # Container count
+            result = subprocess.run(['docker', 'ps', '-a'], capture_output=True, text=True)
+            stats['containers'] = len(result.stdout.strip().split('\n')) - 1 if result.returncode == 0 else 0
+        except:
+            stats['containers'] = 0
+
+        try:
+            # Storage usage
+            result = subprocess.run(['df', '-BG', '/'], capture_output=True, text=True)
+            lines = result.stdout.strip().split('\n')
+            if len(lines) > 1:
+                stats['storage_gb'] = int(lines[1].split()[2].rstrip('G'))
+        except:
+            stats['storage_gb'] = 0
+
+        stats['network_mbps'] = 0  # Placeholder
+
+        return stats
+
+if __name__ == '__main__':
+    server = HTTPServer(('0.0.0.0', 8080), VirtOSHandler)
+    print('VirtOS Web UI running on http://0.0.0.0:8080')
+    server.serve_forever()
+EOF
+
+    chmod +x /opt/virtos-web-ui/api/server.py
+
+    log_message "Custom UI installed on port $CUSTOM_UI_PORT"
+    echo "$CUSTOM_UI_PORT" > "$WEB_CONFIG_DIR/custom-ui-port.conf"
+}
+
+# Start custom UI
+start_custom_ui() {
+    log_message "Starting custom VirtOS web UI..."
+
+    if [ -f /opt/virtos-web-ui/api/server.py ]; then
+        python3 /opt/virtos-web-ui/api/server.py &
+        echo $! > "$WEB_CONFIG_DIR/custom-ui.pid"
+        log_message "Custom UI started on http://$(hostname):$CUSTOM_UI_PORT"
+    else
+        log_message "ERROR: Custom UI not installed"
+        return 1
+    fi
+}
+
+# Stop custom UI
+stop_custom_ui() {
+    log_message "Stopping custom VirtOS web UI..."
+
+    if [ -f "$WEB_CONFIG_DIR/custom-ui.pid" ]; then
+        kill $(cat "$WEB_CONFIG_DIR/custom-ui.pid") 2>/dev/null
+        rm "$WEB_CONFIG_DIR/custom-ui.pid"
+        log_message "Custom UI stopped"
+    fi
+}
+
+# Configure SSL/TLS
+configure_ssl() {
+    local ui_type="$1"
+    local cert_file="$2"
+    local key_file="$3"
+
+    log_message "Configuring SSL/TLS for $ui_type..."
+
+    if [ ! -f "$cert_file" ] || [ ! -f "$key_file" ]; then
+        log_message "Generating self-signed certificate..."
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout "$WEB_CONFIG_DIR/$ui_type.key" \
+            -out "$WEB_CONFIG_DIR/$ui_type.crt" \
+            -subj "/C=US/ST=State/L=City/O=VirtOS/CN=$(hostname)"
+        cert_file="$WEB_CONFIG_DIR/$ui_type.crt"
+        key_file="$WEB_CONFIG_DIR/$ui_type.key"
+    fi
+
+    echo "$cert_file" > "$WEB_CONFIG_DIR/$ui_type-cert.conf"
+    echo "$key_file" > "$WEB_CONFIG_DIR/$ui_type-key.conf"
+
+    log_message "SSL configured for $ui_type"
+}
+
+# Enable authentication
+enable_auth() {
+    local ui_type="$1"
+    local auth_method="$2"  # basic, ldap, oauth
+
+    log_message "Enabling $auth_method authentication for $ui_type..."
+
+    case "$auth_method" in
+        basic)
+            # Create htpasswd file
+            if command -v htpasswd &> /dev/null; then
+                htpasswd -c "$WEB_CONFIG_DIR/$ui_type-htpasswd" admin
+                echo "$auth_method" > "$WEB_CONFIG_DIR/$ui_type-auth.conf"
+                log_message "Basic auth enabled for $ui_type"
+            else
+                log_message "ERROR: htpasswd not available"
+                return 1
+            fi
+            ;;
+        ldap)
+            # LDAP configuration
+            cat > "$WEB_CONFIG_DIR/$ui_type-ldap.conf" <<EOF
+LDAP_URL=ldap://ldap.example.com
+LDAP_BIND_DN=cn=admin,dc=example,dc=com
+LDAP_BASE_DN=ou=users,dc=example,dc=com
+EOF
+            echo "$auth_method" > "$WEB_CONFIG_DIR/$ui_type-auth.conf"
+            log_message "LDAP auth configured for $ui_type"
+            ;;
+        oauth)
+            # OAuth configuration
+            cat > "$WEB_CONFIG_DIR/$ui_type-oauth.conf" <<EOF
+OAUTH_PROVIDER=github
+OAUTH_CLIENT_ID=your_client_id
+OAUTH_CLIENT_SECRET=your_client_secret
+OAUTH_CALLBACK_URL=https://$(hostname)/callback
+EOF
+            echo "$auth_method" > "$WEB_CONFIG_DIR/$ui_type-auth.conf"
+            log_message "OAuth configured for $ui_type"
+            ;;
+        *)
+            log_message "ERROR: Unknown auth method: $auth_method"
+            return 1
+            ;;
+    esac
+}
+
+# Dashboard customization
+customize_dashboard() {
+    local layout="$1"  # default, compact, detailed
+
+    log_message "Customizing dashboard layout: $layout..."
+
+    cat > "$WEB_CONFIG_DIR/dashboard-layout.conf" <<EOF
+LAYOUT=$layout
+REFRESH_INTERVAL=30
+SHOW_GRAPHS=true
+SHOW_ALERTS=true
+SHOW_LOGS=false
+THEME=dark
+EOF
+
+    log_message "Dashboard customized with $layout layout"
+}
+
+# Web UI status
+web_status() {
+    echo "=== VirtOS Web UI Status ==="
+    echo
+
+    # Check Cockpit
+    if [ -f "$WEB_CONFIG_DIR/cockpit.pid" ] && kill -0 $(cat "$WEB_CONFIG_DIR/cockpit.pid") 2>/dev/null; then
+        local cockpit_port=$(cat "$WEB_CONFIG_DIR/cockpit-port.conf" 2>/dev/null || echo "$COCKPIT_PORT")
+        echo "Cockpit: Running on https://$(hostname):$cockpit_port"
+    else
+        echo "Cockpit: Not running"
+    fi
+
+    # Check Portainer
+    local runtime="docker"
+    command -v docker &> /dev/null || runtime="podman"
+
+    if $runtime ps | grep -q portainer; then
+        local portainer_port=$(cat "$WEB_CONFIG_DIR/portainer-port.conf" 2>/dev/null || echo "$PORTAINER_PORT")
+        echo "Portainer: Running on http://$(hostname):$portainer_port"
+    else
+        echo "Portainer: Not running"
+    fi
+
+    # Check Custom UI
+    if [ -f "$WEB_CONFIG_DIR/custom-ui.pid" ] && kill -0 $(cat "$WEB_CONFIG_DIR/custom-ui.pid") 2>/dev/null; then
+        local custom_port=$(cat "$WEB_CONFIG_DIR/custom-ui-port.conf" 2>/dev/null || echo "$CUSTOM_UI_PORT")
+        echo "Custom UI: Running on http://$(hostname):$custom_port"
+    else
+        echo "Custom UI: Not running"
+    fi
+
+    echo
+    echo "Configuration: $WEB_CONFIG_DIR"
+    echo "Logs: $WEB_LOG"
+}
+
+# Interactive wizard
+web_wizard() {
+    dialog --title "VirtOS Web UI Setup" \
+        --msgbox "This wizard will help you set up web-based management interfaces.\n\nNote: Web UI is optional. VirtOS is designed to work primarily via TUI and CLI." 12 60
+
+    # Choose web UI type
+    local choice=$(dialog --title "Choose Web UI" \
+        --menu "Select web interface to install:" 15 60 3 \
+        1 "Cockpit - Red Hat web console" \
+        2 "Portainer - Container management" \
+        3 "Custom VirtOS UI - Built-in interface" \
+        2>&1 >/dev/tty)
+
+    case "$choice" in
+        1)
+            install_cockpit
+            configure_ssl "cockpit"
+            start_cockpit
+            ;;
+        2)
+            install_portainer
+            start_portainer
+            ;;
+        3)
+            install_custom_ui
+            start_custom_ui
+            ;;
+    esac
+
+    dialog --title "Setup Complete" \
+        --msgbox "Web UI setup complete!\n\nRun 'virtos-web status' to see access URLs." 10 50
+}
+
+# Show usage
+usage() {
+    cat <<EOF
+VirtOS Web UI Integration - Optional web-based management
+
+Usage: virtos-web <command> [options]
+
+Installation Commands:
+  install-cockpit              Install Cockpit web console
+  install-portainer            Install Portainer container UI
+  install-custom-ui            Install custom VirtOS web UI
+
+Service Commands:
+  start-cockpit                Start Cockpit service
+  start-portainer              Start Portainer service
+  start-custom-ui              Start custom web UI
+  stop-cockpit                 Stop Cockpit service
+  stop-portainer               Stop Portainer service
+  stop-custom-ui               Stop custom web UI
+
+Configuration Commands:
+  configure-ssl <ui> <cert> <key>  Configure SSL/TLS
+  enable-auth <ui> <method>        Enable authentication (basic/ldap/oauth)
+  customize-dashboard <layout>     Customize dashboard (default/compact/detailed)
+
+Status Commands:
+  status                       Show all web UI status
+  wizard                       Interactive setup wizard
+
+Examples:
+  virtos-web install-cockpit
+  virtos-web start-cockpit
+  virtos-web configure-ssl cockpit /path/to/cert.crt /path/to/key.key
+  virtos-web enable-auth cockpit basic
+  virtos-web status
+  virtos-web wizard
+
+Note: Web UI is optional. VirtOS is designed for text-based operation.
+
+Version: $VERSION
+EOF
+}
+
+# Main command dispatcher
+case "$1" in
+    install-cockpit)
+        install_cockpit
+        ;;
+    install-portainer)
+        install_portainer
+        ;;
+    install-custom-ui)
+        install_custom_ui
+        ;;
+    start-cockpit)
+        start_cockpit
+        ;;
+    start-portainer)
+        start_portainer
+        ;;
+    start-custom-ui)
+        start_custom_ui
+        ;;
+    stop-cockpit)
+        stop_cockpit
+        ;;
+    stop-portainer)
+        stop_portainer
+        ;;
+    stop-custom-ui)
+        stop_custom_ui
+        ;;
+    configure-ssl)
+        configure_ssl "$2" "$3" "$4"
+        ;;
+    enable-auth)
+        enable_auth "$2" "$3"
+        ;;
+    customize-dashboard)
+        customize_dashboard "$2"
+        ;;
+    status)
+        web_status
+        ;;
+    wizard)
+        web_wizard
+        ;;
+    *)
+        usage
+        ;;
+esac
