@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- API versioning and rollback mechanisms (Issues #105, #106) - 2026-05-29
+  - Implemented comprehensive API versioning with /v1, /v2 endpoints
+  - Created automated rollback workflow (.github/workflows/rollback.yml)
+  - Added version negotiation and deprecation handling
+  - Comprehensive docs: API_VERSIONING.md, ROLLBACK.md
+  - Manual and automated rollback procedures
+  
+- Audit logging system (Issue #108) - 2026-05-29
+  - virtos-audit.sh library (360 lines) - Core audit functions
+  - virtos-audit command - Query and analysis tool
+  - Structured log format (machine-parseable)
+  - User attribution, source tracking, success/failure logging
+  - Query and analysis functions
+  - Automatic log rotation (logrotate configuration)
+  - Comprehensive AUDIT_LOGGING.md documentation
+  - Compliance mapping (PCI-DSS, HIPAA, SOX, GDPR)
+
+- Community infrastructure documentation (Issue #101) - 2026-05-29
+  - Created comprehensive COMMUNITY.md guide
+  - GitHub Discussions setup instructions
+  - Discussion category recommendations (7 categories)
+  - Community guidelines and FAQ
+  - Support tiers documentation
+  - Governance model outline
+
+- Experimental features clarification (Issue #109) - 2026-05-29
+  - Created EXPERIMENTAL_FEATURES.md comprehensive guide
+  - Clarified 29 working vs 14 experimental scripts
+  - Added FAQ for evaluators and users
+  - Updated README.md with link to guide
+  - Documented purpose of demonstration/research prototypes
+
+- Testing documentation (Issue #103, #85, #86) - 2026-05-29
+  - Created TESTING_ROADMAP.md - Three-phase execution plan
+  - Addresses false test confidence, integration test execution, ISO boot testing
+  - Provides actionable path forward (Phase 1 can start immediately)
+  - Updated ISO_TESTING_STATUS.md with 47 validation checks
+
+### Changed
+- Documentation renaming: jplatform → platform-java (Issue #133) - 2026-05-29
+  - Updated all references across 9 files
+  - Renamed package from virtos-jplatform.tcz to virtos-platform-java.tcz
+  - Fixed test file naming (02-jplatform.bats → 02-platform-java.bats)
+  - Updated CLAUDE.md, BUILD.md, ROLLBACK.md, STATUS.md, and test files
+
+- All UI files updated to reflect current project state - 2026-05-29
+  - Web UI documentation (WEB-UI.md) reflects Cockpit integration
+  - TUI documentation (TUI.md, TUI_TECHNOLOGY.md) current
+  - API documentation (API.md, API_VERSIONING.md) comprehensive
+
 ### Security
 - CRITICAL: Removed curl | bash patterns (#79)
   - Fixed Remote Code Execution vulnerability

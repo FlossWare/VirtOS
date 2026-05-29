@@ -68,6 +68,7 @@ Complete documentation for FlossWare VirtOS.
 - **[EXPERIMENTAL_FEATURES.md](EXPERIMENTAL_FEATURES.md)** - ⭐ NEW: Experimental vs functional scripts (comprehensive guide)
 - **[EXPERIMENTAL.md](EXPERIMENTAL.md)** - Research prototypes explained (AI, quantum, blockchain, etc.)
 - **[EXAMPLES-INTEGRATION.md](EXAMPLES-INTEGRATION.md)** - VirtOS-Examples repository integration plan
+- **[COMMUNITY.md](COMMUNITY.md)** - ⭐ NEW: Community resources, discussions, support channels
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
 
 ## Operations & Security
