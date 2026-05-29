@@ -1,0 +1,433 @@
+#!/bin/bash
+set -e
+
+# VirtOS Snapshot - Automated VM snapshot management
+# Create, manage, schedule, and cleanup VM snapshots
+
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.21")
+
+usage() {
+    cat << EOF
+VirtOS Snapshot Manager v${VERSION}
+
+Usage: virtos-snapshot [command] [options]
+
+Commands:
+  create <vm-name> [description]    Create snapshot
+  list <vm-name>                    List snapshots for VM
+  revert <vm-name> <snapshot-name>  Revert to snapshot
+  delete <vm-name> <snapshot-name>  Delete snapshot
+  schedule <vm-name>                Schedule automatic snapshots
+  cleanup <vm-name>                 Remove old snapshots
+
+Snapshot Options:
+  --disk-only        Disk-only snapshot (no RAM)
+  --memory           Include memory state
+
+Schedule Options:
+  --hourly           Create hourly snapshots
+  --daily <time>     Create daily snapshots at time (HH:MM)
+  --keep <n>         Keep last N snapshots (default: 7)
+
+Examples:
+  # Create snapshot
+  virtos-snapshot create web-server-1 "Before update"
+
+  # Create disk-only snapshot
+  virtos-snapshot create db-server "Pre-migration" --disk-only
+
+  # List snapshots
+  virtos-snapshot list web-server-1
+
+  # Revert to snapshot
+  virtos-snapshot revert web-server-1 snapshot-20260522-120000
+
+  # Schedule daily snapshots at 2 AM, keep last 7
+  virtos-snapshot schedule web-server-1 --daily 02:00 --keep 7
+
+  # Cleanup old snapshots
+  virtos-snapshot cleanup web-server-1
+
+EOF
+}
+
+create_snapshot() {
+    local vm_name="$1"
+    local description="${2:-Snapshot created at $(date)}"
+    local snapshot_type="${3:-disk-only}"
+
+    # Security: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name"; then
+        echo "Error: Invalid VM name '$vm_name'"
+        echo "VM names must contain only alphanumeric characters, dashes, and underscores (max 64 chars)"
+        return 1
+    fi
+
+    echo "Creating snapshot for VM: $vm_name"
+
+    # Check if VM exists
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    # Generate snapshot name
+    local snapshot_name="snapshot-$(date +%Y%m%d-%H%M%S)"
+
+    # Create snapshot
+    if [ "$snapshot_type" = "memory" ]; then
+        echo "Creating snapshot with memory state..."
+        virsh snapshot-create-as "$vm_name" "$snapshot_name" "$description"
+    else
+        echo "Creating disk-only snapshot..."
+        virsh snapshot-create-as "$vm_name" "$snapshot_name" "$description" --disk-only --atomic
+    fi
+
+    if [ $? -eq 0 ]; then
+        echo "Snapshot created: $snapshot_name"
+        return 0
+    else
+        echo "Error: Failed to create snapshot"
+        return 1
+    fi
+}
+
+list_snapshots() {
+    local vm_name="$1"
+
+    # Security: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name"; then
+        echo "Error: Invalid VM name '$vm_name'"
+        return 1
+    fi
+
+    echo "Snapshots for VM: $vm_name"
+    echo ""
+
+    # Check if VM exists
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    # List snapshots
+    virsh snapshot-list "$vm_name" --tree
+
+    echo ""
+    echo "Detailed information:"
+    virsh snapshot-list "$vm_name" --name | while read snapshot; do
+        if [ -n "$snapshot" ]; then
+            echo ""
+            echo "Snapshot: $snapshot"
+            virsh snapshot-info "$vm_name" "$snapshot" | grep -E "Name|Creation|State|Parent"
+        fi
+    done
+}
+
+revert_snapshot() {
+    local vm_name="$1"
+    local snapshot_name="$2"
+
+    # Security: Validate inputs before using in commands
+    if ! validate_vm_name "$vm_name"; then
+        echo "Error: Invalid VM name '$vm_name'"
+        return 1
+    fi
+    if ! validate_vm_name "$snapshot_name"; then
+        echo "Error: Invalid snapshot name '$snapshot_name'"
+        return 1
+    fi
+
+    echo "Reverting VM '$vm_name' to snapshot '$snapshot_name'..."
+
+    # Check if VM exists
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    # Check if snapshot exists
+    if ! virsh snapshot-list "$vm_name" --name | grep -q "^$snapshot_name$"; then
+        echo "Error: Snapshot '$snapshot_name' not found"
+        return 1
+    fi
+
+    # Revert
+    virsh snapshot-revert "$vm_name" "$snapshot_name"
+
+    if [ $? -eq 0 ]; then
+        echo "VM reverted to snapshot: $snapshot_name"
+        return 0
+    else
+        echo "Error: Failed to revert snapshot"
+        return 1
+    fi
+}
+
+delete_snapshot() {
+    local vm_name="$1"
+    local snapshot_name="$2"
+
+    # Security: Validate inputs before using in commands
+    if ! validate_vm_name "$vm_name"; then
+        echo "Error: Invalid VM name '$vm_name'"
+        return 1
+    fi
+    if ! validate_vm_name "$snapshot_name"; then
+        echo "Error: Invalid snapshot name '$snapshot_name'"
+        return 1
+    fi
+
+    echo "Deleting snapshot '$snapshot_name' for VM '$vm_name'..."
+
+    # Check if VM exists
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    # Delete snapshot
+    virsh snapshot-delete "$vm_name" "$snapshot_name" --metadata
+
+    if [ $? -eq 0 ]; then
+        echo "Snapshot deleted: $snapshot_name"
+        return 0
+    else
+        echo "Error: Failed to delete snapshot"
+        return 1
+    fi
+}
+
+schedule_snapshots() {
+    local vm_name="$1"
+    local schedule_type="$2"  # hourly or daily
+    local schedule_time="$3"
+    local keep_count="${4:-7}"
+
+    echo "Scheduling snapshots for VM: $vm_name"
+
+    # Create cron job
+    local cron_file="/etc/cron.d/virtos-snapshot-$vm_name"
+
+    if [ "$schedule_type" = "hourly" ]; then
+        cat > "$cron_file" <<EOF
+# VirtOS automated snapshot for $vm_name (hourly)
+0 * * * * root /usr/local/bin/virtos-snapshot create $vm_name "Automated hourly snapshot" --disk-only
+EOF
+        echo "Hourly snapshots scheduled"
+    elif [ "$schedule_type" = "daily" ]; then
+        local hour=$(echo "$schedule_time" | cut -d: -f1)
+        local minute=$(echo "$schedule_time" | cut -d: -f2)
+
+        cat > "$cron_file" <<EOF
+# VirtOS automated snapshot for $vm_name (daily at $schedule_time)
+$minute $hour * * * root /usr/local/bin/virtos-snapshot create $vm_name "Automated daily snapshot" --disk-only
+EOF
+        echo "Daily snapshots scheduled at $schedule_time"
+    fi
+
+    # Schedule cleanup
+    cat >> "$cron_file" <<EOF
+# Cleanup old snapshots (keep last $keep_count)
+0 4 * * * root /usr/local/bin/virtos-snapshot cleanup $vm_name --keep $keep_count
+EOF
+
+    echo "Cleanup scheduled to keep last $keep_count snapshots"
+    echo "Cron job created: $cron_file"
+}
+
+cleanup_snapshots() {
+    local vm_name="$1"
+    local keep_count="${2:-7}"
+
+    echo "Cleaning up snapshots for VM: $vm_name (keeping last $keep_count)..."
+
+    # Check if VM exists
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    # Get snapshot list (oldest first)
+    local snapshots=($(virsh snapshot-list "$vm_name" --name --topological))
+    local total=${#snapshots[@]}
+
+    if [ $total -le $keep_count ]; then
+        echo "Total snapshots ($total) <= keep count ($keep_count), nothing to delete"
+        return 0
+    fi
+
+    local delete_count=$((total - keep_count))
+    echo "Deleting $delete_count old snapshots..."
+
+    local deleted=0
+    for ((i=0; i<delete_count; i++)); do
+        local snapshot="${snapshots[$i]}"
+        echo "Deleting: $snapshot"
+        virsh snapshot-delete "$vm_name" "$snapshot" --metadata
+        if [ $? -eq 0 ]; then
+            deleted=$((deleted + 1))
+        fi
+    done
+
+    echo "Deleted $deleted snapshots"
+}
+
+# Storage-specific snapshot functions
+
+btrfs_snapshot() {
+    local vm_name="$1"
+    local description="$2"
+
+    echo "Creating Btrfs snapshot for VM: $vm_name"
+
+    # Find VM disks on Btrfs
+    local disks=$(virsh domblklist "$vm_name" | grep -v '^-' | awk 'NR>1 {print $2}')
+
+    for disk in $disks; do
+        if [ -f "$disk" ]; then
+            local mount_point=$(df "$disk" | tail -1 | awk '{print $6}')
+            local fs_type=$(df -T "$disk" | tail -1 | awk '{print $2}')
+
+            if [ "$fs_type" = "btrfs" ]; then
+                local snapshot_name="$disk.snapshot-$(date +%Y%m%d-%H%M%S)"
+                echo "Creating Btrfs snapshot: $snapshot_name"
+                btrfs subvolume snapshot "$disk" "$snapshot_name"
+            fi
+        fi
+    done
+}
+
+zfs_snapshot() {
+    local vm_name="$1"
+    local description="$2"
+
+    echo "Creating ZFS snapshot for VM: $vm_name"
+
+    # Find VM disks on ZFS
+    local disks=$(virsh domblklist "$vm_name" | grep -v '^-' | awk 'NR>1 {print $2}')
+
+    for disk in $disks; do
+        if [[ "$disk" == /dev/zvol/* ]]; then
+            local zvol_name=$(echo "$disk" | sed 's|/dev/zvol/||')
+            local snapshot_name="$zvol_name@snapshot-$(date +%Y%m%d-%H%M%S)"
+
+            echo "Creating ZFS snapshot: $snapshot_name"
+            zfs snapshot "$snapshot_name"
+        fi
+    done
+}
+
+lvm_snapshot() {
+    local vm_name="$1"
+    local description="$2"
+
+    echo "Creating LVM snapshot for VM: $vm_name"
+
+    # Find VM disks on LVM
+    local disks=$(virsh domblklist "$vm_name" | grep -v '^-' | awk 'NR>1 {print $2}')
+
+    for disk in $disks; do
+        if [[ "$disk" == /dev/*/vms/* ]]; then
+            local snapshot_name="$disk-snapshot-$(date +%Y%m%d-%H%M%S)"
+
+            echo "Creating LVM snapshot: $snapshot_name"
+            lvcreate -L 10G -s -n "$(basename "$snapshot_name")" "$disk"
+        fi
+    done
+}
+
+# Main command handler
+COMMAND="$1"
+shift
+
+SNAPSHOT_TYPE="disk-only"
+SCHEDULE_TYPE=""
+SCHEDULE_TIME=""
+KEEP_COUNT=7
+
+# Parse options
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --disk-only)
+            SNAPSHOT_TYPE="disk-only"
+            shift
+            ;;
+        --memory)
+            SNAPSHOT_TYPE="memory"
+            shift
+            ;;
+        --hourly)
+            SCHEDULE_TYPE="hourly"
+            shift
+            ;;
+        --daily)
+            SCHEDULE_TYPE="daily"
+            SCHEDULE_TIME="$2"
+            shift 2
+            ;;
+        --keep)
+            KEEP_COUNT="$2"
+            shift 2
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+set -- "${ARGS[@]}"
+
+case "$COMMAND" in
+    create)
+        create_snapshot "$1" "$2" "$SNAPSHOT_TYPE"
+        ;;
+    list)
+        list_snapshots "$1"
+        ;;
+    revert)
+        revert_snapshot "$1" "$2"
+        ;;
+    delete)
+        delete_snapshot "$1" "$2"
+        ;;
+    schedule)
+        if [ -z "$SCHEDULE_TYPE" ]; then
+            echo "Error: Schedule type required (--hourly or --daily)"
+            usage
+            exit 1
+        fi
+        schedule_snapshots "$1" "$SCHEDULE_TYPE" "$SCHEDULE_TIME" "$KEEP_COUNT"
+        ;;
+    cleanup)
+        cleanup_snapshots "$1" "$KEEP_COUNT"
+        ;;
+    btrfs)
+        btrfs_snapshot "$1" "$2"
+        ;;
+    zfs)
+        zfs_snapshot "$1" "$2"
+        ;;
+    lvm)
+        lvm_snapshot "$1" "$2"
+        ;;
+    --version|-v|version)
+        echo "virtos-snapshot version $VERSION"
+        exit 0
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

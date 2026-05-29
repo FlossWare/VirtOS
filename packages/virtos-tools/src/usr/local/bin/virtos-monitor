@@ -1,0 +1,497 @@
+#!/bin/bash
+set -e
+
+# VirtOS Monitor - Automated monitoring and alerting
+# Health checks, resource tracking, and alert notifications
+
+VERSION="1"
+CONFIG_DIR="/etc/virtos/monitor"
+STATE_DIR="/var/run/virtos/monitor"
+LOG_FILE="/var/log/virtos-monitor.log"
+
+mkdir -p "$CONFIG_DIR" "$STATE_DIR"
+
+usage() {
+    cat << EOF
+VirtOS Monitor v${VERSION}
+
+Usage: virtos-monitor [command] [options]
+
+Commands:
+  start                         Start monitoring daemon
+  stop                          Stop monitoring daemon
+  status                        Show monitoring status
+  check                         Run health checks once
+  alerts                        List active alerts
+  config <alert-type>           Configure alert thresholds
+  enable <check>                Enable monitoring check
+  disable <check>               Disable monitoring check
+
+Monitoring Checks:
+  cpu                          CPU usage monitoring
+  memory                       Memory usage monitoring
+  disk                         Disk space monitoring
+  vm-health                    VM health monitoring
+  host-health                  Host availability (cluster)
+  service-health               Service status monitoring
+
+Alert Types:
+  email <address>              Email notifications
+  webhook <url>                Webhook notifications
+  log                          Log-only (default)
+
+Examples:
+  # Start monitoring daemon
+  virtos-monitor start
+
+  # Configure CPU alert threshold
+  virtos-monitor config cpu --threshold 90
+
+  # Configure email alerts
+  virtos-monitor config email alerts@example.com
+
+  # Run health check once
+  virtos-monitor check
+
+  # View active alerts
+  virtos-monitor alerts
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# Default configuration
+init_config() {
+    if [ ! -f "$CONFIG_DIR/config.conf" ]; then
+        cat > "$CONFIG_DIR/config.conf" <<EOF
+# VirtOS Monitor Configuration
+
+# Monitoring intervals (seconds)
+CHECK_INTERVAL=60
+ALERT_INTERVAL=300
+
+# CPU thresholds (percentage)
+CPU_WARNING=75
+CPU_CRITICAL=90
+
+# Memory thresholds (percentage)
+MEM_WARNING=80
+MEM_CRITICAL=95
+
+# Disk thresholds (percentage)
+DISK_WARNING=80
+DISK_CRITICAL=90
+
+# VM health check
+VM_CHECK_ENABLED=yes
+VM_CHECK_INTERVAL=120
+
+# Host health check (cluster)
+HOST_CHECK_ENABLED=yes
+HOST_CHECK_INTERVAL=60
+
+# Service health check
+SERVICE_CHECK_ENABLED=yes
+SERVICE_CHECK_INTERVAL=60
+
+# Alert methods
+ALERT_EMAIL=""
+ALERT_WEBHOOK=""
+ALERT_LOG=yes
+
+# Alert cooldown (seconds) - prevents alert spam
+ALERT_COOLDOWN=900
+EOF
+        log_message "Created default configuration"
+    fi
+
+    # Load configuration
+    source "$CONFIG_DIR/config.conf"
+}
+
+check_cpu() {
+    local cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1 | cut -d'.' -f1)
+
+    echo "$cpu_usage" > "$STATE_DIR/cpu_usage"
+
+    if [ "$cpu_usage" -ge "$CPU_CRITICAL" ]; then
+        send_alert "CRITICAL" "CPU usage at ${cpu_usage}% (critical threshold: ${CPU_CRITICAL}%)"
+        return 2
+    elif [ "$cpu_usage" -ge "$CPU_WARNING" ]; then
+        send_alert "WARNING" "CPU usage at ${cpu_usage}% (warning threshold: ${CPU_WARNING}%)"
+        return 1
+    fi
+
+    return 0
+}
+
+check_memory() {
+    local mem_usage=$(free | grep Mem | awk '{printf "%.0f", $3/$2 * 100}')
+
+    echo "$mem_usage" > "$STATE_DIR/mem_usage"
+
+    if [ "$mem_usage" -ge "$MEM_CRITICAL" ]; then
+        send_alert "CRITICAL" "Memory usage at ${mem_usage}% (critical threshold: ${MEM_CRITICAL}%)"
+        return 2
+    elif [ "$mem_usage" -ge "$MEM_WARNING" ]; then
+        send_alert "WARNING" "Memory usage at ${mem_usage}% (warning threshold: ${MEM_WARNING}%)"
+        return 1
+    fi
+
+    return 0
+}
+
+check_disk() {
+    local disk_usage=$(df -h / | tail -1 | awk '{print $5}' | cut -d'%' -f1)
+
+    echo "$disk_usage" > "$STATE_DIR/disk_usage"
+
+    if [ "$disk_usage" -ge "$DISK_CRITICAL" ]; then
+        send_alert "CRITICAL" "Disk usage at ${disk_usage}% (critical threshold: ${DISK_CRITICAL}%)"
+        return 2
+    elif [ "$disk_usage" -ge "$DISK_WARNING" ]; then
+        send_alert "WARNING" "Disk usage at ${disk_usage}% (warning threshold: ${DISK_WARNING}%)"
+        return 1
+    fi
+
+    return 0
+}
+
+check_vms() {
+    if [ "$VM_CHECK_ENABLED" != "yes" ]; then
+        return 0
+    fi
+
+    if ! command -v virsh >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local failed_vms=""
+    local vm_list=$(virsh list --all --name 2>/dev/null)
+
+    for vm in $vm_list; do
+        if [ -z "$vm" ]; then
+            continue
+        fi
+
+        # Check if VM should be running (has autostart)
+        local autostart=$(virsh dominfo "$vm" 2>/dev/null | grep "Autostart:" | awk '{print $2}')
+        local state=$(virsh domstate "$vm" 2>/dev/null)
+
+        if [ "$autostart" = "enable" ] && [ "$state" != "running" ]; then
+            failed_vms="${failed_vms}${vm} (state: ${state}), "
+        fi
+    done
+
+    if [ -n "$failed_vms" ]; then
+        send_alert "WARNING" "VMs not running: ${failed_vms%%, }"
+        return 1
+    fi
+
+    return 0
+}
+
+check_hosts() {
+    if [ "$HOST_CHECK_ENABLED" != "yes" ]; then
+        return 0
+    fi
+
+    if ! command -v virtos-cluster >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local down_hosts=""
+
+    # Get cluster members
+    if [ -f /var/run/virtos/cluster-members ]; then
+        while read -r line; do
+            local hostname=$(echo "$line" | awk '{print $1}')
+            local ip=$(echo "$line" | awk '{print $2}')
+
+            # Skip self
+            if [ "$hostname" = "$(hostname)" ]; then
+                continue
+            fi
+
+            # Ping check
+            if ! ping -c 1 -W 2 "$ip" >/dev/null 2>&1; then
+                down_hosts="${down_hosts}${hostname} (${ip}), "
+            fi
+        done < /var/run/virtos/cluster-members
+    fi
+
+    if [ -n "$down_hosts" ]; then
+        send_alert "CRITICAL" "Cluster hosts unreachable: ${down_hosts%%, }"
+        return 2
+    fi
+
+    return 0
+}
+
+check_services() {
+    if [ "$SERVICE_CHECK_ENABLED" != "yes" ]; then
+        return 0
+    fi
+
+    local failed_services=""
+
+    # Check libvirtd
+    if command -v virsh >/dev/null 2>&1; then
+        if ! pgrep libvirtd >/dev/null; then
+            failed_services="${failed_services}libvirtd, "
+        fi
+    fi
+
+    # Check Docker
+    if command -v docker >/dev/null 2>&1; then
+        if ! pgrep dockerd >/dev/null; then
+            failed_services="${failed_services}docker, "
+        fi
+    fi
+
+    # Check Avahi (clustering)
+    if command -v avahi-daemon >/dev/null 2>&1; then
+        if ! pgrep avahi-daemon >/dev/null; then
+            failed_services="${failed_services}avahi, "
+        fi
+    fi
+
+    if [ -n "$failed_services" ]; then
+        send_alert "CRITICAL" "Services not running: ${failed_services%%, }"
+        return 2
+    fi
+
+    return 0
+}
+
+send_alert() {
+    local severity="$1"
+    local message="$2"
+    local alert_id=$(echo "$message" | md5sum | cut -d' ' -f1)
+    local cooldown_file="$STATE_DIR/alert_${alert_id}"
+
+    # Check cooldown
+    if [ -f "$cooldown_file" ]; then
+        local last_alert=$(cat "$cooldown_file")
+        local now=$(date +%s)
+        local elapsed=$((now - last_alert))
+
+        if [ "$elapsed" -lt "$ALERT_COOLDOWN" ]; then
+            # Still in cooldown period
+            return 0
+        fi
+    fi
+
+    # Record alert time
+    date +%s > "$cooldown_file"
+
+    # Log alert
+    if [ "$ALERT_LOG" = "yes" ]; then
+        log_message "[$severity] $message"
+    fi
+
+    # Save to alerts file
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$severity] $message" >> "$STATE_DIR/alerts.log"
+
+    # Email alert
+    if [ -n "$ALERT_EMAIL" ] && command -v mail >/dev/null 2>&1; then
+        echo "$message" | mail -s "VirtOS Alert [$severity] - $(hostname)" "$ALERT_EMAIL"
+    fi
+
+    # Webhook alert
+    if [ -n "$ALERT_WEBHOOK" ] && command -v curl >/dev/null 2>&1; then
+        curl -X POST "$ALERT_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{\"severity\":\"$severity\",\"host\":\"$(hostname)\",\"message\":\"$message\",\"timestamp\":\"$(date -Iseconds)\"}" \
+            >/dev/null 2>&1
+    fi
+}
+
+run_checks() {
+    log_message "Running health checks..."
+
+    check_cpu
+    check_memory
+    check_disk
+    check_vms
+    check_hosts
+    check_services
+
+    log_message "Health checks completed"
+}
+
+start_daemon() {
+    if [ -f "$STATE_DIR/monitor.pid" ]; then
+        local pid=$(cat "$STATE_DIR/monitor.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "Monitoring daemon already running (PID: $pid)"
+            return 1
+        fi
+    fi
+
+    echo "Starting VirtOS monitoring daemon..."
+
+    # Background daemon
+    (
+        while true; do
+            run_checks
+            sleep "$CHECK_INTERVAL"
+        done
+    ) &
+
+    echo $! > "$STATE_DIR/monitor.pid"
+    log_message "Monitoring daemon started (PID: $!)"
+    echo "Monitoring daemon started (PID: $!)"
+}
+
+stop_daemon() {
+    if [ ! -f "$STATE_DIR/monitor.pid" ]; then
+        echo "Monitoring daemon not running"
+        return 1
+    fi
+
+    local pid=$(cat "$STATE_DIR/monitor.pid")
+
+    if ps -p "$pid" >/dev/null 2>&1; then
+        kill "$pid"
+        rm -f "$STATE_DIR/monitor.pid"
+        log_message "Monitoring daemon stopped"
+        echo "Monitoring daemon stopped"
+    else
+        echo "Monitoring daemon not running (stale PID file)"
+        rm -f "$STATE_DIR/monitor.pid"
+    fi
+}
+
+show_status() {
+    echo "VirtOS Monitoring Status"
+    echo "========================"
+    echo ""
+
+    # Daemon status
+    if [ -f "$STATE_DIR/monitor.pid" ]; then
+        local pid=$(cat "$STATE_DIR/monitor.pid")
+        if ps -p "$pid" >/dev/null 2>&1; then
+            echo "Daemon: Running (PID: $pid)"
+        else
+            echo "Daemon: Not running (stale PID)"
+        fi
+    else
+        echo "Daemon: Not running"
+    fi
+
+    echo ""
+    echo "Current Metrics:"
+
+    # CPU
+    if [ -f "$STATE_DIR/cpu_usage" ]; then
+        echo "  CPU: $(cat $STATE_DIR/cpu_usage)%"
+    fi
+
+    # Memory
+    if [ -f "$STATE_DIR/mem_usage" ]; then
+        echo "  Memory: $(cat $STATE_DIR/mem_usage)%"
+    fi
+
+    # Disk
+    if [ -f "$STATE_DIR/disk_usage" ]; then
+        echo "  Disk: $(cat $STATE_DIR/disk_usage)%"
+    fi
+
+    echo ""
+    echo "Alert Methods:"
+    [ -n "$ALERT_EMAIL" ] && echo "  Email: $ALERT_EMAIL"
+    [ -n "$ALERT_WEBHOOK" ] && echo "  Webhook: $ALERT_WEBHOOK"
+    [ "$ALERT_LOG" = "yes" ] && echo "  Logging: Enabled"
+}
+
+show_alerts() {
+    echo "Active Alerts (last 50):"
+    echo "======================="
+
+    if [ -f "$STATE_DIR/alerts.log" ]; then
+        tail -50 "$STATE_DIR/alerts.log"
+    else
+        echo "No alerts found"
+    fi
+}
+
+configure_threshold() {
+    local check_type="$1"
+    local threshold="$2"
+
+    case "$check_type" in
+        cpu)
+            sed -i "s/^CPU_WARNING=.*/CPU_WARNING=$threshold/" "$CONFIG_DIR/config.conf"
+            echo "CPU warning threshold set to $threshold%"
+            ;;
+        memory)
+            sed -i "s/^MEM_WARNING=.*/MEM_WARNING=$threshold/" "$CONFIG_DIR/config.conf"
+            echo "Memory warning threshold set to $threshold%"
+            ;;
+        disk)
+            sed -i "s/^DISK_WARNING=.*/DISK_WARNING=$threshold/" "$CONFIG_DIR/config.conf"
+            echo "Disk warning threshold set to $threshold%"
+            ;;
+        email)
+            sed -i "s/^ALERT_EMAIL=.*/ALERT_EMAIL=\"$threshold\"/" "$CONFIG_DIR/config.conf"
+            echo "Email alert configured: $threshold"
+            ;;
+        webhook)
+            sed -i "s|^ALERT_WEBHOOK=.*|ALERT_WEBHOOK=\"$threshold\"|" "$CONFIG_DIR/config.conf"
+            echo "Webhook alert configured: $threshold"
+            ;;
+        *)
+            echo "Unknown configuration: $check_type"
+            return 1
+            ;;
+    esac
+}
+
+# Initialize
+init_config
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    start)
+        start_daemon
+        ;;
+    stop)
+        stop_daemon
+        ;;
+    status)
+        show_status
+        ;;
+    check)
+        run_checks
+        ;;
+    alerts)
+        show_alerts
+        ;;
+    config)
+        if [ $# -lt 2 ]; then
+            echo "Usage: virtos-monitor config <type> <value>"
+            exit 1
+        fi
+        configure_threshold "$1" "$2"
+        ;;
+    enable|disable)
+        CHECK_NAME="$1"
+        echo "Enable/disable not yet implemented"
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

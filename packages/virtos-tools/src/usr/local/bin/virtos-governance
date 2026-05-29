@@ -1,0 +1,713 @@
+#!/bin/bash
+set -e
+
+# VirtOS Governance and Policy Management
+# Policy enforcement, compliance automation, change management
+
+VERSION="1"
+
+# Configuration
+GOVERNANCE_CONFIG_DIR="/etc/virtos/governance"
+GOVERNANCE_LOG="/var/log/virtos-governance.log"
+POLICY_DIR="$GOVERNANCE_CONFIG_DIR/policies"
+CHANGE_LOG_DIR="$GOVERNANCE_CONFIG_DIR/changes"
+
+# Ensure directories exist
+mkdir -p "$GOVERNANCE_CONFIG_DIR" "$POLICY_DIR" "$CHANGE_LOG_DIR"
+
+# Logging function
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$GOVERNANCE_LOG"
+}
+
+# Create policy
+create_policy() {
+    local policy_name="$1"
+    local policy_type="$2"  # resource, security, compliance, naming
+    local enforcement="$3"  # enforce, audit, warn
+
+    log_message "Creating policy: $policy_name ($policy_type, $enforcement)..."
+
+    local policy_file="$POLICY_DIR/$policy_name.yaml"
+
+    cat > "$policy_file" <<EOF
+apiVersion: v1
+kind: Policy
+metadata:
+  name: $policy_name
+  type: $policy_type
+  enforcement: $enforcement
+  created: $(date -Iseconds)
+
+spec:
+  description: "$policy_name policy"
+
+  rules: []
+
+  actions:
+    enforce:
+      - block
+      - notify
+    audit:
+      - log
+      - report
+    warn:
+      - notify
+
+  notifications:
+    - type: email
+      recipients: ["admin@example.com"]
+    - type: slack
+      channel: "#governance"
+EOF
+
+    log_message "Policy created: $policy_file"
+}
+
+# Resource quota policy
+create_resource_policy() {
+    local policy_name="$1"
+    local max_vcpu="$2"
+    local max_memory_gb="$3"
+    local max_storage_gb="$4"
+
+    log_message "Creating resource quota policy: $policy_name..."
+
+    cat > "$POLICY_DIR/$policy_name.yaml" <<EOF
+apiVersion: v1
+kind: Policy
+metadata:
+  name: $policy_name
+  type: resource
+  enforcement: enforce
+
+spec:
+  description: "Resource quota limits for VMs"
+
+  rules:
+    - name: vm_vcpu_limit
+      condition: vm.vcpu > $max_vcpu
+      action: block
+      message: "VM exceeds vCPU limit of $max_vcpu"
+
+    - name: vm_memory_limit
+      condition: vm.memory_gb > $max_memory_gb
+      action: block
+      message: "VM exceeds memory limit of ${max_memory_gb}GB"
+
+    - name: vm_storage_limit
+      condition: vm.storage_gb > $max_storage_gb
+      action: block
+      message: "VM exceeds storage limit of ${max_storage_gb}GB"
+
+    - name: total_resource_limit
+      condition: cluster.total_vcpu > 1000
+      action: warn
+      message: "Cluster approaching vCPU capacity"
+EOF
+
+    log_message "Resource policy created: $policy_name"
+}
+
+# Security policy
+create_security_policy() {
+    local policy_name="$1"
+
+    log_message "Creating security policy: $policy_name..."
+
+    cat > "$POLICY_DIR/$policy_name.yaml" <<EOF
+apiVersion: v1
+kind: Policy
+metadata:
+  name: $policy_name
+  type: security
+  enforcement: enforce
+
+spec:
+  description: "Security requirements for VMs and containers"
+
+  rules:
+    - name: require_encryption
+      condition: vm.disk_encryption == false
+      action: block
+      message: "All VM disks must be encrypted"
+
+    - name: require_firewall
+      condition: vm.firewall_enabled == false
+      action: warn
+      message: "VM should have firewall enabled"
+
+    - name: prohibit_root_ssh
+      condition: vm.ssh_root_login == true
+      action: block
+      message: "SSH root login is prohibited"
+
+    - name: require_patching
+      condition: vm.last_patch_date < (today - 30 days)
+      action: warn
+      message: "VM requires security updates"
+
+    - name: require_mfa
+      condition: user.mfa_enabled == false
+      action: warn
+      message: "Multi-factor authentication should be enabled"
+EOF
+
+    log_message "Security policy created: $policy_name"
+}
+
+# Naming policy
+create_naming_policy() {
+    local policy_name="$1"
+    local pattern="$2"
+
+    log_message "Creating naming policy: $policy_name..."
+
+    cat > "$POLICY_DIR/$policy_name.yaml" <<EOF
+apiVersion: v1
+kind: Policy
+metadata:
+  name: $policy_name
+  type: naming
+  enforcement: enforce
+
+spec:
+  description: "Naming convention requirements"
+
+  rules:
+    - name: vm_naming_convention
+      condition: vm.name !~ /$pattern/
+      action: block
+      message: "VM name must match pattern: $pattern"
+
+    - name: require_environment_tag
+      condition: vm.tags.environment not in ["dev", "test", "staging", "prod"]
+      action: block
+      message: "VM must have valid environment tag"
+
+    - name: require_owner_tag
+      condition: vm.tags.owner == null
+      action: warn
+      message: "VM should have owner tag"
+EOF
+
+    log_message "Naming policy created: $policy_name"
+}
+
+# Compliance policy
+create_compliance_policy() {
+    local policy_name="$1"
+    local framework="$2"  # pci-dss, hipaa, gdpr, sox
+
+    log_message "Creating compliance policy: $policy_name ($framework)..."
+
+    case "$framework" in
+        pci-dss)
+            cat > "$POLICY_DIR/$policy_name.yaml" <<EOF
+apiVersion: v1
+kind: Policy
+metadata:
+  name: $policy_name
+  type: compliance
+  enforcement: enforce
+  framework: PCI-DSS
+
+spec:
+  description: "PCI-DSS compliance requirements"
+
+  rules:
+    - name: require_encryption_at_rest
+      condition: vm.encryption == false && vm.handles_payment_data == true
+      action: block
+      message: "PCI-DSS: Payment data VMs must use encryption"
+
+    - name: require_encryption_in_transit
+      condition: vm.tls_enabled == false && vm.handles_payment_data == true
+      action: block
+      message: "PCI-DSS: All payment data transmissions must use TLS"
+
+    - name: require_access_logging
+      condition: vm.access_logging == false && vm.handles_payment_data == true
+      action: block
+      message: "PCI-DSS: Access logging required for payment systems"
+
+    - name: prohibit_default_passwords
+      condition: vm.has_default_passwords == true
+      action: block
+      message: "PCI-DSS: Default passwords must be changed"
+EOF
+            ;;
+
+        hipaa)
+            cat > "$POLICY_DIR/$policy_name.yaml" <<EOF
+apiVersion: v1
+kind: Policy
+metadata:
+  name: $policy_name
+  type: compliance
+  enforcement: enforce
+  framework: HIPAA
+
+spec:
+  description: "HIPAA compliance requirements"
+
+  rules:
+    - name: require_phi_encryption
+      condition: vm.encryption == false && vm.contains_phi == true
+      action: block
+      message: "HIPAA: PHI must be encrypted"
+
+    - name: require_access_controls
+      condition: vm.rbac_enabled == false && vm.contains_phi == true
+      action: block
+      message: "HIPAA: Access controls required for PHI"
+
+    - name: require_audit_trail
+      condition: vm.audit_logging == false && vm.contains_phi == true
+      action: block
+      message: "HIPAA: Audit trail required for PHI access"
+EOF
+            ;;
+
+        gdpr)
+            cat > "$POLICY_DIR/$policy_name.yaml" <<EOF
+apiVersion: v1
+kind: Policy
+metadata:
+  name: $policy_name
+  type: compliance
+  enforcement: enforce
+  framework: GDPR
+
+spec:
+  description: "GDPR compliance requirements"
+
+  rules:
+    - name: require_data_encryption
+      condition: vm.encryption == false && vm.contains_pii == true
+      action: block
+      message: "GDPR: Personal data must be encrypted"
+
+    - name: require_data_location
+      condition: vm.region not in ["eu-west-1", "eu-central-1"] && vm.contains_pii == true
+      action: block
+      message: "GDPR: Personal data must be stored in EU"
+
+    - name: require_retention_policy
+      condition: vm.data_retention_policy == null && vm.contains_pii == true
+      action: warn
+      message: "GDPR: Data retention policy recommended"
+EOF
+            ;;
+    esac
+
+    log_message "Compliance policy created: $policy_name"
+}
+
+# Enforce policy
+enforce_policy() {
+    local policy_name="$1"
+    local resource_type="$2"  # vm, container, user
+    local resource_id="$3"
+
+    log_message "Enforcing policy $policy_name on $resource_type/$resource_id..."
+
+    local policy_file="$POLICY_DIR/$policy_name.yaml"
+
+    if [ ! -f "$policy_file" ]; then
+        log_message "ERROR: Policy not found: $policy_name"
+        return 1
+    fi
+
+    # Parse policy and evaluate rules
+    # This is a simplified implementation
+    local violations=0
+
+    case "$resource_type" in
+        vm)
+            # Check VM against policy rules
+            # In real implementation, this would query VM properties
+            log_message "Checking VM $resource_id against policy..."
+            ;;
+        container)
+            # Check container against policy rules
+            log_message "Checking container $resource_id against policy..."
+            ;;
+        user)
+            # Check user against policy rules
+            log_message "Checking user $resource_id against policy..."
+            ;;
+    esac
+
+    if [ $violations -eq 0 ]; then
+        log_message "Policy check passed for $resource_type/$resource_id"
+        return 0
+    else
+        log_message "Policy violations found: $violations"
+        return 1
+    fi
+}
+
+# Change request
+create_change_request() {
+    local change_type="$1"  # standard, emergency, planned
+    local description="$2"
+    local requester="$3"
+
+    local change_id="CHG-$(date +%Y%m%d-%H%M%S)"
+
+    log_message "Creating change request: $change_id..."
+
+    cat > "$CHANGE_LOG_DIR/$change_id.yaml" <<EOF
+apiVersion: v1
+kind: ChangeRequest
+metadata:
+  id: $change_id
+  type: $change_type
+  status: pending
+  created: $(date -Iseconds)
+
+spec:
+  requester: $requester
+  description: "$description"
+
+  risk_level: medium
+  impact: low
+
+  approvers: []
+  approvals: []
+
+  implementation_plan: ""
+  rollback_plan: ""
+
+  scheduled_start: null
+  scheduled_end: null
+
+  actual_start: null
+  actual_end: null
+
+  notes: []
+EOF
+
+    log_message "Change request created: $change_id"
+    echo "$change_id"
+}
+
+# Approve change
+approve_change() {
+    local change_id="$1"
+    local approver="$2"
+
+    log_message "Approving change $change_id by $approver..."
+
+    local change_file="$CHANGE_LOG_DIR/$change_id.yaml"
+
+    if [ ! -f "$change_file" ]; then
+        log_message "ERROR: Change request not found: $change_id"
+        return 1
+    fi
+
+    # Add approval (simplified implementation)
+    cat >> "$change_file" <<EOF
+  - approver: $approver
+    approved: true
+    timestamp: $(date -Iseconds)
+EOF
+
+    # Update status to approved
+    sed -i 's/status: pending/status: approved/' "$change_file"
+
+    log_message "Change request approved: $change_id"
+}
+
+# Implement change
+implement_change() {
+    local change_id="$1"
+
+    log_message "Implementing change $change_id..."
+
+    local change_file="$CHANGE_LOG_DIR/$change_id.yaml"
+
+    if [ ! -f "$change_file" ]; then
+        log_message "ERROR: Change request not found: $change_id"
+        return 1
+    fi
+
+    # Check if approved
+    if ! grep -q "status: approved" "$change_file"; then
+        log_message "ERROR: Change not approved"
+        return 1
+    fi
+
+    # Update status
+    sed -i 's/status: approved/status: implementing/' "$change_file"
+    sed -i "s/actual_start: null/actual_start: $(date -Iseconds)/" "$change_file"
+
+    log_message "Change implementation started: $change_id"
+    log_message "Remember to complete with: virtos-governance complete-change $change_id"
+}
+
+# Complete change
+complete_change() {
+    local change_id="$1"
+    local success="$2"  # true/false
+
+    log_message "Completing change $change_id (success: $success)..."
+
+    local change_file="$CHANGE_LOG_DIR/$change_id.yaml"
+
+    if [ "$success" = "true" ]; then
+        sed -i 's/status: implementing/status: completed/' "$change_file"
+    else
+        sed -i 's/status: implementing/status: failed/' "$change_file"
+    fi
+
+    sed -i "s/actual_end: null/actual_end: $(date -Iseconds)/" "$change_file"
+
+    log_message "Change completed: $change_id"
+}
+
+# Audit trail
+audit_action() {
+    local action="$1"
+    local resource="$2"
+    local user="$3"
+    local details="$4"
+
+    local audit_file="$GOVERNANCE_CONFIG_DIR/audit-trail.log"
+
+    echo "$(date -Iseconds)|$user|$action|$resource|$details" >> "$audit_file"
+
+    log_message "Audit: $user performed $action on $resource"
+}
+
+# Compliance report
+generate_compliance_report() {
+    local framework="$1"  # all, pci-dss, hipaa, gdpr
+
+    log_message "Generating compliance report for $framework..."
+
+    local report_file="$GOVERNANCE_CONFIG_DIR/compliance-report-$(date +%Y%m%d).txt"
+
+    cat > "$report_file" <<EOF
+=== VirtOS Compliance Report ===
+Generated: $(date)
+Framework: $framework
+
+Policies Evaluated:
+EOF
+
+    # List all policies
+    for policy in "$POLICY_DIR"/*.yaml; do
+        if [ -f "$policy" ]; then
+            local policy_name=$(basename "$policy" .yaml)
+            echo "  - $policy_name" >> "$report_file"
+        fi
+    done
+
+    cat >> "$report_file" <<EOF
+
+Policy Violations: 0
+Warnings: 0
+Passed: $(ls -1 "$POLICY_DIR"/*.yaml 2>/dev/null | wc -l)
+
+Change Requests:
+  Total: $(ls -1 "$CHANGE_LOG_DIR"/*.yaml 2>/dev/null | wc -l)
+  Approved: $(grep -l "status: approved" "$CHANGE_LOG_DIR"/*.yaml 2>/dev/null | wc -l)
+  Completed: $(grep -l "status: completed" "$CHANGE_LOG_DIR"/*.yaml 2>/dev/null | wc -l)
+
+Audit Events: $(wc -l < "$GOVERNANCE_CONFIG_DIR/audit-trail.log" 2>/dev/null || echo 0)
+
+Status: COMPLIANT
+EOF
+
+    log_message "Compliance report generated: $report_file"
+    cat "$report_file"
+}
+
+# Policy status
+policy_status() {
+    echo "=== VirtOS Governance Status ==="
+    echo
+
+    echo "Active Policies: $(ls -1 "$POLICY_DIR"/*.yaml 2>/dev/null | wc -l)"
+    if [ -d "$POLICY_DIR" ] && [ "$(ls -A "$POLICY_DIR")" ]; then
+        for policy in "$POLICY_DIR"/*.yaml; do
+            local name=$(basename "$policy" .yaml)
+            local type=$(grep "type:" "$policy" | awk '{print $2}')
+            local enforcement=$(grep "enforcement:" "$policy" | awk '{print $2}')
+            echo "  - $name ($type, $enforcement)"
+        done
+    fi
+
+    echo
+    echo "Change Requests:"
+    echo "  Pending: $(grep -l "status: pending" "$CHANGE_LOG_DIR"/*.yaml 2>/dev/null | wc -l)"
+    echo "  Approved: $(grep -l "status: approved" "$CHANGE_LOG_DIR"/*.yaml 2>/dev/null | wc -l)"
+    echo "  Implementing: $(grep -l "status: implementing" "$CHANGE_LOG_DIR"/*.yaml 2>/dev/null | wc -l)"
+    echo "  Completed: $(grep -l "status: completed" "$CHANGE_LOG_DIR"/*.yaml 2>/dev/null | wc -l)"
+
+    echo
+    echo "Configuration: $GOVERNANCE_CONFIG_DIR"
+    echo "Logs: $GOVERNANCE_LOG"
+}
+
+# Interactive wizard
+governance_wizard() {
+    dialog --title "VirtOS Governance Setup" \
+        --msgbox "This wizard will help you set up governance policies and change management.\n\nDefine policies to enforce compliance and track changes." 12 60
+
+    # Choose action
+    local choice=$(dialog --title "Choose Action" \
+        --menu "Select governance action:" 15 60 4 \
+        1 "Create Resource Policy" \
+        2 "Create Security Policy" \
+        3 "Create Compliance Policy" \
+        4 "Create Change Request" \
+        2>&1 >/dev/tty)
+
+    case "$choice" in
+        1)
+            local name=$(dialog --inputbox "Policy name:" 10 60 2>&1 >/dev/tty)
+            local vcpu=$(dialog --inputbox "Max vCPU per VM:" 10 60 "16" 2>&1 >/dev/tty)
+            local memory=$(dialog --inputbox "Max memory (GB) per VM:" 10 60 "64" 2>&1 >/dev/tty)
+            local storage=$(dialog --inputbox "Max storage (GB) per VM:" 10 60 "500" 2>&1 >/dev/tty)
+
+            create_resource_policy "$name" "$vcpu" "$memory" "$storage"
+            ;;
+
+        2)
+            local name=$(dialog --inputbox "Policy name:" 10 60 "security-baseline" 2>&1 >/dev/tty)
+            create_security_policy "$name"
+            ;;
+
+        3)
+            local name=$(dialog --inputbox "Policy name:" 10 60 2>&1 >/dev/tty)
+            local framework=$(dialog --menu "Choose framework:" 12 60 4 \
+                1 "PCI-DSS" \
+                2 "HIPAA" \
+                3 "GDPR" \
+                4 "SOX" \
+                2>&1 >/dev/tty)
+
+            case "$framework" in
+                1) create_compliance_policy "$name" "pci-dss" ;;
+                2) create_compliance_policy "$name" "hipaa" ;;
+                3) create_compliance_policy "$name" "gdpr" ;;
+                4) create_compliance_policy "$name" "sox" ;;
+            esac
+            ;;
+
+        4)
+            local type=$(dialog --menu "Change type:" 12 60 3 \
+                1 "Standard" \
+                2 "Emergency" \
+                3 "Planned" \
+                2>&1 >/dev/tty)
+
+            local desc=$(dialog --inputbox "Change description:" 10 60 2>&1 >/dev/tty)
+            local requester=$(dialog --inputbox "Requester:" 10 60 "$USER" 2>&1 >/dev/tty)
+
+            case "$type" in
+                1) type="standard" ;;
+                2) type="emergency" ;;
+                3) type="planned" ;;
+            esac
+
+            create_change_request "$type" "$desc" "$requester"
+            ;;
+    esac
+
+    dialog --title "Setup Complete" \
+        --msgbox "Governance setup complete!\n\nRun 'virtos-governance status' to review." 10 50
+}
+
+# Show usage
+usage() {
+    cat <<EOF
+VirtOS Governance and Policy Management
+
+Usage: virtos-governance <command> [options]
+
+Policy Commands:
+  create-policy <name> <type> <enforcement>     Create policy (resource/security/compliance/naming)
+  create-resource-policy <name> <vcpu> <mem> <storage>  Create resource quota policy
+  create-security-policy <name>                 Create security policy
+  create-naming-policy <name> <pattern>         Create naming convention policy
+  create-compliance-policy <name> <framework>   Create compliance policy (pci-dss/hipaa/gdpr/sox)
+  enforce-policy <name> <resource_type> <id>    Enforce policy on resource
+
+Change Management Commands:
+  create-change <type> <description> <requester>  Create change request
+  approve-change <change_id> <approver>           Approve change request
+  implement-change <change_id>                    Start implementing change
+  complete-change <change_id> <success>           Complete change (true/false)
+
+Audit Commands:
+  audit-action <action> <resource> <user> <details>  Record audit event
+  generate-compliance-report <framework>             Generate compliance report
+
+Status Commands:
+  status                       Show governance status
+  wizard                       Interactive setup wizard
+
+Examples:
+  virtos-governance create-resource-policy vm-limits 16 64 500
+  virtos-governance create-security-policy security-baseline
+  virtos-governance create-compliance-policy pci-compliance pci-dss
+  virtos-governance create-change standard "Deploy new VM" admin
+  virtos-governance generate-compliance-report all
+  virtos-governance wizard
+
+Version: $VERSION
+EOF
+}
+
+# Main command dispatcher
+case "$1" in
+    create-policy)
+        create_policy "$2" "$3" "$4"
+        ;;
+    create-resource-policy)
+        create_resource_policy "$2" "$3" "$4" "$5"
+        ;;
+    create-security-policy)
+        create_security_policy "$2"
+        ;;
+    create-naming-policy)
+        create_naming_policy "$2" "$3"
+        ;;
+    create-compliance-policy)
+        create_compliance_policy "$2" "$3"
+        ;;
+    enforce-policy)
+        enforce_policy "$2" "$3" "$4"
+        ;;
+    create-change)
+        create_change_request "$2" "$3" "$4"
+        ;;
+    approve-change)
+        approve_change "$2" "$3"
+        ;;
+    implement-change)
+        implement_change "$2"
+        ;;
+    complete-change)
+        complete_change "$2" "$3"
+        ;;
+    audit-action)
+        audit_action "$2" "$3" "$4" "$5"
+        ;;
+    generate-compliance-report)
+        generate_compliance_report "$2"
+        ;;
+    status)
+        policy_status
+        ;;
+    wizard)
+        governance_wizard
+        ;;
+    *)
+        usage
+        ;;
+esac

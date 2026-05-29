@@ -1,0 +1,397 @@
+#!/bin/bash
+set -e
+
+# VirtOS Quota - Resource quotas and limits
+# Per-VM and cluster-wide resource management
+
+VERSION="1"
+CONFIG_DIR="/etc/virtos/quota"
+STATE_DIR="/var/run/virtos/quota"
+
+mkdir -p "$CONFIG_DIR" "$STATE_DIR"
+
+usage() {
+    cat << EOF
+VirtOS Quota - Resource Management v${VERSION}
+
+Usage: virtos-quota [command] [options]
+
+Commands:
+  set <vm-name> <resource> <limit>  Set resource limit for VM
+  get <vm-name>                     Show VM resource limits
+  list                              List all quotas
+  check <vm-name>                   Check VM against quotas
+  cluster-quota <resource> <limit>  Set cluster-wide quota
+  usage                             Show cluster resource usage
+  enforce <on|off>                  Enable/disable quota enforcement
+
+Resources:
+  cpu <cores>                      Max CPU cores
+  memory <MB>                      Max memory in MB
+  disk <GB>                        Max disk space in GB
+  vms <count>                      Max VMs (cluster quota only)
+
+Examples:
+  # Set VM CPU limit
+  virtos-quota set web-1 cpu 4
+
+  # Set VM memory limit
+  virtos-quota set db-server memory 8192
+
+  # Set cluster-wide VM limit
+  virtos-quota cluster-quota vms 50
+
+  # Check VM quotas
+  virtos-quota check web-1
+
+  # Show all quotas
+  virtos-quota list
+
+  # Show cluster usage
+  virtos-quota usage
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+# Default configuration
+init_config() {
+    if [ ! -f "$CONFIG_DIR/cluster.conf" ]; then
+        cat > "$CONFIG_DIR/cluster.conf" <<EOF
+# VirtOS Cluster Quotas
+
+# Cluster-wide limits
+MAX_VMS=100
+MAX_TOTAL_CPU=256
+MAX_TOTAL_MEMORY=524288
+MAX_TOTAL_DISK=10240
+
+# Enforcement
+ENFORCE_QUOTAS=yes
+ALLOW_OVERCOMMIT=no
+EOF
+    fi
+
+    source "$CONFIG_DIR/cluster.conf"
+
+    # Create VM quotas directory
+    mkdir -p "$CONFIG_DIR/vms"
+}
+
+set_vm_quota() {
+    local vm_name="$1"
+    local resource="$2"
+    local limit="$3"
+
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    # Load or create VM quota file
+    local quota_file="$CONFIG_DIR/vms/${vm_name}.quota"
+
+    if [ ! -f "$quota_file" ]; then
+        cat > "$quota_file" <<EOF
+# Resource quotas for $vm_name
+VM_NAME="$vm_name"
+CPU_LIMIT=0
+MEMORY_LIMIT=0
+DISK_LIMIT=0
+EOF
+    fi
+
+    # Update limit
+    case "$resource" in
+        cpu)
+            sed -i "s/^CPU_LIMIT=.*/CPU_LIMIT=$limit/" "$quota_file"
+            echo "CPU limit for $vm_name set to $limit cores"
+            ;;
+        memory)
+            sed -i "s/^MEMORY_LIMIT=.*/MEMORY_LIMIT=$limit/" "$quota_file"
+            echo "Memory limit for $vm_name set to $limit MB"
+            ;;
+        disk)
+            sed -i "s/^DISK_LIMIT=.*/DISK_LIMIT=$limit/" "$quota_file"
+            echo "Disk limit for $vm_name set to $limit GB"
+            ;;
+        *)
+            echo "Error: Unknown resource: $resource"
+            return 1
+            ;;
+    esac
+
+    log_message "Quota set: $vm_name $resource=$limit"
+}
+
+get_vm_quota() {
+    local vm_name="$1"
+    local quota_file="$CONFIG_DIR/vms/${vm_name}.quota"
+
+    if [ ! -f "$quota_file" ]; then
+        echo "No quotas set for VM: $vm_name"
+        return 0
+    fi
+
+    source "$quota_file"
+
+    echo "Resource Quotas for: $vm_name"
+    echo "=============================="
+    [ "$CPU_LIMIT" -gt 0 ] && echo "CPU: $CPU_LIMIT cores"
+    [ "$MEMORY_LIMIT" -gt 0 ] && echo "Memory: $MEMORY_LIMIT MB"
+    [ "$DISK_LIMIT" -gt 0 ] && echo "Disk: $DISK_LIMIT GB"
+}
+
+list_quotas() {
+    echo "VM Resource Quotas"
+    echo "=================="
+    printf "%-20s %-10s %-15s %-10s\n" "VM NAME" "CPU" "MEMORY (MB)" "DISK (GB)"
+    echo "-------------------------------------------------------------"
+
+    for quota_file in "$CONFIG_DIR/vms"/*.quota; do
+        if [ ! -f "$quota_file" ]; then
+            echo "No VM quotas configured"
+            return 0
+        fi
+
+        source "$quota_file"
+
+        local cpu_str=$([ "$CPU_LIMIT" -gt 0 ] && echo "$CPU_LIMIT" || echo "-")
+        local mem_str=$([ "$MEMORY_LIMIT" -gt 0 ] && echo "$MEMORY_LIMIT" || echo "-")
+        local disk_str=$([ "$DISK_LIMIT" -gt 0 ] && echo "$DISK_LIMIT" || echo "-")
+
+        printf "%-20s %-10s %-15s %-10s\n" \
+            "$VM_NAME" "$cpu_str" "$mem_str" "$disk_str"
+    done
+
+    echo ""
+    echo "Cluster Quotas"
+    echo "=============="
+    echo "Max VMs: $MAX_VMS"
+    echo "Max Total CPU: $MAX_TOTAL_CPU cores"
+    echo "Max Total Memory: $MAX_TOTAL_MEMORY MB"
+    echo "Max Total Disk: $MAX_TOTAL_DISK GB"
+}
+
+check_vm_quota() {
+    local vm_name="$1"
+    local quota_file="$CONFIG_DIR/vms/${vm_name}.quota"
+
+    if [ ! -f "$quota_file" ]; then
+        echo "No quotas set for VM: $vm_name"
+        return 0
+    fi
+
+    source "$quota_file"
+
+    # Get VM current resources
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    local vm_info=$(virsh dominfo "$vm_name")
+    local current_cpu=$(echo "$vm_info" | grep "CPU(s):" | awk '{print $2}')
+    local current_mem=$(echo "$vm_info" | grep "Max memory:" | awk '{print $3}')
+
+    echo "Quota Check for: $vm_name"
+    echo "========================"
+
+    local violations=0
+
+    # Check CPU
+    if [ "$CPU_LIMIT" -gt 0 ]; then
+        echo -n "CPU: $current_cpu / $CPU_LIMIT cores - "
+        if [ "$current_cpu" -gt "$CPU_LIMIT" ]; then
+            echo "✗ EXCEEDED"
+            violations=$((violations + 1))
+        else
+            echo "✓ OK"
+        fi
+    fi
+
+    # Check Memory (convert to MB)
+    if [ "$MEMORY_LIMIT" -gt 0 ]; then
+        local current_mem_mb=$((current_mem / 1024))
+        echo -n "Memory: $current_mem_mb / $MEMORY_LIMIT MB - "
+        if [ "$current_mem_mb" -gt "$MEMORY_LIMIT" ]; then
+            echo "✗ EXCEEDED"
+            violations=$((violations + 1))
+        else
+            echo "✓ OK"
+        fi
+    fi
+
+    if [ $violations -gt 0 ]; then
+        echo ""
+        echo "Warning: $violations quota violation(s) detected"
+        return 1
+    else
+        echo ""
+        echo "All quotas within limits"
+        return 0
+    fi
+}
+
+set_cluster_quota() {
+    local resource="$1"
+    local limit="$2"
+
+    case "$resource" in
+        vms)
+            sed -i "s/^MAX_VMS=.*/MAX_VMS=$limit/" "$CONFIG_DIR/cluster.conf"
+            echo "Cluster VM limit set to $limit"
+            ;;
+        cpu)
+            sed -i "s/^MAX_TOTAL_CPU=.*/MAX_TOTAL_CPU=$limit/" "$CONFIG_DIR/cluster.conf"
+            echo "Cluster total CPU limit set to $limit cores"
+            ;;
+        memory)
+            sed -i "s/^MAX_TOTAL_MEMORY=.*/MAX_TOTAL_MEMORY=$limit/" "$CONFIG_DIR/cluster.conf"
+            echo "Cluster total memory limit set to $limit MB"
+            ;;
+        disk)
+            sed -i "s/^MAX_TOTAL_DISK=.*/MAX_TOTAL_DISK=$limit/" "$CONFIG_DIR/cluster.conf"
+            echo "Cluster total disk limit set to $limit GB"
+            ;;
+        *)
+            echo "Error: Unknown resource: $resource"
+            return 1
+            ;;
+    esac
+
+    log_message "Cluster quota set: $resource=$limit"
+}
+
+show_cluster_usage() {
+    echo "Cluster Resource Usage"
+    echo "======================"
+
+    # Count VMs
+    local vm_count=0
+    if command -v virsh >/dev/null 2>&1; then
+        vm_count=$(virsh list --all --name | grep -v '^$' | wc -l)
+    fi
+
+    # Get total resources (local host for now)
+    local total_cpu=0
+    local total_mem=0
+
+    if command -v virsh >/dev/null 2>&1; then
+        local vms=$(virsh list --all --name)
+        for vm in $vms; do
+            if [ -z "$vm" ]; then
+                continue
+            fi
+
+            local vm_info=$(virsh dominfo "$vm" 2>/dev/null)
+            local vm_cpu=$(echo "$vm_info" | grep "CPU(s):" | awk '{print $2}')
+            local vm_mem=$(echo "$vm_info" | grep "Max memory:" | awk '{print $3}')
+
+            total_cpu=$((total_cpu + vm_cpu))
+            total_mem=$((total_mem + vm_mem))
+        done
+    fi
+
+    # Convert memory to MB
+    total_mem=$((total_mem / 1024))
+
+    echo "VMs: $vm_count / $MAX_VMS"
+    echo "Total CPU: $total_cpu / $MAX_TOTAL_CPU cores"
+    echo "Total Memory: $total_mem / $MAX_TOTAL_MEMORY MB"
+
+    # Calculate percentages
+    local vm_percent=$(awk "BEGIN {printf \"%.1f\", ($vm_count / $MAX_VMS) * 100}")
+    local cpu_percent=$(awk "BEGIN {printf \"%.1f\", ($total_cpu / $MAX_TOTAL_CPU) * 100}")
+    local mem_percent=$(awk "BEGIN {printf \"%.1f\", ($total_mem / $MAX_TOTAL_MEMORY) * 100}")
+
+    echo ""
+    echo "Usage Percentages:"
+    echo "  VMs: ${vm_percent}%"
+    echo "  CPU: ${cpu_percent}%"
+    echo "  Memory: ${mem_percent}%"
+
+    # Check limits
+    echo ""
+    if [ "$vm_count" -ge "$MAX_VMS" ]; then
+        echo "⚠ VM limit reached!"
+    fi
+    if [ "$total_cpu" -ge "$MAX_TOTAL_CPU" ]; then
+        echo "⚠ CPU limit reached!"
+    fi
+    if [ "$total_mem" -ge "$MAX_TOTAL_MEMORY" ]; then
+        echo "⚠ Memory limit reached!"
+    fi
+}
+
+set_enforcement() {
+    local state="$1"
+
+    case "$state" in
+        on|yes|enable)
+            sed -i "s/^ENFORCE_QUOTAS=.*/ENFORCE_QUOTAS=yes/" "$CONFIG_DIR/cluster.conf"
+            echo "Quota enforcement enabled"
+            log_message "Quota enforcement enabled"
+            ;;
+        off|no|disable)
+            sed -i "s/^ENFORCE_QUOTAS=.*/ENFORCE_QUOTAS=no/" "$CONFIG_DIR/cluster.conf"
+            echo "Quota enforcement disabled"
+            log_message "Quota enforcement disabled"
+            ;;
+        *)
+            echo "Error: Use 'on' or 'off'"
+            return 1
+            ;;
+    esac
+}
+
+# Initialize
+init_config
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    set)
+        if [ $# -lt 3 ]; then
+            echo "Usage: virtos-quota set <vm-name> <resource> <limit>"
+            exit 1
+        fi
+        set_vm_quota "$1" "$2" "$3"
+        ;;
+    get)
+        get_vm_quota "$1"
+        ;;
+    list)
+        list_quotas
+        ;;
+    check)
+        check_vm_quota "$1"
+        ;;
+    cluster-quota)
+        if [ $# -lt 2 ]; then
+            echo "Usage: virtos-quota cluster-quota <resource> <limit>"
+            exit 1
+        fi
+        set_cluster_quota "$1" "$2"
+        ;;
+    usage)
+        show_cluster_usage
+        ;;
+    enforce)
+        set_enforcement "$1"
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

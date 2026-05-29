@@ -1,0 +1,546 @@
+#!/bin/bash
+set -e
+
+# VirtOS Enterprise Directory Integration
+# LDAP, Active Directory, and FreeIPA integration
+
+VERSION="1"
+
+# Configuration
+DIRECTORY_CONFIG_DIR="/etc/virtos/directory"
+DIRECTORY_LOG="/var/log/virtos-directory.log"
+
+# Ensure config directory exists
+mkdir -p "$DIRECTORY_CONFIG_DIR"
+
+# Logging function
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$DIRECTORY_LOG"
+}
+
+# LDAP client setup
+setup_ldap_client() {
+    local ldap_server="$1"
+    local base_dn="$2"
+    local bind_dn="$3"
+
+    log_message "Setting up LDAP client for $ldap_server..."
+
+    # Install LDAP client tools
+    tce-load -wi openldap 2>/dev/null || {
+        log_message "Installing LDAP tools manually..."
+        wget -q https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.0.tgz
+        tar -xzf openldap-2.6.0.tgz
+        cd openldap-2.6.0
+        ./configure --prefix=/usr/local
+        make && make install
+        cd ..
+    }
+
+    # Configure LDAP client
+    cat > /etc/openldap/ldap.conf <<EOF
+BASE    $base_dn
+URI     ldap://$ldap_server
+
+TLS_CACERT      /etc/ssl/certs/ca-certificates.crt
+TLS_REQCERT     allow
+EOF
+
+    log_message "LDAP client configured for $ldap_server"
+    echo "$ldap_server" > "$DIRECTORY_CONFIG_DIR/ldap-server.conf"
+    echo "$base_dn" > "$DIRECTORY_CONFIG_DIR/ldap-base-dn.conf"
+}
+
+# LDAP authentication
+enable_ldap_auth() {
+    local ldap_server="$1"
+    local base_dn="$2"
+    local bind_dn="$3"
+    local bind_password="$4"
+
+    log_message "Enabling LDAP authentication..."
+
+    # Install PAM LDAP module
+    tce-load -wi pam-ldap 2>/dev/null
+
+    # Configure PAM for LDAP
+    cat > /etc/pam_ldap.conf <<EOF
+host $ldap_server
+base $base_dn
+binddn $bind_dn
+bindpw $bind_password
+
+pam_filter objectClass=posixAccount
+pam_login_attribute uid
+pam_member_attribute memberUid
+
+nss_base_passwd $base_dn?sub
+nss_base_group  $base_dn?sub
+EOF
+
+    chmod 600 /etc/pam_ldap.conf
+
+    # Update PAM configuration
+    cat >> /etc/pam.d/common-auth <<EOF
+auth    sufficient      pam_ldap.so
+auth    required        pam_unix.so try_first_pass
+EOF
+
+    cat >> /etc/pam.d/common-account <<EOF
+account sufficient      pam_ldap.so
+account required        pam_unix.so
+EOF
+
+    log_message "LDAP authentication enabled"
+}
+
+# Active Directory integration
+join_active_directory() {
+    local ad_domain="$1"
+    local ad_server="$2"
+    local admin_user="$3"
+    local admin_password="$4"
+
+    log_message "Joining Active Directory domain: $ad_domain..."
+
+    # Install required packages
+    tce-load -wi samba winbind krb5 2>/dev/null
+
+    # Configure Kerberos
+    cat > /etc/krb5.conf <<EOF
+[libdefaults]
+    default_realm = ${ad_domain^^}
+    dns_lookup_realm = true
+    dns_lookup_kdc = true
+
+[realms]
+    ${ad_domain^^} = {
+        kdc = $ad_server
+        admin_server = $ad_server
+    }
+
+[domain_realm]
+    .$ad_domain = ${ad_domain^^}
+    $ad_domain = ${ad_domain^^}
+EOF
+
+    # Configure Samba for AD
+    cat > /etc/samba/smb.conf <<EOF
+[global]
+    workgroup = ${ad_domain%%.*}
+    realm = ${ad_domain^^}
+    security = ads
+    kerberos method = secrets and keytab
+    winbind use default domain = true
+    winbind offline logon = false
+
+    idmap config * : backend = tdb
+    idmap config * : range = 10000-999999
+    idmap config ${ad_domain^^} : backend = rid
+    idmap config ${ad_domain^^} : range = 1000000-1999999
+
+    template shell = /bin/bash
+    template homedir = /home/%U
+EOF
+
+    # Join domain
+    echo "$admin_password" | net ads join -U "$admin_user" "$ad_domain"
+
+    # Start winbind
+    /etc/init.d/winbind start
+
+    # Test connection
+    wbinfo -t
+
+    log_message "Successfully joined AD domain: $ad_domain"
+    echo "$ad_domain" > "$DIRECTORY_CONFIG_DIR/ad-domain.conf"
+}
+
+# Active Directory authentication
+enable_ad_auth() {
+    log_message "Enabling Active Directory authentication..."
+
+    # Configure NSS for winbind
+    cat > /etc/nsswitch.conf <<EOF
+passwd:     files winbind
+group:      files winbind
+shadow:     files
+
+hosts:      files dns
+networks:   files
+
+protocols:  files
+services:   files
+ethers:     files
+rpc:        files
+EOF
+
+    # Configure PAM for AD
+    cat > /etc/pam.d/common-auth <<EOF
+auth    [success=1 default=ignore]  pam_winbind.so krb5_auth krb5_ccache_type=FILE cached_login try_first_pass
+auth    requisite                   pam_deny.so
+auth    required                    pam_permit.so
+EOF
+
+    cat > /etc/pam.d/common-account <<EOF
+account [success=1 default=ignore]  pam_winbind.so
+account requisite                   pam_deny.so
+account required                    pam_permit.so
+EOF
+
+    log_message "Active Directory authentication enabled"
+}
+
+# FreeIPA client setup
+join_freeipa() {
+    local ipa_server="$1"
+    local ipa_domain="$2"
+    local admin_password="$3"
+
+    log_message "Joining FreeIPA domain: $ipa_domain..."
+
+    # Install FreeIPA client
+    tce-load -wi freeipa-client 2>/dev/null || {
+        log_message "Installing FreeIPA client manually..."
+        pip3 install freeipa-client
+    }
+
+    # Run FreeIPA client installer
+    ipa-client-install \
+        --server="$ipa_server" \
+        --domain="$ipa_domain" \
+        --password="$admin_password" \
+        --mkhomedir \
+        --unattended
+
+    log_message "Successfully joined FreeIPA domain: $ipa_domain"
+    echo "$ipa_domain" > "$DIRECTORY_CONFIG_DIR/ipa-domain.conf"
+}
+
+# LDAP user search
+search_ldap_users() {
+    local search_filter="$1"
+
+    log_message "Searching LDAP users with filter: $search_filter..."
+
+    local ldap_server=$(cat "$DIRECTORY_CONFIG_DIR/ldap-server.conf" 2>/dev/null)
+    local base_dn=$(cat "$DIRECTORY_CONFIG_DIR/ldap-base-dn.conf" 2>/dev/null)
+
+    if [ -z "$ldap_server" ] || [ -z "$base_dn" ]; then
+        log_message "ERROR: LDAP not configured"
+        return 1
+    fi
+
+    ldapsearch -x -H "ldap://$ldap_server" -b "$base_dn" "$search_filter"
+}
+
+# LDAP group management
+create_ldap_group() {
+    local group_name="$1"
+    local gid="$2"
+
+    log_message "Creating LDAP group: $group_name (GID: $gid)..."
+
+    local ldap_server=$(cat "$DIRECTORY_CONFIG_DIR/ldap-server.conf" 2>/dev/null)
+    local base_dn=$(cat "$DIRECTORY_CONFIG_DIR/ldap-base-dn.conf" 2>/dev/null)
+
+    # Create LDIF file
+    cat > /tmp/group.ldif <<EOF
+dn: cn=$group_name,ou=groups,$base_dn
+objectClass: top
+objectClass: posixGroup
+cn: $group_name
+gidNumber: $gid
+EOF
+
+    # Add to LDAP
+    ldapadd -x -H "ldap://$ldap_server" -D "cn=admin,$base_dn" -W -f /tmp/group.ldif
+
+    rm /tmp/group.ldif
+    log_message "LDAP group created: $group_name"
+}
+
+# LDAP user management
+create_ldap_user() {
+    local username="$1"
+    local uid="$2"
+    local gid="$3"
+    local first_name="$4"
+    local last_name="$5"
+
+    log_message "Creating LDAP user: $username..."
+
+    local ldap_server=$(cat "$DIRECTORY_CONFIG_DIR/ldap-server.conf" 2>/dev/null)
+    local base_dn=$(cat "$DIRECTORY_CONFIG_DIR/ldap-base-dn.conf" 2>/dev/null)
+
+    # Create LDIF file
+    cat > /tmp/user.ldif <<EOF
+dn: uid=$username,ou=users,$base_dn
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+cn: $first_name $last_name
+sn: $last_name
+givenName: $first_name
+uid: $username
+uidNumber: $uid
+gidNumber: $gid
+homeDirectory: /home/$username
+loginShell: /bin/bash
+EOF
+
+    # Add to LDAP
+    ldapadd -x -H "ldap://$ldap_server" -D "cn=admin,$base_dn" -W -f /tmp/user.ldif
+
+    rm /tmp/user.ldif
+    log_message "LDAP user created: $username"
+}
+
+# AD user search
+search_ad_users() {
+    local search_filter="$1"
+
+    log_message "Searching AD users with filter: $search_filter..."
+
+    wbinfo -u | grep -i "$search_filter"
+}
+
+# AD group membership
+add_ad_group_member() {
+    local username="$1"
+    local group="$2"
+
+    log_message "Adding $username to AD group $group..."
+
+    local ad_domain=$(cat "$DIRECTORY_CONFIG_DIR/ad-domain.conf" 2>/dev/null)
+
+    net rpc group addmem "$group" "$username" -S "$ad_domain"
+
+    log_message "User $username added to group $group"
+}
+
+# FreeIPA user search
+search_ipa_users() {
+    local search_filter="$1"
+
+    log_message "Searching FreeIPA users..."
+
+    ipa user-find --all "$search_filter"
+}
+
+# Directory sync
+sync_directory_users() {
+    local source_type="$1"  # ldap, ad, ipa
+    local target_type="$2"  # local, ldap, ad, ipa
+
+    log_message "Syncing users from $source_type to $target_type..."
+
+    case "$source_type-$target_type" in
+        ldap-local)
+            # Sync LDAP users to local system
+            ldapsearch -x -H "ldap://$(cat $DIRECTORY_CONFIG_DIR/ldap-server.conf)" \
+                -b "$(cat $DIRECTORY_CONFIG_DIR/ldap-base-dn.conf)" \
+                "(objectClass=posixAccount)" uid uidNumber gidNumber homeDirectory loginShell | \
+            while read line; do
+                if [[ "$line" =~ ^uid:\ (.+)$ ]]; then
+                    local username="${BASH_REMATCH[1]}"
+                    # Create local user if doesn't exist
+                    id "$username" &>/dev/null || useradd "$username"
+                fi
+            done
+            ;;
+
+        ad-local)
+            # Sync AD users to local system
+            wbinfo -u | while read username; do
+                id "$username" &>/dev/null || useradd "$username"
+            done
+            ;;
+
+        *)
+            log_message "ERROR: Unsupported sync: $source_type -> $target_type"
+            return 1
+            ;;
+    esac
+
+    log_message "Directory sync completed"
+}
+
+# Directory status
+directory_status() {
+    echo "=== VirtOS Directory Status ==="
+    echo
+
+    # Check LDAP
+    if [ -f "$DIRECTORY_CONFIG_DIR/ldap-server.conf" ]; then
+        local ldap_server=$(cat "$DIRECTORY_CONFIG_DIR/ldap-server.conf")
+        echo "LDAP: Configured ($ldap_server)"
+    else
+        echo "LDAP: Not configured"
+    fi
+
+    # Check AD
+    if [ -f "$DIRECTORY_CONFIG_DIR/ad-domain.conf" ]; then
+        local ad_domain=$(cat "$DIRECTORY_CONFIG_DIR/ad-domain.conf")
+        echo "Active Directory: Joined ($ad_domain)"
+        wbinfo -t &>/dev/null && echo "  Trust status: OK" || echo "  Trust status: FAILED"
+    else
+        echo "Active Directory: Not joined"
+    fi
+
+    # Check FreeIPA
+    if [ -f "$DIRECTORY_CONFIG_DIR/ipa-domain.conf" ]; then
+        local ipa_domain=$(cat "$DIRECTORY_CONFIG_DIR/ipa-domain.conf")
+        echo "FreeIPA: Enrolled ($ipa_domain)"
+    else
+        echo "FreeIPA: Not enrolled"
+    fi
+
+    echo
+    echo "Configuration: $DIRECTORY_CONFIG_DIR"
+    echo "Logs: $DIRECTORY_LOG"
+}
+
+# Interactive wizard
+directory_wizard() {
+    dialog --title "VirtOS Directory Integration" \
+        --msgbox "This wizard will help you integrate VirtOS with enterprise directory services.\n\nChoose LDAP, Active Directory, or FreeIPA." 12 60
+
+    # Choose directory type
+    local choice=$(dialog --title "Choose Directory Service" \
+        --menu "Select directory service:" 13 60 3 \
+        1 "LDAP" \
+        2 "Active Directory" \
+        3 "FreeIPA" \
+        2>&1 >/dev/tty)
+
+    case "$choice" in
+        1)
+            local server=$(dialog --inputbox "LDAP Server:" 10 60 2>&1 >/dev/tty)
+            local base_dn=$(dialog --inputbox "Base DN:" 10 60 "dc=example,dc=com" 2>&1 >/dev/tty)
+            local bind_dn=$(dialog --inputbox "Bind DN:" 10 60 "cn=admin,$base_dn" 2>&1 >/dev/tty)
+
+            setup_ldap_client "$server" "$base_dn" "$bind_dn"
+
+            if dialog --yesno "Enable LDAP authentication?" 8 50; then
+                local bind_pw=$(dialog --passwordbox "Bind Password:" 10 60 2>&1 >/dev/tty)
+                enable_ldap_auth "$server" "$base_dn" "$bind_dn" "$bind_pw"
+            fi
+            ;;
+
+        2)
+            local domain=$(dialog --inputbox "AD Domain:" 10 60 "example.com" 2>&1 >/dev/tty)
+            local server=$(dialog --inputbox "AD Server:" 10 60 "dc.example.com" 2>&1 >/dev/tty)
+            local admin=$(dialog --inputbox "Admin User:" 10 60 "Administrator" 2>&1 >/dev/tty)
+            local password=$(dialog --passwordbox "Admin Password:" 10 60 2>&1 >/dev/tty)
+
+            join_active_directory "$domain" "$server" "$admin" "$password"
+            enable_ad_auth
+            ;;
+
+        3)
+            local server=$(dialog --inputbox "FreeIPA Server:" 10 60 "ipa.example.com" 2>&1 >/dev/tty)
+            local domain=$(dialog --inputbox "IPA Domain:" 10 60 "example.com" 2>&1 >/dev/tty)
+            local password=$(dialog --passwordbox "Admin Password:" 10 60 2>&1 >/dev/tty)
+
+            join_freeipa "$server" "$domain" "$password"
+            ;;
+    esac
+
+    dialog --title "Setup Complete" \
+        --msgbox "Directory integration complete!\n\nRun 'virtos-directory status' to verify." 10 50
+}
+
+# Show usage
+usage() {
+    cat <<EOF
+VirtOS Enterprise Directory Integration - LDAP, AD, FreeIPA
+
+Usage: virtos-directory <command> [options]
+
+LDAP Commands:
+  setup-ldap <server> <base_dn> <bind_dn>     Setup LDAP client
+  enable-ldap-auth <server> <base_dn> <bind_dn> <password>  Enable LDAP authentication
+  search-users <filter>                        Search LDAP users
+  create-group <name> <gid>                    Create LDAP group
+  create-user <user> <uid> <gid> <first> <last>  Create LDAP user
+
+Active Directory Commands:
+  join-ad <domain> <server> <admin> <password>  Join AD domain
+  enable-ad-auth                                Enable AD authentication
+  search-ad-users <filter>                      Search AD users
+  add-ad-group-member <user> <group>            Add user to AD group
+
+FreeIPA Commands:
+  join-ipa <server> <domain> <password>        Join FreeIPA domain
+  search-ipa-users <filter>                    Search IPA users
+
+Sync Commands:
+  sync-users <source> <target>                 Sync users (ldap/ad/ipa -> local)
+
+Status Commands:
+  status                                       Show directory status
+  wizard                                       Interactive setup wizard
+
+Examples:
+  virtos-directory setup-ldap ldap.example.com dc=example,dc=com cn=admin,dc=example,dc=com
+  virtos-directory join-ad example.com dc.example.com Administrator password123
+  virtos-directory join-ipa ipa.example.com example.com password123
+  virtos-directory search-users "uid=john*"
+  virtos-directory sync-users ldap local
+  virtos-directory wizard
+
+Version: $VERSION
+EOF
+}
+
+# Main command dispatcher
+case "$1" in
+    setup-ldap)
+        setup_ldap_client "$2" "$3" "$4"
+        ;;
+    enable-ldap-auth)
+        enable_ldap_auth "$2" "$3" "$4" "$5"
+        ;;
+    join-ad)
+        join_active_directory "$2" "$3" "$4" "$5"
+        ;;
+    enable-ad-auth)
+        enable_ad_auth
+        ;;
+    join-ipa)
+        join_freeipa "$2" "$3" "$4"
+        ;;
+    search-users)
+        search_ldap_users "$2"
+        ;;
+    search-ad-users)
+        search_ad_users "$2"
+        ;;
+    search-ipa-users)
+        search_ipa_users "$2"
+        ;;
+    create-group)
+        create_ldap_group "$2" "$3"
+        ;;
+    create-user)
+        create_ldap_user "$2" "$3" "$4" "$5" "$6"
+        ;;
+    add-ad-group-member)
+        add_ad_group_member "$2" "$3"
+        ;;
+    sync-users)
+        sync_directory_users "$2" "$3"
+        ;;
+    status)
+        directory_status
+        ;;
+    wizard)
+        directory_wizard
+        ;;
+    *)
+        usage
+        ;;
+esac

@@ -1,0 +1,279 @@
+#!/bin/bash
+set -e
+
+# VirtOS Template - VM template management and cloning
+# Create, manage, and clone from VM templates
+
+VERSION="1"
+TEMPLATE_DIR="${TEMPLATE_DIR:-/var/lib/virtos/templates}"
+
+usage() {
+    cat << EOF
+VirtOS Template Manager v${VERSION}
+
+Usage: virtos-template [command] [options]
+
+Commands:
+  create <vm-name> <template-name>  Create template from VM
+  clone <template-name> <new-vm>    Clone VM from template
+  list                               List available templates
+  delete <template-name>             Delete a template
+  import <image-url> <template-name> Import cloud image as template
+
+Examples:
+  # Create template from existing VM
+  virtos-template create ubuntu-vm ubuntu-22.04-template
+
+  # Clone from template
+  virtos-template clone ubuntu-22.04-template web-server-1
+
+  # Import Ubuntu cloud image
+  virtos-template import \\
+    https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img \\
+    ubuntu-2204-cloud
+
+  # List templates
+  virtos-template list
+
+EOF
+}
+
+mkdir -p "$TEMPLATE_DIR"
+
+create_template() {
+    local vm_name="$1"
+    local template_name="$2"
+
+    echo "Creating template '$template_name' from VM '$vm_name'..."
+
+    # Check VM exists
+    if ! virsh list --all | grep -q " $vm_name "; then
+        echo "Error: VM '$vm_name' not found"
+        return 1
+    fi
+
+    # Ensure VM is shut down
+    local state=$(virsh domstate "$vm_name")
+    if [ "$state" != "shut off" ]; then
+        echo "Error: VM must be shut down first"
+        return 1
+    fi
+
+    # Create template directory
+    local template_path="$TEMPLATE_DIR/$template_name"
+    mkdir -p "$template_path"
+
+    # Save XML
+    virsh dumpxml "$vm_name" > "$template_path/template.xml"
+
+    # Copy disks
+    local disks=$(virsh domblklist "$vm_name" | grep -v '^-' | awk 'NR>1 {print $2}')
+    local disk_num=0
+
+    for disk in $disks; do
+        if [ -f "$disk" ]; then
+            disk_num=$((disk_num + 1))
+            echo "Copying disk $disk_num..."
+            qemu-img convert -O qcow2 "$disk" "$template_path/disk-$disk_num.qcow2"
+        fi
+    done
+
+    # Create manifest
+    cat > "$template_path/manifest.txt" <<EOF
+Template: $template_name
+Source VM: $vm_name
+Created: $(date)
+Disks: $disk_num
+EOF
+
+    echo "Template created: $template_name"
+}
+
+clone_from_template() {
+    local template_name="$1"
+    local new_vm_name="$2"
+
+    echo "Cloning VM '$new_vm_name' from template '$template_name'..."
+
+    local template_path="$TEMPLATE_DIR/$template_name"
+
+    if [ ! -d "$template_path" ]; then
+        echo "Error: Template '$template_name' not found"
+        return 1
+    fi
+
+    # Check if VM already exists
+    if virsh list --all | grep -q " $new_vm_name "; then
+        echo "Error: VM '$new_vm_name' already exists"
+        return 1
+    fi
+
+    # Create VM directory
+    local vm_dir="/var/lib/vms/$new_vm_name"
+    mkdir -p "$vm_dir"
+
+    # Clone disks using copy-on-write
+    for template_disk in "$template_path"/disk-*.qcow2; do
+        if [ -f "$template_disk" ]; then
+            local disk_name=$(basename "$template_disk")
+            local new_disk="$vm_dir/$disk_name"
+
+            echo "Creating disk: $disk_name"
+            # Create copy-on-write clone
+            qemu-img create -f qcow2 -F qcow2 -b "$template_disk" "$new_disk"
+        fi
+    done
+
+    # Update XML
+    local new_xml="/tmp/$new_vm_name.xml"
+    cp "$template_path/template.xml" "$new_xml"
+
+    # Update name and UUID
+    sed -i "s|<name>.*</name>|<name>$new_vm_name</name>|" "$new_xml"
+    sed -i "s|<uuid>.*</uuid>|<uuid>$(uuidgen)</uuid>|" "$new_xml"
+
+    # Update disk paths
+    local disk_num=1
+    for new_disk in "$vm_dir"/disk-*.qcow2; do
+        sed -i "s|source file='[^']*disk-$disk_num.qcow2'|source file='$new_disk'|" "$new_xml"
+        disk_num=$((disk_num + 1))
+    done
+
+    # Define VM
+    virsh define "$new_xml"
+    rm "$new_xml"
+
+    echo "VM '$new_vm_name' cloned successfully"
+    echo "Start with: virsh start $new_vm_name"
+}
+
+list_templates() {
+    echo "Available Templates:"
+    echo ""
+
+    if [ ! -d "$TEMPLATE_DIR" ] || [ -z "$(ls -A "$TEMPLATE_DIR" 2>/dev/null)" ]; then
+        echo "No templates found"
+        return 0
+    fi
+
+    printf "%-30s %-15s %-20s\n" "TEMPLATE NAME" "DISKS" "CREATED"
+    echo "------------------------------------------------------------------------"
+
+    for template in "$TEMPLATE_DIR"/*; do
+        if [ ! -d "$template" ]; then
+            continue
+        fi
+
+        local name=$(basename "$template")
+        local disk_count=$(ls -1 "$template"/disk-*.qcow2 2>/dev/null | wc -l)
+        local created="unknown"
+
+        if [ -f "$template/manifest.txt" ]; then
+            created=$(grep "Created:" "$template/manifest.txt" | cut -d: -f2- | xargs)
+        fi
+
+        printf "%-30s %-15s %-20s\n" "$name" "$disk_count disks" "$created"
+    done
+}
+
+delete_template() {
+    local template_name="$1"
+    local template_path="$TEMPLATE_DIR/$template_name"
+
+    if [ ! -d "$template_path" ]; then
+        echo "Error: Template '$template_name' not found"
+        return 1
+    fi
+
+    echo "Deleting template: $template_name"
+    rm -rf "$template_path"
+    echo "Template deleted"
+}
+
+import_cloud_image() {
+    local image_url="$1"
+    local template_name="$2"
+
+    echo "Importing cloud image as template '$template_name'..."
+
+    local template_path="$TEMPLATE_DIR/$template_name"
+    mkdir -p "$template_path"
+
+    # Download image
+    echo "Downloading image..."
+    wget -O "$template_path/disk-1.qcow2" "$image_url" || curl -L -o "$template_path/disk-1.qcow2" "$image_url"
+
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to download image"
+        rm -rf "$template_path"
+        return 1
+    fi
+
+    # Create basic XML template
+    cat > "$template_path/template.xml" <<EOF
+<domain type='kvm'>
+  <name>template-vm</name>
+  <uuid>$(uuidgen)</uuid>
+  <memory unit='GiB'>2</memory>
+  <vcpu>2</vcpu>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <devices>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='$template_path/disk-1.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    <interface type='bridge'>
+      <source bridge='br0'/>
+      <model type='virtio'/>
+    </interface>
+    <graphics type='vnc' port='-1'/>
+    <console type='pty'/>
+  </devices>
+</domain>
+EOF
+
+    cat > "$template_path/manifest.txt" <<EOF
+Template: $template_name
+Source: Cloud Image
+URL: $image_url
+Created: $(date)
+Disks: 1
+EOF
+
+    echo "Template imported: $template_name"
+}
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    create)
+        create_template "$1" "$2"
+        ;;
+    clone)
+        clone_from_template "$1" "$2"
+        ;;
+    list)
+        list_templates
+        ;;
+    delete)
+        delete_template "$1"
+        ;;
+    import)
+        import_cloud_image "$1" "$2"
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac

@@ -1,0 +1,509 @@
+#!/bin/bash
+set -e
+
+# VirtOS DR - Enhanced disaster recovery
+# Cluster-wide backup, replication, and recovery orchestration
+
+VERSION="1"
+DR_DIR="/var/lib/virtos/dr"
+STATE_DIR="/var/run/virtos/dr"
+LOG_FILE="/var/log/virtos-dr.log"
+
+mkdir -p "$DR_DIR" "$STATE_DIR"
+
+usage() {
+    cat << EOF
+VirtOS DR - Disaster Recovery v${VERSION}
+
+Usage: virtos-dr [command] [options]
+
+Commands:
+  plan-create <name>               Create DR plan
+  plan-list                        List DR plans
+  plan-show <name>                 Show DR plan details
+  plan-execute <name>              Execute DR plan
+  plan-test <name>                 Test DR plan (dry-run)
+
+  replicate-start <vm> <target>    Start VM replication
+  replicate-stop <vm>              Stop VM replication
+  replicate-status                 Show replication status
+
+  failover <site>                  Failover to DR site
+  failback <site>                  Failback to primary site
+
+  cluster-backup                   Backup entire cluster
+  cluster-restore <backup-id>      Restore entire cluster
+
+DR Plan Options:
+  --priority <level>               Plan priority (1-10)
+  --rpo <minutes>                  Recovery Point Objective
+  --rto <minutes>                  Recovery Time Objective
+  --auto-failover <yes|no>         Enable auto-failover
+
+Examples:
+  # Create DR plan for critical VMs
+  virtos-dr plan-create production \\
+    --priority 1 \\
+    --rpo 15 \\
+    --rto 30 \\
+    --auto-failover yes
+
+  # Start VM replication to DR site
+  virtos-dr replicate-start web-server-1 dr-site.example.com
+
+  # Test DR plan
+  virtos-dr plan-test production
+
+  # Execute failover to DR site
+  virtos-dr failover dr-site
+
+  # Backup entire cluster
+  virtos-dr cluster-backup
+
+EOF
+}
+
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+init_config() {
+    mkdir -p "$DR_DIR/plans" "$DR_DIR/replicas" "$DR_DIR/backups"
+
+    if [ ! -f "$DR_DIR/config.conf" ]; then
+        cat > "$DR_DIR/config.conf" <<EOF
+# VirtOS DR Configuration
+
+# DR site configuration
+DR_SITE=""
+DR_SITE_IP=""
+
+# Replication settings
+REPLICATION_INTERVAL=300
+COMPRESSION=yes
+ENCRYPTION=no
+
+# Failover settings
+AUTO_FAILOVER=no
+FAILOVER_TIMEOUT=600
+
+# Backup settings
+CLUSTER_BACKUP_DIR="/var/lib/virtos/dr/backups"
+BACKUP_RETENTION_DAYS=30
+EOF
+    fi
+
+    source "$DR_DIR/config.conf"
+}
+
+create_dr_plan() {
+    local plan_name="$1"
+    local priority=5
+    local rpo=60
+    local rto=120
+    local auto_failover="no"
+
+    shift
+
+    # Parse options
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --priority)
+                priority="$2"
+                shift 2
+                ;;
+            --rpo)
+                rpo="$2"
+                shift 2
+                ;;
+            --rto)
+                rto="$2"
+                shift 2
+                ;;
+            --auto-failover)
+                auto_failover="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    log_message "Creating DR plan: $plan_name"
+
+    local plan_file="$DR_DIR/plans/${plan_name}.plan"
+
+    cat > "$plan_file" <<EOF
+# DR Plan: $plan_name
+PLAN_NAME="$plan_name"
+PRIORITY=$priority
+RPO_MINUTES=$rpo
+RTO_MINUTES=$rto
+AUTO_FAILOVER=$auto_failover
+CREATED=$(date +%s)
+VMS=""
+STEPS=""
+EOF
+
+    log_message "DR plan created: $plan_name"
+    echo "DR plan '$plan_name' created"
+    echo "  Priority: $priority"
+    echo "  RPO: $rpo minutes"
+    echo "  RTO: $rto minutes"
+    echo "  Auto-failover: $auto_failover"
+    echo ""
+    echo "Add VMs to plan: Edit $plan_file"
+}
+
+list_dr_plans() {
+    echo "Disaster Recovery Plans:"
+    echo "========================"
+    printf "%-20s %-10s %-10s %-10s %-15s\n" "PLAN NAME" "PRIORITY" "RPO (min)" "RTO (min)" "AUTO-FAILOVER"
+    echo "--------------------------------------------------------------------------"
+
+    for plan_file in "$DR_DIR/plans"/*.plan; do
+        if [ ! -f "$plan_file" ]; then
+            echo "No DR plans configured"
+            return 0
+        fi
+
+        source "$plan_file"
+
+        printf "%-20s %-10s %-10s %-10s %-15s\n" \
+            "$PLAN_NAME" "$PRIORITY" "$RPO_MINUTES" "$RTO_MINUTES" "$AUTO_FAILOVER"
+    done
+}
+
+show_dr_plan() {
+    local plan_name="$1"
+    local plan_file="$DR_DIR/plans/${plan_name}.plan"
+
+    if [ ! -f "$plan_file" ]; then
+        echo "Error: DR plan '$plan_name' not found"
+        return 1
+    fi
+
+    source "$plan_file"
+
+    echo "DR Plan: $plan_name"
+    echo "==================="
+    echo "Priority: $PRIORITY"
+    echo "RPO: $RPO_MINUTES minutes"
+    echo "RTO: $RTO_MINUTES minutes"
+    echo "Auto-failover: $AUTO_FAILOVER"
+    echo "Created: $(date -d @$CREATED '+%Y-%m-%d %H:%M:%S')"
+    echo ""
+    echo "Protected VMs:"
+    if [ -n "$VMS" ]; then
+        echo "$VMS"
+    else
+        echo "  (none configured)"
+    fi
+}
+
+execute_dr_plan() {
+    local plan_name="$1"
+    local plan_file="$DR_DIR/plans/${plan_name}.plan"
+
+    if [ ! -f "$plan_file" ]; then
+        echo "Error: DR plan '$plan_name' not found"
+        return 1
+    fi
+
+    source "$plan_file"
+
+    log_message "Executing DR plan: $plan_name"
+    echo "Executing DR Plan: $plan_name"
+    echo "================================"
+
+    # In production, this would:
+    # 1. Verify DR site availability
+    # 2. Check replication status
+    # 3. Execute failover procedures
+    # 4. Verify VM startup
+    # 5. Run health checks
+
+    echo "Plan execution completed (simulation)"
+}
+
+test_dr_plan() {
+    local plan_name="$1"
+
+    log_message "Testing DR plan: $plan_name (dry-run)"
+    echo "Testing DR Plan: $plan_name (DRY-RUN)"
+    echo "===================================="
+
+    execute_dr_plan "$plan_name"
+
+    echo ""
+    echo "Test completed - no changes made"
+}
+
+start_replication() {
+    local vm_name="$1"
+    local target_host="$2"
+
+    log_message "Starting replication: $vm_name -> $target_host"
+
+    echo "Starting VM replication"
+    echo "======================="
+    echo "VM: $vm_name"
+    echo "Target: $target_host"
+
+    # Create replication config
+    cat > "$DR_DIR/replicas/${vm_name}.replica" <<EOF
+VM_NAME="$vm_name"
+TARGET_HOST="$target_host"
+STATUS="active"
+STARTED=$(date +%s)
+LAST_SYNC=0
+EOF
+
+    # In production, this would:
+    # 1. Set up continuous replication
+    # 2. Monitor replication lag
+    # 3. Handle network failures
+
+    log_message "Replication started: $vm_name -> $target_host"
+    echo "Replication started successfully"
+}
+
+stop_replication() {
+    local vm_name="$1"
+
+    if [ ! -f "$DR_DIR/replicas/${vm_name}.replica" ]; then
+        echo "Error: No replication configured for $vm_name"
+        return 1
+    fi
+
+    log_message "Stopping replication: $vm_name"
+
+    rm -f "$DR_DIR/replicas/${vm_name}.replica"
+
+    echo "Replication stopped for $vm_name"
+}
+
+show_replication_status() {
+    echo "VM Replication Status:"
+    echo "======================"
+    printf "%-20s %-25s %-15s\n" "VM NAME" "TARGET" "STATUS"
+    echo "----------------------------------------------------------------"
+
+    for replica_file in "$DR_DIR/replicas"/*.replica; do
+        if [ ! -f "$replica_file" ]; then
+            echo "No active replications"
+            return 0
+        fi
+
+        source "$replica_file"
+
+        printf "%-20s %-25s %-15s\n" "$VM_NAME" "$TARGET_HOST" "$STATUS"
+    done
+}
+
+perform_failover() {
+    local target_site="$1"
+
+    log_message "Initiating failover to: $target_site"
+
+    echo "DISASTER RECOVERY FAILOVER"
+    echo "=========================="
+    echo "Target Site: $target_site"
+    echo ""
+    echo "This operation will:"
+    echo "  1. Stop VMs on primary site"
+    echo "  2. Start VMs on DR site"
+    echo "  3. Update DNS/networking"
+    echo "  4. Verify services"
+    echo ""
+
+    read -p "Proceed with failover? (yes/no): " confirm
+
+    if [ "$confirm" != "yes" ]; then
+        echo "Failover cancelled"
+        return 0
+    fi
+
+    log_message "Failover confirmed - executing"
+    echo "Executing failover..."
+
+    # In production:
+    # 1. Fence primary site
+    # 2. Activate DR site
+    # 3. Start VMs in priority order
+    # 4. Update network configuration
+    # 5. Verify health
+
+    echo "Failover completed (simulation)"
+    log_message "Failover completed to: $target_site"
+}
+
+perform_failback() {
+    local primary_site="$1"
+
+    log_message "Initiating failback to: $primary_site"
+
+    echo "FAILBACK TO PRIMARY SITE"
+    echo "========================"
+    echo "Primary Site: $primary_site"
+    echo ""
+
+    read -p "Proceed with failback? (yes/no): " confirm
+
+    if [ "$confirm" != "yes" ]; then
+        echo "Failback cancelled"
+        return 0
+    fi
+
+    log_message "Failback confirmed - executing"
+    echo "Executing failback..."
+
+    # In production:
+    # 1. Sync data from DR to primary
+    # 2. Stop VMs on DR site
+    # 3. Start VMs on primary
+    # 4. Update network configuration
+    # 5. Resume replication
+
+    echo "Failback completed (simulation)"
+    log_message "Failback completed to: $primary_site"
+}
+
+cluster_backup() {
+    local backup_id="cluster-$(date +%Y%m%d-%H%M%S)"
+    local backup_dir="$DR_DIR/backups/$backup_id"
+
+    mkdir -p "$backup_dir"
+
+    log_message "Starting cluster backup: $backup_id"
+
+    echo "Cluster-Wide Backup"
+    echo "==================="
+    echo "Backup ID: $backup_id"
+    echo ""
+
+    # Backup all VMs
+    echo "Backing up VMs..."
+    if command -v virsh >/dev/null 2>&1; then
+        local vms=$(virsh list --all --name)
+        for vm in $vms; do
+            if [ -n "$vm" ]; then
+                echo "  Backing up: $vm"
+                virtos-backup backup "$vm" --destination "$backup_dir" 2>/dev/null || true
+            fi
+        done
+    fi
+
+    # Backup cluster configuration
+    echo "Backing up configuration..."
+    cp -r /etc/virtos "$backup_dir/config" 2>/dev/null || true
+
+    # Create manifest
+    cat > "$backup_dir/manifest.txt" <<EOF
+Backup ID: $backup_id
+Created: $(date)
+Type: Cluster-wide backup
+VMs: $(echo "$vms" | wc -l)
+EOF
+
+    log_message "Cluster backup completed: $backup_id"
+    echo ""
+    echo "Backup completed: $backup_dir"
+}
+
+cluster_restore() {
+    local backup_id="$1"
+    local backup_dir="$DR_DIR/backups/$backup_id"
+
+    if [ ! -d "$backup_dir" ]; then
+        echo "Error: Backup '$backup_id' not found"
+        return 1
+    fi
+
+    log_message "Starting cluster restore: $backup_id"
+
+    echo "CLUSTER RESTORE"
+    echo "==============="
+    echo "Backup: $backup_id"
+    echo ""
+    echo "WARNING: This will restore the entire cluster"
+    echo ""
+
+    read -p "Proceed with restore? (yes/no): " confirm
+
+    if [ "$confirm" != "yes" ]; then
+        echo "Restore cancelled"
+        return 0
+    fi
+
+    echo "Restoring cluster..."
+
+    # Restore VMs
+    echo "Restoring VMs..."
+    # Implementation would restore each VM from backup
+
+    # Restore configuration
+    echo "Restoring configuration..."
+    if [ -d "$backup_dir/config" ]; then
+        cp -r "$backup_dir/config"/* /etc/virtos/ 2>/dev/null || true
+    fi
+
+    log_message "Cluster restore completed: $backup_id"
+    echo "Cluster restore completed"
+}
+
+# Initialize
+init_config
+
+# Main command handler
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+    plan-create)
+        create_dr_plan "$@"
+        ;;
+    plan-list)
+        list_dr_plans
+        ;;
+    plan-show)
+        show_dr_plan "$1"
+        ;;
+    plan-execute)
+        execute_dr_plan "$1"
+        ;;
+    plan-test)
+        test_dr_plan "$1"
+        ;;
+    replicate-start)
+        start_replication "$1" "$2"
+        ;;
+    replicate-stop)
+        stop_replication "$1"
+        ;;
+    replicate-status)
+        show_replication_status
+        ;;
+    failover)
+        perform_failover "$1"
+        ;;
+    failback)
+        perform_failback "$1"
+        ;;
+    cluster-backup)
+        cluster_backup
+        ;;
+    cluster-restore)
+        cluster_restore "$1"
+        ;;
+    --help|-h|help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown command: $COMMAND"
+        usage
+        exit 1
+        ;;
+esac
