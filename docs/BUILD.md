@@ -317,7 +317,7 @@ wget https://tinycorelinux.net/15.x/x86_64/release/CorePure64-15.0.iso
 # Edit build/build.conf and change TC_MIRROR_URL
 ```
 
-See [BUILD_DEPENDENCIES.md](../BUILD_DEPENDENCIES.md) for offline builds.
+See [BUILD_DEPENDENCIES.md](BUILD_DEPENDENCIES.md) for offline builds.
 
 ### "Permission denied" during build
 
@@ -460,7 +460,7 @@ For air-gapped environments:
    make build
    ```
 
-See [BUILD_DEPENDENCIES.md](../BUILD_DEPENDENCIES.md) for complete offline build guide.
+See [BUILD_DEPENDENCIES.md](BUILD_DEPENDENCIES.md) for complete offline build guide.
 
 ### Multi-Architecture Builds
 
@@ -485,7 +485,7 @@ Currently VirtOS supports x86_64 only. For other architectures:
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
 - [RUNTIME_TESTING_PLAN.md](../RUNTIME_TESTING_PLAN.md) - Comprehensive testing guide
 - [ISO_BUILD_STATUS.md](../ISO_BUILD_STATUS.md) - Build system status
-- [BUILD_DEPENDENCIES.md](../BUILD_DEPENDENCIES.md) - Detailed dependency information
+- [BUILD_DEPENDENCIES.md](BUILD_DEPENDENCIES.md) - Detailed dependency information
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - General troubleshooting
 
 ## Contributing
