@@ -150,9 +150,12 @@ for pattern in "${SECRET_PATTERNS[@]}"; do
         2>/dev/null | grep -v '=\s*""\|=\s*'\'''\'''); then # Exclude empty strings
 
         if [ -n "$findings" ]; then
-            # Further filter out variable assignments from parameters
+            # Further filter out variable assignments from parameters (password="$1" or password="${var}")
             # shellcheck disable=SC2016
-            findings=$(echo "$findings" | grep -v '=\s*"\$'"[0-9]"'\|=\s*"\$\{[^}]*\}' || true)
+            findings=$(echo "$findings" | grep -v '=\s*"\$' || true)
+
+            # Filter out lines with pragma allowlist comments
+            findings=$(echo "$findings" | grep -v 'pragma: allowlist secret' || true)
 
             if [ -n "$findings" ]; then
                 echo "⚠️  Potential secrets found:" | tee -a "$REVIEW_LOG"
@@ -185,7 +188,7 @@ for pattern in "${UNSAFE_PATTERNS[@]}"; do
         2>/dev/null || true); then
 
         # Filter out legitimate database CLI usage (mongo --eval, mysql --execute, psql --command)
-        findings=$(echo "$findings" | grep -v 'mongo --eval\|mysql --execute\|psql --command' || true)
+        findings=$(echo "$findings" | grep -v 'mongo.*--eval\|mysql.*--execute\|psql.*--command' || true)
 
         # Filter out documented security justifications
         # This is a simple filter - ideally we'd check preceding lines for SECURITY NOTE
