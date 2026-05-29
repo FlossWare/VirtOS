@@ -114,9 +114,18 @@ done
 
 # Validate required arguments
 if [ -z "$NAME" ] || [ -z "$CPU" ] || [ -z "$RAM" ] || [ -z "$DISK" ]; then
-    echo "${RED}Error: Missing required arguments${NC}"
-    echo ""
-    usage
+    echo "${RED}Error: Missing required arguments for VM creation${NC}" >&2
+    echo "" >&2
+    echo "Required arguments:" >&2
+    [ -z "$NAME" ] && echo "  --name <name>     VM name (missing)" >&2 || echo "  --name <name>     VM name: $NAME" >&2
+    [ -z "$CPU" ] && echo "  --cpu <count>     Number of vCPUs (missing)" >&2 || echo "  --cpu <count>     Number of vCPUs: $CPU" >&2
+    [ -z "$RAM" ] && echo "  --ram <MB>        RAM in MB (missing)" >&2 || echo "  --ram <MB>        RAM in MB: $RAM" >&2
+    [ -z "$DISK" ] && echo "  --disk <size>     Disk size (missing)" >&2 || echo "  --disk <size>     Disk size: $DISK" >&2
+    echo "" >&2
+    echo "Example:" >&2
+    echo "  virtos-create-vm --name web-1 --cpu 2 --ram 4096 --disk 20G" >&2
+    echo "" >&2
+    echo "See 'virtos-create-vm --help' for full usage" >&2
     exit 1
 fi
 
@@ -298,8 +307,20 @@ else
 
     # Get cluster members
     if [ ! -f /var/run/virtos/cluster-members ]; then
-        echo "${RED}Error: Cluster information not available${NC}"
-        echo "Run: virtos-cluster refresh"
+        echo "${RED}Error: Cluster information not available${NC}" >&2
+        echo "" >&2
+        echo "Reason: Cluster member cache not found" >&2
+        echo "  File: /var/run/virtos/cluster-members" >&2
+        echo "" >&2
+        echo "To resolve:" >&2
+        echo "  1. Refresh cluster discovery:" >&2
+        echo "     virtos-cluster refresh" >&2
+        echo "" >&2
+        echo "  2. If clustering is not configured, initialize it:" >&2
+        echo "     virtos-cluster init" >&2
+        echo "" >&2
+        echo "  3. For single-host deployment, use --require localhost:" >&2
+        echo "     virtos-create-vm --name $NAME --cpu $CPU --ram $RAM --disk $DISK --require localhost" >&2
         exit 1
     fi
 
@@ -414,11 +435,28 @@ else
     done < /var/run/virtos/cluster-members
 
     if [ -z "$SELECTED_HOST" ]; then
-        echo "${RED}Error: No suitable host found${NC}"
-        echo "Possible reasons:"
-        echo "  - All hosts avoided or excluded by constraints"
-        echo "  - Insufficient resources on all hosts"
-        echo "  - Unable to contact cluster members"
+        echo "${RED}Error: No suitable host found for VM placement${NC}" >&2
+        echo "" >&2
+        echo "VM requirements:" >&2
+        echo "  CPU:    $CPU vCPUs" >&2
+        echo "  RAM:    $RAM MB" >&2
+        echo "  Policy: $POLICY" >&2
+        echo "" >&2
+        echo "Possible reasons:" >&2
+        echo "  • All hosts avoided or excluded by affinity constraints" >&2
+        echo "  • Insufficient resources (CPU/RAM) on all available hosts" >&2
+        echo "  • Unable to contact cluster members (network issues)" >&2
+        echo "  • Anti-affinity rules prevent placement" >&2
+        echo "" >&2
+        echo "To resolve:" >&2
+        echo "  1. Check cluster status:" >&2
+        echo "     virtos-cluster resources" >&2
+        echo "" >&2
+        echo "  2. Reduce resource requirements or try different policy:" >&2
+        echo "     virtos-create-vm --name $NAME --cpu $((CPU/2)) --ram $((RAM/2)) --disk $DISK --policy spread" >&2
+        echo "" >&2
+        echo "  3. Force placement on specific host:" >&2
+        echo "     virtos-create-vm --name $NAME --cpu $CPU --ram $RAM --disk $DISK --require <hostname>" >&2
         exit 1
     fi
 
