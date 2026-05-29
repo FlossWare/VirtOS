@@ -907,6 +907,150 @@ Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** fo
 - **[Pre-commit Hooks](docs/PRE_COMMIT_HOOKS.md)** - Automated code quality checks
 - **[Security Hardening](docs/SECURITY-HARDENING.md)** - Security guidelines
 
+## Common Issues
+
+Quick answers to frequently asked questions. For detailed troubleshooting, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
+### Build Issues
+
+**Q: Build fails with "command not found: genisoimage"**
+A: Install build dependencies first:
+
+```bash
+# Fedora/RHEL
+sudo dnf install -y genisoimage syslinux wget bash cpio gzip squashfs-tools
+
+# Debian/Ubuntu
+sudo apt install -y genisoimage syslinux-utils wget bash cpio gzip squashfs-tools
+```
+
+Or use the Makefile: `make install-deps-fedora` (or `-ubuntu`, `-arch`)
+
+**Q: Build validation fails - what should I check first?**
+A: Run the validation script to diagnose:
+
+```bash
+build/scripts/validate-build.sh
+```
+
+This checks for missing dependencies, permissions, and disk space.
+
+**Q: Package build succeeds but TCZ file is missing**
+A: Check build logs in `packages/output/build.log`. Common causes:
+
+- Insufficient disk space (need 20GB free)
+- Permission errors (check directory ownership)
+- Missing intermediate files (re-run `./build-all.sh`)
+
+### Runtime Issues
+
+**Q: ISO doesn't boot in QEMU/VirtualBox**
+A: For QEMU, ensure KVM acceleration is enabled:
+
+```bash
+qemu-system-x86_64 -enable-kvm -m 2048 -cdrom VirtOS-*.iso
+```
+
+For VirtualBox, enable "VT-x/AMD-V" in VM settings.
+
+**Q: Management scripts show "command not found" after boot**
+A: Scripts are in `/usr/local/bin` after installing `virtos-tools.tcz`. Verify installation:
+
+```bash
+# Check if package is loaded
+tce-status -i | grep virtos-tools
+
+# If missing, install it
+tce-load -i virtos-tools
+```
+
+**Q: libvirt/virsh commands fail with permission errors**
+A: Add your user to the `libvirt` group and configure PolicyKit:
+
+```bash
+sudo usermod -a -G libvirt $USER
+# Logout and login for group changes to take effect
+```
+
+See [LIBVIRT-PERMISSIONS.md](docs/LIBVIRT-PERMISSIONS.md) for detailed setup.
+
+**Q: VM creation fails with "no space left on device"**
+A: Check available storage pools:
+
+```bash
+virtos-storage list-pools
+virsh pool-list --all
+```
+
+Create or expand storage pools as needed. See [STORAGE.md](docs/STORAGE.md).
+
+### Testing & Development
+
+**Q: Pre-commit hooks fail - how do I fix them?**
+A: Install pre-commit and run auto-fixes:
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+See [PRE_COMMIT_HOOKS.md](docs/PRE_COMMIT_HOOKS.md) for details.
+
+**Q: BATS tests pass but scripts don't work at runtime**
+A: Current tests validate script structure, not functionality (see Issue #103). For real testing:
+
+1. Build and boot VirtOS ISO
+2. Run integration tests in live environment
+3. See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
+
+**Q: I want to contribute - where do I start?**
+A: Check issues labeled ["good first issue"](https://github.com/FlossWare/VirtOS/labels/good%20first%20issue). Then:
+
+1. Read [CONTRIBUTING.md](CONTRIBUTING.md)
+2. Review [CODING_STANDARDS.md](docs/CODING_STANDARDS.md)
+3. Join discussions on GitHub
+
+### Production Readiness
+
+**Q: Is VirtOS ready for production?**
+A: **No** - VirtOS is in alpha. Core VM management works but needs:
+
+- ISO boot testing (0/47 checks completed)
+- Runtime validation in real environment
+- Security audit and hardening
+- Performance benchmarking
+
+Use for: learning, development, home labs  
+Avoid for: production, critical systems, uptime SLAs
+
+See [Project Status](#project-status) for complete details.
+
+**Q: What actually works right now?**
+A: **29/54 management scripts** are fully functional:
+
+- Complete VM lifecycle (create, start, stop, migrate, snapshot, backup)
+- Storage pools and volumes
+- Network bridges and NAT
+- Cluster discovery
+- Resource monitoring
+
+Build system and packaging are working and tested. ISO building is code-complete but awaiting validation.
+
+**Q: Why are there experimental scripts (AI, quantum, blockchain)?**
+A: These 14 scripts are **intentional research prototypes** showing potential future features. They demonstrate interfaces but need significant backend implementation. See [EXPERIMENTAL_FEATURES.md](docs/EXPERIMENTAL_FEATURES.md).
+
+### Additional Resources
+
+**Q: Where can I get more help?**
+A:
+
+- **Documentation**: [docs/INDEX.md](docs/INDEX.md) - Complete documentation index
+- **Troubleshooting**: [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Detailed problem solving
+- **Issues**: [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) - Bug reports and questions
+- **Discussions**: [GitHub Discussions](https://github.com/FlossWare/VirtOS/discussions) - General questions and ideas
+- **Community**: [COMMUNITY.md](COMMUNITY.md) - Community guidelines and support channels
+
 ## License
 
 GNU General Public License v3.0 - see [LICENSE](LICENSE) file for details.
