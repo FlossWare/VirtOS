@@ -640,6 +640,14 @@ Examples:
   # Optimize bandwidth
   $SCRIPT_NAME bandwidth-optimize 50
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Edge node not initialized
+    4    Sync failed
+    5    Deployment failed
+
 EOF
 }
 

@@ -762,6 +762,14 @@ Examples:
   # Check status
   $SCRIPT_NAME federation-status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Provider not found
+    4    Deployment failed
+    5    Authentication failed
+
 EOF
 }
 

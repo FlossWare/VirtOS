@@ -54,6 +54,14 @@ Examples:
   # Check HA status
   virtos-ha status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM not found
+    4    Failover failed
+    5    Quorum not met
+
 EOF
 }
 

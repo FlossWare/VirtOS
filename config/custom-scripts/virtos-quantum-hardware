@@ -774,6 +774,14 @@ Notes:
   - Results include hardware errors (use error mitigation)
   - Hybrid algorithms combine quantum and classical processing
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Hardware not initialized
+    4    Job submission failed
+    5    Authentication failed
+
 EOF
 }
 
