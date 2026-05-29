@@ -1,12 +1,12 @@
 # VirtOS v1.0 Roadmap
 
 **Target Release**: Q1 2027 (January-March 2027)  
-**Current Version**: 0.86 (Alpha - Functional Core)  
+**Current Version**: 0.89 (Alpha - Functional Core)  
 **Status**: 44% toward production readiness
 
 ## Overview
 
-This roadmap outlines the path from current alpha status (v0.86) to production-ready v1.0 release. VirtOS v1.0 will be suitable for production deployment in home labs, edge computing, and small-to-medium business environments.
+This roadmap outlines the path from current alpha status (v0.89) to production-ready v1.0 release. VirtOS v1.0 will be suitable for production deployment in home labs, edge computing, and small-to-medium business environments.
 
 ## Release Milestones
 

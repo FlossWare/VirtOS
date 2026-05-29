@@ -1,7 +1,7 @@
 # VirtOS Examples Integration Plan
 
 **Last Updated**: 2026-05-29  
-**Version**: 0.87  
+**Version: 0.89  
 **Status**: Integration Plan (Not Yet Implemented)
 
 ## Overview

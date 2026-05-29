@@ -1,7 +1,7 @@
 # VirtOS Experimental Features
 
 **Last Updated**: 2026-05-29  
-**Version**: 0.87
+**Version: 0.89
 
 ## What Are Experimental Scripts?
 

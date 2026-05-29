@@ -1,7 +1,7 @@
 # VirtOS Build Configurator (Interactive TUI)
 
 **Last Updated**: 2026-05-29  
-**Version**: 0.87  
+**Version: 0.89  
 **Status**: Design Document (Not Yet Implemented)
 
 ## Overview

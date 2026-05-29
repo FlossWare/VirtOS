@@ -1,6 +1,6 @@
 # Migration Guide: Proxmox VE to VirtOS
 
-**Status**: ⚠️ **DRAFT** - VirtOS is not yet production-ready (v0.86 alpha)  
+**Status**: ⚠️ **DRAFT** - VirtOS is not yet production-ready (v0.89 alpha)  
 **Target Audience**: Proxmox VE users evaluating VirtOS  
 **Prerequisites**: VirtOS v1.0+ (not available yet - estimated Q1 2027)
 
@@ -65,7 +65,7 @@
 
 ## Feature Parity Matrix
 
-| Feature | Proxmox VE | VirtOS v0.86 | VirtOS v1.0 (Planned) |
+| Feature | Proxmox VE | VirtOS v0.89 | VirtOS v1.0 (Planned) |
 |---------|------------|--------------|----------------------|
 | **VM Management** |
 | KVM/QEMU VMs | ✅ Full | ✅ Working | ✅ Validated |

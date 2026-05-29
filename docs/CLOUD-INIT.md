@@ -1,7 +1,7 @@
 # VirtOS Cloud-init Guide
 
 **Last Updated**: 2026-05-29  
-**Version**: 0.87
+**Version: 0.89
 
 ## What is Cloud-init?
 

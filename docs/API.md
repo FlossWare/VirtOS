@@ -291,7 +291,7 @@ Returns API version information.
 ```json
 {
   "api_version": "v1",
-  "virtos_version": "0.87",
+  "virtos_version": "0.89",
   "server": "virtos-api"
 }
 ```

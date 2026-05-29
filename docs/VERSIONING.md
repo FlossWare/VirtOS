@@ -8,7 +8,7 @@ VirtOS uses **X.Y semantic versioning** where:
 
 ## Current Version
 
-**v0.87** (as of 2026-05-28)
+**v0.89** (as of 2026-05-28)
 
 - **Major**: 0 (pre-1.0 alpha/beta phase)
 - **Minor**: 87 (auto-incremented by CD workflow)
@@ -21,7 +21,7 @@ The `VERSION` file at repository root contains the canonical version:
 
 ```
 $ cat VERSION
-0.87
+0.89
 ```
 
 All package metadata files sync from this single source.
@@ -50,11 +50,11 @@ All version references stay synchronized:
 
 | File | Version Reference |
 |------|-------------------|
-| `VERSION` | 0.87 |
-| `packages/virtos-tools/virtos-tools.tcz.info` | Version: 0.87 |
-| `packages/virtos-platform-java/virtos-platform-java.tcz.info` | Version: 0.87 |
-| Git tag | v0.87 |
-| GitHub Release | VirtOS v0.87 |
+| `VERSION` | 0.89 |
+| `packages/virtos-tools/virtos-tools.tcz.info` | Version: 0.89 |
+| `packages/virtos-platform-java/virtos-platform-java.tcz.info` | Version: 0.89 |
+| Git tag | v0.89 |
+| GitHub Release | VirtOS v0.89 |
 
 ### Validation
 
@@ -146,10 +146,10 @@ All virtos-* scripts support `--version`:
 
 ```bash
 $ virtos-create-vm --version
-virtos-create-vm version 0.87
+virtos-create-vm version 0.89
 
 $ virtos-tui --version
-virtos-tui version 0.87
+virtos-tui version 0.89
 ```
 
 ### Package Metadata
@@ -159,7 +159,7 @@ TCZ package info files show version:
 ```bash
 $ cat /tmp/tcloop/virtos-tools/virtos-tools.tcz.info
 Title:          virtos-tools.tcz
-Version:        0.87
+Version: 0.89
 ...
 ```
 
@@ -171,9 +171,9 @@ All releases tagged as `vX.Y`:
 $ git tag | tail -5
 v0.83
 v0.84
-v0.85
-v0.86
-v0.87
+v0.89
+v0.89
+v0.89
 ```
 
 ## Historical Versions

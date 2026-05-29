@@ -1,7 +1,7 @@
 # VirtOS Script-to-Script Dependencies
 
 **Last Updated**: 2026-05-29  
-**Version**: 0.87  
+**Version: 0.89  
 **Status**: Reference Documentation
 
 ## Overview

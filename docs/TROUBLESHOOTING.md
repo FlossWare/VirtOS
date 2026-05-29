@@ -1,7 +1,7 @@
 # VirtOS Troubleshooting Guide
 
 **Last Updated**: 2026-05-29  
-**Version**: 0.87
+**Version: 0.89
 
 Complete guide for diagnosing and fixing common VirtOS issues.
 
