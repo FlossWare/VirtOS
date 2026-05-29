@@ -107,7 +107,7 @@ Complete documentation for FlossWare VirtOS.
 - **[TESTING_ROADMAP.md](../TESTING_ROADMAP.md)** - ⭐ NEW: Three-phase testing execution plan
 - **[ISO_TESTING_STATUS.md](../ISO_TESTING_STATUS.md)** - ISO validation checklist (47 tests)
 - **[RUNTIME_TESTING_PLAN.md](../RUNTIME_TESTING_PLAN.md)** - Runtime testing procedures
-- **[TESTING.md](TESTING.md)** - Testing guide
+- **[TESTING.md](../TESTING.md)** - Testing guide
 - **[TESTING_METRICS.md](TESTING_METRICS.md)** - Test metrics
 
 ## Roadmap & Planning
