@@ -81,7 +81,9 @@ If you're adding a new TCZ extension:
 - Update relevant .md files with changes
 - Spell check and proofread
 
-## Development Setup
+## Development Setup Guide
+
+This section provides step-by-step instructions to set up your VirtOS development environment, from initial clone to running your first build.
 
 ### Prerequisites
 
@@ -102,62 +104,420 @@ If you're adding a new TCZ extension:
 - 20GB+ free disk space
 - QEMU/KVM for testing
 
-### Quick Start
+### Step 1: Clone and Environment Setup
+
+Clone the repository and install required development tools:
 
 ```bash
 # Clone the repository
 git clone https://github.com/FlossWare/VirtOS.git
 cd VirtOS
 
-# Install pre-commit hooks (RECOMMENDED)
-pip install pre-commit
-pre-commit install
-pre-commit install --hook-type commit-msg
+# Install development dependencies (Fedora/RHEL)
+sudo dnf install -y shellcheck git python3 python3-pip
 
-# Check out a development branch
-git checkout -b feature/my-feature
+# Install development dependencies (Ubuntu/Debian)
+sudo apt install -y shellcheck git python3 python3-pip
 
-# Validate scripts before making changes
-./build/scripts/prepare.sh
+# Install Python development tools
+pip install --user pre-commit
 
-# Make your changes
-# ...
-
-# Pre-commit hooks run automatically on commit
-# Or run manually:
-pre-commit run --all-files
-
-# Test script syntax
-bash -n config/custom-scripts/virtos-yourscript
-
-# Run shellcheck
-shellcheck config/custom-scripts/virtos-yourscript
+# Verify installations
+shellcheck --version
+pre-commit --version
+git --version
 ```
 
-**Pre-commit Hooks** (Recommended):
-VirtOS uses automated code quality checks via pre-commit hooks. These catch issues before you commit:
+### Step 2: Pre-commit Hook Installation
+
+VirtOS uses automated code quality checks to catch issues before commit. **This step is highly recommended**.
 
 ```bash
-# One-time setup
-pip install pre-commit
+# Install pre-commit hooks (one-time setup)
 pre-commit install
 pre-commit install --hook-type commit-msg
 
-# Hooks run automatically on 'git commit'
-# Or run manually on all files:
+# Verify hooks are installed
+ls -la .git/hooks/
+# Should see: pre-commit, commit-msg
+
+# Test hooks on all files (optional)
 pre-commit run --all-files
 ```
 
-Hooks enforce:
+**What the hooks enforce:**
 
 - ✅ ShellCheck (shell script linting)
 - ✅ shfmt (shell script formatting)
 - ✅ YAML/JSON validation
-- ✅ Secret detection
-- ✅ Conventional commit messages
+- ✅ Secret detection (prevents committing passwords/keys)
+- ✅ Conventional commit messages (feat:, fix:, docs:, etc.)
 - ✅ Trailing whitespace removal
+- ✅ Mixed line endings detection
 
-See [docs/PRE_COMMIT_HOOKS.md](docs/PRE_COMMIT_HOOKS.md) for complete guide.
+**Hook behavior:**
+
+```bash
+# Hooks run automatically on 'git commit'
+git commit -m "feat: add new feature"
+# Hook runs, fails if issues found
+
+# To skip hooks (NOT recommended - only for emergencies)
+git commit -m "feat: add feature" --no-verify
+
+# Run hooks manually without committing
+pre-commit run --all-files
+
+# Run specific hook
+pre-commit run shellcheck --all-files
+```
+
+See [docs/PRE_COMMIT_HOOKS.md](docs/PRE_COMMIT_HOOKS.md) for complete guide and troubleshooting.
+
+### Step 3: Running Tests Locally
+
+VirtOS has comprehensive testing at multiple levels. Run tests before submitting PRs.
+
+#### Quick Validation (Recommended for all PRs)
+
+```bash
+# Comprehensive validation (8 checks per script)
+./ci/validate-scripts.sh --report
+
+# Check specific script
+./ci/validate-scripts.sh packages/virtos-tools/src/usr/local/bin/virtos-vm
+
+# Validate error handling compliance
+./ci/migrate-error-handling.sh --report
+```
+
+#### Manual Testing
+
+```bash
+# Test syntax of all scripts
+for script in packages/virtos-tools/src/usr/local/bin/virtos-*; do
+  bash -n "$script" && echo "✓ $script" || echo "✗ $script FAILED"
+done
+
+# Run shellcheck on all scripts
+shellcheck packages/virtos-tools/src/usr/local/bin/virtos-*
+
+# Test specific script
+bash -n config/custom-scripts/virtos-vm
+shellcheck config/custom-scripts/virtos-vm
+```
+
+#### Unit Tests (BATS Framework)
+
+```bash
+# Install BATS (if not present)
+git clone https://github.com/bats-core/bats-core.git /tmp/bats
+sudo /tmp/bats/install.sh /usr/local
+
+# Run all unit tests
+bats tests/*.bats
+
+# Run specific test file
+bats tests/virtos-vm.bats
+
+# Run with verbose output
+bats -t tests/virtos-vm.bats
+```
+
+#### Integration Tests
+
+```bash
+# Integration tests require VirtOS runtime environment
+# See TESTING.md for full procedures
+
+# Run integration test suite (when VirtOS is running)
+cd tests/integration
+bats 01-vm-lifecycle.bats
+bats 02-network-management.bats
+```
+
+See [TESTING.md](TESTING.md) for complete testing procedures.
+
+### Step 4: Building Packages
+
+Build VirtOS packages locally to test your changes.
+
+#### Build All Packages
+
+```bash
+# Build all TCZ packages
+cd packages
+./build-all.sh
+
+# Check build output
+ls -lh output/
+# Should see: virtos-tools.tcz, virtos-platform-java.tcz, etc.
+
+# Verify package contents
+unsquashfs -ll output/virtos-tools.tcz
+```
+
+#### Build Specific Package
+
+```bash
+# Build virtos-tools only
+cd packages/virtos-tools
+./build.sh
+
+# Build platform-java integration
+cd packages/virtos-platform-java
+./build.sh
+
+# Verify package metadata
+cat virtos-tools.tcz.info
+cat virtos-tools.tcz.dep  # Dependencies
+```
+
+#### Package Testing
+
+```bash
+# Extract package for inspection
+cd packages/output
+unsquashfs virtos-tools.tcz
+
+# Check extracted files
+ls -R squashfs-root/
+
+# Verify script permissions
+find squashfs-root/ -name "virtos-*" -exec ls -lh {} \;
+
+# Clean up
+rm -rf squashfs-root/
+```
+
+#### Build ISO (Advanced)
+
+```bash
+# Build VirtOS ISO (requires Tiny Core build environment)
+cd build
+./build.sh
+
+# Build specific profile
+./build.sh --profile minimal
+
+# Check ISO output
+ls -lh output/
+file output/virtos-*.iso
+
+# Test ISO in QEMU
+qemu-system-x86_64 -cdrom output/virtos-minimal.iso -m 2048
+```
+
+See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for ISO validation checklist.
+
+### Step 5: Common Development Workflows
+
+#### Workflow 1: Fix a Bug
+
+```bash
+# Create branch
+git checkout -b fix/vm-creation-bug
+
+# Make changes to script
+vim packages/virtos-tools/src/usr/local/bin/virtos-vm
+
+# Test locally
+bash -n packages/virtos-tools/src/usr/local/bin/virtos-vm
+shellcheck packages/virtos-tools/src/usr/local/bin/virtos-vm
+./ci/validate-scripts.sh packages/virtos-tools/src/usr/local/bin/virtos-vm
+
+# Build package to verify
+cd packages/virtos-tools && ./build.sh
+
+# Commit (pre-commit hooks run automatically)
+git add packages/virtos-tools/src/usr/local/bin/virtos-vm
+git commit -m "fix: correct VM creation error handling
+
+Fixes issue where VM creation failed silently when disk
+quota was exceeded.
+
+Fixes #123"
+
+# Push and create PR
+git push origin fix/vm-creation-bug
+```
+
+#### Workflow 2: Add New Feature
+
+```bash
+# Create branch
+git checkout -b feature/add-backup-encryption
+
+# Add new feature to existing script
+vim packages/virtos-tools/src/usr/local/bin/virtos-backup
+
+# Add tests
+vim tests/virtos-backup.bats
+
+# Validate
+./ci/validate-scripts.sh --report
+bats tests/virtos-backup.bats
+
+# Update documentation
+vim docs/guides/BACKUP.md
+
+# Commit and push
+git add packages/virtos-tools/src/usr/local/bin/virtos-backup
+git add tests/virtos-backup.bats
+git add docs/guides/BACKUP.md
+git commit -m "feat: add encryption support to virtos-backup
+
+Implements AES-256 encryption for backup files with
+configurable passphrase management.
+
+Closes #456"
+git push origin feature/add-backup-encryption
+```
+
+#### Workflow 3: Create New Management Script
+
+```bash
+# Create branch
+git checkout -b feature/add-virtos-monitoring
+
+# Create new script
+cat > packages/virtos-tools/src/usr/local/bin/virtos-monitoring <<'EOF'
+#!/bin/sh
+# virtos-monitoring - System monitoring and alerting
+set -e
+VERSION="0.1"
+# ... implementation ...
+EOF
+
+# Make executable
+chmod +x packages/virtos-tools/src/usr/local/bin/virtos-monitoring
+
+# Add to package file list
+vim packages/virtos-tools/virtos-tools.tcz.list
+
+# Create tests
+vim tests/virtos-monitoring.bats
+
+# Validate
+bash -n packages/virtos-tools/src/usr/local/bin/virtos-monitoring
+shellcheck packages/virtos-tools/src/usr/local/bin/virtos-monitoring
+bats tests/virtos-monitoring.bats
+
+# Build package
+cd packages/virtos-tools && ./build.sh
+
+# Commit and push
+git add packages/virtos-tools/src/usr/local/bin/virtos-monitoring
+git add packages/virtos-tools/virtos-tools.tcz.list
+git add tests/virtos-monitoring.bats
+git commit -m "feat: add virtos-monitoring for system alerts"
+git push origin feature/add-virtos-monitoring
+```
+
+#### Workflow 4: Update Documentation
+
+```bash
+# Create branch
+git checkout -b docs/improve-testing-guide
+
+# Update documentation
+vim TESTING.md
+
+# Validate markdown (pre-commit hook does this)
+pre-commit run --files TESTING.md
+
+# Commit
+git add TESTING.md
+git commit -m "docs: add BATS testing examples to TESTING.md"
+git push origin docs/improve-testing-guide
+```
+
+### Troubleshooting Development Setup
+
+#### Pre-commit hooks fail
+
+```bash
+# Update hooks to latest version
+pre-commit autoupdate
+
+# Clear hook cache
+pre-commit clean
+
+# Reinstall hooks
+pre-commit uninstall
+pre-commit install
+pre-commit install --hook-type commit-msg
+```
+
+#### shellcheck not found
+
+```bash
+# Fedora/RHEL
+sudo dnf install shellcheck
+
+# Ubuntu/Debian
+sudo apt install shellcheck
+
+# macOS
+brew install shellcheck
+
+# Or disable shellcheck hook temporarily
+SKIP=shellcheck git commit -m "message"
+```
+
+#### Package build fails
+
+```bash
+# Check dependencies
+cat packages/virtos-tools/virtos-tools.tcz.dep
+
+# Verify file permissions
+find packages/virtos-tools/src -type f -name "virtos-*" ! -perm -111
+
+# Check for syntax errors
+bash -n packages/virtos-tools/src/usr/local/bin/virtos-*
+
+# Review build script
+cat packages/virtos-tools/build.sh
+```
+
+#### BATS tests fail
+
+```bash
+# Install BATS
+git clone https://github.com/bats-core/bats-core.git /tmp/bats
+sudo /tmp/bats/install.sh /usr/local
+
+# Verify installation
+bats --version
+
+# Run single test for debugging
+bats -t tests/virtos-vm.bats
+
+# Check test file syntax
+bash -n tests/virtos-vm.bats
+```
+
+### Next Steps
+
+After completing the setup:
+
+1. Read [TESTING.md](TESTING.md) for complete testing procedures
+2. Review [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) for code style
+3. Check [docs/ROADMAP.md](docs/ROADMAP.md) for areas needing help
+4. Browse existing issues for good first contributions
+5. Join discussions in GitHub Discussions
+
+### Quick Start Summary
+
+```bash
+# Complete setup in 5 commands
+git clone https://github.com/FlossWare/VirtOS.git && cd VirtOS
+pip install --user pre-commit && pre-commit install && pre-commit install --hook-type commit-msg
+git checkout -b feature/my-feature
+./ci/validate-scripts.sh --report  # Verify everything works
+cd packages && ./build-all.sh      # Build packages
+```
 
 ### Development Workflow
 
