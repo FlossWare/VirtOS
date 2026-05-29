@@ -91,8 +91,9 @@ Complete documentation for FlossWare VirtOS.
 ## Operations & Security
 
 - **[AUDIT_LOGGING.md](AUDIT_LOGGING.md)** - ⭐ NEW: Audit logging guide (compliance, security, troubleshooting)
-- **[SECURITY-HARDENING.md](SECURITY-HARDENING.md)** - Security best practices
-- **[SECURITY_HARDENING.md](SECURITY_HARDENING.md)** - Security hardening procedures (duplicate reference)
+- **[SECURITY-HARDENING.md](SECURITY-HARDENING.md)** - Security best practices and hardening guide
+- **[SECURITY_HARDENING.md](SECURITY_HARDENING.md)** - Alternative security hardening reference (same content, different filename)
+- **[SECURITY_ENHANCEMENTS_SUMMARY.md](SECURITY_ENHANCEMENTS_SUMMARY.md)** - ⭐ NEW: Security improvements summary (Issue #116)
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - ⭐ ENHANCED: Complete troubleshooting (CLI, TUI, Web UI, API)
 - **[MONITORING-SETUP.md](MONITORING-SETUP.md)** - System monitoring configuration and setup
 - **[DR-PROCEDURES.md](DR-PROCEDURES.md)** - Disaster recovery procedures and planning
