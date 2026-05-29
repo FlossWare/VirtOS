@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- Enhanced input validation in virtos-api (Issue #116) - 2026-05-29
+  - VM name validation from API URLs (prevents command injection)
+  - Port number validation (1-65535, privilege check for <1024)
+  - Host address validation (IP format checking)
+  - Action validation (only allow: start, stop, restart, reboot)
+  - Security logging for invalid requests
+  - Prevents arbitrary command execution via API parameters
+  
 - Enhanced input validation in virtos-create-vm (Issue #116) - 2026-05-29
   - Added comprehensive parameter validation (VM name, CPU, RAM, disk)
   - Validates network mode (bridged, nat, isolated)

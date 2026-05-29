@@ -138,6 +138,13 @@ handle_request() {
             local vm_name=$(echo "$path" | sed 's|/api/v1/vms/||' | cut -d'/' -f1)
             local action=$(echo "$path" | sed 's|/api/v1/vms/||' | cut -d'/' -f2)
 
+            # SECURITY: Validate VM name from URL to prevent command injection
+            if ! echo "$vm_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+                log_message "SECURITY: Invalid VM name in request: $vm_name"
+                http_response "400 Bad Request" "application/json" '{"error":"Invalid VM name format"}'
+                return 1
+            fi
+
             if [ -z "$action" ]; then
                 # Get VM details
                 if command -v virsh >/dev/null 2>&1; then
@@ -155,19 +162,22 @@ handle_request() {
                     http_response "503 Service Unavailable" "application/json" '{"error":"libvirt not available"}'
                 fi
             elif [ "$action" = "start" ] && [ "$method" = "POST" ]; then
+                # VM name already validated above
                 if virsh start "$vm_name" 2>/dev/null; then
                     http_response "200 OK" "application/json" '{"status":"started","vm":"'$vm_name'"}'
                 else
                     http_response "500 Internal Server Error" "application/json" '{"error":"Failed to start VM"}'
                 fi
             elif [ "$action" = "stop" ] && [ "$method" = "POST" ]; then
+                # VM name already validated above
                 if virsh shutdown "$vm_name" 2>/dev/null; then
                     http_response "200 OK" "application/json" '{"status":"stopping","vm":"'$vm_name'"}'
                 else
                     http_response "500 Internal Server Error" "application/json" '{"error":"Failed to stop VM"}'
                 fi
             else
-                http_response "404 Not Found" "application/json" '{"error":"Endpoint not found"}'
+                # Invalid action - already validated above or wrong method
+                http_response "404 Not Found" "application/json" '{"error":"Endpoint not found or invalid method"}'
             fi
             ;;
 
@@ -220,6 +230,26 @@ start_server() {
                 ;;
         esac
     done
+
+    # SECURITY: Validate port number
+    if ! echo "$port" | grep -qE '^[0-9]+$'; then
+        echo "Error: Port must be a number: $port" >&2
+        return 1
+    fi
+    if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+        echo "Error: Port must be between 1-65535: $port" >&2
+        return 1
+    fi
+    if [ "$port" -lt 1024 ] && [ "$(id -u)" -ne 0 ]; then
+        echo "Error: Port $port requires root privileges (ports < 1024)" >&2
+        return 1
+    fi
+
+    # SECURITY: Validate host address format
+    if ! echo "$host" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|^0\.0\.0\.0$|^localhost$'; then
+        echo "Error: Invalid host address: $host" >&2
+        return 1
+    fi
 
     if [ -f "$API_DIR/api.pid" ]; then
         local pid=$(cat "$API_DIR/api.pid")
