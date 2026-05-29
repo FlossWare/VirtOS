@@ -151,8 +151,10 @@ for pattern in "${SECRET_PATTERNS[@]}"; do
 
         if [ -n "$findings" ]; then
             # Further filter out variable assignments from parameters (e.g., receiving positional args)
+            # Use variable to avoid bashate E041 misdetection of $[ in grep pattern
             # shellcheck disable=SC2016
-            findings=$(echo "$findings" | grep -v '=\s*"\$' || true)
+            dollar_pattern='=\s*"$'
+            findings=$(echo "$findings" | grep -v "$dollar_pattern" || true)
 
             # Filter out lines with pragma allowlist comments
             findings=$(echo "$findings" | grep -v 'pragma: allowlist secret' || true)
