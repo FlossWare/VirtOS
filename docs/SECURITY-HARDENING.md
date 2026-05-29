@@ -706,4 +706,4 @@ mail -s "VirtOS Security Audit" security@example.com < /tmp/audit.log
 
 **Security Hardening Guide Version**: 1.0 (2026-05-26)  
 **Applies to**: VirtOS 0.80+  
-**Related**: [ADMIN-GUIDE.md](ADMIN-GUIDE.md), [INCIDENT-RESPONSE.md](INCIDENT-RESPONSE.md)
+**Related**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md), [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

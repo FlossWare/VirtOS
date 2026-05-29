@@ -942,10 +942,10 @@ See **[VirtOS-Examples](https://github.com/FlossWare/VirtOS-Examples)** for:
 ## Related Documentation
 
 - [CLUSTERING.md](CLUSTERING.md) - On-premises multi-host clustering
-- [MULTICLOUD.md](MULTICLOUD.md) - Multi-cloud strategies
-- [NETWORKING.md](NETWORKING.md) - Network virtualization
+- [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Multi-cloud strategies
+- [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Network virtualization
 - [IAAS.md](IAAS.md) - Infrastructure as a Service features
-- [DR.md](DR.md) - Disaster recovery planning
+- [DR.md](DR-PROCEDURES.md) - Disaster recovery planning
 
 ## Getting Help
 

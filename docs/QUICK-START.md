@@ -411,7 +411,7 @@ virtos-monitor resources
 ## Getting Help
 
 - **Full documentation**: `ls /usr/share/doc/virtos/` or [docs/](../docs/)
-- **Administrator guide**: [ADMIN-GUIDE.md](ADMIN-GUIDE.md)
+- **Administrator guide**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md)
 - **Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 - **GitHub issues**: [github.com/FlossWare/VirtOS/issues](https://github.com/FlossWare/VirtOS/issues)
 
@@ -419,4 +419,4 @@ virtos-monitor resources
 
 **Quick Start Guide Version**: 1.0 (2026-05-26)  
 **Compatible with**: VirtOS 0.80+  
-**Next**: [Administrator Guide](ADMIN-GUIDE.md)
+**Next**: [Administrator Guide](QUICK-REFERENCE.md)
