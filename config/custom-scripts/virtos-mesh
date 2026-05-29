@@ -794,6 +794,14 @@ Examples:
   $SCRIPT_NAME status
   $SCRIPT_NAME dashboard
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Service mesh not installed
+    4    Configuration failed
+    5    Injection failed
+
 EOF
 }
 

@@ -533,6 +533,14 @@ Examples:
   # Status
   $SCRIPT_NAME federation-ext-status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Provider not registered
+    4    Deployment failed
+    5    Authentication failed
+
 EOF
 }
 

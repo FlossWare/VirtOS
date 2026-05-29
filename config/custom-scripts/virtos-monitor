@@ -74,6 +74,14 @@ Examples:
   # View active alerts
   virtos-monitor alerts
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Monitoring daemon not running
+    4    Configuration failed
+    5    Health check failed
+
 EOF
 }
 

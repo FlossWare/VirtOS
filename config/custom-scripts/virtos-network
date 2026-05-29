@@ -100,6 +100,14 @@ Examples:
   # Create bridge for isolated network
   virtos-network bridge-create isolated-br0
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Network/bridge not found
+    4    Operation failed
+    5    OVN not initialized
+
 EOF
 }
 

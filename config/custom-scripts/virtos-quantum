@@ -543,6 +543,14 @@ Examples:
   # Check status
   $SCRIPT_NAME quantum-status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Quantum simulator not initialized
+    4    Circuit execution failed
+    5    Algorithm optimization failed
+
 EOF
 }
 

@@ -69,6 +69,14 @@ Examples:
   # Schedule automatic GPU attachment
   virtos-gpu schedule-attach workstation-vm 0000:01:00.0
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    GPU not found
+    4    IOMMU not enabled
+    5    GPU isolation failed
+
 EOF
 }
 

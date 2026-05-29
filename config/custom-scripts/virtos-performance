@@ -171,6 +171,15 @@ Examples:
   $SCRIPT_NAME bottleneck-detect
   $SCRIPT_NAME profile-application qemu
   $SCRIPT_NAME performance-status
+
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Benchmark failed
+    4    Profiling failed
+    5    Auto-tune failed
+
 EOF
 }
 

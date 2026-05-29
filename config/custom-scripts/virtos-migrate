@@ -48,6 +48,14 @@ Examples:
   # Compressed migration
   virtos-migrate --block --compressed large-vm virtos-3
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM not found
+    4    Migration failed
+    5    Destination host unreachable
+
 EOF
 }
 
