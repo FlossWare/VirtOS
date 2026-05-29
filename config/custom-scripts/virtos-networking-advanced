@@ -636,8 +636,8 @@ network_wizard() {
         --msgbox "Advanced networking configured!" 8 40
 }
 
-# Show usage
-usage() {
+# Show show_help
+show_help() {
     cat <<EOF
 VirtOS Advanced Networking - SDN, NFV, service discovery, load balancing
 
@@ -666,7 +666,11 @@ Status Commands:
   status                                       Show networking status
   wizard                                       Interactive setup wizard
 
-Examples:
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
+
+EXAMPLES:
   virtos-networking-advanced setup-sdn ovs
   virtos-networking-advanced setup-nfv firewall
   virtos-networking-advanced setup-service-discovery consul
@@ -676,7 +680,12 @@ Examples:
   virtos-networking-advanced setup-traffic-shaping eth0 100mbit
   virtos-networking-advanced wizard
 
-Version: $VERSION
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -713,6 +722,6 @@ case "$1" in
         echo "virtos-networking-advanced version $VERSION"
         ;;
     *)
-        usage
+        show_help
         ;;
 esac

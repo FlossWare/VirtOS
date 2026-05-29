@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Enhanced help documentation for 5 advanced scripts - 2026-05-29
+  - virtos-governance: Added OPTIONS and EXIT CODES sections to help text
+  - virtos-multicloud: Added OPTIONS and EXIT CODES sections to help text
+  - virtos-networking-advanced: Added OPTIONS and EXIT CODES sections to help text
+  - virtos-sre: Added OPTIONS and EXIT CODES sections to help text
+  - virtos-web: Added OPTIONS and EXIT CODES sections to help text
+  - All scripts now follow consistent help text formatting per CODING_STANDARDS.md
+  - Complete documentation coverage: Usage, Commands, Options, Examples, Exit Codes, Version
+
 ### Security
 - Checksum verification for security tool downloads (Issue #137) - 2026-05-29
   - virtos-container-security: Added SHA256 verification for Trivy downloads

@@ -687,8 +687,8 @@ sre_wizard() {
         --msgbox "SRE setup complete!\n\nRun 'virtos-sre status' to review." 10 50
 }
 
-# Show usage
-usage() {
+# Show show_help
+show_help() {
     cat <<EOF
 VirtOS Site Reliability Engineering Tools
 
@@ -716,7 +716,11 @@ Status Commands:
   status                                            Show SRE status
   wizard                                            Interactive setup wizard
 
-Examples:
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
+
+EXAMPLES:
   virtos-sre define-slo api-availability api-service 99.9 30
   virtos-sre calculate-slo api-availability
   virtos-sre create-incident P1 "API service down" "500 errors on all endpoints"
@@ -726,7 +730,12 @@ Examples:
   virtos-sre error-budget-report
   virtos-sre wizard
 
-Version: $VERSION
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -772,6 +781,6 @@ case "$1" in
         echo "virtos-sre version $VERSION"
         ;;
     *)
-        usage
+        show_help
         ;;
 esac

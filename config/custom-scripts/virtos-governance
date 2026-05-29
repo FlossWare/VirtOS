@@ -640,8 +640,8 @@ governance_wizard() {
         --msgbox "Governance setup complete!\n\nRun 'virtos-governance status' to review." 10 50
 }
 
-# Show usage
-usage() {
+# Show show_help
+show_help() {
     cat <<EOF
 VirtOS Governance and Policy Management
 
@@ -669,7 +669,11 @@ Status Commands:
   status                       Show governance status
   wizard                       Interactive setup wizard
 
-Examples:
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
+
+EXAMPLES:
   virtos-governance create-resource-policy vm-limits 16 64 500
   virtos-governance create-security-policy security-baseline
   virtos-governance create-compliance-policy pci-compliance pci-dss
@@ -677,7 +681,12 @@ Examples:
   virtos-governance generate-compliance-report all
   virtos-governance wizard
 
-Version: $VERSION
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -729,6 +738,6 @@ case "$1" in
         echo "virtos-governance version $VERSION"
         ;;
     *)
-        usage
+        show_help
         ;;
 esac

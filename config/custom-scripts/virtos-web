@@ -262,7 +262,7 @@ class VirtOSHandler(BaseHTTPRequestHandler):
             stats['containers'] = 0
 
         try:
-            # Storage usage
+            # Storage show_help
             result = subprocess.run(['df', '-BG', '/'], capture_output=True, text=True)
             lines = result.stdout.strip().split('\n')
             if len(lines) > 1:
@@ -470,8 +470,8 @@ web_wizard() {
         --msgbox "Web UI setup complete!\n\nRun 'virtos-web status' to see access URLs." 10 50
 }
 
-# Show usage
-usage() {
+# Show show_help
+show_help() {
     cat <<EOF
 VirtOS Web UI Integration - Optional web-based management
 
@@ -499,7 +499,11 @@ Status Commands:
   status                       Show all web UI status
   wizard                       Interactive setup wizard
 
-Examples:
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
+
+EXAMPLES:
   virtos-web install-cockpit
   virtos-web start-cockpit
   virtos-web configure-ssl cockpit /path/to/cert.crt /path/to/key.key
@@ -507,9 +511,15 @@ Examples:
   virtos-web status
   virtos-web wizard
 
-Note: Web UI is optional. VirtOS is designed for text-based operation.
+EXIT CODES:
+    0   Success
+    1   Error
 
-Version: $VERSION
+NOTE:
+    Web UI is optional. VirtOS is designed for text-based operation.
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -561,6 +571,6 @@ case "$1" in
         echo "virtos-web version $VERSION"
         ;;
     *)
-        usage
+        show_help
         ;;
 esac
