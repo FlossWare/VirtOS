@@ -64,6 +64,7 @@ Complete documentation for FlossWare VirtOS.
 - **[COMPARISON.md](COMPARISON.md)** - VirtOS vs similar projects (Proxmox, ESXi, etc.)
 - **[MISSING-FEATURES.md](MISSING-FEATURES.md)** - What VirtOS lacks (honest assessment)
 - **[EXPERIMENTAL.md](EXPERIMENTAL.md)** - Research prototypes explained (AI, quantum, blockchain, etc.)
+- **[EXAMPLES-INTEGRATION.md](EXAMPLES-INTEGRATION.md)** - VirtOS-Examples repository integration plan
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
 
 ## Documentation by Use Case
