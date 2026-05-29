@@ -53,6 +53,15 @@ Examples:
   # Cleanup old snapshots
   virtos-snapshot cleanup web-server-1
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM not found
+    4    Snapshot creation failed
+    5    Snapshot not found
+    6    Revert failed
+
 EOF
 }
 

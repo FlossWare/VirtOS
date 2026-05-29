@@ -71,6 +71,14 @@ Examples:
   # Monitor USB device changes
   virtos-usb monitor-start
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM/device not found
+    4    Attach/detach failed
+    5    USB redirection not supported
+
 EOF
 }
 

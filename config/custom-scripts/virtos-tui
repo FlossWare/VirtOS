@@ -45,6 +45,13 @@ EXAMPLES:
     virtos-tui --help
     virtos-tui --version
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Dialog/whiptail not available
+    4    Operation failed
+
 EOF
         exit 0
         ;;

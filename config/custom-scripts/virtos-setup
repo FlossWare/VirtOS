@@ -43,6 +43,14 @@ EXAMPLES:
     virtos-setup --help
     virtos-setup --version
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Dialog/whiptail not available
+    4    Configuration failed
+    5    Permission denied (not root)
+
 EOF
         exit 0
         ;;

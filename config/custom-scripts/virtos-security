@@ -746,6 +746,14 @@ Examples:
   # Check status
   $SCRIPT_NAME status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    SELinux/AppArmor not available
+    4    Scan failed
+    5    Compliance check failed
+
 EOF
 }
 

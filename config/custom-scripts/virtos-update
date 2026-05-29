@@ -69,6 +69,14 @@ Examples:
   # Enable automatic updates (daily)
   virtos-update auto-enable
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    No updates available
+    4    Update installation failed
+    5    Rollback failed
+
 EOF
 }
 

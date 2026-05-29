@@ -37,6 +37,11 @@ Examples:
   virtos-version --short          # Just the version number
   virtos-version --json           # JSON output for scripts
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+
 EOF
 }
 

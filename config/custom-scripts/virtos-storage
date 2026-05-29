@@ -87,6 +87,14 @@ Examples:
   # Enable replication
   virtos-storage replication-enable vm-pool
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Storage backend not initialized
+    4    Pool/volume not found
+    5    Operation failed
+
 EOF
 }
 

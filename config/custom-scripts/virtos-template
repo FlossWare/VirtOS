@@ -41,6 +41,14 @@ Examples:
   # List templates
   virtos-template list
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM/template not found
+    4    Template creation failed
+    5    Clone operation failed
+
 EOF
 }
 
