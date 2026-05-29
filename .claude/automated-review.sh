@@ -150,7 +150,7 @@ for pattern in "${SECRET_PATTERNS[@]}"; do
         2>/dev/null | grep -v '=\s*""\|=\s*'\'''\'''); then # Exclude empty strings
 
         if [ -n "$findings" ]; then
-            # Further filter out variable assignments from parameters (password="$1" or password="${var}")
+            # Further filter out variable assignments from parameters (e.g., receiving positional args)
             # shellcheck disable=SC2016
             findings=$(echo "$findings" | grep -v '=\s*"\$' || true)
 
