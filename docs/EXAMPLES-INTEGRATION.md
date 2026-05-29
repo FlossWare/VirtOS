@@ -235,7 +235,7 @@ VirtOS/
 1. Clone VirtOS-Examples repository locally
 2. Audit all examples for:
    - Compatibility with current VirtOS (0.87)
-   - Outdated references (jplatform → platform-java)
+   - Outdated references (already completed: jplatform → platform-java)
    - Missing documentation
    - Broken scripts
 3. Categorize examples into 8 categories
@@ -292,9 +292,9 @@ done
 1. Copy examples from VirtOS-Examples
 2. Reorganize into new structure
 3. Update all references:
-   - `jplatform` → `platform-java`
    - Paths to match new structure
    - Version numbers
+   - (Note: jplatform → platform-java already completed)
 4. Add missing documentation
 5. Update scripts for consistency
 
@@ -550,7 +550,7 @@ Please file issues at: https://github.com/FlossWare/VirtOS/issues
 
 - [ ] All examples migrated to `examples/`
 - [ ] Examples organized into 8 categories
-- [ ] All references updated (jplatform → platform-java)
+- [ ] All path references updated
 - [ ] CI validates examples automatically
 - [ ] Documentation updated with example links
 - [ ] VirtOS-Examples deprecated

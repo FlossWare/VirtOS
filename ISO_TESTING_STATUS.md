@@ -68,7 +68,7 @@ Test advanced integrations:
 - [ ] SSH remote access works (`ssh tc@<virtos-ip>`)
 - [ ] virt-manager connection from remote (`virt-manager -c qemu+ssh://tc@<ip>/system`)
 - [ ] Cluster discovery via Avahi (`virtos-cluster discover`)
-- [ ] platform-java commands available (`jplatform --version`)
+- [ ] platform-java commands available (`platform-java --version`)
 - [ ] platform-java can deploy workload (`platform-java deploy examples/nginx-example.yaml`)
 - [ ] Container runtime works (`docker run hello-world` or `podman run hello-world`)
 - [ ] Multi-tier app deployment (database → app → web tier)

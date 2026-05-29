@@ -114,7 +114,7 @@ make packages
 
 This creates:
 - `packages/output/virtos-tools.tcz` - Core management scripts
-- `packages/output/virtos-jplatform.tcz` - platform-java integration
+- `packages/output/virtos-platform-java.tcz` - platform-java integration
 
 ### Step 4: Build ISO
 

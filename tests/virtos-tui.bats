@@ -95,10 +95,10 @@ setup() {
     # 4. Return to main menu
 }
 
-@test "virtos-tui JPlatform menu (placeholder)" {
-    skip "Requires interactive TUI and JPlatform"
+@test "virtos-tui platform-java menu (placeholder)" {
+    skip "Requires interactive TUI and platform-java"
     # Full workflow test would:
-    # 1. Enter JPlatform menu
+    # 1. Enter platform-java menu
     # 2. List workloads
     # 3. Deploy/manage workloads
     # 4. Return to main menu

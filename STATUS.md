@@ -91,7 +91,7 @@
 
 **5 Test Suites** (52 tests):
 - ✅ 01-vm-lifecycle.bats (7 tests) - VM create/start/stop/migrate
-- ✅ 02-jplatform.bats (9 tests) - platform-java workloads
+- ✅ 02-platform-java.bats (9 tests) - platform-java workloads
 - ✅ 03-networking.bats (10 tests) - Network bridges, NAT, DHCP
 - ✅ 04-storage.bats (11 tests) - Storage pools and volumes
 - ✅ 05-cluster.bats (15 tests) - Multi-host clustering

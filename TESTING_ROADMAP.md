@@ -98,7 +98,7 @@ All three issues require **the same prerequisite**: A running VirtOS system.
    ```bash
    # In VirtOS environment
    tce-load -i virtos-tools.tcz
-   tce-load -i virtos-jplatform.tcz
+   tce-load -i virtos-platform-java.tcz
    ```
    - **Expected Output**: Scripts available in `/usr/local/bin/`
    - **Success Criteria**: `virtos-setup --version` works
@@ -148,7 +148,7 @@ All three issues require **the same prerequisite**: A running VirtOS system.
    ```bash
    cd tests/integration
    bats 01-vm-lifecycle.bats
-   bats 02-jplatform.bats
+   bats 02-platform-java.bats
    bats 03-networking.bats
    bats 04-storage.bats
    ```

@@ -207,7 +207,7 @@ If you need to downgrade after a bad release:
 ```bash
 # 1. Download rollback packages
 wget https://github.com/FlossWare/VirtOS/releases/download/v0.5-rollback/virtos-tools.tcz
-wget https://github.com/FlossWare/VirtOS/releases/download/v0.5-rollback/virtos-jplatform.tcz
+wget https://github.com/FlossWare/VirtOS/releases/download/v0.5-rollback/virtos-platform-java.tcz
 
 # 2. Stop VirtOS services
 sudo systemctl stop libvirtd
@@ -216,11 +216,11 @@ sudo systemctl stop virtos-*
 # 3. Remove current packages
 tce-audit builddb
 tce-audit delete virtos-tools.tcz
-tce-audit delete virtos-jplatform.tcz
+tce-audit delete virtos-platform-java.tcz
 
 # 4. Install rollback packages
 tce-load -i virtos-tools.tcz
-tce-load -i virtos-jplatform.tcz
+tce-load -i virtos-platform-java.tcz
 
 # 5. Restart services
 sudo systemctl start libvirtd

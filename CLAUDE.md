@@ -85,7 +85,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 VirtOS/
 ├── packages/               # TCZ package sources and build scripts
 │   ├── virtos-tools/      # Core management scripts (54 scripts)
-│   ├── virtos-jplatform/  # platform-java integration
+│   ├── virtos-platform-java/  # platform-java integration
 │   └── output/            # Built TCZ packages (ignored in git)
 ├── build/                 # ISO build system (awaiting testing - see ISO_TESTING_STATUS.md)
 │   ├── scripts/           # Build automation scripts
@@ -109,7 +109,7 @@ VirtOS/
 #### Core Build Files
 - `packages/build-all.sh` - Build all TCZ packages
 - `packages/virtos-tools/build.sh` - Build virtos-tools package
-- `packages/virtos-jplatform/build.sh` - Build platform-java integration
+- `packages/virtos-platform-java/build.sh` - Build platform-java integration
 - `VERSION` - Current version (0.1)
 
 #### Management Scripts
@@ -306,7 +306,7 @@ VirtOS integrates platform-java for unified workload orchestration:
 
 ### Key Integration Points
 
-1. **virtos-jplatform.tcz** - platform-java integration package
+1. **virtos-platform-java.tcz** - platform-java integration package
 2. **platform-java CLI** - CLI for workload management
 3. **virtos-tui** - Includes platform-java menu (option 17)
 4. **Multi-tier examples** - Database VM + Java app + NGINX container
