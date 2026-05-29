@@ -233,28 +233,71 @@ start_server() {
 
     # SECURITY: Validate port number
     if ! echo "$port" | grep -qE '^[0-9]+$'; then
-        echo "Error: Port must be a number: $port" >&2
+        echo "Error: Invalid port number: $port" >&2
+        echo "" >&2
+        echo "Port must be a numeric value." >&2
+        echo "" >&2
+        echo "Examples:" >&2
+        echo "  virtos-api start --port 8080" >&2
+        echo "  virtos-api start --port 9090" >&2
         return 1
     fi
     if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-        echo "Error: Port must be between 1-65535: $port" >&2
+        echo "Error: Port number out of valid range: $port" >&2
+        echo "" >&2
+        echo "Valid port range: 1-65535" >&2
+        echo "Provided port:    $port" >&2
+        echo "" >&2
+        echo "Common API ports:" >&2
+        echo "  8080  (default HTTP alternative)" >&2
+        echo "  8443  (HTTPS alternative)" >&2
+        echo "  9090  (common for monitoring/APIs)" >&2
         return 1
     fi
     if [ "$port" -lt 1024 ] && [ "$(id -u)" -ne 0 ]; then
-        echo "Error: Port $port requires root privileges (ports < 1024)" >&2
+        echo "Error: Insufficient privileges for port $port" >&2
+        echo "" >&2
+        echo "Ports below 1024 (privileged ports) require root access." >&2
+        echo "Current user: $(whoami)" >&2
+        echo "" >&2
+        echo "Options:" >&2
+        echo "  1. Run as root:" >&2
+        echo "     sudo virtos-api start --port $port" >&2
+        echo "" >&2
+        echo "  2. Use an unprivileged port (>= 1024):" >&2
+        echo "     virtos-api start --port 8080" >&2
         return 1
     fi
 
     # SECURITY: Validate host address format
     if ! echo "$host" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|^0\.0\.0\.0$|^localhost$'; then
-        echo "Error: Invalid host address: $host" >&2
+        echo "Error: Invalid bind address: $host" >&2
+        echo "" >&2
+        echo "Valid address formats:" >&2
+        echo "  0.0.0.0     Bind to all interfaces (allow external access)" >&2
+        echo "  127.0.0.1   Bind to localhost only (local access only)" >&2
+        echo "  <IP>        Bind to specific IP address" >&2
+        echo "" >&2
+        echo "Examples:" >&2
+        echo "  virtos-api start --host 0.0.0.0 --port 8080  # Allow external access" >&2
+        echo "  virtos-api start --host 127.0.0.1 --port 8080  # Local only" >&2
         return 1
     fi
 
     if [ -f "$API_DIR/api.pid" ]; then
         local pid=$(cat "$API_DIR/api.pid")
         if ps -p "$pid" >/dev/null 2>&1; then
-            echo "API server already running (PID: $pid)"
+            echo "Error: API server is already running" >&2
+            echo "" >&2
+            echo "PID:  $pid" >&2
+            echo "Port: $API_PORT (likely)" >&2
+            echo "" >&2
+            echo "To stop the running server:" >&2
+            echo "  virtos-api stop" >&2
+            echo "" >&2
+            echo "To check server status:" >&2
+            echo "  virtos-api status" >&2
+            echo "  curl http://localhost:$API_PORT/api/v1/health" >&2
             return 1
         fi
     fi
@@ -294,8 +337,16 @@ start_server() {
                     /usr/local/bin/virtos-api handle "$method" "$path"
                 '
             else
-                echo "Error: netcat or socat required"
-                echo "Install with: tce-load -i netcat"
+                echo "Error: HTTP server backend not available" >&2
+                echo "" >&2
+                echo "The API server requires either 'netcat' or 'socat'." >&2
+                echo "" >&2
+                echo "To install:" >&2
+                echo "  tce-load -wi netcat    # Lightweight option (recommended)" >&2
+                echo "  tce-load -wi socat     # Advanced option" >&2
+                echo "" >&2
+                echo "After installation, retry:" >&2
+                echo "  virtos-api start" >&2
                 exit 1
             fi
             sleep 1
