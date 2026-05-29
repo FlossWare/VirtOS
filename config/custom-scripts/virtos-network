@@ -148,6 +148,12 @@ vlan_create() {
         return 1
     fi
 
+    # SECURITY: Validate VLAN name to prevent command injection
+    if ! echo "$vlan_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid VLAN name '$vlan_name' (only alphanumeric, underscore, hyphen allowed)" >&2
+        return 1
+    fi
+
     if [ "$vlan_id" -lt 1 ] || [ "$vlan_id" -gt 4094 ]; then
         echo "Error: VLAN ID must be between 1-4094"
         return 1
@@ -272,6 +278,12 @@ vlan_attach() {
 
     if [ -z "$vm_name" ] || [ -z "$vlan_id" ]; then
         echo "Error: VM name and VLAN ID required"
+        return 1
+    fi
+
+    # SECURITY: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        echo "Error: Invalid VM name '$vm_name'" >&2
         return 1
     fi
 
@@ -451,6 +463,12 @@ bridge_create() {
         return 1
     fi
 
+    # SECURITY: Validate bridge name to prevent command injection
+    if ! echo "$bridge_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid bridge name '$bridge_name' (only alphanumeric, underscore, hyphen allowed)" >&2
+        return 1
+    fi
+
     log_message "Creating bridge: $bridge_name"
 
     echo "Creating Virtual Bridge"
@@ -547,6 +565,12 @@ firewall_create() {
     if [ -z "$vm_name" ] || [ -z "$rule" ]; then
         echo "Error: VM name and rule required"
         echo "Rule format: allow|deny tcp|udp|icmp port[,port]"
+        return 1
+    fi
+
+    # SECURITY: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        echo "Error: Invalid VM name '$vm_name'" >&2
         return 1
     fi
 

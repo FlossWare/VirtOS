@@ -196,6 +196,12 @@ ceph_pool_create() {
         return 1
     fi
 
+    # SECURITY: Validate pool name to prevent command injection
+    if ! echo "$pool_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid pool name '$pool_name' (only alphanumeric, underscore, hyphen allowed)" >&2
+        return 1
+    fi
+
     log_message "Creating Ceph pool: $pool_name (replicas: $replicas)"
 
     if ! command -v ceph >/dev/null 2>&1; then
@@ -309,6 +315,12 @@ gluster_volume_create() {
 
     if [ -z "$volume_name" ]; then
         echo "Error: Volume name required"
+        return 1
+    fi
+
+    # SECURITY: Validate volume name to prevent command injection
+    if ! echo "$volume_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid volume name '$volume_name' (only alphanumeric, underscore, hyphen allowed)" >&2
         return 1
     fi
 
@@ -552,6 +564,12 @@ pool_create() {
     if [ -z "$pool_name" ] || [ -z "$pool_type" ]; then
         echo "Error: Pool name and type required"
         echo "Types: ceph, gluster, nfs, dir"
+        return 1
+    fi
+
+    # SECURITY: Validate pool name to prevent command injection
+    if ! echo "$pool_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid pool name '$pool_name' (only alphanumeric, underscore, hyphen allowed)" >&2
         return 1
     fi
 

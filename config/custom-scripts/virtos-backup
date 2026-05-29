@@ -121,6 +121,12 @@ backup_vm() {
     local timestamp=$(date +%Y%m%d-%H%M%S)
     local backup_path="$BACKUP_DIR/$vm_name/$timestamp"
 
+    # SECURITY: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        error "Invalid VM name '$vm_name'"
+        return 1
+    fi
+
     log "Starting backup of VM: $vm_name"
 
     # Check if VM exists
@@ -279,6 +285,16 @@ restore_vm() {
     local vm_name="$1"
     local backup_date="$2"
     local target_name="${3:-$vm_name}"
+
+    # SECURITY: Validate VM names before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        error "Invalid VM name '$vm_name'"
+        return 1
+    fi
+    if ! validate_vm_name "$target_name" 2>/dev/null; then
+        error "Invalid target VM name '$target_name'"
+        return 1
+    fi
 
     log "Starting restore of VM: $vm_name from backup: $backup_date"
 
