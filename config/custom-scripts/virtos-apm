@@ -560,45 +560,72 @@ apm_wizard() {
         --msgbox "APM setup complete!\n\nRun 'virtos-apm status' to verify." 10 50
 }
 
-# Show usage
-usage() {
+# Show help text
+show_help() {
     cat <<EOF
-VirtOS Application Performance Monitoring
+Usage: virtos-apm [OPTIONS] <command> [arguments]
 
-Usage: virtos-apm <command> [options]
+VirtOS Application Performance Monitoring - APM integration, profiling, and tracing.
 
-APM Platform Commands:
-  setup-apm <platform>                         Setup APM (newrelic/datadog/appdynamics/dynatrace/elastic)
+COMMANDS:
+  APM Platform:
+    setup-apm <platform>              Setup APM platform
+                                      (newrelic/datadog/appdynamics/dynatrace/elastic)
 
-Profiling Commands:
-  profile-app <name> <duration> <type>         Profile application (cpu/memory/blocking)
+  Profiling:
+    profile-app <name> <duration> <type>
+                                      Profile application
+                                      Types: cpu, memory, blocking
 
-Tracing Commands:
-  setup-tracing <service>                      Setup transaction tracing
+  Tracing:
+    setup-tracing <service>           Setup transaction tracing for service
 
-Error Tracking Commands:
-  setup-error-tracking <platform>              Setup error tracking (sentry/rollbar/bugsnag)
+  Error Tracking:
+    setup-error-tracking <platform>   Setup error tracking
+                                      (sentry/rollbar/bugsnag)
 
-RUM Commands:
-  setup-rum <platform>                         Setup Real User Monitoring
+  Real User Monitoring:
+    setup-rum <platform>              Setup RUM (newrelic/datadog/elastic)
 
-Dashboard Commands:
-  performance-dashboard                        Generate performance dashboard
+  Dashboard:
+    performance-dashboard             Generate performance dashboard
 
-Status Commands:
-  status                                       Show APM status
-  wizard                                       Interactive setup wizard
+  Status:
+    status                            Show APM status
+    wizard                            Interactive setup wizard
 
-Examples:
-  virtos-apm setup-apm newrelic
-  virtos-apm profile-app myapp 60 cpu
-  virtos-apm setup-tracing api-service
-  virtos-apm setup-error-tracking sentry
-  virtos-apm setup-rum datadog
-  virtos-apm performance-dashboard
-  virtos-apm wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Setup APM platform
+    virtos-apm setup-apm newrelic
+
+    # Profile application CPU usage
+    virtos-apm profile-app myapp 60 cpu
+
+    # Setup transaction tracing
+    virtos-apm setup-tracing api-service
+
+    # Setup error tracking
+    virtos-apm setup-error-tracking sentry
+
+    # Setup Real User Monitoring
+    virtos-apm setup-rum datadog
+
+    # Generate performance dashboard
+    virtos-apm performance-dashboard
+
+    # Interactive wizard
+    virtos-apm wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -633,11 +660,11 @@ case "$1" in
         exit 0
         ;;
     --help|-h|help|"")
-        usage
+        show_help
         exit 0
         ;;
     *)
-        usage
+        show_help
         exit 1
         ;;
 esac

@@ -235,6 +235,15 @@ Examples:
   $SCRIPT_NAME automated-failback dc1
   $SCRIPT_NAME dr-runbook-execute
   $SCRIPT_NAME dr-adv-status
+
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM/site not found
+    4    Replication failed
+    5    Restore failed
+
 EOF
 }
 

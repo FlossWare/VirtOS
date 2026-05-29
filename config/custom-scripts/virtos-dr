@@ -78,6 +78,14 @@ Examples:
   # Backup entire cluster
   virtos-dr cluster-backup
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    DR plan not found
+    4    Replication failed
+    5    Failover failed
+
 EOF
 }
 

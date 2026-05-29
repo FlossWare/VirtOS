@@ -471,46 +471,74 @@ directory_wizard() {
         --msgbox "Directory integration complete!\n\nRun 'virtos-directory status' to verify." 10 50
 }
 
-# Show usage
-usage() {
+# Show help text
+show_help() {
     cat <<EOF
-VirtOS Enterprise Directory Integration - LDAP, AD, FreeIPA
+Usage: virtos-directory [OPTIONS] <command> [arguments]
 
-Usage: virtos-directory <command> [options]
+VirtOS Enterprise Directory Integration - LDAP, Active Directory, and FreeIPA.
 
-LDAP Commands:
-  setup-ldap <server> <base_dn> <bind_dn>     Setup LDAP client
-  enable-ldap-auth <server> <base_dn> <bind_dn> <password>  Enable LDAP authentication
-  search-users <filter>                        Search LDAP users
-  create-group <name> <gid>                    Create LDAP group
-  create-user <user> <uid> <gid> <first> <last>  Create LDAP user
+COMMANDS:
+  LDAP:
+    setup-ldap <server> <base_dn> <bind_dn>
+                                  Setup LDAP client configuration
+    enable-ldap-auth <server> <base_dn> <bind_dn> <password>
+                                  Enable LDAP authentication
+    search-users <filter>         Search LDAP users
+    create-group <name> <gid>     Create LDAP group
+    create-user <user> <uid> <gid> <first> <last>
+                                  Create LDAP user account
 
-Active Directory Commands:
-  join-ad <domain> <server> <admin> <password>  Join AD domain
-  enable-ad-auth                                Enable AD authentication
-  search-ad-users <filter>                      Search AD users
-  add-ad-group-member <user> <group>            Add user to AD group
+  Active Directory:
+    join-ad <domain> <server> <admin> <password>
+                                  Join Active Directory domain
+    enable-ad-auth                Enable AD authentication
+    search-ad-users <filter>      Search AD users
+    add-ad-group-member <user> <group>
+                                  Add user to AD group
 
-FreeIPA Commands:
-  join-ipa <server> <domain> <password>        Join FreeIPA domain
-  search-ipa-users <filter>                    Search IPA users
+  FreeIPA:
+    join-ipa <server> <domain> <password>
+                                  Join FreeIPA domain
+    search-ipa-users <filter>     Search IPA users
 
-Sync Commands:
-  sync-users <source> <target>                 Sync users (ldap/ad/ipa -> local)
+  User Synchronization:
+    sync-users <source> <target>  Sync users between directories
+                                  Sources/Targets: ldap, ad, ipa, local
 
-Status Commands:
-  status                                       Show directory status
-  wizard                                       Interactive setup wizard
+  Status:
+    status                        Show directory integration status
+    wizard                        Interactive setup wizard
 
-Examples:
-  virtos-directory setup-ldap ldap.example.com dc=example,dc=com cn=admin,dc=example,dc=com
-  virtos-directory join-ad example.com dc.example.com Administrator password123
-  virtos-directory join-ipa ipa.example.com example.com password123
-  virtos-directory search-users "uid=john*"
-  virtos-directory sync-users ldap local
-  virtos-directory wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Setup LDAP client
+    virtos-directory setup-ldap ldap.example.com dc=example,dc=com cn=admin,dc=example,dc=com
+
+    # Join Active Directory domain
+    virtos-directory join-ad example.com dc.example.com Administrator password123
+
+    # Join FreeIPA domain
+    virtos-directory join-ipa ipa.example.com example.com password123
+
+    # Search users
+    virtos-directory search-users "uid=john*"
+
+    # Sync LDAP users to local system
+    virtos-directory sync-users ldap local
+
+    # Interactive wizard
+    virtos-directory wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -563,11 +591,11 @@ case "$1" in
         exit 0
         ;;
     --help|-h|help|"")
-        usage
+        show_help
         exit 0
         ;;
     *)
-        usage
+        show_help
         exit 1
         ;;
 esac

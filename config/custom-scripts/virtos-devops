@@ -696,45 +696,69 @@ devops_wizard() {
 }
 
 # Show usage
-usage() {
+show_help() {
     cat <<EOF
-VirtOS DevOps Integration - GitOps, CI/CD, and IaC tools
+Usage: virtos-devops [OPTIONS] <command> [arguments]
 
-Usage: virtos-devops <command> [options]
+VirtOS DevOps Integration - GitOps, CI/CD, and Infrastructure as Code tools.
 
-GitOps Commands:
-  install-argocd               Install ArgoCD for GitOps
-  install-flux                 Install Flux for GitOps
+COMMANDS:
+  GitOps:
+    install-argocd                Install ArgoCD for GitOps workflows
+    install-flux                  Install Flux for GitOps workflows
 
-CI/CD Commands:
-  install-jenkins              Install Jenkins CI/CD server
-  install-gitlab-runner        Install GitLab Runner
-  install-github-actions <repo> <token>  Install GitHub Actions runner
-  create-ci-pipeline <type> <dir>  Create CI pipeline (github-actions/gitlab-ci/jenkins)
+  CI/CD:
+    install-jenkins               Install Jenkins CI/CD server
+    install-gitlab-runner         Install GitLab Runner for CI/CD
+    install-github-actions <repo> <token>
+                                  Install GitHub Actions runner
+    create-ci-pipeline <type> <dir>
+                                  Create CI pipeline configuration
+                                  Types: github-actions, gitlab-ci, jenkins
 
-IaC Commands:
-  install-terraform            Install Terraform
-  install-ansible              Install Ansible
-  install-pulumi               Install Pulumi
+  Infrastructure as Code:
+    install-terraform             Install Terraform for IaC
+    install-ansible               Install Ansible automation
+    install-pulumi                Install Pulumi for IaC
 
-Registry Commands:
-  install-harbor               Install Harbor container registry
+  Container Registry:
+    install-harbor                Install Harbor container registry
 
-Deployment Commands:
-  create-deployment <name> <type>  Create deployment (kubernetes/docker-compose/systemd)
+  Deployment:
+    create-deployment <name> <type>
+                                  Create deployment configuration
+                                  Types: kubernetes, docker-compose, systemd
 
-Status Commands:
-  status                       Show DevOps tools status
-  wizard                       Interactive setup wizard
+  Status:
+    status                        Show DevOps tools status
+    wizard                        Interactive setup wizard
 
-Examples:
-  virtos-devops install-terraform
-  virtos-devops install-jenkins
-  virtos-devops create-ci-pipeline github-actions /path/to/project
-  virtos-devops create-deployment myapp kubernetes
-  virtos-devops wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Install Terraform
+    virtos-devops install-terraform
+
+    # Install Jenkins CI/CD
+    virtos-devops install-jenkins
+
+    # Create GitHub Actions CI pipeline
+    virtos-devops create-ci-pipeline github-actions /path/to/project
+
+    # Create Kubernetes deployment
+    virtos-devops create-deployment myapp kubernetes
+
+    # Interactive wizard
+    virtos-devops wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -784,11 +808,11 @@ case "$1" in
         exit 0
         ;;
     --help|-h|help|"")
-        usage
+        show_help
         exit 0
         ;;
     *)
-        usage
+        show_help
         exit 1
         ;;
 esac

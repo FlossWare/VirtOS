@@ -369,41 +369,68 @@ database_wizard() {
         --msgbox "Database management complete!" 8 40
 }
 
-# Show usage
-usage() {
+# Show help text
+show_help() {
     cat <<EOF
-VirtOS Database Management - Replication, backups, optimization
+Usage: virtos-database [OPTIONS] <command> [arguments]
 
-Usage: virtos-database <command> [options]
+VirtOS Database Management - Replication, backups, and optimization.
 
-Replication Commands:
-  setup-replication <type> <role> [primary_host]  Setup replication (mysql/postgres/mongodb)
+COMMANDS:
+  Replication:
+    setup-replication <type> <role> [primary_host]
+                                      Setup database replication
+                                      Types: mysql, postgres, mongodb
+                                      Roles: primary, replica
 
-Backup Commands:
-  backup-database <type> <name> [dir]             Backup database
-  restore-database <type> <name> <backup_file>    Restore database
+  Backup/Restore:
+    backup-database <type> <name> [dir]
+                                      Backup database to directory
+    restore-database <type> <name> <backup_file>
+                                      Restore database from backup
 
-Optimization Commands:
-  optimize-database <type> <name>                 Optimize database
-  analyze-queries <type>                          Analyze slow queries
+  Optimization:
+    optimize-database <type> <name>   Optimize database tables/collections
+    analyze-queries <type>            Analyze slow queries for tuning
 
-Configuration Commands:
-  configure-connection-pool <type> <max>          Configure connection pool
-  setup-monitoring <type>                         Setup database monitoring
+  Configuration:
+    configure-connection-pool <type> <max>
+                                      Configure connection pool settings
+    setup-monitoring <type>           Setup database monitoring
 
-Status Commands:
-  status                                          Show database status
-  wizard                                          Interactive wizard
+  Status:
+    status                            Show database status
+    wizard                            Interactive management wizard
 
-Examples:
-  virtos-database setup-replication mysql primary
-  virtos-database setup-replication mysql replica 192.168.1.10
-  virtos-database backup-database postgres mydb /backups
-  virtos-database optimize-database mysql production
-  virtos-database analyze-queries postgres
-  virtos-database wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Setup MySQL primary replication
+    virtos-database setup-replication mysql primary
+
+    # Setup MySQL replica replication
+    virtos-database setup-replication mysql replica 192.168.1.10
+
+    # Backup PostgreSQL database
+    virtos-database backup-database postgres mydb /backups
+
+    # Optimize MySQL database
+    virtos-database optimize-database mysql production
+
+    # Analyze slow PostgreSQL queries
+    virtos-database analyze-queries postgres
+
+    # Interactive wizard
+    virtos-database wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -441,11 +468,11 @@ case "$1" in
         exit 0
         ;;
     --help|-h|help|"")
-        usage
+        show_help
         exit 0
         ;;
     *)
-        usage
+        show_help
         exit 1
         ;;
 esac
