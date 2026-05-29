@@ -67,6 +67,14 @@ Examples:
   virtos-create-vm --name test --cpu 1 --ram 2048 --disk 10G \\
     --require virtos-2
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM already exists
+    4    Insufficient resources
+    5    Disk creation failed
+
 EOF
 }
 

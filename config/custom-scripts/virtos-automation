@@ -925,6 +925,13 @@ Examples:
   # Event trigger
   $SCRIPT_NAME event-trigger vm.created
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Automation task not found
+    4    Task execution failed
+
 EOF
 }
 

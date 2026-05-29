@@ -662,6 +662,13 @@ Examples:
   $SCRIPT_NAME set-pricing cpu 0.10
   $SCRIPT_NAME show-pricing
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Resource not found
+    4    Invoice generation failed
+
 EOF
 }
 

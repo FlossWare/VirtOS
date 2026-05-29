@@ -77,6 +77,13 @@ Examples:
   virtos-cloud-init generate web-vm
   virtos-cloud-init attach web-vm /var/lib/virtos/cloud-init/web-vm.iso
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM not found
+    4    ISO generation failed
+
 EOF
 }
 

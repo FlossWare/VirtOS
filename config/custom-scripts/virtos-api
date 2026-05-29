@@ -60,6 +60,13 @@ Authentication:
   Basic authentication using VirtOS users (virtos-auth)
   Pass credentials: curl -u username:password http://...
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    API server failed to start
+    4    Authentication failed
+
 EOF
 }
 

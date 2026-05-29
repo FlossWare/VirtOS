@@ -621,6 +621,14 @@ Examples:
   # Disaster recovery failover
   $SCRIPT_NAME dr-failover dc1 dc2
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Datacenter not found
+    4    Replication failed
+    5    Failover failed
+
 EOF
 }
 
