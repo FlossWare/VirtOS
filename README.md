@@ -299,7 +299,10 @@ curl -X POST http://localhost:8080/api/v1/vms/web-01/start
 - `GET /api/v1/cluster` - Cluster status
 - `GET /api/v1/health` - Health check
 
-**See [docs/WEB-UI.md](docs/WEB-UI.md) for complete web interface guide.**
+**See:**
+
+- [docs/WEB-UI.md](docs/WEB-UI.md) - Complete web interface guide
+- [docs/API_REFERENCE.md](docs/API_REFERENCE.md) - Complete REST API documentation
 
 ### Profiles
 
@@ -361,7 +364,10 @@ ssh admin@web-server.local
 virt-manager -c qemu+ssh://vmadmin@virtos/system
 ```
 
-VirtOS includes SSH and libvirt for remote management. See [docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md) for setup.
+VirtOS includes SSH and libvirt for remote management. See:
+
+- [docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md) - Remote management setup
+- [docs/LIBVIRT-PERMISSIONS.md](docs/LIBVIRT-PERMISSIONS.md) - Libvirt authentication and permissions
 
 ### Clustering
 
