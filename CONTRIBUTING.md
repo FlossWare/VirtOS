@@ -481,7 +481,7 @@ command --option value
 
 ### Commit Message Format
 
-```
+```text
 <type>: <short description>
 
 <optional longer description>
@@ -501,7 +501,7 @@ command --option value
 
 **Examples:**
 
-```
+```text
 feat: Add virtos-backup-orchestration script
 
 Implements automated backup workflows with policy management,
@@ -606,7 +606,7 @@ This is a community project. Please be patient:
 - PRs: Initial review within 1 week
 - Discussions: Best effort, community-driven
 
-### Code of Conduct
+### Community Standards
 
 Be respectful and constructive:
 
