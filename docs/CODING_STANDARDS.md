@@ -789,6 +789,314 @@ main "$@"
 
 ---
 
+## Common VirtOS Patterns
+
+This section documents frequently-used patterns found across VirtOS scripts. Following these patterns ensures consistency and maintainability.
+
+### Version Display Pattern
+
+All virtos-* scripts use a centralized version function:
+
+```bash
+# Load common library for version function
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+# Get version with fallback
+VERSION=$(get_version 2>/dev/null || echo "0.1")
+
+# In argument parsing
+case "${1:-}" in
+    -v|--version|version)
+        echo "virtos-example version $VERSION"
+        exit 0
+        ;;
+esac
+```
+
+**Why**: Centralized version management allows version updates without modifying individual scripts.
+
+### Help Display Pattern
+
+Standard help text format using heredoc:
+
+```bash
+show_help() {
+    cat <<EOF
+Usage: virtos-example [OPTIONS] [ARGUMENTS]
+
+Brief description of what this script does.
+
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
+    --option        Example option
+
+ARGUMENTS:
+    name            Example argument
+
+EXAMPLES:
+    virtos-example --option value
+    virtos-example name
+
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+EOF
+}
+
+# In argument parsing
+case "${1:-}" in
+    -h|--help|help)
+        show_help
+        exit 0
+        ;;
+esac
+```
+
+**Why**: Consistent help format makes scripts easier to learn and use.
+
+### Audit Logging Pattern
+
+Optional audit logging for security-sensitive operations:
+
+```bash
+# Load audit library if available
+if [ -f /usr/local/lib/virtos-audit.sh ]; then
+    . /usr/local/lib/virtos-audit.sh
+fi
+
+# Log successful operation
+if command_exists log_audit; then
+    log_audit "vm_create" "name=$vm_name disk=$disk_size" "success"
+fi
+
+# Log failed operation
+if command_exists log_audit; then
+    log_audit "vm_create" "name=$vm_name error=$error_msg" "failure"
+fi
+```
+
+**Why**: Provides audit trail for compliance without breaking scripts when audit library is unavailable.
+
+### Common Library Loading Pattern
+
+Two-location library loading for development and production:
+
+```bash
+SCRIPT_DIR="$(dirname "$0")"
+
+# Try development location first, fall back to system location
+if [ -f "$SCRIPT_DIR/../lib/virtos-common.sh" ]; then
+    # shellcheck source=../lib/virtos-common.sh
+    . "$SCRIPT_DIR/../lib/virtos-common.sh"
+elif [ -f "/usr/local/lib/virtos-common.sh" ]; then
+    . "/usr/local/lib/virtos-common.sh"
+else
+    echo "Error: virtos-common.sh library not found" >&2
+    exit 1
+fi
+```
+
+**Why**: Works in both development (config/custom-scripts/) and installed (/usr/local/bin/) environments.
+
+### Input Validation Pattern
+
+Use virtos-common.sh validation functions:
+
+```bash
+# Load common library
+. /usr/local/lib/virtos-common.sh
+
+# Validate VM name
+if ! validate_vm_name "$vm_name"; then
+    echo "Error: Invalid VM name '$vm_name'" >&2
+    echo "VM names must be alphanumeric with hyphens/underscores" >&2
+    exit 2
+fi
+
+# Validate path
+if ! validate_path "$config_file"; then
+    echo "Error: Invalid path '$config_file'" >&2
+    exit 2
+fi
+
+# Validate port number
+if ! validate_port "$port"; then
+    echo "Error: Invalid port number '$port'" >&2
+    echo "Port must be 1-65535" >&2
+    exit 2
+fi
+```
+
+**Why**: Centralized validation prevents security vulnerabilities like command injection and path traversal.
+
+### Temporary File Pattern
+
+Safe temporary file handling with automatic cleanup:
+
+```bash
+# Create temporary file
+temp_file=$(mktemp) || {
+    echo "Error: Failed to create temporary file" >&2
+    exit 1
+}
+
+# Ensure cleanup on exit
+trap 'rm -f "$temp_file"' EXIT INT TERM
+
+# Use temporary file
+echo "data" > "$temp_file"
+process_file "$temp_file"
+
+# Cleanup happens automatically via trap
+```
+
+**Why**: Prevents temporary file leaks and ensures cleanup even on script errors or interrupts.
+
+### Dialog/Whiptail UI Pattern
+
+TUI input with fallback to command-line prompts:
+
+```bash
+# Check for dialog availability
+if command -v dialog >/dev/null 2>&1; then
+    DIALOG="dialog"
+elif command -v whiptail >/dev/null 2>&1; then
+    DIALOG="whiptail"
+else
+    echo "Error: Neither dialog nor whiptail found" >&2
+    exit 1
+fi
+
+# Simple input box
+result=$($DIALOG --inputbox "Enter VM name:" 8 40 "" 3>&1 1>&2 2>&3) || exit 1
+
+# Menu selection
+choice=$($DIALOG --menu "Select action:" 15 50 5 \
+    "1" "Create VM" \
+    "2" "Delete VM" \
+    "3" "List VMs" \
+    3>&1 1>&2 2>&3) || exit 1
+```
+
+**Why**: Provides user-friendly TUI while remaining scriptable.
+
+### Consistent Error Messages Pattern
+
+Standard error handling with helpful context:
+
+```bash
+# Enable exit on error
+set -e
+
+# Function-level error handling
+create_vm() {
+    local vm_name="$1"
+
+    # Check preconditions
+    if virsh list --all --name | grep -q "^${vm_name}$"; then
+        echo "Error: VM '$vm_name' already exists" >&2
+        return 1
+    fi
+
+    # Perform operation with error context
+    if ! virsh define /tmp/vm-config.xml; then
+        echo "Error: Failed to define VM '$vm_name'" >&2
+        echo "Check XML configuration in /tmp/vm-config.xml" >&2
+        return 1
+    fi
+
+    echo "Successfully created VM '$vm_name'"
+    return 0
+}
+
+# Main execution with error handling
+main() {
+    local vm_name="$1"
+
+    if [ -z "$vm_name" ]; then
+        echo "Error: VM name required" >&2
+        echo "Usage: $0 <vm-name>" >&2
+        return 2
+    fi
+
+    create_vm "$vm_name" || {
+        echo "Failed to create VM, check errors above" >&2
+        return 1
+    }
+}
+
+main "$@"
+```
+
+**Why**: Provides clear error messages with actionable information for troubleshooting.
+
+### Command Availability Check Pattern
+
+Check for required commands before use:
+
+```bash
+# Single command check
+if ! command -v virsh >/dev/null 2>&1; then
+    echo "Error: virsh not found" >&2
+    echo "Install libvirt: sudo apt install libvirt-clients" >&2
+    exit 1
+fi
+
+# Multiple commands check
+check_dependencies() {
+    local missing=""
+
+    for cmd in virsh qemu-img ssh; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing="$missing $cmd"
+        fi
+    done
+
+    if [ -n "$missing" ]; then
+        echo "Error: Missing required commands:$missing" >&2
+        return 1
+    fi
+
+    return 0
+}
+
+check_dependencies || exit 1
+```
+
+**Why**: Provides clear error messages instead of cryptic "command not found" failures.
+
+### Privilege Check Pattern
+
+Verify script runs with appropriate privileges:
+
+```bash
+# Require root/sudo
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Error: This script must be run as root" >&2
+    echo "Try: sudo $0 $*" >&2
+    exit 1
+fi
+
+# Require non-root
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Error: This script should not be run as root" >&2
+    exit 1
+fi
+
+# Check for sudo capability (for user-facing scripts)
+if [ "$(id -u)" -ne 0 ] && ! sudo -n true 2>/dev/null; then
+    echo "Warning: This operation may require sudo privileges" >&2
+fi
+```
+
+**Why**: Prevents permission errors and security issues from running with wrong privileges.
+
+---
+
 ## References
 
 - **Pre-commit Hooks**: [docs/PRE_COMMIT_HOOKS.md](PRE_COMMIT_HOOKS.md)
