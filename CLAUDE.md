@@ -546,7 +546,7 @@ A: **No, those 14 scripts are intentional demonstrations/future concepts.** Core
 ## Additional Resources
 
 - [Main Repository](https://github.com/FlossWare/VirtOS)
-- [platform-java Repository](https://github.com/FlossWare/jplatform)
+- [platform-java Repository](https://github.com/FlossWare/platform-java)
 - [Integration Test Report](INTEGRATION_TEST_REPORT.md)
 - [Architecture Documentation](docs/ARCHITECTURE.md)
 - [Development Roadmap](docs/ROADMAP.md)

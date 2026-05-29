@@ -18,7 +18,7 @@ PACKAGES=(
     # Core VirtOS management tools
     "virtos-tools"
 
-    # JPlatform integration
+    # platform-java integration
     "virtos-jplatform"
 
     # Future packages:
