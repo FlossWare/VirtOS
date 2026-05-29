@@ -768,6 +768,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md) for detailed g
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
+**Developer Tools**:
+- `./ci/validate-scripts.sh --report` - Comprehensive script quality validation
+- `./ci/migrate-error-handling.sh --report` - Error handling analysis
+
 ## Examples
 
 Ready-to-deploy examples and patterns for VirtOS:
@@ -800,8 +804,16 @@ Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** fo
 
 ### Community Support
 
+📢 **New to VirtOS?** See our **[Community Guide](docs/COMMUNITY.md)** for:
+- Communication channels (GitHub Discussions, Issues)
+- How to ask questions and get help
+- Community guidelines and support resources
+- Contributing and recognition
+
+**Quick Links**:
 - **GitHub Issues**: [Report bugs or request features](https://github.com/FlossWare/VirtOS/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/FlossWare/VirtOS/discussions)
+- **Discussions**: [Ask questions and share ideas](https://github.com/FlossWare/VirtOS/discussions) *(Setup in progress)*
+- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ### Documentation
 
