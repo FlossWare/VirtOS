@@ -65,9 +65,23 @@ Complete documentation for FlossWare VirtOS.
 - **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** - All commands in one place
 - **[COMPARISON.md](COMPARISON.md)** - VirtOS vs similar projects (Proxmox, ESXi, etc.)
 - **[MISSING-FEATURES.md](MISSING-FEATURES.md)** - What VirtOS lacks (honest assessment)
+- **[EXPERIMENTAL_FEATURES.md](EXPERIMENTAL_FEATURES.md)** - ⭐ NEW: Experimental vs functional scripts (comprehensive guide)
 - **[EXPERIMENTAL.md](EXPERIMENTAL.md)** - Research prototypes explained (AI, quantum, blockchain, etc.)
 - **[EXAMPLES-INTEGRATION.md](EXAMPLES-INTEGRATION.md)** - VirtOS-Examples repository integration plan
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
+
+## Operations & Security
+
+- **[AUDIT_LOGGING.md](AUDIT_LOGGING.md)** - ⭐ NEW: Audit logging guide (compliance, security, troubleshooting)
+- **[SECURITY-HARDENING.md](SECURITY-HARDENING.md)** - Security best practices
+
+## Testing & Quality
+
+- **[TESTING_ROADMAP.md](../TESTING_ROADMAP.md)** - ⭐ NEW: Three-phase testing execution plan
+- **[ISO_TESTING_STATUS.md](../ISO_TESTING_STATUS.md)** - ISO validation checklist (47 tests)
+- **[RUNTIME_TESTING_PLAN.md](../RUNTIME_TESTING_PLAN.md)** - Runtime testing procedures
+- **[TESTING.md](TESTING.md)** - Testing guide
+- **[TESTING_METRICS.md](TESTING_METRICS.md)** - Test metrics
 
 ## Documentation by Use Case
 
@@ -233,11 +247,14 @@ Complete documentation for FlossWare VirtOS.
 
 ## Total Documentation
 
-- **44 Documentation Files** (including business case, technical guides, and operations)
-- **30,000+ Lines** of comprehensive documentation
+- **54+ Documentation Files** (including business case, technical guides, operations, security)
+- **32,500+ Lines** of comprehensive documentation
 - **Complete and Honest Coverage** - including what's missing
 - **Business Value Analysis** - ROI, cost savings, competitive comparison
-- **Phase 16 Complete** - SRE, multi-cloud, networking, APM (May 2026)
+- **Recent Additions** (May 2026):
+  - Experimental features guide (600+ lines)
+  - Audit logging guide (800+ lines)
+  - Testing roadmap (1,100+ lines)
 
 ## Getting Help
 
