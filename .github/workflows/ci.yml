@@ -562,16 +562,120 @@ jobs:
 
           AVG_LINES_PER_SCRIPT=$(echo "scale=0; $TOTAL_LINES / $SCRIPT_COUNT" | bc)
 
-          # 4. Code Duplication Detection (simple pattern-based)
+          # 4. Code Duplication Detection
           echo "=== Code Duplication ==="
+
+          # Create temp file for duplication report
+          DUPLICATION_REPORT=".metrics/duplication.txt"
+          > "$DUPLICATION_REPORT"
+
           # Look for common duplicate patterns
           DUPLICATE_SHOW_HELP=$(grep -l "show_help()" config/custom-scripts/virtos-* | wc -l)
           DUPLICATE_GET_VERSION=$(grep -l "get_version()" config/custom-scripts/virtos-* | wc -l)
           DUPLICATE_SET_E=$(grep -l "set -e" config/custom-scripts/virtos-* | wc -l)
 
-          # Calculate duplication percentage (common patterns vs total scripts)
+          # Detect duplicate code blocks (5+ consecutive lines)
+          echo "Scanning for duplicate code blocks (5+ lines)..." | tee -a "$DUPLICATION_REPORT"
+
+          # Extract functions and significant code blocks from all scripts
+          TEMP_BLOCKS=".metrics/code_blocks"
+          mkdir -p "$TEMP_BLOCKS"
+
+          # Extract code blocks from each script (functions and case blocks)
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ -x "$script" ]; then
+              script_name=$(basename "$script")
+
+              # Extract functions (looking for function definitions)
+              awk '/^[a-zA-Z_][a-zA-Z0-9_]*\(\)|^function [a-zA-Z_]/ {
+                start=NR
+                name=$1
+                gsub(/\(\)|function /, "", name)
+                block=""
+              }
+              start && NR > start {
+                if (/^}$/ && block ~ /\n.*\n.*\n.*\n/) {
+                  print FILENAME ":" name ":" block
+                  start=0
+                  block=""
+                } else {
+                  block = block "\n" $0
+                }
+              }' "$script" >> "$TEMP_BLOCKS/functions.txt" 2>/dev/null || true
+            fi
+          done
+
+          # Find duplicate 5-line blocks across scripts
+          DUPLICATE_BLOCKS=0
+          DUPLICATE_SCRIPTS=0
+          HIGH_DUPLICATION_SCRIPTS=""
+
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ -x "$script" ]; then
+              script_name=$(basename "$script")
+              script_lines=$(wc -l < "$script")
+              duplicated_lines=0
+
+              # Extract all 5-line windows from this script
+              total_windows=$((script_lines - 4))
+              if [ "$total_windows" -gt 0 ]; then
+                for i in $(seq 1 "$total_windows"); do
+                  # Get 5-line block
+                  block=$(sed -n "${i},$((i+4))p" "$script" | grep -v "^#" | grep -v "^[[:space:]]*$" || true)
+
+                  # Skip if block is too short or just comments/whitespace
+                  block_lines=$(echo "$block" | grep -c . || echo 0)
+                  if [ "$block_lines" -lt 3 ]; then
+                    continue
+                  fi
+
+                  # Check if this block appears in other scripts
+                  matches=0
+                  for other_script in config/custom-scripts/virtos-*; do
+                    if [ "$script" != "$other_script" ] && [ -f "$other_script" ]; then
+                      if grep -Fq "$block" "$other_script" 2>/dev/null; then
+                        matches=$((matches + 1))
+                      fi
+                    fi
+                  done
+
+                  if [ "$matches" -gt 0 ]; then
+                    duplicated_lines=$((duplicated_lines + 1))
+                  fi
+                done
+              fi
+
+              # Calculate duplication percentage for this script
+              if [ "$script_lines" -gt 0 ]; then
+                script_dup_pct=$(echo "scale=2; ($duplicated_lines * 100) / $script_lines" | bc)
+
+                # Flag scripts with >20% duplication
+                if (( $(echo "$script_dup_pct > 20" | bc -l) )); then
+                  DUPLICATE_SCRIPTS=$((DUPLICATE_SCRIPTS + 1))
+                  echo "⚠️  $script_name: ${script_dup_pct}% duplicated" | tee -a "$DUPLICATION_REPORT"
+                  HIGH_DUPLICATION_SCRIPTS="${HIGH_DUPLICATION_SCRIPTS}${script_name} (${script_dup_pct}%), "
+                fi
+              fi
+            fi
+          done
+
+          # Calculate overall duplication metrics
           COMMON_PATTERNS=$((DUPLICATE_SHOW_HELP + DUPLICATE_GET_VERSION + DUPLICATE_SET_E))
-          DUPLICATION_PCT=$(echo "scale=2; ($COMMON_PATTERNS * 100) / ($SCRIPT_COUNT * 3)" | bc)
+          PATTERN_CONSISTENCY_PCT=$(echo "scale=2; ($COMMON_PATTERNS * 100) / ($SCRIPT_COUNT * 3)" | bc)
+
+          # Summary
+          echo "" | tee -a "$DUPLICATION_REPORT"
+          echo "Duplication Summary:" | tee -a "$DUPLICATION_REPORT"
+          echo "- Scripts with >20% duplication: $DUPLICATE_SCRIPTS" | tee -a "$DUPLICATION_REPORT"
+          echo "- Pattern consistency: ${PATTERN_CONSISTENCY_PCT}%" | tee -a "$DUPLICATION_REPORT"
+
+          # Calculate overall duplication percentage (weighted: 70% block duplication, 30% pattern consistency)
+          if [ "$SCRIPT_COUNT" -gt 0 ]; then
+            BLOCK_DUP_PCT=$(echo "scale=2; ($DUPLICATE_SCRIPTS * 100) / $SCRIPT_COUNT" | bc)
+            DUPLICATION_PCT=$(echo "scale=2; ($BLOCK_DUP_PCT * 0.7) + ($PATTERN_CONSISTENCY_PCT * 0.3)" | bc)
+          else
+            DUPLICATION_PCT=0
+          fi
 
           # 5. Documentation Coverage
           echo "=== Documentation ==="
@@ -604,7 +708,10 @@ jobs:
             },
             "duplication": {
               "common_patterns": $COMMON_PATTERNS,
-              "percentage": $DUPLICATION_PCT
+              "pattern_consistency": $PATTERN_CONSISTENCY_PCT,
+              "scripts_with_high_duplication": $DUPLICATE_SCRIPTS,
+              "block_duplication_pct": $BLOCK_DUP_PCT,
+              "overall_percentage": $DUPLICATION_PCT
             },
             "documentation": {
               "scripts_with_help": $SCRIPTS_WITH_HELP,
@@ -628,6 +735,10 @@ jobs:
           echo "MAX_LINES=$MAX_LINES" >> $GITHUB_ENV
           echo "MAX_LINES_SCRIPT=$MAX_LINES_SCRIPT" >> $GITHUB_ENV
           echo "DUPLICATION_PCT=$DUPLICATION_PCT" >> $GITHUB_ENV
+          echo "PATTERN_CONSISTENCY_PCT=$PATTERN_CONSISTENCY_PCT" >> $GITHUB_ENV
+          echo "BLOCK_DUP_PCT=$BLOCK_DUP_PCT" >> $GITHUB_ENV
+          echo "DUPLICATE_SCRIPTS=$DUPLICATE_SCRIPTS" >> $GITHUB_ENV
+          echo "HIGH_DUPLICATION_SCRIPTS=$HIGH_DUPLICATION_SCRIPTS" >> $GITHUB_ENV
           echo "SCRIPTS_WITH_HELP=$SCRIPTS_WITH_HELP" >> $GITHUB_ENV
           echo "DOC_COVERAGE=$DOC_COVERAGE" >> $GITHUB_ENV
 
@@ -726,18 +837,43 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Code Duplication Section
-          echo "### 🔁 Code Patterns" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔁 Code Duplication Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Scripts with >20% Duplication | $DUPLICATE_SCRIPTS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Block Duplication | ${BLOCK_DUP_PCT}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pattern Consistency | ${PATTERN_CONSISTENCY_PCT}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Overall Duplication** | **${DUPLICATION_PCT}%** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Duplication status
+          if (( $(echo "$DUPLICATION_PCT < 15" | bc -l) )) && [ "$DUPLICATE_SCRIPTS" -eq 0 ]; then
+            echo "✅ **Excellent - minimal duplication detected**" >> $GITHUB_STEP_SUMMARY
+          elif (( $(echo "$DUPLICATION_PCT < 30" | bc -l) )) && [ "$DUPLICATE_SCRIPTS" -le 3 ]; then
+            echo "✅ **Good - acceptable duplication levels**" >> $GITHUB_STEP_SUMMARY
+          elif [ "$DUPLICATE_SCRIPTS" -gt 0 ]; then
+            echo "⚠️ **Warning: $DUPLICATE_SCRIPTS script(s) have >20% duplicated code**" >> $GITHUB_STEP_SUMMARY
+            if [ -n "$HIGH_DUPLICATION_SCRIPTS" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Scripts flagged:** ${HIGH_DUPLICATION_SCRIPTS%, }" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ **Moderate duplication - consider refactoring common code**" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Pattern usage table
+          echo "**Common Patterns:**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Pattern | Scripts Using |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|---------------|" >> $GITHUB_STEP_SUMMARY
           SET_E_COUNT=$(grep -l "set -e" config/custom-scripts/virtos-* | wc -l)
           HELP_COUNT=$(grep -l "show_help()" config/custom-scripts/virtos-* | wc -l)
           VERSION_COUNT=$(grep -l "get_version()" config/custom-scripts/virtos-* | wc -l)
-          echo "| Error handling (set -e) | $SET_E_COUNT |" >> $GITHUB_STEP_SUMMARY
-          echo "| Help function | $HELP_COUNT |" >> $GITHUB_STEP_SUMMARY
-          echo "| Version function | $VERSION_COUNT |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Good pattern consistency (${DUPLICATION_PCT}% standardized)**" >> $GITHUB_STEP_SUMMARY
+          echo "| Error handling (set -e) | $SET_E_COUNT/$SCRIPT_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Help function | $HELP_COUNT/$SCRIPT_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version function | $VERSION_COUNT/$SCRIPT_COUNT |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Overall Quality Score
@@ -791,7 +927,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: code-metrics
-          path: .metrics/metrics.json
+          path: |
+            .metrics/metrics.json
+            .metrics/duplication.txt
           retention-days: 90
 
       - name: Compare with previous metrics
