@@ -30,6 +30,7 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 - **14/54 scripts** are experimental demos (AI, quantum, blockchain, etc.)
 - These show *potential* future features but are NOT functional
 - Included as design examples and conversation starters
+- **See [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md) for complete details**
 
 **What's Missing** ❌:
 - ISO boot testing: 0/47 checks completed
