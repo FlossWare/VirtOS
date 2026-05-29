@@ -803,4 +803,4 @@ DR successfully executed. Service restored within acceptable RTO for all tiers.
 
 **DR Procedures Version**: 1.0 (2026-05-26)  
 **Applies to**: VirtOS 0.80+  
-**Related**: [ADMIN-GUIDE.md](ADMIN-GUIDE.md), [BACKUP-GUIDE.md](BACKUP-GUIDE.md)
+**Related**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md), [MONITORING-SETUP.md](MONITORING-SETUP.md)
