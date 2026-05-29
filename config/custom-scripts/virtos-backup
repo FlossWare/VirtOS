@@ -131,7 +131,13 @@ backup_vm() {
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
-        error "VM '$vm_name' not found"
+        error "VM '$vm_name' not found" >&2
+        echo "" >&2
+        echo "Available VMs:" >&2
+        virsh list --all --name 2>/dev/null | grep -v '^$' | sed 's/^/  • /' >&2 || echo "  (none)" >&2
+        echo "" >&2
+        echo "To backup a VM, specify an existing VM name:" >&2
+        echo "  virtos-backup backup <vm-name>" >&2
         return 1
     fi
 
@@ -151,7 +157,17 @@ backup_vm() {
     local disks=$(virsh domblklist "$vm_name" --details | grep disk | awk '{print $4}')
 
     if [ -z "$disks" ]; then
-        error "No disks found for VM '$vm_name'"
+        error "No disks found for VM '$vm_name'" >&2
+        echo "" >&2
+        echo "The VM has no attached disk devices to backup." >&2
+        echo "" >&2
+        echo "This could indicate:" >&2
+        echo "  • VM configuration error (no disks defined)" >&2
+        echo "  • Disk devices are not accessible" >&2
+        echo "" >&2
+        echo "Check VM configuration:" >&2
+        echo "  virsh domblklist $vm_name --details" >&2
+        echo "  virsh dumpxml $vm_name | grep -A5 disk" >&2
         return 1
     fi
 
@@ -249,14 +265,41 @@ EOF
 
         if [[ "$REMOTE_DEST" == s3://* ]]; then
             # S3 destination (requires aws CLI)
+            if ! command -v aws >/dev/null 2>&1; then
+                error "AWS CLI not installed (required for S3 destinations)" >&2
+                echo "" >&2
+                echo "To install AWS CLI:" >&2
+                echo "  tce-load -wi awscli" >&2
+                echo "" >&2
+                echo "Or use SCP destination instead:" >&2
+                echo "  virtos-backup backup $vm_name --remote user@host:/backup/path" >&2
+                return 1
+            fi
             aws s3 cp "$backup_path" "$REMOTE_DEST/$vm_name/" || {
-                error "Failed to copy to S3"
+                error "Failed to copy backup to S3: $REMOTE_DEST" >&2
+                echo "" >&2
+                echo "Possible causes:" >&2
+                echo "  • Invalid AWS credentials (check: aws configure)" >&2
+                echo "  • Bucket doesn't exist or lacks write permissions" >&2
+                echo "  • Network connectivity issues" >&2
+                echo "" >&2
+                echo "Local backup saved at: $backup_path" >&2
                 return 1
             }
         else
             # SCP destination
             scp -r "$backup_path" "$REMOTE_DEST/$vm_name/" || {
-                error "Failed to copy to remote"
+                error "Failed to copy backup to remote: $REMOTE_DEST" >&2
+                echo "" >&2
+                echo "Possible causes:" >&2
+                echo "  • SSH authentication failed (check: ssh-copy-id)" >&2
+                echo "  • Remote path doesn't exist or lacks write permissions" >&2
+                echo "  • Network connectivity issues" >&2
+                echo "" >&2
+                echo "Local backup saved at: $backup_path" >&2
+                echo "" >&2
+                echo "Retry after fixing remote access:" >&2
+                echo "  scp -r $backup_path $REMOTE_DEST/$vm_name/" >&2
                 return 1
             }
         fi
