@@ -42,6 +42,7 @@ FlossWare VirtOS is designed to be a lightweight, efficient hypervisor platform 
 - **KVM/QEMU** - Full hardware virtualization
 - **LXC** - System containers (lightweight VMs)
 - **Containers** - Docker, Podman, and containerd (all optional, you choose!)
+- **Cloud-init** - Industry-standard automated VM configuration ([guide](docs/CLOUD-INIT.md))
 - **Modular** - Everything is choosable, nothing is forced
 - **Extensible** - Support for additional virtualization technologies
 
@@ -228,6 +229,42 @@ virtos-tui
 | **storage** | ~350MB | Btrfs + LVM + ZFS + NFS (4GB+ RAM) |
 
 See [docs/PROFILES.md](docs/PROFILES.md) for details.
+
+### Cloud-init Support ☁️
+
+**Automated VM configuration on first boot:**
+
+```bash
+# Create VM with SSH access and packages pre-installed
+virtos-cloud-init create web-server \
+  --hostname production-web \
+  --user admin \
+  --ssh-key ~/.ssh/id_rsa.pub \
+  --packages nginx,certbot,git
+
+# Generate cloud-init ISO
+virtos-cloud-init generate web-server
+
+# Create and start VM
+virtos-create-vm --name web-server --cpu 4 --ram 8192 --disk 50G --cloud-init
+
+# SSH in after ~2 minutes (cloud-init completes)
+ssh admin@web-server.local
+```
+
+**What cloud-init can do:**
+- ✅ Create users with SSH keys
+- ✅ Install packages automatically  
+- ✅ Configure static IP or DHCP
+- ✅ Run custom setup scripts
+- ✅ Configure hostname and DNS
+- ✅ Format and mount disks
+
+**See the [Cloud-init Guide](docs/CLOUD-INIT.md) for:**
+- Complete command reference
+- Common use cases (web servers, databases, Kubernetes nodes)
+- Advanced examples
+- Troubleshooting tips
 
 ### Remote Management
 

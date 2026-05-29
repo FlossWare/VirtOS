@@ -24,6 +24,7 @@ Complete documentation for FlossWare VirtOS.
 ## Virtualization Technologies
 
 ### VMs and Containers
+- **[CLOUD-INIT.md](CLOUD-INIT.md)** - Automated VM configuration on first boot ☁️
 - **[CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md)** - Docker vs Podman vs containerd
 - **[KUBERNETES.md](KUBERNETES.md)** - K3s orchestration (optional)
 - **[MICROSERVICES.md](MICROSERVICES.md)** - Deploying microservices on VirtOS
