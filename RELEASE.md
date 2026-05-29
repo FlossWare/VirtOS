@@ -11,6 +11,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 ```
 
 **Examples:**
+
 - `0.1.0-alpha` - Alpha release
 - `0.2.0-beta.1` - First beta of 0.2.0
 - `1.0.0` - First stable release
@@ -43,6 +44,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 **Stability:** Unstable, breaking changes expected
 
 **When:**
+
 - Major features completed but not fully tested
 - APIs/interfaces may change
 - Not recommended for production
@@ -56,6 +58,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 **Stability:** More stable, fewer breaking changes
 
 **When:**
+
 - All planned features implemented
 - Focus on bug fixes and polish
 - Ready for wider testing
@@ -70,6 +73,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 **Stability:** Stable, only critical bug fixes
 
 **When:**
+
 - No known critical bugs
 - All tests passing
 - Documentation complete
@@ -84,6 +88,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 **Stability:** Stable, well-tested
 
 **When:**
+
 - All RC issues resolved
 - Full test suite passing
 - Documentation reviewed
@@ -96,6 +101,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 ### Pre-Release Checklist
 
 #### Code Quality
+
 - [ ] All scripts pass syntax check (`make check`)
 - [ ] Quick test passes (`make test`)
 - [ ] Package builds successfully (`make packages`)
@@ -104,6 +110,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 - [ ] Security review completed (if applicable)
 
 #### Testing
+
 - [ ] Unit tests passing (when implemented)
 - [ ] Integration tests passing (when implemented)
 - [ ] Manual testing completed
@@ -112,6 +119,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 - [ ] No regressions from previous version
 
 #### Documentation
+
 - [ ] README.md updated with new features
 - [ ] CHANGELOG.md updated
 - [ ] BUILD.md reflects current build process
@@ -121,6 +129,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 - [ ] Migration guide provided (for breaking changes)
 
 #### Package/Build
+
 - [ ] Version bumped in all necessary files
 - [ ] Package metadata updated (.tcz.info files)
 - [ ] Build scripts tested and working
@@ -128,6 +137,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 - [ ] Checksums generated and verified
 
 #### Legal/Licensing
+
 - [ ] LICENSE file present and correct
 - [ ] Copyright notices updated
 - [ ] Third-party licenses acknowledged
@@ -251,6 +261,7 @@ git push origin v0.2.0-alpha
 2. Select tag: `v0.2.0-alpha`
 3. Release title: `VirtOS v0.2.0-alpha`
 4. Description:
+
    ```markdown
    ## VirtOS v0.2.0-alpha
 
@@ -323,6 +334,7 @@ git push origin --delete release/v0.2.0-alpha
 **Status:** Initial alpha release
 
 **What Works:**
+
 - ✅ Package building (virtos-tools.tcz)
 - ✅ Build validation and testing
 - ✅ 52 management scripts
@@ -330,26 +342,31 @@ git push origin --delete release/v0.2.0-alpha
 - ✅ CI/CD pipeline
 
 **What's Planned:**
+
 - 🔧 ISO building (framework ready)
 - 🔧 Virtualization packages (QEMU, libvirt, etc.)
 - 🔧 Custom kernel builds
 
 **Artifacts:**
+
 - virtos-tools.tcz (332KB)
 
 ### Future Releases
 
 **0.2.0-alpha** (Target: June 2026)
+
 - ISO building tested and functional
 - QEMU package available
 - Basic VM creation working
 
 **0.3.0-beta** (Target: Q3 2026)
+
 - All core packages (QEMU, libvirt, Docker, LXC)
 - Complete VM/container workflows
 - Clustering tested
 
 **1.0.0** (Target: Q4 2026)
+
 - Feature complete
 - Production ready
 - Full documentation
@@ -388,12 +405,14 @@ git push origin main
 ### Future: Automated Releases
 
 Consider implementing:
+
 - GitHub Actions for release builds
 - Automated CHANGELOG generation
 - Automated artifact uploads
 - Automated version bumping
 
 Example workflow:
+
 ```yaml
 name: Release
 
@@ -420,10 +439,12 @@ jobs:
 ## Support Policy
 
 **Alpha/Beta Releases:**
+
 - No long-term support
 - Upgrade to latest version
 
 **Stable Releases:**
+
 - Critical security fixes: 6 months
 - Bug fixes: 3 months
 - Feature updates: Latest version only
@@ -431,12 +452,14 @@ jobs:
 ## Communication
 
 **Release Announcements:**
+
 - GitHub Releases page
 - GitHub Discussions
 - Project README.md
 - Social media (if applicable)
 
 **Release Notes Format:**
+
 - Highlight major changes
 - List all changes (from CHANGELOG)
 - Acknowledge contributors

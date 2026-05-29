@@ -15,6 +15,7 @@ VirtOS supports multiple storage solutions from basic local filesystems to enter
 ## Philosophy
 
 Following VirtOS principles:
+
 - **Minimal by default** - ext4 works for most cases
 - **Optional advanced features** - Enable only what you need
 - **Choosable** - Pick the right tool for your use case
@@ -38,6 +39,7 @@ echo "mount /dev/sdb1 /mnt/vms" >> /opt/bootlocal.sh
 ```
 
 **When to use:**
+
 - ✓ Simple setups
 - ✓ Good performance
 - ✓ Stable and mature
@@ -57,6 +59,7 @@ mount /dev/sdc1 /mnt/usb
 ```
 
 **When to use:**
+
 - ✓ USB drives
 - ✓ Cross-platform compatibility
 - ✗ Not for VM storage (lacks features)
@@ -74,6 +77,7 @@ qemu-img create /tmp/fast/test.qcow2 10G
 ```
 
 **When to use:**
+
 - ✓ Temporary VMs
 - ✓ Cache/scratch space
 - ✓ Ultra-fast I/O
@@ -160,6 +164,7 @@ echo "mount -o compress=lz4 /dev/sdb1 /var/lib/vms" >> /opt/bootlocal.sh
 - ✗ **RAID 5/6** - Not production-ready yet
 
 **When to use:**
+
 - VM snapshots before updates
 - Quick VM cloning
 - Save disk space with compression
@@ -264,6 +269,7 @@ vgdisplay vg_vms
 - ✗ **Complex** - More commands to learn
 
 **When to use:**
+
 - Dynamic storage allocation
 - Need to resize VM disks
 - Combine multiple physical disks
@@ -400,6 +406,7 @@ zpool status
 - ✗ **Size** - Larger footprint
 
 **When to use:**
+
 - Data integrity is critical
 - Large storage arrays
 - Need compression
@@ -475,6 +482,7 @@ virsh start web-1     # on virtos-2 (same storage!)
 - ✗ **No redundancy** - Built-in HA
 
 **When to use:**
+
 - Multi-host clusters
 - VM migration needed
 - Centralized VM storage
@@ -484,6 +492,7 @@ virsh start web-1     # on virtos-2 (same storage!)
 **Planned for VirtOS, not yet implemented.**
 
 Would provide:
+
 - Distributed storage pool
 - High availability (no single point of failure)
 - Automatic replication
@@ -491,6 +500,7 @@ Would provide:
 - Scalable to hundreds of nodes
 
 **Requirements:**
+
 - 3+ hosts minimum
 - Dedicated network (10GbE recommended)
 - Significant resources (CPU, RAM, disk)
@@ -515,47 +525,62 @@ Would provide:
 ## Use Case Recommendations
 
 ### Home Lab / Learning
+
 **Use:** ext4 (default)
+
 ```bash
 INCLUDE_BTRFS="no"
 INCLUDE_LVM="no"
 INCLUDE_ZFS="no"
 ```
+
 - Simple, reliable, sufficient
 
 ### Development / Testing
+
 **Use:** Btrfs
+
 ```bash
 INCLUDE_BTRFS="yes"
 ```
+
 - Snapshots before testing
 - Quick cloning
 - Easy rollback
 
 ### Production Single Host
+
 **Use:** LVM or ZFS
+
 ```bash
 INCLUDE_LVM="yes"  # or
 INCLUDE_ZFS="yes"
 ```
+
 - LVM: Flexible, proven
 - ZFS: Data integrity, compression
 
 ### Multi-Host Cluster
+
 **Use:** ZFS + NFS
+
 ```bash
 INCLUDE_ZFS="yes"
 CLUSTER_SHARED_STORAGE="yes"
 ```
+
 - ZFS on NFS server for data integrity
 - NFS for shared access
 - VM migration capability
 
 ### Enterprise / Large Scale
+
 **Use:** ZFS (now) → Ceph (future)
+
 ```bash
 INCLUDE_ZFS="yes"
 ```
+
 - ZFS pools on each host
 - Plan for Ceph migration later
 
@@ -574,6 +599,7 @@ INCLUDE_ZFS="yes"
 ### 2. Regular Snapshots
 
 **Btrfs:**
+
 ```bash
 # Daily snapshot script
 #!/bin/sh
@@ -584,6 +610,7 @@ find /var/lib/vms-snapshot-* -mtime +7 -exec btrfs subvolume delete {} \;
 ```
 
 **ZFS:**
+
 ```bash
 # Automated snapshots (zfs-auto-snapshot)
 zfs snapshot vmpool/vms@daily-$(date +%Y-%m-%d)
@@ -612,6 +639,7 @@ zfs list
 ### 4. Performance Tuning
 
 **For SSDs:**
+
 ```bash
 # Disable barriers (only if battery-backed cache)
 mount -o nobarrier /dev/sdb1 /var/lib/vms
@@ -621,6 +649,7 @@ echo noop > /sys/block/sdb/queue/scheduler
 ```
 
 **For ZFS:**
+
 ```bash
 # Set ARC size (ZFS cache, 50% of RAM max)
 echo "options zfs zfs_arc_max=4294967296" > /etc/modprobe.d/zfs.conf
@@ -628,6 +657,7 @@ echo "options zfs zfs_arc_max=4294967296" > /etc/modprobe.d/zfs.conf
 ```
 
 **For VMs:**
+
 ```bash
 # Use virtio-scsi for better performance
 qemu-system-x86_64 \
@@ -639,12 +669,14 @@ qemu-system-x86_64 \
 ### 5. Backup Strategy
 
 **Local snapshots (quick recovery):**
+
 ```bash
 # Btrfs/ZFS snapshots before changes
 btrfs subvolume snapshot /var/lib/vms /var/lib/vms-pre-update
 ```
 
 **Off-site backups (disaster recovery):**
+
 ```bash
 # ZFS send to remote
 zfs send vmpool/vms@backup | ssh backup-server zfs receive pool/virtos-backup
@@ -676,6 +708,7 @@ PROFILE="storage"
 ```
 
 **Includes:**
+
 - Btrfs - Snapshots and compression
 - LVM - Volume management
 - ZFS - Enterprise features
@@ -767,15 +800,18 @@ mount -t nfs server:/export/data /mnt
 ## Summary
 
 **Start simple:**
+
 - Use ext4 (default) for basic needs
 
 **Add as needed:**
+
 - Btrfs for snapshots
 - LVM for flexibility
 - ZFS for enterprise
 - NFS for sharing
 
 **Remember:**
+
 - VirtOS philosophy: optional and choosable
 - Enable only what you need
 - Start small, grow as needed

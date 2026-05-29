@@ -5,6 +5,7 @@ Thank you for considering contributing! This project aims to create a minimal, e
 ## Community Resources
 
 New to VirtOS? Check out our [Community Guide](docs/COMMUNITY.md) for:
+
 - 📢 Communication channels (GitHub Discussions, Issues)
 - 💬 How to ask questions and get help
 - 🙌 Community guidelines and Code of Conduct
@@ -12,7 +13,7 @@ New to VirtOS? Check out our [Community Guide](docs/COMMUNITY.md) for:
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to https://github.com/FlossWare/VirtOS/issues (use the "code-of-conduct" label).
+This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to <https://github.com/FlossWare/VirtOS/issues> (use the "code-of-conduct" label).
 
 ## Project Philosophy
 
@@ -41,6 +42,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 1. **Fork the repository**
 2. **Create a feature branch**
+
    ```bash
    git checkout -b feature/my-feature
    ```
@@ -51,11 +53,13 @@ This project and everyone participating in it is governed by our [Code of Conduc
    - Update documentation
 
 4. **Commit with clear messages**
+
    ```bash
    git commit -m "Add support for XYZ virtualization"
    ```
 
 5. **Push and create pull request**
+
    ```bash
    git push origin feature/my-feature
    ```
@@ -82,6 +86,7 @@ If you're adding a new TCZ extension:
 ### Prerequisites
 
 **For script development:**
+
 - Linux system (preferably Fedora, Ubuntu, or Tiny Core)
 - Bash 4.0+
 - Git
@@ -91,6 +96,7 @@ If you're adding a new TCZ extension:
 - pre-commit (recommended - see below)
 
 **For building VirtOS ISO:**
+
 - Tiny Core Linux build environment
 - 4GB+ RAM
 - 20GB+ free disk space
@@ -143,6 +149,7 @@ pre-commit run --all-files
 ```
 
 Hooks enforce:
+
 - ✅ ShellCheck (shell script linting)
 - ✅ shfmt (shell script formatting)
 - ✅ YAML/JSON validation
@@ -166,6 +173,7 @@ See [docs/PRE_COMMIT_HOOKS.md](docs/PRE_COMMIT_HOOKS.md) for complete guide.
 ### Branch Naming
 
 Use descriptive branch names:
+
 - `feature/add-xyz-support` - New features
 - `fix/vm-creation-bug` - Bug fixes
 - `docs/update-readme` - Documentation
@@ -192,6 +200,7 @@ Before submitting a PR, ensure:
 ### Quick Validation
 
 **Using our validation tools** (recommended):
+
 ```bash
 # Comprehensive script validation (8 quality checks per script)
 ./ci/validate-scripts.sh --report
@@ -204,6 +213,7 @@ Before submitting a PR, ensure:
 ```
 
 **Manual validation**:
+
 ```bash
 # Validate all scripts
 for script in packages/virtos-tools/src/usr/local/bin/virtos-*; do
@@ -221,23 +231,27 @@ grep -r "TODO\|FIXME" packages/   # Find items needing attention
 ### Testing Levels
 
 **Level 0: Syntax validation** (required for all PRs)
+
 ```bash
 bash -n your-script.sh
 shellcheck your-script.sh
 ```
 
 **Level 1: Script execution** (test commands work)
+
 ```bash
 ./config/custom-scripts/virtos-yourscript --help
 ./config/custom-scripts/virtos-yourscript status
 ```
 
 **Level 2: Integration testing** (test with VirtOS system)
+
 - Build ISO and boot
 - Run script in VirtOS environment
 - Verify expected behavior
 
 **Level 3: System testing** (end-to-end workflows)
+
 - Complete user workflows
 - Test with actual VMs/containers
 - Verify clustering, HA, backup, etc.
@@ -249,12 +263,14 @@ See [TESTING.md](TESTING.md) for detailed procedures.
 Current priorities (see ROADMAP.md):
 
 **Core System**:
+
 - [ ] Custom kernel configuration optimization
 - [ ] TCZ package building automation
 - [ ] Build script improvements
 - [ ] Testing on various hardware
 
 **Advanced Features**:
+
 - [ ] Web UI integration (Cockpit/Portainer)
 - [ ] GPU passthrough support
 - [ ] USB passthrough
@@ -263,6 +279,7 @@ Current priorities (see ROADMAP.md):
 - [ ] Advanced networking (OVS, VLANs)
 
 **Documentation**:
+
 - [ ] Video tutorials
 - [ ] More examples and use cases
 - [ ] Troubleshooting guides
@@ -270,12 +287,14 @@ Current priorities (see ROADMAP.md):
 - [ ] Translation to other languages
 
 **Testing**:
+
 - [ ] Automated testing
 - [ ] Integration tests
 - [ ] Performance benchmarks
 - [ ] Hardware compatibility list
 
 **Community**:
+
 - [ ] Sample configurations
 - [ ] Template library
 - [ ] Blog posts / articles
@@ -286,6 +305,7 @@ Current priorities (see ROADMAP.md):
 ### Shell Script Standards
 
 **General Guidelines:**
+
 - Use `#!/bin/bash` shebang (not `/bin/sh`)
 - Use 4 spaces for indentation (no tabs)
 - Maximum line length: 120 characters
@@ -295,18 +315,21 @@ Current priorities (see ROADMAP.md):
 - Prefer `$(command)` over backticks
 
 **Naming Conventions:**
+
 - Variables: `UPPERCASE_WITH_UNDERSCORES`
 - Functions: `lowercase_with_underscores`
 - Scripts: `virtos-lowercase-with-hyphens`
 - Temporary files: Use `mktemp`
 
 **Comments:**
+
 - Add file header with description, version, author
 - Document complex logic and why (not what)
 - Use TODO/FIXME for incomplete items
 - Keep comments up-to-date with code
 
 **Error Handling:**
+
 ```bash
 # Always check exit codes
 if ! command; then
@@ -326,6 +349,7 @@ trap cleanup EXIT
 ```
 
 **Example Script Structure:**
+
 ```bash
 #!/bin/bash
 # VirtOS Example Script
@@ -410,11 +434,13 @@ echo $VAR  # Intentionally unquoted
 ### Documentation Standards
 
 **Inline Documentation:**
+
 - All `virtos-*` commands must have `--help` option
 - Help text should include examples
 - Version info should be available
 
 **Markdown Files:**
+
 - Use proper heading hierarchy (# ## ###)
 - Include code blocks with syntax highlighting
 - Add table of contents for long documents
@@ -422,6 +448,7 @@ echo $VAR  # Intentionally unquoted
 - Use relative links within repo
 
 **Code Blocks:**
+
 ```bash
 # Use bash syntax highlighting
 command --option value
@@ -462,6 +489,7 @@ command --option value
 ```
 
 **Types:**
+
 - `feat:` New feature
 - `fix:` Bug fix
 - `docs:` Documentation changes
@@ -471,6 +499,7 @@ command --option value
 - `perf:` Performance improvements
 
 **Examples:**
+
 ```
 feat: Add virtos-backup-orchestration script
 
@@ -571,6 +600,7 @@ Fixes #123
 ### Response Times
 
 This is a community project. Please be patient:
+
 - Issues: Triage within 3-5 days
 - PRs: Initial review within 1 week
 - Discussions: Best effort, community-driven
@@ -578,6 +608,7 @@ This is a community project. Please be patient:
 ### Code of Conduct
 
 Be respectful and constructive:
+
 - Assume good faith
 - Be patient with newcomers
 - Provide helpful feedback
@@ -587,6 +618,7 @@ Be respectful and constructive:
 ## Recognition
 
 Contributors are recognized in several ways:
+
 - Listed in CONTRIBUTORS.md (if you'd like)
 - Git commit history
 - Release notes for significant contributions
@@ -595,6 +627,7 @@ Contributors are recognized in several ways:
 ## Implementation Status
 
 VirtOS is in active development. Please read the **Implementation Status** section in README.md to understand:
+
 - What's fully implemented
 - What's prototype/demonstration
 - What needs backend integration
@@ -603,6 +636,7 @@ VirtOS is in active development. Please read the **Implementation Status** secti
 ## Areas Needing Help (Priority Order)
 
 ### 🔴 Critical (Core Functionality)
+
 1. **Backend Integration** - Connect management scripts to libvirt/QEMU/LXC
 2. **ISO Building** - Complete bootable ISO generation process
 3. **Kernel Configuration** - Test and refine KVM kernel configs
@@ -610,6 +644,7 @@ VirtOS is in active development. Please read the **Implementation Status** secti
 5. **Basic Testing** - Boot-to-VM workflow validation
 
 ### 🟠 High Priority (Production Features)
+
 1. **Backup Integration** - Connect virtos-backup to actual VM snapshots
 2. **HA Implementation** - Real failover detection and VM migration
 3. **Clustering** - Implement actual cluster communication
@@ -617,6 +652,7 @@ VirtOS is in active development. Please read the **Implementation Status** secti
 5. **Network Integration** - Bridge/VLAN/OVS actual configuration
 
 ### 🟡 Medium Priority (Advanced Features)
+
 1. **GPU Passthrough** - VFIO configuration and testing
 2. **Live Migration** - Implement VM migration between hosts
 3. **Monitoring** - Prometheus/Grafana integration
@@ -624,6 +660,7 @@ VirtOS is in active development. Please read the **Implementation Status** secti
 5. **Web UI** - Optional Cockpit/Portainer integration
 
 ### 🟢 Low Priority (Nice to Have)
+
 1. **AI/ML Features** - Actual ML-based optimization
 2. **Quantum Integration** - Real quantum computer access
 3. **Blockchain Features** - DeFi/NFT implementation
@@ -631,6 +668,7 @@ VirtOS is in active development. Please read the **Implementation Status** secti
 5. **Additional Platforms** - More cloud provider support
 
 ### 📚 Documentation
+
 - [ ] Video tutorials
 - [ ] More real-world examples
 - [ ] Troubleshooting guides (common issues)
@@ -639,6 +677,7 @@ VirtOS is in active development. Please read the **Implementation Status** secti
 - [ ] Translation to other languages
 
 ### 🧪 Testing
+
 - [ ] Unit tests (BATS framework)
 - [ ] Integration tests
 - [ ] Performance benchmarks

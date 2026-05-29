@@ -30,7 +30,8 @@ See [GitHub Issue #109](https://github.com/FlossWare/VirtOS/issues/109) for back
 
 The following scripts demonstrate **interface design** for potential future features. They have complete command-line interfaces and help text, but **do not have working backends**.
 
-**Purpose**: 
+**Purpose**:
+
 - Show how VirtOS *could* integrate advanced technologies
 - Serve as conversation starters for future development
 - Provide interface examples for contributors
@@ -43,12 +44,14 @@ The following scripts demonstrate **interface design** for potential future feat
 ### AI/ML Integration (2 scripts)
 
 #### `virtos-ai` (684 lines)
+
 **Claims**: AI-powered workload optimization, predictive scaling, anomaly detection  
 **Reality**: Interface prototype, no AI/ML backend  
 **Why It Exists**: Demonstrates potential for ML-driven resource management  
 **To Make It Real**: Integrate with TensorFlow Serving, MLflow, or Kubeflow
 
 #### `virtos-ai-advanced` (959 lines)
+
 **Claims**: Advanced AI features, model training, inference pipelines  
 **Reality**: Extended interface prototype, no AI backend  
 **Why It Exists**: Shows advanced AI integration possibilities  
@@ -59,12 +62,14 @@ The following scripts demonstrate **interface design** for potential future feat
 ### Quantum Computing (2 scripts)
 
 #### `virtos-quantum` (594 lines)
+
 **Claims**: Quantum VM management, qubit allocation  
 **Reality**: Conceptual interface, no quantum backend  
 **Why It Exists**: Forward-looking design for quantum workload orchestration  
 **To Make It Real**: Integrate with IBM Qiskit, AWS Braket, or Azure Quantum
 
 #### `virtos-quantum-hardware` (828 lines)
+
 **Claims**: Quantum hardware management, qubit calibration  
 **Reality**: Speculative interface for quantum hardware  
 **Why It Exists**: Demonstrates potential quantum hardware abstraction  
@@ -75,12 +80,14 @@ The following scripts demonstrate **interface design** for potential future feat
 ### Blockchain (2 scripts)
 
 #### `virtos-blockchain` (719 lines)
+
 **Claims**: Blockchain node management, smart contract deployment  
 **Reality**: Interface mockup, no blockchain integration  
 **Why It Exists**: Shows how VirtOS could manage blockchain workloads  
 **To Make It Real**: Integrate with Hyperledger, Ethereum, or Substrate
 
 #### `virtos-blockchain-advanced` (688 lines)
+
 **Claims**: Advanced blockchain features, consensus management  
 **Reality**: Extended blockchain interface  
 **Why It Exists**: Demonstrates blockchain orchestration possibilities  
@@ -91,24 +98,28 @@ The following scripts demonstrate **interface design** for potential future feat
 ### Federation & Multi-Cloud (4 scripts)
 
 #### `virtos-federation` (820 lines)
+
 **Claims**: Multi-cluster federation, global workload distribution  
 **Reality**: Federation interface prototype  
 **Why It Exists**: Demonstrates cross-cluster orchestration design  
 **To Make It Real**: Implement federation controller, cross-cluster sync
 
 #### `virtos-federation-extended` (594 lines)
+
 **Claims**: Extended federation features  
 **Reality**: Additional federation interfaces  
 **Why It Exists**: Shows advanced federation capabilities  
 **To Make It Real**: Requires federation protocol, state replication
 
 #### `virtos-multicloud` (613 lines)
+
 **Claims**: Multi-cloud workload management (AWS, Azure, GCP)  
 **Reality**: Multi-cloud interface prototype  
 **Why It Exists**: Demonstrates cloud provider abstraction  
 **To Make It Real**: Integrate cloud provider APIs, cost optimization
 
 #### `virtos-edge` (706 lines)
+
 **Claims**: Edge computing management, IoT device orchestration  
 **Reality**: Edge interface mockup  
 **Why It Exists**: Shows edge computing integration possibilities  
@@ -119,24 +130,28 @@ The following scripts demonstrate **interface design** for potential future feat
 ### Advanced Operations (4 scripts)
 
 #### `virtos-mesh` (819 lines)
+
 **Claims**: Service mesh integration, traffic management  
 **Reality**: Service mesh interface  
 **Why It Exists**: Demonstrates service mesh abstraction for VirtOS  
 **To Make It Real**: Integrate with Istio, Linkerd, or Consul
 
 #### `virtos-governance` (711 lines)
+
 **Claims**: Policy enforcement, compliance automation  
 **Reality**: Governance interface prototype  
 **Why It Exists**: Shows policy-driven infrastructure management  
 **To Make It Real**: Implement policy engine (OPA), audit logging
 
 #### `virtos-sre` (754 lines)
+
 **Claims**: SRE automation, SLO management, error budgets  
 **Reality**: SRE interface mockup  
 **Why It Exists**: Demonstrates SRE principles applied to VirtOS  
 **To Make It Real**: Integrate metrics pipeline, SLO calculators
 
 #### `virtos-apm` (614 lines)
+
 **Claims**: Application performance monitoring, distributed tracing  
 **Reality**: APM interface prototype  
 **Why It Exists**: Shows observability integration possibilities  
@@ -147,6 +162,7 @@ The following scripts demonstrate **interface design** for potential future feat
 ## How to Identify Experimental Scripts
 
 ### Method 1: Check Script Output
+
 ```bash
 # Working script returns actual data
 virtos-network list
@@ -158,12 +174,15 @@ virtos-ai optimize
 ```
 
 ### Method 2: Check Implementation Status
+
 See [SCRIPT_IMPLEMENTATION_AUDIT.md](../SCRIPT_IMPLEMENTATION_AUDIT.md):
+
 - **✅ Fully Working** - Has backend integration (29 scripts)
 - **🟡 Partial** - Interface complete, backend partial (9 scripts)
 - **🔷 Experimental** - Interface only, no backend (14 scripts)
 
 ### Method 3: Check Source Code
+
 ```bash
 grep -l "Prototype" packages/virtos-tools/src/usr/local/bin/virtos-*
 ```
@@ -175,6 +194,7 @@ Scripts that print "Prototype" messages are experimental.
 ## Fully Functional Scripts (29)
 
 ### Core VM Management (10 scripts) ✅
+
 All of these **work right now** with libvirt/QEMU backends:
 
 - `virtos-setup` - System setup wizard
@@ -189,36 +209,44 @@ All of these **work right now** with libvirt/QEMU backends:
 - `virtos-tui` - Text user interface
 
 ### Advanced Features (19 scripts) ✅
+
 These have working backends:
 
 **VM Features**:
+
 - `virtos-template` - VM templates
 - `virtos-gpu` - GPU passthrough
 - `virtos-usb` - USB passthrough
 
 **Containers**:
+
 - `virtos-container-security` - Container security policies
 
 **High Availability**:
+
 - `virtos-ha` - HA clustering
 - `virtos-dr` - Disaster recovery
 
 **Automation**:
+
 - `virtos-api` - REST API server
 - `virtos-automation` - Automation engine
 - `virtos-devops` - CI/CD integration
 
 **Security**:
+
 - `virtos-security` - Security hardening
 - `virtos-security-advanced` - Advanced security
 - `virtos-cloud-init` - Cloud-init integration
 
 **Monitoring**:
+
 - `virtos-analytics` - Analytics dashboard
 - `virtos-observability` - Observability stack
 - `virtos-telemetry` - Telemetry collection
 
 **Operations**:
+
 - `virtos-quota` - Resource quotas
 - `virtos-billing` - Usage billing
 - `virtos-datacenter` - Datacenter management
@@ -229,6 +257,7 @@ These have working backends:
 ## Partially Implemented Scripts (9)
 
 ### Infrastructure Components 🟡
+
 Interface complete, backend integration needed:
 
 - `virtos-auth` (547 lines) - Needs LDAP/auth backend
@@ -250,6 +279,7 @@ These scripts have the **command-line interface implemented** but need backend s
 ### Q: Why include experimental scripts if they don't work?
 
 **A**: Design-first development. By defining interfaces early:
+
 - We establish a clear API contract before implementation
 - Contributors know what the feature should look like
 - Users can provide feedback on usability before we invest in backends
@@ -260,6 +290,7 @@ This is common in open-source projects - see Kubernetes CRDs, OpenStack blueprin
 ### Q: Can I help implement these features?
 
 **A**: Yes! Each experimental script is a potential contribution opportunity. To implement:
+
 1. Pick a script that interests you
 2. Review the interface (help text, arguments)
 3. Design the backend integration (what services needed?)
@@ -271,6 +302,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for contribution guidelines.
 ### Q: Will these features be removed?
 
 **A**: No immediate plans. They serve as:
+
 - Design artifacts showing VirtOS's vision
 - Examples for contributors
 - Placeholders preventing namespace collisions
@@ -287,6 +319,7 @@ However, scripts may be moved to a separate "examples" or "experimental" package
 ### Q: What's the roadmap for implementing experimental features?
 
 **A**: Prioritization is driven by:
+
 1. **User demand** - What features do users actually need?
 2. **Ecosystem maturity** - Are the backend technologies stable?
 3. **Maintainability** - Can we support it long-term?
@@ -301,15 +334,18 @@ Quantum and blockchain features are intentionally far-future. AI/ML integration 
 ### If You're Evaluating VirtOS for Production Use
 
 **Focus on these 29 working scripts**:
+
 - Core VM management (10 scripts)
 - Advanced operational features (19 scripts)
 
 **Ignore these 14 experimental scripts** for now:
+
 - They are research prototypes
 - They will not work in production
 - They are not representative of VirtOS quality
 
 **Evaluation criteria should be**:
+
 - Does VirtOS's **working** feature set meet your needs?
 - Is the **core VM management** reliable and performant?
 - Does the **architecture** support your requirements?
@@ -319,6 +355,7 @@ Don't base your evaluation on experimental features - they're intentionally aspi
 ### If You're Evaluating VirtOS for Development/Learning
 
 All scripts are valuable:
+
 - **Working scripts** - Learn how VirtOS manages VMs, storage, networking
 - **Experimental scripts** - See design patterns, interface conventions
 - **All scripts** - Understand shell scripting, CLI design, libvirt integration
@@ -385,6 +422,7 @@ PROFILE_PRODUCTION_EXCLUDE="
 ```
 
 Then build with:
+
 ```bash
 cd build/scripts
 PROFILE=production ./build-all.sh

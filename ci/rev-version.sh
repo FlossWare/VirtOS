@@ -16,13 +16,13 @@ MAJOR="$(echo "${CURRENT_VERSION}" | cut -d. -f1)"
 MINOR="$(echo "${CURRENT_VERSION}" | cut -d. -f2)"
 
 # Increment the minor version
-NEXT_MINOR="$(( ${MINOR} + 1 ))"
+NEXT_MINOR="$((${MINOR} + 1))"
 NEXT_VERSION="${MAJOR}.${NEXT_MINOR}"
 
 echo "Reving version from ${CURRENT_VERSION} to ${NEXT_VERSION}..."
 
 # Update the VERSION file
-echo "${NEXT_VERSION}" > VERSION
+echo "${NEXT_VERSION}" >VERSION
 
 # Update package info files
 for info_file in packages/*/virtos-*.tcz.info; do

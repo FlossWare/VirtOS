@@ -27,6 +27,7 @@ ls -lh packages/output/
 ```
 
 **Expected output:**
+
 ```
 virtos-tools.tcz          332K
 virtos-tools.tcz.md5.txt   51B
@@ -66,6 +67,7 @@ make test
 ### Example 4: Build with Different Profiles
 
 **Minimal Profile** (smallest, ~100MB target):
+
 ```bash
 # Edit build/build.conf
 PROFILE="minimal"
@@ -75,6 +77,7 @@ make build
 ```
 
 **Full Profile** (everything, ~400MB target):
+
 ```bash
 # Edit build/build.conf
 PROFILE="full"
@@ -84,6 +87,7 @@ make build
 ```
 
 **Custom Profile:**
+
 ```bash
 # Edit build/build.conf
 PROFILE="custom"
@@ -99,6 +103,7 @@ make build
 ### Example 5: Build for Specific Use Cases
 
 **Container-focused build:**
+
 ```bash
 # Edit build/build.conf
 PROFILE="containers"
@@ -108,6 +113,7 @@ make build
 ```
 
 **Kubernetes orchestration:**
+
 ```bash
 # Edit build/build.conf
 PROFILE="kubernetes"
@@ -117,6 +123,7 @@ make build
 ```
 
 **Storage server:**
+
 ```bash
 # Edit build/build.conf
 PROFILE="storage"
@@ -145,6 +152,7 @@ ls -la squashfs-root/
 ### Example 7: Install Package in Tiny Core
 
 **On a Tiny Core system:**
+
 ```bash
 # Copy package to Tiny Core
 scp packages/output/virtos-tools.tcz tc@tinycore:/tmp/
@@ -532,12 +540,14 @@ ls -l config/custom-scripts/virtos-* | grep -v "rwxr-xr-x" && echo "Still have i
 ## Tips and Tricks
 
 ### Tip 1: Fast Iteration
+
 ```bash
 # Use quick-test during development
 watch -n 2 'make test'
 ```
 
 ### Tip 2: Check Before Commit
+
 ```bash
 # Add to git alias
 git config alias.check '!make check && make test'
@@ -547,6 +557,7 @@ git check
 ```
 
 ### Tip 3: Package Only Changed Scripts
+
 ```bash
 # Incremental rebuild (packages/virtos-tools/build.sh already handles this)
 cd packages/virtos-tools

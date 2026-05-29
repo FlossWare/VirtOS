@@ -69,6 +69,7 @@ make test
 ### Make Your First Contribution
 
 **1. Find something to work on:**
+
 ```bash
 # See what needs help
 cat CONTRIBUTING.md | grep "NEEDED"
@@ -77,11 +78,13 @@ cat CONTRIBUTING.md | grep "NEEDED"
 ```
 
 **2. Create a feature branch:**
+
 ```bash
 git checkout -b feature/my-awesome-feature
 ```
 
 **3. Make changes and test:**
+
 ```bash
 # Edit files
 vim config/custom-scripts/virtos-mynewscript
@@ -94,6 +97,7 @@ make test
 ```
 
 **4. Commit and push:**
+
 ```bash
 git add .
 git commit -m "feat: Add my awesome feature"
@@ -190,20 +194,23 @@ See [BUILD.md](BUILD.md) for detailed status.
 
 ## Development Workflow
 
-### Typical contribution flow:
+### Typical contribution flow
 
 1. **Check existing work**
+
    ```bash
    git pull origin main
    make test  # Ensure everything works
    ```
 
 2. **Create branch**
+
    ```bash
    git checkout -b feature/your-feature
    ```
 
 3. **Develop**
+
    ```bash
    # Edit files
    make check      # Check syntax
@@ -211,6 +218,7 @@ See [BUILD.md](BUILD.md) for detailed status.
    ```
 
 4. **Commit**
+
    ```bash
    git add .
    git commit -m "type: description"
@@ -218,6 +226,7 @@ See [BUILD.md](BUILD.md) for detailed status.
    ```
 
 5. **Push and PR**
+
    ```bash
    git push origin feature/your-feature
    # Open PR on GitHub
@@ -234,6 +243,7 @@ See [BUILD.md](BUILD.md) for detailed status.
 ```
 
 **Examples:**
+
 - `feat: Add virtos-newfeature script`
 - `fix: Correct syntax error in virtos-backup`
 - `docs: Update BUILD.md with new instructions`
@@ -241,7 +251,7 @@ See [BUILD.md](BUILD.md) for detailed status.
 
 ## Testing Your Changes
 
-### Before committing:
+### Before committing
 
 ```bash
 # 1. Syntax check
@@ -257,7 +267,7 @@ make packages
 make validate
 ```
 
-### The git pre-commit hook (if you ran `make dev-setup`) automatically runs `make check`.
+### The git pre-commit hook (if you ran `make dev-setup`) automatically runs `make check`
 
 ## Getting Help
 
@@ -278,9 +288,9 @@ make help          # Show all make targets
 
 ### Community
 
-- **Issues**: https://github.com/FlossWare/VirtOS/issues
-- **Discussions**: https://github.com/FlossWare/VirtOS/discussions
-- **PRs**: https://github.com/FlossWare/VirtOS/pulls
+- **Issues**: <https://github.com/FlossWare/VirtOS/issues>
+- **Discussions**: <https://github.com/FlossWare/VirtOS/discussions>
+- **PRs**: <https://github.com/FlossWare/VirtOS/pulls>
 
 ## FAQs
 
@@ -299,6 +309,7 @@ A: No! Most contributions (scripts, docs, configs) don't require ISO building.
 ### Q: What if I don't have mksquashfs?
 
 A: Install with:
+
 ```bash
 sudo dnf install squashfs-tools  # Fedora
 sudo apt install squashfs-tools  # Ubuntu
@@ -319,18 +330,21 @@ A: Check CONTRIBUTING.md "Areas Needing Help" section or GitHub issues.
 
 ## Next Steps
 
-### For Users:
+### For Users
+
 1. ✅ Build a package (`make packages`)
 2. 📖 Read [BUILD.md](BUILD.md) for detailed build options
 3. 🧪 Read [TESTING.md](TESTING.md) for testing procedures
 
-### For Contributors:
+### For Contributors
+
 1. ✅ Set up development environment (`make dev-setup`)
 2. 📖 Read [CONTRIBUTING.md](CONTRIBUTING.md)
 3. 🎯 Pick an issue or feature to work on
 4. 🔨 Make your first PR!
 
-### For Advanced Users:
+### For Advanced Users
+
 1. 🚀 Try building the full ISO
 2. 🔧 Customize a profile in `build/build.conf`
 3. 📦 Create additional TCZ packages
@@ -342,7 +356,7 @@ A: Check CONTRIBUTING.md "Areas Needing Help" section or GitHub issues.
 - **Build Guide**: [BUILD.md](BUILD.md)
 - **Testing Guide**: [TESTING.md](TESTING.md)
 - **Contribution Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Tiny Core Linux**: https://tinycorelinux.net
+- **Tiny Core Linux**: <https://tinycorelinux.net>
 
 ## Support the Project
 

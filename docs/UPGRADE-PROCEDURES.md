@@ -167,7 +167,7 @@ for vm in $(virsh list --name --inactive); do
     echo "Starting $vm..."
     virsh start $vm
     sleep 10  # Wait before starting next
-    
+
     # Verify VM started
     virsh list | grep $vm || echo "FAILED: $vm"
 done
@@ -582,7 +582,7 @@ Rollback Plan: Restore from backup (30 min)
 ## Getting Help
 
 - **Upgrade issues**: File GitHub issue with "upgrade" label
-- **Security patches**: security@flossware.org
+- **Security patches**: <security@flossware.org>
 - **Emergency support**: Check [SUPPORT.md](SUPPORT.md)
 
 ---

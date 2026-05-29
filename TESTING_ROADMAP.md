@@ -28,6 +28,7 @@ VirtOS has comprehensive test infrastructure (581 unit tests + 52 integration te
 | **Test Documentation** | ✅ Complete | RUNTIME_TESTING_PLAN.md, ISO_TESTING_STATUS.md |
 
 **What Works**:
+
 - Structure validation (bash -n, argument parsing)
 - Help text validation
 - Version flag validation
@@ -35,6 +36,7 @@ VirtOS has comprehensive test infrastructure (581 unit tests + 52 integration te
 - Code quality checks
 
 **What's Missing**:
+
 - Functional validation (does it actually create a VM?)
 - End-to-end workflows (create → start → snapshot → backup → delete)
 - Integration validation (platform-java + libvirt + VirtOS)
@@ -44,18 +46,21 @@ VirtOS has comprehensive test infrastructure (581 unit tests + 52 integration te
 All three issues require **the same prerequisite**: A running VirtOS system.
 
 #### Issue #103 - False Test Confidence
+
 - **Problem**: 581 tests pass but validate structure not function
 - **Blocker**: No VirtOS runtime to test against
 - **Impact**: False sense of confidence in code quality
 - **Priority**: P0 - Critical
 
 #### Issue #85 - Integration Tests Never Run
+
 - **Problem**: 52 integration tests always skipped
 - **Blocker**: Tests require libvirt, QEMU, platform-java running in VirtOS
 - **Impact**: No end-to-end workflow validation
 - **Priority**: P0 - Critical
 
 #### Issue #86 - ISO Never Booted
+
 - **Problem**: 0/47 ISO validation tests completed
 - **Blocker**: ISO has never been booted on real hardware or VM
 - **Impact**: Unknown if ISO actually works
@@ -71,17 +76,21 @@ All three issues require **the same prerequisite**: A running VirtOS system.
 **Duration**: 2-3 hours  
 **Blockers**: None (can start immediately)
 
-#### Steps:
+#### Steps
+
 1. **Build ISO**
+
    ```bash
    cd build/scripts
    ./build-all.sh
    ```
+
    - **Expected Output**: `build/output/VirtOS-0.1-alpha-*.iso`
    - **Success Criteria**: ISO file created, checksums match
    - **Addresses**: Issue #86 (Phase 1: Build Validation)
 
 2. **Boot in QEMU**
+
    ```bash
    qemu-system-x86_64 \
      -enable-kvm \
@@ -90,16 +99,19 @@ All three issues require **the same prerequisite**: A running VirtOS system.
      -boot d \
      -display gtk
    ```
+
    - **Expected Output**: VirtOS boots to desktop
    - **Success Criteria**: No kernel panics, desktop loads
    - **Addresses**: Issue #86 (Phase 2: Boot Testing)
 
 3. **Install Packages**
+
    ```bash
    # In VirtOS environment
    tce-load -i virtos-tools.tcz
    tce-load -i virtos-platform-java.tcz
    ```
+
    - **Expected Output**: Scripts available in `/usr/local/bin/`
    - **Success Criteria**: `virtos-setup --version` works
    - **Addresses**: Issue #86 (Phase 4: Package Management)
@@ -114,37 +126,43 @@ All three issues require **the same prerequisite**: A running VirtOS system.
 **Duration**: 2-3 hours  
 **Prerequisite**: Phase 1 complete
 
-#### Steps:
+#### Steps
+
 1. **Setup VirtOS**
+
    ```bash
    sudo virtos-setup --auto
    ```
+
    - **Validates**: virtos-setup script
    - **Expected**: libvirt service starts, default network/storage created
    - **Addresses**: Issue #103 (core functionality)
 
 2. **VM Lifecycle Test**
+
    ```bash
    # Create VM
    virtos-create-vm --name test-vm --cpu 2 --memory 1024 --disk 10G
-   
+
    # Start VM
    virsh start test-vm
-   
+
    # Verify running
    virsh list | grep test-vm
-   
+
    # Stop VM
    virsh destroy test-vm
-   
+
    # Delete VM
    virsh undefine test-vm --remove-all-storage
    ```
+
    - **Validates**: virtos-create-vm, libvirt integration
    - **Expected**: VM created, started, stopped, deleted successfully
    - **Addresses**: Issue #103 (VM functionality)
 
 3. **Run Integration Tests**
+
    ```bash
    cd tests/integration
    bats 01-vm-lifecycle.bats
@@ -152,6 +170,7 @@ All three issues require **the same prerequisite**: A running VirtOS system.
    bats 03-networking.bats
    bats 04-storage.bats
    ```
+
    - **Validates**: End-to-end workflows
    - **Expected**: At least 40/52 tests passing (77% threshold)
    - **Addresses**: Issue #85 (integration test execution)
@@ -159,6 +178,7 @@ All three issues require **the same prerequisite**: A running VirtOS system.
 **Deliverable**: Proof that core VirtOS functionality works
 
 **Success Criteria**:
+
 - [ ] virtos-setup completes without errors
 - [ ] Can create, start, stop, delete a VM
 - [ ] At least 40/52 integration tests pass
@@ -172,7 +192,8 @@ All three issues require **the same prerequisite**: A running VirtOS system.
 **Duration**: 4-6 hours  
 **Prerequisite**: Phase 2 complete
 
-#### Steps:
+#### Steps
+
 1. **Complete ISO Testing Checklist**
    - Run all 47 tests in [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md)
    - Document results for each test
@@ -180,10 +201,11 @@ All three issues require **the same prerequisite**: A running VirtOS system.
    - **Addresses**: Issue #86 (complete resolution)
 
 2. **Create Functional Tests**
+
    ```bash
    # Add functional tests to unit test suite
    # Example: tests/functional/virtos-create-vm.bats
-   
+
    @test "virtos-create-vm actually creates a VM" {
      virtos-create-vm --name func-test --cpu 1 --memory 512 --disk 5G
      run virsh list --all
@@ -191,11 +213,13 @@ All three issues require **the same prerequisite**: A running VirtOS system.
      virsh undefine func-test --remove-all-storage
    }
    ```
+
    - **Validates**: Actual functionality, not just structure
    - **Expected**: 20+ functional tests created
    - **Addresses**: Issue #103 (functional test coverage)
 
 3. **Enable CI Testing**
+
    ```yaml
    # .github/workflows/functional-tests.yml
    jobs:
@@ -204,13 +228,14 @@ All three issues require **the same prerequisite**: A running VirtOS system.
        steps:
          - name: Build VirtOS ISO
            run: cd build/scripts && ./build-all.sh
-         
+
          - name: Boot VirtOS in QEMU
            run: # Boot and wait for ready state
-         
+
          - name: Run functional tests
            run: cd tests/functional && bats *.bats
    ```
+
    - **Validates**: CI can run functional tests
    - **Expected**: CI pipeline runs functional tests on every PR
    - **Addresses**: Issue #85 (CI integration)
@@ -218,6 +243,7 @@ All three issues require **the same prerequisite**: A running VirtOS system.
 **Deliverable**: Fully validated VirtOS with automated testing
 
 **Success Criteria**:
+
 - [ ] 40/47 ISO tests passing (85% threshold)
 - [ ] 20+ functional tests created and passing
 - [ ] 48/52 integration tests passing (92% threshold)
@@ -272,21 +298,25 @@ All three issues require **the same prerequisite**: A running VirtOS system.
 ### Issue #103 - False Test Confidence
 
 **Current State**:
+
 - 581 structural tests passing (100% coverage)
 - 0 functional tests
 
 **After Phase 2**:
+
 - 581 structural tests passing
 - 6+ functional tests passing (MVP: VM create/start/stop)
 - Confidence level: **Low → Medium**
 
 **After Phase 3**:
+
 - 581 structural tests passing
 - 20+ functional tests passing
 - 48/52 integration tests passing
 - Confidence level: **Medium → High**
 
 **Resolution Criteria**:
+
 - [ ] At least 20 functional tests created
 - [ ] At least 40/52 integration tests passing
 - [ ] One full workflow test (create → start → snapshot → backup → stop → delete)
@@ -299,21 +329,25 @@ All three issues require **the same prerequisite**: A running VirtOS system.
 ### Issue #85 - Integration Tests Never Run
 
 **Current State**:
+
 - 52 integration tests exist
 - All 52 tests skipped (require VirtOS runtime)
 - Status: ⏳ Waiting for runtime
 
 **After Phase 2**:
+
 - 52 integration tests can run
 - 30-40/52 tests passing (expected, some may fail)
 - Status: 🔧 Running but needs fixes
 
 **After Phase 3**:
+
 - Bugs from Phase 2 fixed
 - 48-50/52 tests passing (92-96%)
 - Status: ✅ Passing
 
 **Resolution Criteria**:
+
 - [ ] All 52 tests run (not skipped)
 - [ ] At least 40/52 tests passing (77% threshold)
 - [ ] Failures documented with bug reports
@@ -326,23 +360,28 @@ All three issues require **the same prerequisite**: A running VirtOS system.
 ### Issue #86 - ISO Boot Testing
 
 **Current State**:
+
 - 0/47 ISO tests completed
 - ISO never booted
 - Status: ⏳ Not started
 
 **After Phase 1**:
+
 - 13/47 tests completed (Build + Boot + Package = 20 tests)
 - Status: 🔧 In progress
 
 **After Phase 2**:
+
 - 33/47 tests completed (Core functionality = additional 12 tests)
 - Status: 🔧 In progress
 
 **After Phase 3**:
+
 - 40-45/47 tests completed (85-96%)
 - Status: ✅ Complete (meets 60% threshold)
 
 **Resolution Criteria**:
+
 - [ ] At least 28/47 tests passing (60% threshold for "tested" label)
 - [ ] All Phase 1-3 tests passing (core functionality validated)
 - [ ] Boot successful on at least 1 hardware platform (or QEMU)
@@ -387,18 +426,21 @@ qemu-system-x86_64 \
 ## Next Steps
 
 ### Immediate (This Week)
+
 1. ✅ **Create this roadmap document** (you are here)
 2. ⏳ **Run Phase 1** - Build and boot ISO
 3. ⏳ **Update ISO_TESTING_STATUS.md** with Phase 1 results
 4. ⏳ **File bugs** for any Phase 1 failures
 
 ### Short-term (Next 2 Weeks)
+
 5. ⏳ **Run Phase 2** - Core functionality testing
 6. ⏳ **Create functional test suite** (20+ tests)
 7. ⏳ **Fix critical bugs** found in Phase 2
 8. ⏳ **Update issue #103, #85** with progress
 
 ### Medium-term (Next 4 Weeks)
+
 9. ⏳ **Run Phase 3** - Comprehensive validation
 10. ⏳ **Enable CI functional testing**
 11. ⏳ **Complete all 47 ISO tests**
@@ -409,6 +451,7 @@ qemu-system-x86_64 \
 ## Success Metrics
 
 ### MVP Success (Phase 2 Complete)
+
 - [ ] ISO builds and boots ✅
 - [ ] Can create, start, stop, delete VM ✅
 - [ ] At least 6 functional tests passing ✅
@@ -417,6 +460,7 @@ qemu-system-x86_64 \
 **Impact**: Issues #103, #85, #86 move from "blocked" to "in progress"
 
 ### Production Success (Phase 3 Complete)
+
 - [ ] 40/47 ISO tests passing (85%)
 - [ ] 20+ functional tests passing
 - [ ] 48/52 integration tests passing (92%)
@@ -429,33 +473,41 @@ qemu-system-x86_64 \
 ## Risks and Mitigation
 
 ### Risk 1: ISO Doesn't Boot
+
 **Likelihood**: Medium  
 **Impact**: High (blocks everything)  
-**Mitigation**: 
+**Mitigation**:
+
 - Build system tested, syntax valid, packages verified
 - If boot fails, debug with `qemu -serial stdio` for kernel logs
 - Fallback: Boot Tiny Core Linux base, manually install packages
 
 ### Risk 2: Functional Tests Reveal Critical Bugs
+
 **Likelihood**: High  
 **Impact**: Medium (expected, good to find early)  
 **Mitigation**:
+
 - Bugs found in testing are successes, not failures
 - Prioritize bug fixes by severity
 - Document workarounds for medium/low priority bugs
 
 ### Risk 3: Integration Tests Fail
+
 **Likelihood**: High  
 **Impact**: Medium  
 **Mitigation**:
+
 - Tests written based on expected behavior, may need adjustment
 - 77% passing threshold allows for some failures
 - Failures guide improvements, not blockers
 
 ### Risk 4: Resource Constraints
+
 **Likelihood**: Medium  
 **Impact**: Medium  
 **Mitigation**:
+
 - Phase 1 requires minimal resources (2GB RAM, 2 cores)
 - Cloud VMs available if local hardware insufficient
 - Can parallelize testing across multiple environments
@@ -465,11 +517,13 @@ qemu-system-x86_64 \
 ## Related Issues
 
 **Critical Blockers** (require VirtOS runtime):
+
 - [Issue #103](https://github.com/FlossWare/VirtOS/issues/103) - False test confidence
 - [Issue #85](https://github.com/FlossWare/VirtOS/issues/85) - Integration tests skipped
 - [Issue #86](https://github.com/FlossWare/VirtOS/issues/86) - ISO never booted
 
 **Dependent Issues** (blocked by above):
+
 - [Issue #134](https://github.com/FlossWare/VirtOS/issues/134) - Integration tests Phase 1
 - [Issue #135](https://github.com/FlossWare/VirtOS/issues/135) - Integration tests in CI
 - [Issue #90](https://github.com/FlossWare/VirtOS/issues/90) - Security audit

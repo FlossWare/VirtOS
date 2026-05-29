@@ -43,17 +43,20 @@ Complete guide for diagnosing and fixing common VirtOS issues.
 ### ISO Won't Boot - Black Screen
 
 **Symptoms**:
+
 - Black screen after USB/CD boot
 - No boot menu appears
 - System hangs at BIOS/UEFI
 
 **Causes**:
+
 - BIOS/UEFI boot mode mismatch
 - Corrupted ISO image
 - Incorrect USB writing method
 - Secure Boot enabled
 
 **Diagnosis**:
+
 ```bash
 # Verify ISO checksum on build machine
 md5sum build/output/VirtOS-*.iso
@@ -77,16 +80,18 @@ file build/output/VirtOS-*.iso
    - Change in BIOS settings
 
 3. **Re-write USB with different tool**:
+
    ```bash
    # Linux - Use dd (most reliable)
    sudo dd if=VirtOS-*.iso of=/dev/sdX bs=4M status=progress
    sudo sync
-   
+
    # Or use Ventoy (works for both BIOS and UEFI)
    # https://www.ventoy.net/
    ```
 
 4. **Verify ISO integrity**:
+
    ```bash
    # Rebuild if checksum fails
    cd build/scripts
@@ -96,6 +101,7 @@ file build/output/VirtOS-*.iso
 ### ISO Boots but Kernel Panic
 
 **Symptoms**:
+
 ```
 Kernel panic - not syncing: VFS: Unable to mount root fs
 ```
@@ -103,6 +109,7 @@ Kernel panic - not syncing: VFS: Unable to mount root fs
 **Cause**: Missing initrd or kernel modules
 
 **Solution**:
+
 ```bash
 # Rebuild with correct kernel modules
 cd build
@@ -113,6 +120,7 @@ cd build
 ### ISO Boots to Console but No GUI/TUI
 
 **Symptoms**:
+
 - Boots to text console
 - `virtos-tui` command not found
 - Network works but no scripts
@@ -120,6 +128,7 @@ cd build
 **Cause**: Package not loaded
 
 **Solution**:
+
 ```bash
 # Check if packages loaded
 tce-load -l | grep virtos
@@ -138,15 +147,19 @@ echo virtos-tools.tcz >> /mnt/sda1/tce/onboot.lst
 ### Build Failed - Missing Dependencies
 
 **Symptoms**:
+
 ```
 genisoimage: command not found
 ```
+
 or
+
 ```
 mksquashfs: not found
 ```
 
 **Solution**:
+
 ```bash
 # Fedora/RHEL
 make install-deps-fedora
@@ -165,15 +178,19 @@ sudo apt install genisoimage syslinux-utils squashfs-tools  # Ubuntu
 ### Build Failed - Network Download Error
 
 **Symptoms**:
+
 ```
 wget: unable to resolve host address 'tinycorelinux.net'
 ```
+
 or
+
 ```
 Connection timed out
 ```
 
 **Diagnosis**:
+
 ```bash
 # Test network
 ping -c 3 tinycorelinux.net
@@ -186,18 +203,21 @@ nslookup tinycorelinux.net
 **Solutions**:
 
 1. **Check internet connection**:
+
    ```bash
    # Test external connectivity
    curl -I https://google.com
    ```
 
 2. **Try different DNS**:
+
    ```bash
    # Temporarily use Google DNS
    echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
    ```
 
 3. **Use proxy if behind firewall**:
+
    ```bash
    export http_proxy=http://proxy.example.com:8080
    export https_proxy=http://proxy.example.com:8080
@@ -206,17 +226,20 @@ nslookup tinycorelinux.net
 ### Build Failed - Disk Space
 
 **Symptoms**:
+
 ```
 No space left on device
 ```
 
 **Diagnosis**:
+
 ```bash
 df -h .
 du -sh build/
 ```
 
 **Solution**:
+
 ```bash
 # Clean old builds
 make clean
@@ -232,10 +255,12 @@ df -h /
 ### Build Succeeds but ISO is Too Small
 
 **Symptoms**:
+
 - ISO only 50-100MB (should be 200MB+)
 - Missing expected packages
 
 **Diagnosis**:
+
 ```bash
 # Check ISO contents
 unsquashfs -ll build/output/VirtOS-*.iso
@@ -245,6 +270,7 @@ grep PROFILE= build/build.conf
 ```
 
 **Solution**:
+
 ```bash
 # Edit build profile
 vim build/build.conf
@@ -262,11 +288,13 @@ cd build/scripts
 ### virtos-* commands not found
 
 **Symptom**:
+
 ```bash
 bash: virtos-setup: command not found
 ```
 
 **Solution**:
+
 ```bash
 # Check if virtos-tools is installed
 tce-load -i virtos-tools
@@ -283,11 +311,13 @@ tce-load -i virtos-tools
 ### Permission denied errors
 
 **Symptom**:
+
 ```
 Error: Permission denied
 ```
 
 **Solution**:
+
 ```bash
 # Most virtos-* commands need root
 sudo virtos-setup
@@ -305,12 +335,14 @@ sudo usermod -aG libvirt $USER
 ### libvirt daemon not running
 
 **Symptom**:
+
 ```
 Error: Failed to connect to libvirt
 error: failed to connect to the hypervisor
 ```
 
 **Diagnosis**:
+
 ```bash
 # Check if libvirtd is running
 ps aux | grep libvirtd
@@ -320,6 +352,7 @@ systemctl status libvirtd
 ```
 
 **Solution**:
+
 ```bash
 # Start libvirtd
 sudo systemctl start libvirtd
@@ -334,12 +367,14 @@ sudo /usr/local/etc/init.d/libvirtd start
 ### KVM module not loaded
 
 **Symptom**:
+
 ```
 Error: KVM not available
 Could not access KVM kernel module
 ```
 
 **Diagnosis**:
+
 ```bash
 # Check if KVM module is loaded
 lsmod | grep kvm
@@ -350,6 +385,7 @@ egrep -c '(vmx|svm)' /proc/cpuinfo
 ```
 
 **Solution**:
+
 ```bash
 # Load KVM module (Intel)
 sudo modprobe kvm_intel
@@ -368,11 +404,13 @@ echo "kvm_intel" | sudo tee -a /etc/modules
 ### Cannot access /dev/kvm
 
 **Symptom**:
+
 ```
 Error: Could not access KVM kernel module: Permission denied
 ```
 
 **Solution**:
+
 ```bash
 # Check permissions
 ls -l /dev/kvm
@@ -386,6 +424,7 @@ sudo usermod -aG kvm $USER
 ```
 
 **Verify**:
+
 ```bash
 groups
 # Should include: kvm
@@ -404,17 +443,20 @@ kvm-ok
 ### virtos-create-vm fails
 
 **Symptom**:
+
 ```
 Error: Failed to create VM
 ```
 
 **Common Causes**:
+
 1. Invalid VM name
 2. Insufficient resources
 3. Disk path doesn't exist
 4. No cluster members found
 
 **Diagnosis**:
+
 ```bash
 # Check VM name is valid (alphanumeric, dash, underscore only)
 echo "test-vm" | grep -E '^[a-zA-Z0-9_-]{1,64}$'
@@ -430,6 +472,7 @@ cat /etc/virtos/cluster.conf
 ```
 
 **Solution**:
+
 ```bash
 # Use valid VM name
 virtos-create-vm --name web-server-01 --cpu 2 --ram 4096 --disk 20G
@@ -447,11 +490,13 @@ virtos-create-vm --name test --cpu 1 --ram 1024 --disk 10G --require localhost
 ### VM won't start
 
 **Symptom**:
+
 ```
 Error: Failed to start domain 'test-vm'
 ```
 
 **Diagnosis**:
+
 ```bash
 # Check VM exists
 virsh list --all
@@ -470,6 +515,7 @@ sudo journalctl -u libvirtd -n 50
 **Common Issues & Solutions**:
 
 **Disk image missing**:
+
 ```bash
 # Find VM XML
 virsh dumpxml test-vm | grep "source file"
@@ -482,6 +528,7 @@ qemu-img create -f qcow2 /var/lib/virtos/vms/test-vm/test-vm.qcow2 20G
 ```
 
 **Network bridge missing**:
+
 ```bash
 # Check bridge exists
 ip link show br0
@@ -491,6 +538,7 @@ virtos-network create-bridge --name br0 --interface eth0
 ```
 
 **Insufficient memory**:
+
 ```bash
 # Check free memory
 free -m
@@ -507,11 +555,13 @@ virsh shutdown other-vm
 ### VM migration fails
 
 **Symptom**:
+
 ```
 Error: Migration failed
 ```
 
 **Diagnosis**:
+
 ```bash
 # Check destination host is reachable
 ping dest-host.local
@@ -527,6 +577,7 @@ ssh root@dest-host.local "ls -l /var/lib/virtos/vms/"
 ```
 
 **Solution**:
+
 ```bash
 # Ensure SSH keys are set up
 ssh-copy-id root@dest-host.local
@@ -545,11 +596,13 @@ virtos-migrate --name test-vm --destination dest-host.local --verbose
 ### Bridge not found
 
 **Symptom**:
+
 ```
 Error: Network bridge 'br0' not found
 ```
 
 **Diagnosis**:
+
 ```bash
 # List bridges
 ip link show type bridge
@@ -560,6 +613,7 @@ virsh net-list --all
 ```
 
 **Solution**:
+
 ```bash
 # Create bridge using virtos-network
 sudo virtos-network create-bridge --name br0 --interface eth0
@@ -576,6 +630,7 @@ sudo ip link set eth0 master br0
 VM has no network connectivity
 
 **Diagnosis**:
+
 ```bash
 # From VM console (virsh console vm-name):
 ip addr
@@ -590,6 +645,7 @@ ip addr show br0
 ```
 
 **Solution**:
+
 ```bash
 # Ensure bridge has IP forwarding
 sudo sysctl -w net.ipv4.ip_forward=1
@@ -612,11 +668,13 @@ sudo iptables -A FORWARD -o br0 -j ACCEPT
 ### Disk image creation fails
 
 **Symptom**:
+
 ```
 Error: Failed to create disk image
 ```
 
 **Diagnosis**:
+
 ```bash
 # Check available disk space
 df -h /var/lib/virtos/vms
@@ -626,6 +684,7 @@ ls -ld /var/lib/virtos/vms
 ```
 
 **Solution**:
+
 ```bash
 # Create directory
 sudo mkdir -p /var/lib/virtos/vms
@@ -641,11 +700,13 @@ sudo qemu-img create -f qcow2 /var/lib/virtos/vms/test.qcow2 20G
 ### Storage pool errors
 
 **Symptom**:
+
 ```
 Error: Storage pool 'default' not active
 ```
 
 **Diagnosis**:
+
 ```bash
 # List storage pools
 virsh pool-list --all
@@ -655,6 +716,7 @@ virsh pool-info default
 ```
 
 **Solution**:
+
 ```bash
 # Start pool
 virsh pool-start default
@@ -673,11 +735,13 @@ virtos-storage create-pool --name default --path /var/lib/virtos/vms --type dir
 ### No cluster members found
 
 **Symptom**:
+
 ```
 No cluster members found
 ```
 
 **Diagnosis**:
+
 ```bash
 # Check cluster config
 cat /etc/virtos/cluster.conf
@@ -691,6 +755,7 @@ ping other-host.local
 ```
 
 **Solution**:
+
 ```bash
 # Start Avahi
 sudo systemctl start avahi-daemon
@@ -716,11 +781,13 @@ sudo vi /etc/virtos/cluster-members.conf
 ### Cannot SSH to cluster members
 
 **Symptom**:
+
 ```
 Permission denied (publickey)
 ```
 
 **Solution**:
+
 ```bash
 # Generate SSH key if not exists
 ssh-keygen -t rsa -b 4096
@@ -740,11 +807,13 @@ ssh root@virtos-2.local "echo test"
 ### TCZ package won't load
 
 **Symptom**:
+
 ```
 Error loading extension virtos-tools.tcz
 ```
 
 **Diagnosis**:
+
 ```bash
 # Check package exists
 ls -lh /mnt/sda1/tce/optional/virtos-tools.tcz
@@ -758,6 +827,7 @@ md5sum -c virtos-tools.tcz.md5.txt
 ```
 
 **Solution**:
+
 ```bash
 # Re-download package
 cd /mnt/sda1/tce/optional
@@ -778,6 +848,7 @@ dmesg | tail
 ## Diagnostic Commands
 
 ### System Information
+
 ```bash
 # VirtOS version
 cat /usr/local/share/virtos/VERSION
@@ -798,6 +869,7 @@ df -h
 ```
 
 ### VM Information
+
 ```bash
 # List all VMs
 virsh list --all
@@ -816,6 +888,7 @@ sudo journalctl -u libvirtd | grep vm-name
 ```
 
 ### Network Information
+
 ```bash
 # Bridges
 brctl show
@@ -830,6 +903,7 @@ sudo iptables -L -n -v
 ```
 
 ### Storage Information
+
 ```bash
 # Storage pools
 virsh pool-list --all
@@ -850,11 +924,13 @@ du -sh /var/lib/virtos/vms/*
 ### VM is Slow / Poor Performance
 
 **Symptoms**:
+
 - VM responds slowly
 - High CPU usage on host
 - Disk I/O very slow
 
 **Diagnosis**:
+
 ```bash
 # Check VM resource usage
 virsh domstats vm-name
@@ -871,45 +947,49 @@ virsh dumpxml vm-name | grep kvm
 **Solutions**:
 
 1. **Enable KVM acceleration**:
+
    ```bash
    # Verify KVM available
    lsmod | grep kvm
-   
+
    # Check CPU virtualization
    grep -E 'vmx|svm' /proc/cpuinfo
-   
+
    # If missing, enable in BIOS
    # Look for "Intel VT-x" or "AMD-V"
    ```
 
 2. **Allocate more resources**:
+
    ```bash
    # Increase CPU
    virsh setvcpus vm-name 4 --config --maximum
    virsh setvcpus vm-name 4 --config
-   
+
    # Increase RAM  
    virsh setmem vm-name 8G --config
    ```
 
 3. **Use virtio drivers**:
+
    ```bash
    # Edit VM XML
    virsh edit vm-name
-   
+
    # Change disk to:
    <driver name='qemu' type='qcow2' cache='none' io='native'/>
    <target dev='vda' bus='virtio'/>
-   
+
    # Change network to:
    <model type='virtio'/>
    ```
 
 4. **Optimize disk**:
+
    ```bash
    # Convert to qcow2 with compression
    qemu-img convert -O qcow2 -c old.img new.qcow2
-   
+
    # Use SSD for VM storage
    # Move /var/lib/virtos/vms to SSD mount
    ```
@@ -917,11 +997,13 @@ virsh dumpxml vm-name | grep kvm
 ### High CPU Usage on Host
 
 **Symptoms**:
+
 - Host CPU at 100%
 - Multiple VMs running slowly
 - System unresponsive
 
 **Diagnosis**:
+
 ```bash
 # Find CPU hogs
 top -o %CPU
@@ -936,6 +1018,7 @@ virsh nodeinfo
 ```
 
 **Solution**:
+
 ```bash
 # Don't oversubscribe CPUs
 # Rule: Total VM vCPUs < Host CPUs * 2
@@ -951,10 +1034,12 @@ virsh schedinfo vm-name --set vcpu_quota=50000
 ### Network Performance is Slow
 
 **Symptoms**:
+
 - VM network throughput < 100 Mbps
 - High latency between VMs
 
 **Diagnosis**:
+
 ```bash
 # Test network speed
 # Inside VM
@@ -965,6 +1050,7 @@ virsh dumpxml vm-name | grep "model type"
 ```
 
 **Solution**:
+
 ```bash
 # Use virtio network
 virsh edit vm-name
@@ -981,10 +1067,12 @@ virsh edit vm-name
 ### Disk I/O is Slow
 
 **Symptoms**:
+
 - VM disk operations very slow
 - High iowait on host
 
 **Diagnosis**:
+
 ```bash
 # Check I/O
 iostat -x 1 5
@@ -994,6 +1082,7 @@ virsh dumpxml vm-name | grep cache
 ```
 
 **Solution**:
+
 ```bash
 # Use optimal cache mode
 virsh edit vm-name
@@ -1021,7 +1110,7 @@ If issues persist:
    - `sudo journalctl -u libvirtd`
    - `dmesg | tail`
 
-2. **GitHub Issues**: https://github.com/FlossWare/VirtOS/issues
+2. **GitHub Issues**: <https://github.com/FlossWare/VirtOS/issues>
 
 3. **Documentation**:
    - [README.md](../README.md)

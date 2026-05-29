@@ -42,7 +42,7 @@ jobs:
           MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
           NEXT_MINOR=$((MINOR + 1))
           NEXT_VERSION="${MAJOR}.${NEXT_MINOR}"
-          
+
           echo "$NEXT_VERSION" > VERSION
           echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "Bumped version from $CURRENT_VERSION to $NEXT_VERSION"
@@ -50,7 +50,7 @@ jobs:
       - name: Update package versions
         run: |
           VERSION=${{ steps.new_version.outputs.version }}
-          
+
           # Update all package info files
           for info_file in packages/*/virtos-*.tcz.info; do
             if [ -f "$info_file" ]; then
@@ -63,13 +63,13 @@ jobs:
         run: |
           cd packages
           ./build-all.sh
-          
+
           # Verify packages were built
           if [ ! -d output ] || [ -z "$(ls -A output/*.tcz 2>/dev/null)" ]; then
             echo "❌ No packages built"
             exit 1
           fi
-          
+
           echo "✅ Packages built:"
           ls -lh output/*.tcz
 
@@ -220,18 +220,18 @@ jobs:
           name: VirtOS v${{ steps.new_version.outputs.version }}
           body: |
             ## VirtOS v${{ steps.new_version.outputs.version }}
-            
+
             ### Packages
             - virtos-tools.tcz - Core VirtOS management tools
             - virtos-jplatform.tcz - JPlatform integration
-            
+
             ### Installation
             ```bash
             # On Tiny Core Linux / VirtOS
             tce-load -wi virtos-tools
             tce-load -wi virtos-jplatform
             ```
-            
+
             ### packagecloud.io
             Packages are available at: https://packagecloud.io/flossware/virtos
           files: |

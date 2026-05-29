@@ -30,6 +30,7 @@ pre-commit install --hook-type commit-msg
 ### Usage
 
 #### Automatic (Recommended)
+
 Once installed, hooks run automatically on `git commit`:
 
 ```bash
@@ -39,6 +40,7 @@ git commit -m "fix: improve error handling"
 ```
 
 #### Manual
+
 Run hooks on all files without committing:
 
 ```bash
@@ -53,6 +55,7 @@ pre-commit run --files config/custom-scripts/virtos-create-vm
 ```
 
 #### Bypass (Not Recommended)
+
 Skip hooks in emergencies (use sparingly):
 
 ```bash
@@ -64,34 +67,42 @@ git commit --no-verify -m "emergency fix"
 ### 1. General File Checks
 
 **Large Files**: Prevents files >500KB
+
 - **Why**: Large files slow down repository
 - **Fix**: Use Git LFS or external storage
 
 **Case Conflicts**: Detects case-sensitive filename issues
+
 - **Why**: Prevents Windows/macOS compatibility issues
 - **Fix**: Rename files to be uniquely cased
 
 **Merge Conflicts**: Prevents committing merge conflict markers
+
 - **Why**: Broken code in repository
 - **Fix**: Resolve conflicts properly
 
 **Executables**: Ensures executables have shebangs
+
 - **Why**: Scripts won't run without shebang
 - **Fix**: Add `#!/bin/bash` or `#!/bin/sh`
 
 **JSON/YAML**: Validates syntax
+
 - **Why**: Broken configs cause runtime errors
 - **Fix**: Fix syntax errors reported
 
 **Private Keys**: Detects accidentally committed keys
+
 - **Why**: Security vulnerability
 - **Fix**: Remove keys, rotate credentials
 
 **Trailing Whitespace**: Removes trailing spaces
+
 - **Why**: Cleaner diffs, consistent formatting
 - **Fix**: Automatic
 
 **Line Endings**: Enforces LF line endings
+
 - **Why**: Consistent across platforms
 - **Fix**: Automatic
 
@@ -102,6 +113,7 @@ git commit --no-verify -m "emergency fix"
 **Files**: `*.sh`, `*.bash`, `virtos-*` scripts
 
 **Common Issues**:
+
 - SC2006: Use `$(...)` instead of backticks
 - SC2086: Quote variables to prevent word splitting
 - SC2046: Quote command substitutions
@@ -109,6 +121,7 @@ git commit --no-verify -m "emergency fix"
 - SC2181: Check exit code directly instead of `$?`
 
 **Fix**:
+
 ```bash
 # Bad
 files=`ls *.txt`
@@ -120,6 +133,7 @@ for f in "$files"; do echo "$f"; done
 ```
 
 **Disable false positives**:
+
 ```bash
 # shellcheck disable=SC2034
 UNUSED_VAR="value"  # Used by sourced script
@@ -131,6 +145,7 @@ UNUSED_VAR="value"  # Used by sourced script
 **Style**: 4-space indent, switch case indent, binary ops on new line
 
 **Example**:
+
 ```bash
 # Before
 if [ "$x" = "y" ];then
@@ -144,6 +159,7 @@ fi
 ```
 
 **Configuration** (`.editorconfig`):
+
 - Indent: 4 spaces
 - Case indent: Yes
 - Binary operators: New line before
@@ -155,6 +171,7 @@ fi
 **Checks**: Bash-specific style issues
 
 **Rules**:
+
 - E001: Trailing whitespace
 - E002: Tab indent
 - E003: Indent not multiple of 4
@@ -168,12 +185,14 @@ fi
 **Auto-fix**: Yes
 
 **Common Issues**:
+
 - MD001: Heading levels should increment by one
 - MD013: Line length (disabled)
 - MD033: No inline HTML
 - MD041: First line should be top-level heading
 
 **Configuration**:
+
 ```yaml
 # .markdownlint.yaml (if needed)
 MD013: false  # Line length
@@ -186,6 +205,7 @@ MD033: false  # Allow HTML in docs
 **Max line length**: 120
 
 **Common Issues**:
+
 - Indentation (must be 2 spaces)
 - Trailing spaces
 - Document start markers
@@ -196,6 +216,7 @@ MD033: false  # Allow HTML in docs
 **Baseline**: `.secrets.baseline`
 
 **Detects**:
+
 - AWS keys
 - Private keys
 - GitHub tokens
@@ -205,6 +226,7 @@ MD033: false  # Allow HTML in docs
 
 **False Positives**:
 Update `.secrets.baseline`:
+
 ```bash
 detect-secrets scan --baseline .secrets.baseline
 ```
@@ -215,6 +237,7 @@ detect-secrets scan --baseline .secrets.baseline
 **Format**: `<type>(<scope>): <subject>`
 
 **Types**:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -225,6 +248,7 @@ detect-secrets scan --baseline .secrets.baseline
 - `ci`: CI/CD changes
 
 **Examples**:
+
 ```bash
 # Good
 git commit -m "feat: add input validation to virtos-create-vm"
@@ -243,6 +267,7 @@ git commit -m "WIP"
 
 **Issue**: Hook reports errors
 **Solution**:
+
 1. Read error message carefully
 2. Fix reported issues
 3. Stage fixed files: `git add <file>`
@@ -252,6 +277,7 @@ git commit -m "WIP"
 
 **Issue**: Hooks not triggering on commit
 **Solution**:
+
 ```bash
 # Reinstall hooks
 pre-commit uninstall
@@ -267,6 +293,7 @@ ls -la .git/hooks/
 
 **Issue**: Hooks take too long
 **Solution**:
+
 ```bash
 # Run only fast hooks
 pre-commit run --hook-stage manual
@@ -282,6 +309,7 @@ pre-commit install-hooks
 ### False Positives
 
 **ShellCheck**:
+
 ```bash
 # Disable specific check
 # shellcheck disable=SC2034
@@ -292,6 +320,7 @@ VARIABLE="value"
 ```
 
 **Detect Secrets**:
+
 ```bash
 # Update baseline
 detect-secrets scan --baseline .secrets.baseline
@@ -304,17 +333,20 @@ git commit -m "chore: update secrets baseline"
 ### Emergency Bypass
 
 **Last Resort Only**:
+
 ```bash
 # Skip all hooks (use sparingly!)
 git commit --no-verify -m "emergency: critical production fix"
 ```
 
 **When to bypass**:
+
 - Critical production hotfix
 - Fixing broken CI/CD
 - Reverting bad commit
 
 **Never bypass for**:
+
 - "Just this once"
 - Avoiding fixing style issues
 - Time pressure on features
@@ -322,7 +354,9 @@ git commit --no-verify -m "emergency: critical production fix"
 ## Best Practices
 
 ### 1. Fix Issues Early
+
 Don't accumulate hook violations. Fix as you go:
+
 ```bash
 # Before committing, run hooks manually
 pre-commit run --files <files-you-changed>
@@ -332,12 +366,15 @@ pre-commit run --files <files-you-changed>
 ```
 
 ### 2. Understand Errors
+
 Don't blindly disable checks. Understand what they're catching:
-- Read ShellCheck wiki: https://www.shellcheck.net/wiki/
+
+- Read ShellCheck wiki: <https://www.shellcheck.net/wiki/>
 - Ask in code review if unsure
 - Document why you're disabling a check
 
 ### 3. Update Hooks Regularly
+
 ```bash
 # Update hook versions
 pre-commit autoupdate
@@ -354,6 +391,7 @@ git commit -m "chore: update pre-commit hooks"
 ```
 
 ### 4. Team Consistency
+
 - All contributors should install hooks
 - Don't commit hook-violating code
 - Fix hook issues in your PRs, not maintainer's job
@@ -370,6 +408,7 @@ Pre-commit hooks also run in CI (`.github/workflows/ci.yml`):
 ```
 
 **Why CI?**
+
 - Catches issues if contributor didn't install hooks
 - Enforces standards on all PRs
 - Provides feedback in PR checks
@@ -377,16 +416,21 @@ Pre-commit hooks also run in CI (`.github/workflows/ci.yml`):
 ## Configuration Files
 
 ### `.pre-commit-config.yaml`
+
 Main configuration file defining all hooks.
 
 ### `.editorconfig`
+
 Editor/IDE configuration for consistent formatting.
 
 ### `.secrets.baseline`
+
 Baseline for detect-secrets (known false positives).
 
 ### `.shellcheckrc` (optional)
+
 ShellCheck-specific configuration:
+
 ```bash
 # .shellcheckrc
 disable=SC1090  # Can't follow non-constant source
@@ -396,13 +440,16 @@ disable=SC2034  # Unused variables exported by sourced files
 ## Customization
 
 ### Skip Specific Hooks
+
 In `.pre-commit-config.yaml`:
+
 ```yaml
 - id: shellcheck
   exclude: '^legacy/'  # Skip legacy scripts
 ```
 
 ### Add Custom Hook
+
 ```yaml
 - repo: local
   hooks:
@@ -414,6 +461,7 @@ In `.pre-commit-config.yaml`:
 ```
 
 ### Adjust Hook Behavior
+
 ```yaml
 - id: shellcheck
   args: ['-x', '-S', 'warning', '--exclude=SC2034']
@@ -461,17 +509,20 @@ Add to `CONTRIBUTING.md`:
    ```
 
 2. Install hooks:
+
    ```bash
    pre-commit install
    pre-commit install --hook-type commit-msg
    ```
 
 3. (Optional) Run on all files:
+
    ```bash
    pre-commit run --all-files
    ```
 
 4. Hooks now run automatically on commit!
+
 ```
 
 ## Resources

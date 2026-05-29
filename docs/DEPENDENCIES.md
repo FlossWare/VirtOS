@@ -26,6 +26,7 @@ All virtos-* scripts require:
 | `sed` | sed | Text manipulation |
 
 **Install**:
+
 ```bash
 # Usually pre-installed on all Linux systems
 ```
@@ -35,9 +36,11 @@ All virtos-* scripts require:
 ### virtos-setup
 
 **Required**:
+
 - `dialog` OR `whiptail` - Interactive TUI
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install dialog
@@ -49,13 +52,16 @@ sudo apt install dialog
 ### virtos-create-vm
 
 **Required**:
+
 - `virsh` (libvirt-client) - VM management
 - `qemu-img` (qemu-utils) - Disk image creation
 
 **Optional**:
+
 - `virt-install` - Advanced VM creation
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install libvirt qemu-img virt-install
@@ -67,10 +73,12 @@ sudo apt install libvirt-clients qemu-utils virtinst
 ### virtos-migrate
 
 **Required**:
+
 - `virsh` (libvirt-client) - VM management
 - `ssh` (openssh-client) - Remote host access
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install libvirt openssh-clients
@@ -82,9 +90,11 @@ sudo apt install libvirt-clients openssh-client
 ### virtos-snapshot
 
 **Required**:
+
 - `virsh` (libvirt-client) - Snapshot management
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install libvirt
@@ -96,11 +106,13 @@ sudo apt install libvirt-clients
 ### virtos-backup
 
 **Required**:
+
 - `virsh` (libvirt-client) - VM operations
 - `qemu-img` (qemu-utils) - Image conversion
 - `tar` - Archive creation
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install libvirt qemu-img tar
@@ -112,13 +124,16 @@ sudo apt install libvirt-clients qemu-utils tar
 ### virtos-monitor
 
 **Required**:
+
 - `virsh` (libvirt-client) - VM stats
 
 **Optional**:
+
 - `htop` - Process monitoring
 - `iotop` - I/O monitoring
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install libvirt htop iotop
@@ -132,15 +147,18 @@ sudo apt install libvirt-clients htop iotop
 ### virtos-network
 
 **Required**:
+
 - `virsh` (libvirt-client) - Network management
 - `ip` (iproute2) - Network configuration
 - `brctl` (bridge-utils) - Bridge management
 
 **Optional**:
+
 - `iptables` - Firewall rules
 - `dnsmasq` - DNS/DHCP
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install libvirt iproute bridge-utils iptables dnsmasq
@@ -152,12 +170,15 @@ sudo apt install libvirt-clients iproute2 bridge-utils iptables dnsmasq
 ### virtos-firewall
 
 **Required**:
+
 - `iptables` - Firewall management
 
 **Optional**:
+
 - `nft` (nftables) - Modern firewall
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install iptables nftables
@@ -171,14 +192,17 @@ sudo apt install iptables nftables
 ### virtos-storage
 
 **Required**:
+
 - `virsh` (libvirt-client) - Storage pool management
 
 **Optional**:
+
 - `lvs`, `vgs`, `pvs` (lvm2) - LVM volumes
 - `btrfs` (btrfs-progs) - Btrfs filesystems
 - `zpool`, `zfs` (zfsutils) - ZFS pools
 
 **Install**:
+
 ```bash
 # Fedora (base)
 sudo dnf install libvirt
@@ -202,6 +226,7 @@ sudo apt install libvirt-clients btrfs-progs
 ### virtos-storage-pool
 
 **Required**:
+
 - `virsh` (libvirt-client) - Pool operations
 
 **Install**: Same as virtos-storage
@@ -211,11 +236,13 @@ sudo apt install libvirt-clients btrfs-progs
 ### virtos-container
 
 **Required** (at least one):
+
 - `docker` (docker-ce) - Docker containers
 - `podman` - Rootless containers
 - `lxc-create` (lxc) - System containers
 
 **Install**:
+
 ```bash
 # Fedora (Docker)
 sudo dnf install docker
@@ -241,14 +268,17 @@ sudo apt install lxc
 ### virtos-cluster
 
 **Required**:
+
 - `ssh` (openssh-client) - Remote communication
 
 **Optional**:
+
 - `avahi-browse` (avahi-utils) - mDNS discovery
 - `socat` OR `nc` - Multicast communication
 - `nmap` - Network scanning (fallback)
 
 **Install**:
+
 ```bash
 # Fedora (full)
 sudo dnf install openssh-clients avahi-tools socat nmap
@@ -264,14 +294,17 @@ sudo apt install openssh-client   # Ubuntu
 ### virtos-ha
 
 **Required**:
+
 - `virsh` (libvirt-client) - VM management
 - `ssh` (openssh-client) - Remote operations
 
 **Optional**:
+
 - `pacemaker` - Cluster resource manager
 - `corosync` - Cluster communication
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install libvirt openssh-clients pacemaker corosync
@@ -285,13 +318,16 @@ sudo apt install libvirt-clients openssh-client pacemaker corosync
 ### virtos-template
 
 **Required**:
+
 - `virsh` (libvirt-client) - VM/template operations
 - `qemu-img` (qemu-utils) - Image conversion
 
 **Optional**:
+
 - `wget` OR `curl` - Cloud image download
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install libvirt qemu-img wget
@@ -305,9 +341,11 @@ sudo apt install libvirt-clients qemu-utils wget
 ### virtos-tui
 
 **Required**:
+
 - `dialog` OR `whiptail` - Text UI
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install dialog
@@ -319,17 +357,21 @@ sudo apt install dialog
 ### virtos-version
 
 **Required**:
+
 - None (uses only shell builtins)
 
 ### virtos-logs
 
 **Required**:
+
 - `journalctl` (systemd) - Log viewing
 
 **Optional**:
+
 - `less` - Log paging
 
 **Install**:
+
 ```bash
 # Usually pre-installed with systemd
 ```
@@ -339,10 +381,12 @@ sudo apt install dialog
 ### GPU Passthrough (virtos-gpu)
 
 **Required**:
+
 - `lspci` (pciutils) - PCI device listing
 - `modprobe` (kmod) - Kernel module management
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install pciutils kmod
@@ -354,9 +398,11 @@ sudo apt install pciutils kmod
 ### USB Passthrough (virtos-usb)
 
 **Required**:
+
 - `lsusb` (usbutils) - USB device listing
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install usbutils
@@ -368,9 +414,11 @@ sudo apt install usbutils
 ### Advanced Networking (virtos-networking-advanced)
 
 **Required**:
+
 - `ovs-vsctl` (openvswitch) - OVS management
 
 **Install**:
+
 ```bash
 # Fedora
 sudo dnf install openvswitch
@@ -384,17 +432,20 @@ sudo apt install openvswitch-switch
 For building and testing VirtOS:
 
 **Required**:
+
 - `bash` - Build scripts
 - `genisoimage` - ISO creation
 - `syslinux` - Bootloader
 - `squashfs-tools` - Package compression
 
 **Optional**:
+
 - `shellcheck` - Script linting
 - `bats` - Unit testing
 - `qemu-system-x86_64` - ISO testing
 
 **Install**:
+
 ```bash
 # Fedora (full dev environment)
 sudo dnf install bash genisoimage syslinux squashfs-tools shellcheck qemu-kvm
@@ -475,6 +526,7 @@ check_cmd dialog || check_cmd whiptail
 **Error**: `virsh: command not found`
 
 **Solution**:
+
 ```bash
 # Install libvirt client
 sudo dnf install libvirt  # Fedora
@@ -484,6 +536,7 @@ sudo apt install libvirt-clients  # Ubuntu
 **Error**: `brctl: command not found`
 
 **Solution**:
+
 ```bash
 # Install bridge-utils
 sudo dnf install bridge-utils  # Fedora
@@ -493,6 +546,7 @@ sudo apt install bridge-utils  # Ubuntu
 **Error**: `docker: command not found`
 
 **Solution**:
+
 ```bash
 # Install Docker OR Podman
 sudo dnf install docker  # Fedora
@@ -508,6 +562,7 @@ sudo apt install podman  # Ubuntu
 **Error**: `error: Failed to connect to libvirtd`
 
 **Solution**:
+
 ```bash
 # Start libvirtd service
 sudo systemctl start libvirtd
@@ -521,6 +576,7 @@ sudo usermod -aG libvirt $USER
 **Error**: `permission denied: /dev/kvm`
 
 **Solution**:
+
 ```bash
 # Add user to kvm group
 sudo usermod -aG kvm $USER
@@ -535,6 +591,7 @@ sudo chmod 660 /dev/kvm
 **Error**: `error: failed to connect to the hypervisor`
 
 **Solution**:
+
 ```bash
 # Check libvirtd status
 sudo systemctl status libvirtd
@@ -590,6 +647,7 @@ sudo apt install libvirt-clients qemu-utils virtinst \
 ## Questions?
 
 If you encounter missing dependency errors not covered here:
+
 1. Check the script source code for `command -v` checks
-2. File an issue at https://github.com/FlossWare/VirtOS/issues
+2. File an issue at <https://github.com/FlossWare/VirtOS/issues>
 3. Update this documentation with the solution

@@ -39,7 +39,7 @@ Every VirtOS script has **two version numbers**:
   - Output format changed (breaks parsers)
   - Exit code meaning changed
   - Default behavior changed (affects existing scripts)
-  
+
 - **MINOR** - Incremented for backward-compatible additions
   - New argument added
   - New feature added (doesn't break existing usage)
@@ -47,6 +47,7 @@ Every VirtOS script has **two version numbers**:
   - Bug fix that changes behavior (if significant)
 
 **Examples**:
+
 - `1.0` → `1.1` - Added `--format json` option (backward compatible)
 - `1.1` → `2.0` - Changed default output from text to JSON (breaking change)
 
@@ -79,12 +80,13 @@ All scripts must support:
 ```bash
 --version, -v, version
     Show both VirtOS version and API version
-    
+
 --api-version
     Show only API version (for compatibility checks)
 ```
 
 **Example Output**:
+
 ```
 $ virtos-create-vm --version
 virtos-create-vm version 0.1 (API 1.0)
@@ -114,6 +116,7 @@ fi
 ### When to Bump API Version
 
 **Increment MINOR (1.0 → 1.1)** when:
+
 - ✅ Adding optional argument: `--cpu <count>` → add `--memory <size>`
 - ✅ Adding new feature (doesn't break existing usage)
 - ✅ Adding deprecation warning (doesn't break, just warns)
@@ -122,6 +125,7 @@ fi
 - ✅ Bug fix that changes behavior (if observable to users)
 
 **Increment MAJOR (1.x → 2.0)** when:
+
 - ❌ Removing argument: `--old-flag` deleted
 - ❌ Renaming argument: `--cpu` → `--vcpu`
 - ❌ Changing required arguments: `<vm-name>` → `<vm-name> <disk-size>`
@@ -131,6 +135,7 @@ fi
 - ❌ Removing feature/command
 
 **Do NOT bump API version** when:
+
 - ✅ Internal refactoring (no observable change)
 - ✅ Performance improvements
 - ✅ Bug fix that only fixes obviously wrong behavior
@@ -254,16 +259,19 @@ Run API compatibility tests on every commit:
 ### Supported Versions
 
 **Current Policy** (Alpha/Beta):
+
 - **Latest API version only** - Best effort backward compatibility
 - Breaking changes allowed with deprecation warnings
 - No LTS (Long-Term Support) versions yet
 
 **Future Policy** (v1.0+):
+
 - **N and N-1** - Support current and previous major version
 - **LTS releases** - Every 3rd major version (e.g., 3.0, 6.0, 9.0)
 - **6-month minimum** between major versions
 
 **Example Timeline**:
+
 ```
 API 1.0 released: 2026-05-01
 API 1.1 released: 2026-06-01
@@ -302,12 +310,14 @@ Memory: 1024MB
 ```
 
 **New behavior (API 2.0)**:
+
 ```bash
 $ virtos-create-vm test
 {"name":"test","cpu":2,"memory":"1024MB","status":"created"}
 ```
 
 **Migration**:
+
 - Parsers: Update to parse JSON
 - Scripts: Add `--format text` to get old output
 - CI/CD: Add `--format text` to existing automation
@@ -315,16 +325,19 @@ $ virtos-create-vm test
 **2. `--old-flag` removed**
 
 **Old behavior (API 1.x)**:
+
 ```bash
 virtos-create-vm --old-flag value
 ```
 
 **New behavior (API 2.0)**:
+
 ```bash
 virtos-create-vm --new-flag value
 ```
 
 **Migration**: Replace all uses of `--old-flag` with `--new-flag`
+
 ```
 
 ---
@@ -361,6 +374,7 @@ virtos-create-vm --new-flag value
    ```
 
 2. **Pin to Specific Versions** (when critical)
+
    ```bash
    # In automation, check API version
    if [ "$(virtos-create-vm --api-version)" != "1.0" ]; then
@@ -411,10 +425,12 @@ virtos-create-vm --new-flag value
 ### Q: What about output format changes?
 
 **A**: Output format changes are **breaking** if:
+
 - Scripts/tools parse the output (e.g., `grep`, `awk`, `jq`)
 - Exit codes change meaning
 
 Output format changes are **non-breaking** if:
+
 - New `--format` flag added (existing format unchanged)
 - Only improving error messages
 - Adding optional verbose output
@@ -422,6 +438,7 @@ Output format changes are **non-breaking** if:
 ### Q: How do I know if my change breaks the API?
 
 **A**: Ask:
+
 1. Will existing user scripts/automation break?
 2. Will existing output parsers break?
 3. Will existing CI/CD pipelines break?

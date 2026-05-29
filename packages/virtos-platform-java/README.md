@@ -5,12 +5,14 @@ Integrates platform-java with VirtOS to provide unified orchestration for virtua
 ## What This Package Provides
 
 **Scripts:**
+
 - `platform-java` - Main CLI for managing all workload types
 - `virtos-platform-java-install` - Installs platform-java on VirtOS
 - `virtos-platform-java-uninstall` - Removes platform-java from VirtOS
 - `virtos-platform-java-info` - Shows installation status and configuration
 
 **Directories:**
+
 - `/usr/local/lib/platform-java/` - platform-java binaries
 - `/var/lib/platform-java/apps/` - Deployed applications
 - `/var/lib/platform-java/vms/` - Virtual machine disk images
@@ -45,6 +47,7 @@ virtos-platform-java-install
 ```
 
 This will:
+
 - Install OpenJDK 21 (if not present)
 - Install libvirt for VM management
 - Download/build platform-java
@@ -158,6 +161,7 @@ dependencies:
 ```
 
 platform-java ensures:
+
 1. `postgres-vm` starts first
 2. `redis-container` starts second
 3. `auth-service` starts third
@@ -273,10 +277,10 @@ sudo virsh list --all
 
 ## Documentation
 
-- **platform-java**: https://github.com/FlossWare/platform-java
-- **VirtOS**: https://github.com/FlossWare/VirtOS
-- **VM Management**: https://github.com/FlossWare/platform-java/tree/main/platform-java-vm-management
-- **Container Deployment**: https://github.com/FlossWare/platform-java/blob/main/CONTAINER_DEPLOYMENT.md
+- **platform-java**: <https://github.com/FlossWare/platform-java>
+- **VirtOS**: <https://github.com/FlossWare/VirtOS>
+- **VM Management**: <https://github.com/FlossWare/platform-java/tree/main/platform-java-vm-management>
+- **Container Deployment**: <https://github.com/FlossWare/platform-java/blob/main/CONTAINER_DEPLOYMENT.md>
 
 ## License
 

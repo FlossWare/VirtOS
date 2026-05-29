@@ -85,7 +85,7 @@ audit_log() {
 
     # Validate result value
     case "$result" in
-        success|failed|denied|skipped)
+        success | failed | denied | skipped)
             # Valid result
             ;;
         *)
@@ -126,7 +126,7 @@ audit_log() {
 
     # Write to audit log
     if [ -w "$AUDIT_LOG_FILE" ]; then
-        echo "$log_entry" >> "$AUDIT_LOG_FILE"
+        echo "$log_entry" >>"$AUDIT_LOG_FILE"
     else
         # Fallback to syslog if audit log not writable
         logger -t virtos-audit -p auth.info "$log_entry" 2>/dev/null || true
@@ -238,7 +238,7 @@ audit_stats() {
 
     echo "=== VirtOS Audit Log Statistics ==="
     echo "Log file: $AUDIT_LOG_FILE"
-    echo "Total entries: $(wc -l < "$AUDIT_LOG_FILE")"
+    echo "Total entries: $(wc -l <"$AUDIT_LOG_FILE")"
     echo ""
 
     echo "Events by result:"

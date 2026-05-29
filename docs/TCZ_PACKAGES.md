@@ -139,12 +139,14 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Use Case**: Smallest possible system, VMs only, no containers
 
 **Included**:
+
 - ✅ Core system (3MB)
 - ✅ Networking (2MB)
 - ✅ KVM/QEMU (65MB)
 - ✅ libvirt (10MB)
 
 **Excluded**:
+
 - ❌ vim (use busybox vi)
 - ❌ htop (use busybox top)
 - ❌ LXC
@@ -163,6 +165,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Use Case**: Home lab, balanced VM + container support
 
 **Included**:
+
 - ✅ Everything in Minimal
 - ✅ vim (5-8MB)
 - ✅ htop (1-2MB)
@@ -173,6 +176,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 - ✅ Clustering/Avahi (1MB)
 
 **Excluded**:
+
 - ❌ Podman
 - ❌ nano
 - ❌ Advanced networking/storage
@@ -187,6 +191,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Use Case**: Container workloads, minimal VM support
 
 **Included**:
+
 - ✅ Everything in Standard
 - ✅ Podman (25MB)
 
@@ -201,6 +206,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Use Case**: Development environment with all tools
 
 **Included**:
+
 - ✅ Everything in Containers
 - ✅ nano (1MB)
 - ✅ WireGuard (500KB)
@@ -214,6 +220,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Use Case**: Kubernetes cluster node
 
 **Included**:
+
 - ✅ Everything in Developer (except nano)
 - ✅ K3s (50MB)
 - ✅ WireGuard (500KB)
@@ -227,6 +234,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Use Case**: All features enabled
 
 **Included**:
+
 - ✅ Everything in Developer
 - ✅ K3s (50MB)
 - ✅ Open vSwitch (10MB)
@@ -243,6 +251,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Use Case**: Storage server with advanced filesystems (requires 4GB+ RAM for ZFS)
 
 **Included**:
+
 - ✅ Standard packages
 - ✅ LVM (2MB)
 - ✅ ZFS (20MB)
@@ -260,6 +269,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Contents**: 54 management scripts
 
 **Dependencies**:
+
 - bash.tcz (required for scripts)
 - dialog.tcz (required for virtos-tui)
 - ncurses.tcz (required by dialog)
@@ -273,6 +283,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 **Contents**: platform-java integration
 
 **Dependencies**:
+
 - openjdk-21-jre.tcz (~100MB) ⚠️ **LARGE**
 - libvirt.tcz (already in base)
 
@@ -289,6 +300,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 ### By Profile
 
 **Minimal** → Remove everything optional:
+
 - No containers (LXC/Docker/containerd/Podman)
 - No extra editors (vim/nano → busybox vi)
 - No extra monitors (htop → busybox top)
@@ -296,29 +308,34 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 - **Goal**: Smallest possible (~100MB)
 
 **Standard** → Balanced for most users:
+
 - Include common containers (Docker, LXC)
 - Include vim + htop (quality of life)
 - Include clustering (multi-host)
 - **Goal**: Homelab-ready (~200MB)
 
 **Containers** → Container-focused:
+
 - All container runtimes (Docker, containerd, Podman, LXC)
 - Minimal VM support
 - **Goal**: Container workloads (~150MB)
 
 **Developer** → Dev-friendly:
+
 - All containers
 - All editors (vim, nano)
 - WireGuard VPN
 - **Goal**: Development environment (~250MB)
 
 **Kubernetes** → K8s orchestration:
+
 - K3s + all dependencies
 - All container runtimes
 - WireGuard for overlay network
 - **Goal**: K8s cluster node (~250MB)
 
 **Full** → Everything:
+
 - All virtualization
 - All containers
 - All networking (OVS, WireGuard)
@@ -326,6 +343,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 - **Goal**: Maximum features (~400MB)
 
 **Storage** → Advanced storage:
+
 - Advanced filesystems (ZFS, Btrfs, LVM)
 - NFS server
 - Containers for storage services
@@ -360,6 +378,7 @@ INCLUDE_DOCKER="yes"
 ```
 
 Then in `build.conf`:
+
 ```bash
 PROFILE="myprofile"
 ```
@@ -369,15 +388,19 @@ PROFILE="myprofile"
 ## Package Size Reference
 
 **Tiny** (< 1MB):
+
 - dialog, ncurses, curl, bridge-utils, iptables, dnsmasq, avahi, htop, wget, nano, wireguard
 
 **Small** (1-10MB):
+
 - bash, openssh, iproute2, lvm, btrfs, lxc, qemu-img, openvswitch
 
 **Medium** (10-30MB):
+
 - libvirt, zfs, docker
 
 **Large** (30-100MB):
+
 - qemu, k3s, containerd, podman, openjdk-21-jre
 
 ---
@@ -403,6 +426,7 @@ virtos-platform-java.tcz
 ### For Production
 
 **Use Standard profile** (~200MB):
+
 - Good balance of features vs size
 - VM + container support
 - Common tools included
@@ -410,6 +434,7 @@ virtos-platform-java.tcz
 ### For Embedded/IoT
 
 **Use Minimal profile** (~100MB):
+
 - Smallest possible
 - VM-only
 - Basic tools
@@ -417,6 +442,7 @@ virtos-platform-java.tcz
 ### For Development
 
 **Use Developer profile** (~250MB):
+
 - All tools included
 - All container runtimes
 - VPN support
@@ -424,6 +450,7 @@ virtos-platform-java.tcz
 ### For Kubernetes
 
 **Use Kubernetes profile** (~250MB):
+
 - K3s included
 - All container runtimes
 - Optimized for cluster nodes
@@ -435,24 +462,29 @@ virtos-platform-java.tcz
 ### Potential Additions
 
 **Web UI**:
+
 - cockpit.tcz (~5MB) - Already in build.conf, set to "no"
 - portainer.tcz (~10MB) - Already in build.conf, set to "no"
 
 **Observability**:
+
 - prometheus.tcz (~50MB)
 - grafana.tcz (~100MB)
 
 **Storage**:
+
 - ceph.tcz (~50MB)
 - nfs.tcz (~2MB)
 
 ### Potential Removals
 
 **Consider removing from Standard**:
+
 - wget (use curl instead) - saves ~500KB
 - LXC (if users prefer Docker only) - saves ~5-10MB
 
 **Already optimized**:
+
 - Minimal has no fat to trim without removing core functionality
 
 ---
@@ -465,4 +497,4 @@ virtos-platform-java.tcz
 
 ---
 
-**Questions?** File an issue: https://github.com/FlossWare/VirtOS/issues
+**Questions?** File an issue: <https://github.com/FlossWare/VirtOS/issues>

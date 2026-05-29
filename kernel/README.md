@@ -9,24 +9,28 @@ VirtOS requires a Linux kernel with virtualization support enabled. By default, 
 The VirtOS kernel must include:
 
 ### Core Virtualization Support
+
 - **KVM** - Kernel-based Virtual Machine
 - **VHOST** - Virtual host drivers for better performance
 - **TUN/TAP** - Network virtualization
 - **VFIO** - PCI passthrough support
 
 ### Container Support
+
 - **Namespaces** - PID, NET, MNT, UTS, IPC, USER
 - **Cgroups v1 and v2** - Resource control
 - **Overlayfs** - Container filesystem layers
 - **Bridge networking** - Container networking
 
 ### Storage Support
+
 - **Device Mapper** - LVM support
 - **Btrfs** - Copy-on-write filesystem
 - **ZFS** - (via external module)
 - **Loop devices** - Disk image support
 
 ### Hardware Passthrough
+
 - **IOMMU** - Intel VT-d / AMD-Vi
 - **VFIO-PCI** - GPU/device passthrough
 - **USB passthrough** - USB device assignment
@@ -34,6 +38,7 @@ The VirtOS kernel must include:
 ## Kernel Configuration Files
 
 ### virtos-base.config.example
+
 Example kernel configuration with all required virtualization options. This is a reference/starting point for manual kernel builds.
 
 **Note**: Additional configurations (virtos-minimal.config, virtos-full.config) are planned but not yet implemented.
@@ -89,6 +94,7 @@ lsmod | grep kvm   # Should show kvm modules
 ## Key Kernel Options
 
 ### KVM Configuration
+
 ```
 CONFIG_HAVE_KVM=y
 CONFIG_HAVE_KVM_IRQCHIP=y
@@ -108,6 +114,7 @@ CONFIG_KVM_AMD=m
 ```
 
 ### Namespace Configuration
+
 ```
 CONFIG_NAMESPACES=y
 CONFIG_UTS_NS=y
@@ -118,6 +125,7 @@ CONFIG_NET_NS=y
 ```
 
 ### Cgroup Configuration
+
 ```
 CONFIG_CGROUPS=y
 CONFIG_CGROUP_FREEZER=y
@@ -133,6 +141,7 @@ CONFIG_MEMCG_SWAP=y
 ```
 
 ### Network Configuration
+
 ```
 CONFIG_NETDEVICES=y
 CONFIG_NET_CORE=y
@@ -147,6 +156,7 @@ CONFIG_OPENVSWITCH=m
 ```
 
 ### Storage Configuration
+
 ```
 CONFIG_BLK_DEV_LOOP=y
 CONFIG_BLK_DEV_NBD=m
@@ -159,6 +169,7 @@ CONFIG_XFS_FS=m
 ```
 
 ### VFIO Configuration (for GPU passthrough)
+
 ```
 CONFIG_VFIO=m
 CONFIG_VFIO_PCI=m
@@ -175,12 +186,15 @@ CONFIG_AMD_IOMMU_V2=m
 ## Kernel Patches
 
 ### virtos-patches/
+
 Directory containing VirtOS-specific kernel patches:
+
 - **01-optimize-boot.patch** - Boot time optimizations
 - **02-kvm-improvements.patch** - KVM performance tweaks
 - **03-container-security.patch** - Enhanced container isolation
 
 Apply patches before building:
+
 ```bash
 cd linux-6.6.30
 for patch in /path/to/VirtOS/kernel/virtos-patches/*.patch; do
@@ -193,6 +207,7 @@ done
 VirtOS requires these modules to be loaded:
 
 ### Essential
+
 - `kvm`
 - `kvm_intel` or `kvm_amd`
 - `vhost_net`
@@ -200,12 +215,14 @@ VirtOS requires these modules to be loaded:
 - `tun`
 
 ### Optional
+
 - `vfio-pci` (GPU passthrough)
 - `openvswitch` (advanced networking)
 - `dm-thin-pool` (LVM thin provisioning)
 - `btrfs` (Btrfs filesystem)
 
 Load modules in `/etc/rc.d/bootlocal.sh`:
+
 ```bash
 modprobe kvm
 modprobe kvm_intel  # or kvm_amd
@@ -246,11 +263,13 @@ See `/etc/sysctl.conf` for runtime kernel tuning.
 ## Tiny Core Linux Kernel Compatibility
 
 VirtOS is based on Tiny Core Linux. Kernel versions tested:
+
 - **6.1.x** - Stable, tested
 - **6.6.x** - Recommended
 - **6.8.x** - Latest, experimental
 
 Choose kernel version based on:
+
 - Hardware support needs
 - Stability requirements
 - Feature requirements
@@ -258,6 +277,7 @@ Choose kernel version based on:
 ## Troubleshooting
 
 ### KVM not available
+
 ```bash
 # Check CPU virtualization support
 grep -E 'vmx|svm' /proc/cpuinfo
@@ -273,6 +293,7 @@ modprobe kvm_intel  # or kvm_amd
 ```
 
 ### Container creation fails
+
 ```bash
 # Check namespace support
 ls /proc/self/ns/
@@ -285,6 +306,7 @@ mount -t cgroup2 none /sys/fs/cgroup
 ```
 
 ### Device passthrough not working
+
 ```bash
 # Check IOMMU in kernel
 dmesg | grep -i iommu
@@ -299,6 +321,7 @@ cat /proc/cmdline | grep iommu
 ## Contributing
 
 To contribute kernel configurations:
+
 1. Test on real hardware
 2. Document hardware tested
 3. Minimize size while keeping features
@@ -314,6 +337,7 @@ To contribute kernel configurations:
 ## Integration Status
 
 **Custom kernel building is not integrated into the automated build system.** The build scripts in `build/scripts/` currently:
+
 - ✅ Check for KVM kernel module availability
 - ❌ Do NOT build custom kernels
 - ❌ Do NOT package custom kernels

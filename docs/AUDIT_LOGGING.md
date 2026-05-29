@@ -11,6 +11,7 @@
 VirtOS provides comprehensive audit logging for all sensitive operations. Every create, delete, modify, and security-related action is logged with full context for compliance, security investigation, and troubleshooting.
 
 **Key Features**:
+
 - ✅ Centralized audit log (`/var/log/virtos-audit.log`)
 - ✅ Structured log format (machine-parseable)
 - ✅ User attribution (who performed the action)
@@ -25,6 +26,7 @@ VirtOS provides comprehensive audit logging for all sensitive operations. Every 
 ## Quick Start
 
 ### View Recent Events
+
 ```bash
 # Show last 10 audit events
 virtos-audit recent
@@ -34,6 +36,7 @@ virtos-audit recent 50
 ```
 
 ### Query Audit Log
+
 ```bash
 # Find all events by user
 virtos-audit query user admin
@@ -49,12 +52,14 @@ virtos-audit query date "2026-05-29"
 ```
 
 ### Monitor in Real-Time
+
 ```bash
 # Watch audit log (like tail -f)
 virtos-audit watch
 ```
 
 ### Statistics
+
 ```bash
 # Show audit log statistics
 virtos-audit stats
@@ -116,6 +121,7 @@ Each audit entry follows this structured format:
 ## Action Categories
 
 ### VM Operations
+
 - `vm.create` - Virtual machine created
 - `vm.delete` - Virtual machine deleted
 - `vm.start` - Virtual machine started
@@ -127,12 +133,14 @@ Each audit entry follows this structured format:
 - `vm.modify` - Virtual machine configuration modified
 
 ### Snapshot Operations
+
 - `snapshot.create` - Snapshot created
 - `snapshot.delete` - Snapshot deleted
 - `snapshot.restore` - Snapshot restored
 - `snapshot.list` - Snapshots listed (query only, rarely logged)
 
 ### Storage Operations
+
 - `storage.pool.create` - Storage pool created
 - `storage.pool.delete` - Storage pool deleted
 - `storage.volume.create` - Storage volume created
@@ -141,6 +149,7 @@ Each audit entry follows this structured format:
 - `storage.volume.detach` - Volume detached from VM
 
 ### Network Operations
+
 - `network.create` - Network created
 - `network.delete` - Network deleted
 - `network.modify` - Network configuration modified
@@ -148,12 +157,14 @@ Each audit entry follows this structured format:
 - `network.detach` - Network detached from VM
 
 ### Backup Operations
+
 - `backup.create` - Backup created
 - `backup.delete` - Backup deleted
 - `backup.restore` - Backup restored
 - `backup.verify` - Backup verified
 
 ### Security Operations
+
 - `security.policy.change` - Security policy changed
 - `security.permission.change` - Permissions modified
 - `security.user.create` - User created
@@ -162,6 +173,7 @@ Each audit entry follows this structured format:
 - `security.firewall.change` - Firewall rules changed
 
 ### System Operations
+
 - `system.config.change` - System configuration changed
 - `system.service.start` - Service started
 - `system.service.stop` - Service stopped
@@ -247,6 +259,7 @@ audit_success "vm.migrate" "myvm" "duration=${DURATION}s dest=host2"
 VirtOS audit logs are automatically rotated using logrotate:
 
 **Configuration**: `/etc/logrotate.d/virtos-audit`
+
 ```
 /var/log/virtos-audit.log {
     daily
@@ -260,6 +273,7 @@ VirtOS audit logs are automatically rotated using logrotate:
 ```
 
 **Manual Rotation**:
+
 ```bash
 # Rotate audit log manually
 sudo virtos-audit rotate
@@ -270,12 +284,14 @@ sudo virtos-audit rotate
 **Default**: 90 days (configurable via logrotate)
 
 **Compliance Requirements**:
+
 - PCI-DSS: 1 year (365 days)
 - HIPAA: 6 years (2190 days)
 - SOX: 7 years (2555 days)
 - GDPR: Varies (30 days to 6 years)
 
 **Adjust Retention**:
+
 ```bash
 # Edit logrotate configuration
 sudo vi /etc/logrotate.d/virtos-audit
@@ -384,6 +400,7 @@ sudo /opt/splunkforwarder/bin/splunk restart
 ### ELK Stack (Elasticsearch, Logstash, Kibana)
 
 **Logstash Configuration**:
+
 ```ruby
 input {
   file {
@@ -417,6 +434,7 @@ output {
 **Requirement 10.2**: Implement automated audit trails for all system components to reconstruct events
 
 **VirtOS Coverage**:
+
 - ✅ 10.2.1 - All individual user accesses (user field)
 - ✅ 10.2.2 - All actions by privileged users (root actions logged)
 - ✅ 10.2.3 - All audit trail accesses (virtos-audit query)
@@ -429,6 +447,7 @@ output {
 **§164.312(b)**: Audit controls - Implement hardware, software, and/or procedural mechanisms that record and examine activity
 
 **VirtOS Coverage**:
+
 - ✅ User access logging (user field)
 - ✅ Resource access logging (resource field)
 - ✅ Timestamp of activity (timestamp field)
@@ -440,6 +459,7 @@ output {
 **Section 404**: Management assessment of internal controls
 
 **VirtOS Coverage**:
+
 - ✅ Audit trail of changes to systems (all operations logged)
 - ✅ User attribution (who made changes)
 - ✅ Timestamp of changes (when changes occurred)
@@ -452,6 +472,7 @@ output {
 ### Protecting Audit Logs
 
 **File Permissions**:
+
 ```bash
 # Audit log permissions (read/write for root, read for virtos group)
 chmod 640 /var/log/virtos-audit.log
@@ -459,6 +480,7 @@ chown root:virtos /var/log/virtos-audit.log
 ```
 
 **Append-Only Attribute** (Linux):
+
 ```bash
 # Make audit log append-only (requires root)
 sudo chattr +a /var/log/virtos-audit.log
@@ -468,6 +490,7 @@ sudo chattr +a /var/log/virtos-audit.log
 ```
 
 **SELinux Context** (if using SELinux):
+
 ```bash
 # Set appropriate SELinux context
 sudo chcon -t var_log_t /var/log/virtos-audit.log
@@ -476,6 +499,7 @@ sudo chcon -t var_log_t /var/log/virtos-audit.log
 ### Detecting Tampering
 
 **Hash Verification**:
+
 ```bash
 # Generate hash of audit log
 sha256sum /var/log/virtos-audit.log > audit-log.sha256
@@ -485,6 +509,7 @@ sha256sum -c audit-log.sha256
 ```
 
 **Integrity Monitoring** (AIDE, Tripwire):
+
 ```bash
 # Add audit log to AIDE monitoring
 echo '/var/log/virtos-audit.log p' >> /etc/aide.conf
@@ -500,22 +525,27 @@ aide --init
 **Symptom**: No entries in audit log
 
 **Check**:
+
 1. Log file exists and is writable:
+
    ```bash
    ls -l /var/log/virtos-audit.log
    ```
 
 2. Permissions correct:
+
    ```bash
    sudo chmod 640 /var/log/virtos-audit.log
    ```
 
 3. Disk space available:
+
    ```bash
    df -h /var/log
    ```
 
 4. Check syslog as fallback:
+
    ```bash
    grep virtos-audit /var/log/syslog
    ```
@@ -525,6 +555,7 @@ aide --init
 **Symptom**: Audit log consuming too much disk space
 
 **Solution**:
+
 ```bash
 # Immediate: Rotate manually
 sudo virtos-audit rotate
@@ -539,12 +570,15 @@ sudo vi /etc/logrotate.d/virtos-audit
 **Symptom**: Operations slow due to audit logging
 
 **Check**:
+
 - Disk I/O on /var/log filesystem
 - Audit log size (should be rotated)
 
 **Optimize**:
+
 - Use separate disk for /var/log
 - Disable synchronous writes (less safe but faster):
+
   ```bash
   # Mount /var/log with async option (NOT recommended for compliance)
   ```

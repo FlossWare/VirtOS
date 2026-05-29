@@ -15,6 +15,7 @@ This document provides security hardening recommendations for VirtOS deployments
 Use this checklist for rapid hardening assessment:
 
 ### Pre-Deployment ✅
+
 - [ ] Review security requirements
 - [ ] Plan network segmentation
 - [ ] Design access control policies
@@ -22,6 +23,7 @@ Use this checklist for rapid hardening assessment:
 - [ ] Document security architecture
 
 ### Initial Hardening ✅
+
 - [ ] Change default passwords
 - [ ] Configure firewall rules
 - [ ] Enable audit logging
@@ -29,6 +31,7 @@ Use this checklist for rapid hardening assessment:
 - [ ] Configure secure boot (if supported)
 
 ### Post-Deployment ✅
+
 - [ ] Enable monitoring and alerting
 - [ ] Configure log retention
 - [ ] Test backup/restore
@@ -36,6 +39,7 @@ Use this checklist for rapid hardening assessment:
 - [ ] Document configuration
 
 ### Ongoing Maintenance ✅
+
 - [ ] Apply security updates
 - [ ] Review audit logs weekly
 - [ ] Rotate credentials quarterly
@@ -47,9 +51,11 @@ Use this checklist for rapid hardening assessment:
 ### 1. Boot Security
 
 #### Secure Boot
+
 **Purpose**: Prevent unauthorized OS modifications
 
 **Recommendations**:
+
 ```bash
 # Check if secure boot is enabled (UEFI systems)
 mokutil --sb-state
@@ -58,15 +64,18 @@ mokutil --sb-state
 ```
 
 **VirtOS Status**: ⚠️ Depends on hardware
+
 - UEFI systems: Can enable secure boot
 - BIOS systems: Not available
 
 **Best Practice**: Use UEFI hardware with secure boot support
 
 #### GRUB Password Protection
+
 **Purpose**: Prevent unauthorized boot parameter changes
 
 **Implementation**:
+
 ```bash
 # Generate password hash
 grub-mkpasswd-pbkdf2
@@ -79,9 +88,11 @@ password_pbkdf2 admin <hash>
 **VirtOS Status**: ⚠️ Manual configuration required
 
 #### Kernel Parameters
+
 **Purpose**: Harden kernel security
 
 **Recommended Parameters**:
+
 ```bash
 # Add to bootloader configuration
 kernel.yama.ptrace_scope=1           # Restrict ptrace
@@ -92,6 +103,7 @@ net.core.bpf_jit_harden=2            # Harden BPF JIT
 ```
 
 **Apply**:
+
 ```bash
 # Add to /etc/sysctl.conf
 cat >> /etc/sysctl.conf <<EOF
@@ -109,9 +121,11 @@ sysctl -p
 ### 2. Filesystem Security
 
 #### Mount Options
+
 **Purpose**: Restrict filesystem capabilities
 
 **Critical Mount Options**:
+
 ```bash
 # /tmp with restrictions
 /dev/sda1 /tmp ext4 defaults,nodev,nosuid,noexec 0 2
@@ -124,14 +138,17 @@ sysctl -p
 ```
 
 **Explanation**:
+
 - `nodev`: No device files
 - `nosuid`: No SUID bit honored
 - `noexec`: No execution allowed
 
 #### File Permissions
+
 **Purpose**: Least privilege access
 
 **Critical Files**:
+
 ```bash
 # Secure sensitive configuration
 chmod 600 /etc/virtos/auth.conf
@@ -148,9 +165,11 @@ chown root:root /usr/local/bin/virtos-*
 ```
 
 #### Disk Encryption
+
 **Purpose**: Protect data at rest
 
 **LUKS Encryption** (recommended):
+
 ```bash
 # Encrypt volume
 cryptsetup luksFormat /dev/sda2
@@ -163,6 +182,7 @@ mount /dev/mapper/virtos-data /var/lib/libvirt
 ```
 
 **VirtOS Integration**:
+
 ```bash
 # Create encrypted VM disk
 virtos-create-vm myvm --disk encrypted:50G
@@ -174,9 +194,11 @@ virtos-backup myvm --encrypt
 ### 3. Network Security
 
 #### Firewall Configuration
+
 **Purpose**: Restrict network access
 
 **Essential Rules** (iptables):
+
 ```bash
 # Default deny
 iptables -P INPUT DROP
@@ -206,15 +228,16 @@ iptables-save > /etc/iptables/rules.v4
 ```
 
 **nftables** (modern alternative):
+
 ```bash
 # /etc/nftables.conf
 table inet filter {
     chain input {
         type filter hook input priority 0; policy drop;
-        
+
         iif lo accept
         ct state established,related accept
-        
+
         tcp dport 2222 accept  # SSH
         tcp dport 16509 ip saddr 127.0.0.1 accept  # libvirt
     }
@@ -222,9 +245,11 @@ table inet filter {
 ```
 
 #### Network Segmentation
+
 **Purpose**: Isolate VM traffic
 
 **Recommended Topology**:
+
 ```
 ┌─────────────────────────────────────────┐
 │ Management Network (192.168.100.0/24)  │
@@ -246,6 +271,7 @@ table inet filter {
 ```
 
 **Implementation**:
+
 ```bash
 # Create isolated bridge
 virtos-network create --name tenant1 --isolated \
@@ -257,9 +283,11 @@ virtos-network create --name dmz --nat \
 ```
 
 #### SSH Hardening
+
 **Purpose**: Secure remote access
 
 **/etc/ssh/sshd_config**:
+
 ```bash
 # Change default port
 Port 2222
@@ -301,9 +329,11 @@ systemctl restart sshd
 ### 4. Access Control
 
 #### User Management
+
 **Purpose**: Principle of least privilege
 
 **Best Practices**:
+
 ```bash
 # Create admin group
 groupadd virtos-admin
@@ -331,9 +361,11 @@ chmod 440 /etc/sudoers.d/virtos
 ```
 
 #### libvirt Access Control
+
 **Purpose**: Restrict VM management
 
 **Configuration**:
+
 ```bash
 # /etc/libvirt/libvirtd.conf
 unix_sock_group = "libvirt"
@@ -355,9 +387,11 @@ polkit.addRule(function(action, subject) {
 ```
 
 #### RBAC (Future Enhancement)
+
 **Status**: ⚠️ Not yet implemented (see Issue #116)
 
 **Planned Roles**:
+
 - **Super Admin**: Full system access
 - **Admin**: VM management, no system changes
 - **Operator**: VM start/stop, monitoring
@@ -368,6 +402,7 @@ polkit.addRule(function(action, subject) {
 **Status**: ✅ Implemented (Issue #108)
 
 **Configuration**:
+
 ```bash
 # Enable audit logging
 virtos-audit enable
@@ -383,6 +418,7 @@ virtos-audit export --format json > /var/log/virtos/audit-export.json
 ```
 
 **What's Logged**:
+
 - VM lifecycle events (create, start, stop, delete)
 - Configuration changes
 - Authentication/authorization events
@@ -398,6 +434,7 @@ See: [AUDIT_LOGGING.md](AUDIT_LOGGING.md)
 **Status**: ⚠️ Partial implementation (see Issue #116)
 
 **Current Capabilities**:
+
 ```bash
 # Store secret (file-based)
 virtos-secrets store myvm/password --file /tmp/password.txt
@@ -410,6 +447,7 @@ virtos-secrets rotate myvm/password
 ```
 
 **Limitations**:
+
 - File-based storage (not as secure as Vault)
 - No automatic rotation
 - Limited access control
@@ -419,9 +457,11 @@ virtos-secrets rotate myvm/password
 ### 7. VM Security
 
 #### VM Isolation
+
 **Purpose**: Prevent VM-to-VM attacks
 
 **SELinux/AppArmor**:
+
 ```bash
 # Enable SELinux (Fedora/RHEL)
 setenforce 1
@@ -434,9 +474,11 @@ ps -eZ | grep qemu
 ```
 
 #### Resource Limits
+
 **Purpose**: Prevent resource exhaustion attacks
 
 **Configuration**:
+
 ```bash
 # CPU limits
 virtos-quota set myvm --cpu-quota 80%
@@ -452,9 +494,11 @@ virtos-quota set myvm --net-ingress 100M --net-egress 100M
 ```
 
 #### VM Template Security
+
 **Purpose**: Secure baseline images
 
 **Best Practices**:
+
 ```bash
 # Create hardened template
 virtos-template create ubuntu-hardened --from ubuntu-22.04
@@ -504,6 +548,7 @@ virtos-template seal ubuntu-hardened
 **Legend**: ✅ Implemented | ⚠️ Manual configuration required
 
 **Automated CIS Hardening** (future):
+
 ```bash
 # Apply CIS Level 1 hardening
 virtos-harden --profile cis-level-1
@@ -520,20 +565,24 @@ virtos-harden --audit
 **Relevant Requirements**:
 
 **Requirement 2.2**: Develop configuration standards
+
 - ✅ This document provides baseline
 - ⚠️ Need formal change control process
 
 **Requirement 8**: Identify and authenticate users
+
 - ✅ SSH key-based authentication
 - ✅ Audit logging (virtos-audit)
 - ⚠️ RBAC not yet implemented
 
 **Requirement 10**: Track and monitor access
+
 - ✅ Audit logging (virtos-audit)
 - ✅ 90-day retention
 - ✅ Log export for SIEM
 
 **Requirement 11**: Test security regularly
+
 - ⚠️ External security audit needed (Issue #116)
 - ⚠️ Penetration testing required
 
@@ -542,25 +591,30 @@ virtos-harden --audit
 **Relevant Controls**:
 
 **164.312(a)(1)**: Access Control
+
 - ✅ User authentication
 - ⚠️ RBAC needed for role-based access
 - ✅ Audit logging
 
 **164.312(b)**: Audit Controls
+
 - ✅ virtos-audit implementation
 - ✅ Activity logging
 - ✅ Log retention
 
 **164.312(c)(1)**: Integrity Controls
+
 - ✅ File permissions
 - ✅ Input validation (virtos-common.sh)
 - ✅ Change tracking (git)
 
 **164.312(d)**: Person or Entity Authentication
+
 - ✅ SSH key authentication
 - ✅ User attribution in logs
 
 **164.312(e)(1)**: Transmission Security
+
 - ✅ Encrypted channels (SSH, TLS)
 - ⚠️ VNC encryption recommended
 
@@ -569,6 +623,7 @@ virtos-harden --audit
 ### Log Monitoring
 
 **Critical Logs**:
+
 ```bash
 # System logs
 /var/log/messages
@@ -583,6 +638,7 @@ virtos-harden --audit
 ```
 
 **Monitoring Commands**:
+
 ```bash
 # Watch failed SSH attempts
 tail -f /var/log/secure | grep "Failed password"
@@ -602,6 +658,7 @@ virtos-audit summary --since "1 day ago"
 **Host-based IDS** (recommended):
 
 **AIDE** (Advanced Intrusion Detection Environment):
+
 ```bash
 # Install
 apt-get install aide  # Ubuntu/Debian
@@ -618,6 +675,7 @@ echo "0 2 * * * /usr/sbin/aide --check" > /etc/cron.d/aide
 ```
 
 **OSSEC** (Host Intrusion Detection):
+
 ```bash
 # Install agent
 wget https://github.com/ossec/ossec-hids/releases/latest
@@ -633,6 +691,7 @@ vi /var/ossec/etc/ossec.conf
 ### Vulnerability Scanning
 
 **Trivy** (Already in CI):
+
 ```bash
 # Scan packages
 trivy rootfs /
@@ -642,6 +701,7 @@ trivy fs /usr/local/bin/virtos-create-vm
 ```
 
 **OpenVAS** (Comprehensive scanning):
+
 ```bash
 # Run external scan from another host
 openvas-cli -h virtos.example.com
@@ -652,12 +712,14 @@ openvas-cli -h virtos.example.com
 ### Preparation
 
 **Response Team**:
+
 - Security lead
 - System administrator
 - Network administrator
 - Management representative
 
 **Contact Information**:
+
 ```bash
 # /etc/virtos/incident-response.conf
 SECURITY_LEAD_EMAIL="security@example.com"
@@ -669,6 +731,7 @@ ADMIN_PAGER="555-0002"
 ### Detection
 
 **Indicators of Compromise** (IOCs):
+
 - Unexpected VM creation
 - Permission denied errors (brute force)
 - Unusual network traffic
@@ -677,6 +740,7 @@ ADMIN_PAGER="555-0002"
 - New user accounts
 
 **Automated Alerting**:
+
 ```bash
 # Alert on failed logins
 virtos-monitor alert --trigger "failed-login-count > 5" \
@@ -694,6 +758,7 @@ virtos-monitor alert --trigger "cpu-usage > 90%" \
 ### Containment
 
 **Immediate Actions**:
+
 ```bash
 # Isolate compromised VM
 virtos-network isolate <vm-name>
@@ -711,6 +776,7 @@ iptables -A INPUT -s <attacker-ip> -j DROP
 ### Eradication
 
 **Steps**:
+
 1. Identify root cause
 2. Patch vulnerabilities
 3. Remove malware/backdoors
@@ -720,12 +786,14 @@ iptables -A INPUT -s <attacker-ip> -j DROP
 ### Recovery
 
 **Steps**:
+
 1. Restore from clean backup
 2. Verify integrity
 3. Monitor for reinfection
 4. Update documentation
 
 **Restore from Backup**:
+
 ```bash
 # Restore VM
 virtos-backup restore <vm-name> --from <backup-date>
@@ -737,6 +805,7 @@ virtos-snapshot diff <vm-name> --baseline <clean-snapshot>
 ### Post-Incident
 
 **Actions**:
+
 1. Document incident
 2. Conduct lessons learned
 3. Update procedures
@@ -748,6 +817,7 @@ virtos-snapshot diff <vm-name> --baseline <clean-snapshot>
 ### System Updates
 
 **Automatic Updates** (recommended):
+
 ```bash
 # Configure unattended-upgrades (Ubuntu/Debian)
 apt-get install unattended-upgrades
@@ -760,6 +830,7 @@ systemctl start yum-cron
 ```
 
 **Manual Updates**:
+
 ```bash
 # VirtOS update
 virtos-update check
@@ -773,12 +844,14 @@ yum update                              # RHEL/CentOS
 ### Patch Management
 
 **Prioritization**:
+
 1. **Critical**: Apply within 24 hours
 2. **High**: Apply within 7 days
 3. **Medium**: Apply within 30 days
 4. **Low**: Apply during maintenance window
 
 **Testing Process**:
+
 1. Test in development environment
 2. Test in staging environment
 3. Apply to 10% of production
@@ -790,6 +863,7 @@ yum update                              # RHEL/CentOS
 ### OpenSCAP
 
 **Run Security Scan**:
+
 ```bash
 # Install OpenSCAP
 apt-get install libopenscap8   # Ubuntu/Debian
@@ -809,6 +883,7 @@ oscap xccdf generate report results.xml > security-report.html
 ### Lynis
 
 **Security Audit**:
+
 ```bash
 # Install Lynis
 git clone https://github.com/CISOfy/lynis
@@ -827,26 +902,30 @@ cat /var/log/lynis.log
 ## References
 
 ### VirtOS Documentation
+
 - [Audit Logging](AUDIT_LOGGING.md)
 - [Architecture](ARCHITECTURE.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
 
 ### External Resources
-- **CIS Benchmarks**: https://www.cisecurity.org/cis-benchmarks/
-- **NIST Cybersecurity Framework**: https://www.nist.gov/cyberframework
-- **OWASP Top 10**: https://owasp.org/www-project-top-ten/
-- **SANS Security**: https://www.sans.org/security-resources/
+
+- **CIS Benchmarks**: <https://www.cisecurity.org/cis-benchmarks/>
+- **NIST Cybersecurity Framework**: <https://www.nist.gov/cyberframework>
+- **OWASP Top 10**: <https://owasp.org/www-project-top-ten/>
+- **SANS Security**: <https://www.sans.org/security-resources/>
 
 ### Tools
-- **Trivy**: https://github.com/aquasecurity/trivy
-- **AIDE**: https://aide.github.io/
-- **OSSEC**: https://www.ossec.net/
-- **OpenSCAP**: https://www.open-scap.org/
-- **Lynis**: https://cisofy.com/lynis/
+
+- **Trivy**: <https://github.com/aquasecurity/trivy>
+- **AIDE**: <https://aide.github.io/>
+- **OSSEC**: <https://www.ossec.net/>
+- **OpenSCAP**: <https://www.open-scap.org/>
+- **Lynis**: <https://cisofy.com/lynis/>
 
 ## Changelog
 
 ### Version 1.0 (2026-05-29)
+
 - Initial release
 - Comprehensive hardening guidelines
 - Compliance framework mapping

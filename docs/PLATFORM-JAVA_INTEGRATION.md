@@ -5,6 +5,7 @@ Analysis of shared functionality and integration opportunities between platform-
 ## Project Overview
 
 ### platform-java
+
 - **Purpose**: Java application platform for running multiple isolated Java apps in a single JVM
 - **Language**: Java
 - **Scope**: Single-host application management
@@ -18,6 +19,7 @@ Analysis of shared functionality and integration opportunities between platform-
   - Clustering (Consul, etcd, Hazelcast)
 
 ### VirtOS
+
 - **Purpose**: Minimal virtualization OS based on Tiny Core Linux
 - **Language**: Bash
 - **Scope**: Multi-host infrastructure management, federation across clouds
@@ -34,6 +36,7 @@ Analysis of shared functionality and integration opportunities between platform-
 ### 1. Container Management (Docker, Podman, LXC)
 
 **platform-java Approach:**
+
 ```java
 // Java API for container deployment
 ApplicationDescriptor nginx = ApplicationDescriptor.builder()
@@ -48,6 +51,7 @@ manager.start("web-server");
 ```
 
 **VirtOS Approach:**
+
 ```bash
 # Bash scripts calling docker/podman/lxc directly
 docker run -d \
@@ -60,6 +64,7 @@ virtos-tui → Container Management → Docker → Start Container
 ```
 
 **Shared Functionality:**
+
 - Both execute same underlying commands (`docker run`, `podman run`, `lxc-start`)
 - Both need container lifecycle management
 - Both track running containers
@@ -68,6 +73,7 @@ virtos-tui → Container Management → Docker → Start Container
 ### 2. Monitoring & Observability
 
 **platform-java:**
+
 - OpenTelemetry integration
 - Prometheus metrics export
 - JMX MBeans
@@ -75,12 +81,14 @@ virtos-tui → Container Management → Docker → Start Container
 - CPU/memory/thread tracking per application
 
 **VirtOS:**
+
 - Resource monitoring (CPU, RAM, disk)
 - Alert system (email, webhook, log)
 - Health checks (VMs, containers, hosts)
 - Metrics collection for VMs and containers
 
 **Shared Needs:**
+
 - Metric collection
 - Alerting
 - Resource threshold enforcement
@@ -89,17 +97,20 @@ virtos-tui → Container Management → Docker → Start Container
 ### 3. REST API
 
 **platform-java:**
+
 - Full REST API for deployment
 - Application lifecycle (deploy, start, stop, undeploy)
 - Metrics retrieval
 - Live status
 
 **VirtOS:**
+
 - `virtos-api` script provides REST endpoints
 - VM/container management via HTTP
 - Status and metrics
 
 **Shared Patterns:**
+
 - HTTP-based management
 - JSON responses
 - Authentication/authorization
@@ -108,18 +119,21 @@ virtos-tui → Container Management → Docker → Start Container
 ### 4. Terminal UI (TUI)
 
 **platform-java:**
+
 - Curses-like interface using JCurses
 - Real-time metrics display
 - Keyboard navigation
 - Application list, deployment, monitoring
 
 **VirtOS:**
+
 - Dialog/whiptail-based TUI
 - Interactive menus
 - 54 menu functions
 - VM/container/storage management
 
 **Shared Requirements:**
+
 - Remote SSH management
 - Keyboard-driven interface
 - Real-time updates
@@ -128,18 +142,21 @@ virtos-tui → Container Management → Docker → Start Container
 ### 5. Clustering
 
 **platform-java:**
+
 - Multi-node clustering via Hazelcast
 - Consul/etcd/Zookeeper backends
 - Service registry
 - Distributed state
 
 **VirtOS:**
+
 - Multi-host clustering
 - Automatic discovery (mDNS/Avahi)
 - Cluster-wide VM placement
 - Federation across data centers
 
 **Shared Concepts:**
+
 - Node discovery
 - Distributed configuration
 - Service registration
@@ -169,12 +186,14 @@ virtos-tui → Container Management → Docker → Start Container
 ```
 
 **Benefits:**
+
 - VirtOS provides the infrastructure layer (VMs, networking, storage)
 - platform-java provides the application layer (Java apps, isolation, monitoring)
 - Clear separation of concerns
 - VirtOS can deploy platform-java as a VM or container
 
 **Implementation:**
+
 ```bash
 # VirtOS creates VM with platform-java installed
 virtos-create-vm \
@@ -192,6 +211,7 @@ virtos-federation vm-deploy platform-java-app on-prem \
 ```
 
 **Use Case:**
+
 - Run Java microservices on VirtOS infrastructure
 - VirtOS handles infrastructure (VMs, networking, storage, federation)
 - platform-java handles Java app lifecycle, isolation, monitoring
@@ -201,6 +221,7 @@ virtos-federation vm-deploy platform-java-app on-prem \
 **Scenario:** Extract common container management code into shared library
 
 **Shared Library:**
+
 ```
 virtos-platform-java-common/
 ├── container-runtime.sh     # Bash abstraction
@@ -213,6 +234,7 @@ virtos-platform-java-common/
 ```
 
 **platform-java Usage:**
+
 ```java
 // Use shared container runtime abstraction
 ContainerRuntime runtime = ContainerRuntime.detect(); // docker/podman/lxc
@@ -223,6 +245,7 @@ Container container = runtime.create("nginx:latest")
 ```
 
 **VirtOS Usage:**
+
 ```bash
 # Use shared container runtime library
 source /usr/local/lib/virtos-platform-java-common/container-runtime.sh
@@ -234,6 +257,7 @@ create_container "nginx:latest" \
 ```
 
 **Benefits:**
+
 - DRY (Don't Repeat Yourself) - single implementation
 - Consistent behavior across projects
 - Easier maintenance (fix bugs once)
@@ -256,6 +280,7 @@ create_container "nginx:latest" \
 ```
 
 **VirtOS Enhancement:**
+
 ```bash
 # New virtos-platform-java script
 virtos-platform-java deploy \
@@ -269,6 +294,7 @@ virtos-tui → Java Application Management → Deploy JAR
 ```
 
 **Benefits:**
+
 - VirtOS gains sophisticated Java app management
 - Leverage platform-java's classloader isolation
 - Resource quotas for Java apps
@@ -280,6 +306,7 @@ virtos-tui → Java Application Management → Deploy JAR
 **Scenario:** Share monitoring infrastructure
 
 **Architecture:**
+
 ```
 ┌─────────────────────────────────────────┐
 │      Shared Monitoring Backend         │
@@ -298,6 +325,7 @@ virtos-tui → Java Application Management → Deploy JAR
 ```
 
 **VirtOS Integration:**
+
 ```bash
 # Export VirtOS metrics to same Prometheus
 virtos-monitor export-prometheus \
@@ -309,6 +337,7 @@ virtos-monitor export-otel \
 ```
 
 **platform-java Integration:**
+
 ```java
 // Already supports OpenTelemetry and Prometheus
 // Just configure same endpoint
@@ -316,6 +345,7 @@ OtelExporter.configure("http://otel-collector:4317");
 ```
 
 **Benefits:**
+
 - Unified dashboard (Grafana)
 - Correlate infrastructure + application metrics
 - Single alerting system
@@ -339,6 +369,7 @@ OtelExporter.configure("http://otel-collector:4317");
 ```
 
 **Workflow:**
+
 ```bash
 # Initialize federation
 virtos-federation federation-init my-company
@@ -360,6 +391,7 @@ virtos-platform-java deploy myapp.jar \
 ```
 
 **Benefits:**
+
 - Multi-cloud Java application platform
 - Geographic distribution of Java apps
 - VirtOS handles infrastructure, platform-java handles apps
@@ -372,11 +404,13 @@ virtos-platform-java deploy myapp.jar \
 **Create:** `shared/container-runtime/`
 
 **Capabilities:**
+
 - Detect available runtime (docker, podman, lxc)
 - Normalize commands across runtimes
 - Provide consistent interface
 
 **Usage:**
+
 ```bash
 # Bash (VirtOS)
 source container-runtime.sh
@@ -397,6 +431,7 @@ runtime.run("nginx:latest")
 **Create:** `shared/metrics-spec/`
 
 **Specification:**
+
 ```yaml
 # Common metrics format (OpenTelemetry compatible)
 metrics:
@@ -404,12 +439,12 @@ metrics:
     type: gauge
     unit: percent
     labels: [host, app_id, container_id]
-  
+
   memory_usage:
     type: gauge
     unit: bytes
     labels: [host, app_id, container_id]
-  
+
   disk_io:
     type: counter
     unit: bytes
@@ -417,6 +452,7 @@ metrics:
 ```
 
 **Benefits:**
+
 - Both projects emit same metric format
 - Single Prometheus/Grafana config
 - Easier correlation
@@ -426,6 +462,7 @@ metrics:
 **Create:** `shared/api-spec/`
 
 **OpenAPI Specification:**
+
 ```yaml
 # Common endpoints both projects support
 paths:
@@ -443,21 +480,22 @@ paths:
                 name: string
                 type: string  # vm, container, java-app
                 status: string  # running, stopped, starting
-  
+
   /apps/{id}/start:
     post:
       summary: Start application/VM/container
-  
+
   /apps/{id}/stop:
     post:
       summary: Stop application/VM/container
-  
+
   /metrics:
     get:
       summary: Get metrics (Prometheus format)
 ```
 
 **Benefits:**
+
 - Same API contract
 - Tools work with both
 - Easier integration
@@ -467,6 +505,7 @@ paths:
 **Create:** `shared/config-schema/`
 
 **Common YAML format:**
+
 ```yaml
 # Works for both platform-java apps and VirtOS VMs/containers
 apiVersion: v1
@@ -481,21 +520,21 @@ spec:
   # platform-java-specific
   mainClass: com.example.MyApp
   classpath: app.jar
-  
+
   # OR VirtOS-specific
   image: ubuntu-22.04
   vcpu: 4
   memory: 8G
-  
+
   # Common fields
   resources:
     cpu: 4
     memory: 8Gi
-  
+
   monitoring:
     prometheus: true
     jmx: true
-  
+
   storage:
     - name: data
       size: 100Gi
@@ -503,6 +542,7 @@ spec:
 ```
 
 **Benefits:**
+
 - Familiar format (Kubernetes-like)
 - Portable between projects
 - Easy to learn
@@ -514,6 +554,7 @@ spec:
 **Timeline:** 2-4 weeks
 
 **Deliverables:**
+
 1. Extract container management code from both projects
 2. Create `virtos-platform-java-container-runtime` library
 3. Bash version for VirtOS
@@ -521,6 +562,7 @@ spec:
 5. Tests for docker, podman, lxc
 
 **Benefits:**
+
 - Immediate code reuse
 - Reduced maintenance
 - Consistent behavior
@@ -530,6 +572,7 @@ spec:
 **Timeline:** 4-6 weeks
 
 **Deliverables:**
+
 1. Standardize metrics format (OpenTelemetry)
 2. VirtOS exports to Prometheus/OTLP
 3. platform-java exports to same endpoints
@@ -537,6 +580,7 @@ spec:
 5. Unified alerting (Alertmanager)
 
 **Benefits:**
+
 - Single pane of glass
 - Infrastructure + application correlation
 - Professional monitoring stack
@@ -546,6 +590,7 @@ spec:
 **Timeline:** 8-12 weeks
 
 **Deliverables:**
+
 1. `virtos-platform-java` management script
 2. TUI integration (Java Application Management menu)
 3. VM template with platform-java pre-installed
@@ -553,6 +598,7 @@ spec:
 5. Federation support (multi-cloud platform-java clusters)
 
 **Benefits:**
+
 - VirtOS gains Java app management
 - platform-java gains cloud federation
 - Unified platform story
@@ -562,6 +608,7 @@ spec:
 **Timeline:** 6-8 weeks
 
 **Deliverables:**
+
 1. OpenAPI specification for common endpoints
 2. VirtOS REST API implements spec
 3. platform-java REST API implements spec
@@ -569,6 +616,7 @@ spec:
 5. Client libraries
 
 **Benefits:**
+
 - Interchangeable APIs
 - Tool compatibility
 - Professional API experience
@@ -578,6 +626,7 @@ spec:
 ### Scenario: E-Commerce Platform
 
 **Requirements:**
+
 - Java microservices (order, inventory, payment)
 - PostgreSQL database
 - Redis cache
@@ -623,6 +672,7 @@ virtos-tui
 ```
 
 **Result:**
+
 - VirtOS manages infrastructure (VMs, networking, storage, federation)
 - platform-java manages Java apps (isolation, monitoring, hot reload)
 - Unified monitoring (Prometheus + Grafana)
@@ -636,6 +686,7 @@ virtos-tui
 **Challenge:** platform-java is Java, VirtOS is Bash
 
 **Solutions:**
+
 1. **REST API bridge** - VirtOS calls platform-java REST API
 2. **Shared libraries** - JNI or shell wrappers
 3. **Common data formats** - JSON/YAML configuration
@@ -644,44 +695,52 @@ virtos-tui
 ### Dependency Management
 
 **platform-java Dependencies:**
+
 - Java 11+ runtime
 - Container runtime (docker/podman/lxc)
 - Optional: Consul, Prometheus, Grafana
 
 **VirtOS Dependencies:**
+
 - Linux kernel (KVM support)
 - QEMU, libvirt
 - Container runtime (docker/podman/lxc)
 
 **Shared:**
+
 - Container runtime (natural integration point)
 - Prometheus/Grafana (monitoring)
 
 ### Performance
 
 **platform-java:**
+
 - JVM overhead (~200MB base memory)
 - Excellent for long-running apps
 - Hot reload without process restart
 
 **VirtOS:**
+
 - Minimal OS overhead (~100MB)
 - Fast boot times (<10s)
 - Efficient for infrastructure
 
 **Integration Impact:**
+
 - Running platform-java in VirtOS VM: +200MB memory, negligible CPU
 - Worth it for Java app management capabilities
 
 ### Maintenance
 
 **Shared Code Maintenance:**
+
 - Single repository for shared libraries
 - Versioned releases (semver)
 - Both projects depend on stable API
 - CI/CD for shared components
 
 **Testing:**
+
 - Integration tests across both projects
 - Container runtime compatibility matrix
 - Monitoring format validation

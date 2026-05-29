@@ -14,7 +14,7 @@ echo ""
 
 # Test 1: Validation
 echo "[1/5] Running validation..."
-if "$SCRIPT_DIR/validate-build.sh" > /tmp/virtos-validate.log 2>&1; then
+if "$SCRIPT_DIR/validate-build.sh" >/tmp/virtos-validate.log 2>&1; then
     echo "  ✓ Validation passed"
 else
     echo "  ⚠ Validation issues (see /tmp/virtos-validate.log)"
@@ -59,7 +59,7 @@ fi
 # Test 4: Package build
 echo "[4/5] Testing package build..."
 cd "$PROJECT_ROOT/packages"
-if ./build-all.sh > /tmp/virtos-package-build.log 2>&1; then
+if ./build-all.sh >/tmp/virtos-package-build.log 2>&1; then
     if [ -f "output/virtos-tools.tcz" ]; then
         SIZE=$(du -h output/virtos-tools.tcz | cut -f1)
         echo "  ✓ Package built successfully ($SIZE)"

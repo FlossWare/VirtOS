@@ -69,6 +69,7 @@ virtos-create-vm --name web-server --cpu 4 --ram 8192 --disk 50G --cloud-init
 ```
 
 **nginx-setup.sh example**:
+
 ```bash
 #!/bin/bash
 # Configure NGINX on first boot
@@ -112,6 +113,7 @@ virtos-create-vm --name k8s-worker-1 --cpu 4 --ram 8192 --disk 100G --cloud-init
 ```
 
 **k8s-join.sh example**:
+
 ```bash
 #!/bin/bash
 # Join Kubernetes cluster on first boot
@@ -170,6 +172,7 @@ virtos-cloud-init generate <vm-name>
 ```
 
 Creates an ISO at `/var/lib/virtos/cloud-init/<vm-name>.iso` containing:
+
 - `meta-data`: VM metadata (hostname, instance-id)
 - `user-data`: Cloud-init configuration (users, packages, scripts)
 
@@ -347,12 +350,15 @@ virtos-snapshot create db-server "After cloud-init setup"
 **Symptoms**: VM boots but cloud-init configuration not applied.
 
 **Solutions**:
+
 1. Check ISO is attached:
+
    ```bash
    virsh dumpxml <vm-name> | grep cloud-init
    ```
 
 2. Verify ISO contents:
+
    ```bash
    sudo mount /var/lib/virtos/cloud-init/<vm-name>.iso /mnt
    cat /mnt/user-data
@@ -361,6 +367,7 @@ virtos-snapshot create db-server "After cloud-init setup"
    ```
 
 3. Check cloud-init logs inside VM:
+
    ```bash
    ssh admin@<vm-name>
    sudo cat /var/log/cloud-init.log
@@ -373,6 +380,7 @@ virtos-snapshot create db-server "After cloud-init setup"
 **Symptoms**: Cloud-init runs but packages not installed.
 
 **Solutions**:
+
 1. Check network connectivity during boot
 2. Verify package names are correct for the OS
 3. Check `/var/log/cloud-init-output.log` for apt/yum errors
@@ -383,18 +391,22 @@ virtos-snapshot create db-server "After cloud-init setup"
 **Symptoms**: Cannot SSH into VM with configured key.
 
 **Solutions**:
+
 1. Verify public key format:
+
    ```bash
    ssh-keygen -l -f ~/.ssh/id_rsa.pub
    ```
 
 2. Check authorized_keys inside VM:
+
    ```bash
    # Via console
    cat /home/<username>/.ssh/authorized_keys
    ```
 
 3. Verify SSH service is running:
+
    ```bash
    systemctl status sshd
    ```
@@ -404,6 +416,7 @@ virtos-snapshot create db-server "After cloud-init setup"
 **Symptoms**: Script in `--run` didn't execute successfully.
 
 **Solutions**:
+
 1. Check script has execute permissions
 2. Verify script has correct shebang (`#!/bin/bash`)
 3. Check script output in `/var/log/cloud-init-output.log`

@@ -182,7 +182,7 @@ analyze_script() {
 
 # Parse arguments
 case "${1:-}" in
-    -h|--help)
+    -h | --help)
         show_help
         exit 0
         ;;

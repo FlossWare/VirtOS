@@ -84,6 +84,7 @@ These are **required** to build VirtOS packages (.tcz files):
 | **git** | Version control | `dnf install git` | `apt install git` |
 
 **Minimum to build packages**:
+
 ```bash
 # Fedora
 sudo dnf install bash squashfs-tools
@@ -105,6 +106,7 @@ These are **required** to build bootable ISO images:
 | **gzip** | Compression | `dnf install gzip` | `apt install gzip` |
 
 **Minimum to build ISO**:
+
 ```bash
 # Fedora
 sudo dnf install genisoimage syslinux wget cpio gzip
@@ -124,12 +126,14 @@ sudo apt install genisoimage syslinux-utils isolinux wget cpio gzip
 ### Network Access
 
 **Required Hosts**:
+
 - `tinycorelinux.net` - Download Tiny Core Linux base system
 - `repo.tinycorelinux.net` - Download TCZ packages
 - `packagecloud.io` - Deploy VirtOS packages (CD pipeline only)
 - `github.com` - Source repository
 
 **Firewall Rules**:
+
 ```bash
 # Allow outbound HTTP/HTTPS
 # Port 80 (HTTP)
@@ -145,6 +149,7 @@ sudo apt install genisoimage syslinux-utils isolinux wget cpio gzip
 ### Issue: genisoimage not found
 
 **Symptoms**:
+
 ```
 ERROR: genisoimage not found
 Install required tools:
@@ -152,6 +157,7 @@ Install required tools:
 ```
 
 **Solution**:
+
 ```bash
 # Fedora/RHEL/CentOS
 sudo dnf install genisoimage syslinux
@@ -165,6 +171,7 @@ sudo pacman -S cdrtools syslinux
 
 **Alternative (Arch Linux)**:
 On Arch Linux, `genisoimage` is part of `cdrtools`:
+
 ```bash
 sudo pacman -S cdrtools
 # Creates symlink: genisoimage -> mkisofs
@@ -175,11 +182,13 @@ sudo pacman -S cdrtools
 ### Issue: Cannot reach tinycorelinux.net
 
 **Symptoms**:
+
 ```
 WARNING: Cannot reach tinycorelinux.net (required for downloads)
 ```
 
 **Causes**:
+
 1. Network/firewall blocking access
 2. DNS resolution failure
 3. Temporary site outage
@@ -188,6 +197,7 @@ WARNING: Cannot reach tinycorelinux.net (required for downloads)
 **Solutions**:
 
 #### 1. Check Network Connectivity
+
 ```bash
 # Test basic connectivity
 ping tinycorelinux.net
@@ -198,6 +208,7 @@ echo $?  # Should return 0 for success
 ```
 
 #### 2. Check DNS Resolution
+
 ```bash
 # Verify DNS works
 nslookup tinycorelinux.net
@@ -207,6 +218,7 @@ echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf.temp
 ```
 
 #### 3. Check Firewall
+
 ```bash
 # Fedora - check firewalld
 sudo firewall-cmd --list-all
@@ -219,6 +231,7 @@ sudo firewall-cmd --add-service=http --add-service=https
 ```
 
 #### 4. Use Offline Build
+
 See [Offline Build](#offline-build) section below.
 
 ---
@@ -226,11 +239,13 @@ See [Offline Build](#offline-build) section below.
 ### Issue: squashfs-tools missing
 
 **Symptoms**:
+
 ```
 mksquashfs: command not found
 ```
 
 **Solution**:
+
 ```bash
 # Fedora
 sudo dnf install squashfs-tools
@@ -247,11 +262,13 @@ sudo pacman -S squashfs-tools
 ### Issue: isohybrid not found
 
 **Symptoms**:
+
 ```
 WARNING: isohybrid failed, ISO may not boot from USB
 ```
 
 **Solution**:
+
 ```bash
 # Fedora
 sudo dnf install syslinux
@@ -396,16 +413,19 @@ cd build/scripts
 GitHub Actions runners include most dependencies by default:
 
 **Pre-installed**:
+
 - bash, git, wget, curl
 - cpio, gzip
 - squashfs-tools
 
 **Must Install in Workflow**:
+
 - genisoimage
 - syslinux-utils
 - shellcheck (optional)
 
 **Example CI Step**:
+
 ```yaml
 - name: Install build tools
   run: |
@@ -548,6 +568,7 @@ WORKDIR /workspace
 **Problem**: `mksquashfs` fails
 
 **Solution**:
+
 ```bash
 # Check squashfs-tools installed
 which mksquashfs
@@ -562,6 +583,7 @@ sudo apt install squashfs-tools  # Debian
 **Problem**: `genisoimage` command fails
 
 **Diagnosis**:
+
 ```bash
 # Check tool exists
 which genisoimage
@@ -578,6 +600,7 @@ genisoimage -o /tmp/test.iso .
 **Problem**: Scripts not executable
 
 **Solution**:
+
 ```bash
 # Fix permissions
 chmod +x build/scripts/*.sh
@@ -600,5 +623,6 @@ git checkout -- build/scripts/
 ---
 
 **Questions?**
-- File an issue: https://github.com/FlossWare/VirtOS/issues
-- Check discussions: https://github.com/FlossWare/VirtOS/discussions
+
+- File an issue: <https://github.com/FlossWare/VirtOS/issues>
+- Check discussions: <https://github.com/FlossWare/VirtOS/discussions>

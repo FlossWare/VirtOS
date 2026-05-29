@@ -10,12 +10,13 @@ Plan to integrate the VirtOS-Examples repository into the main VirtOS repository
 
 ## Current State
 
-**VirtOS-Examples Repository**: https://github.com/FlossWare/VirtOS-Examples
+**VirtOS-Examples Repository**: <https://github.com/FlossWare/VirtOS-Examples>
 
 **Status**: Active, separate repository  
 **Purpose**: Ready-to-deploy examples and templates for VirtOS
 
 **Current Content**:
+
 - platform-java workload examples
 - Multi-tier application examples
 - Microservices deployments
@@ -24,6 +25,7 @@ Plan to integrate the VirtOS-Examples repository into the main VirtOS repository
 - Observability stacks
 
 **Problem**: Examples are separated from main codebase, causing:
+
 - Version synchronization issues
 - Difficulty discovering examples
 - No automated testing of examples
@@ -35,6 +37,7 @@ Plan to integrate the VirtOS-Examples repository into the main VirtOS repository
 ### 1. User Experience Improvements
 
 **Before** (Separate Repository):
+
 ```bash
 # User must clone two repositories
 git clone https://github.com/FlossWare/VirtOS.git
@@ -48,6 +51,7 @@ cd ../VirtOS
 ```
 
 **After** (Integrated):
+
 ```bash
 # Single clone
 git clone https://github.com/FlossWare/VirtOS.git
@@ -63,6 +67,7 @@ cd examples/01-quickstart
 ```
 
 **Benefits**:
+
 - ✅ Single clone includes everything
 - ✅ Examples versioned with VirtOS
 - ✅ No confusion about compatibility
@@ -71,18 +76,21 @@ cd examples/01-quickstart
 ### 2. Development Workflow
 
 **Before**:
+
 - Update VirtOS API → Examples break
 - No automated detection of broken examples
 - Manual sync between repositories
 - Examples may lag behind features
 
 **After**:
+
 - Examples tested in CI pipeline
 - Breaking changes caught immediately
 - Examples stay in sync automatically
 - Examples updated with features
 
 **Benefits**:
+
 - ✅ Examples validate API changes
 - ✅ CI catches broken examples
 - ✅ Examples always compatible
@@ -91,18 +99,21 @@ cd examples/01-quickstart
 ### 3. Documentation Integration
 
 **Before**:
+
 - Examples in separate repo
 - Docs link to external repository
 - Examples hard to discover
 - No inline examples in docs
 
 **After**:
+
 - Examples inline with documentation
 - Docs can reference `examples/` directly
 - Better discoverability
 - Code and examples co-located
 
 **Benefits**:
+
 - ✅ Better documentation
 - ✅ Easier to find relevant examples
 - ✅ Examples complement docs
@@ -111,18 +122,21 @@ cd examples/01-quickstart
 ### 4. Testing & Quality
 
 **Before**:
+
 - No automated example validation
 - Examples may be outdated
 - No syntax checking
 - Manual testing only
 
 **After**:
+
 - Automated syntax validation
 - YAML linting
 - Integration test suite
 - Examples as test fixtures
 
 **Benefits**:
+
 - ✅ Examples always work
 - ✅ CI validates examples
 - ✅ Higher quality examples
@@ -232,6 +246,7 @@ VirtOS/
 ### Phase 1: Preparation (Week 1)
 
 **Tasks**:
+
 1. Clone VirtOS-Examples repository locally
 2. Audit all examples for:
    - Compatibility with current VirtOS (0.87)
@@ -242,6 +257,7 @@ VirtOS/
 4. Create migration mapping document
 
 **Deliverables**:
+
 - [ ] Local clone of VirtOS-Examples
 - [ ] Example audit report
 - [ ] Category mapping
@@ -250,12 +266,14 @@ VirtOS/
 ### Phase 2: Directory Setup (Week 2, Days 1-2)
 
 **Tasks**:
+
 1. Create `examples/` directory structure
 2. Create category README.md files
 3. Set up .gitignore rules for examples/
 4. Create main examples/README.md
 
 **Commands**:
+
 ```bash
 cd VirtOS
 
@@ -281,6 +299,7 @@ done
 ```
 
 **Deliverables**:
+
 - [ ] examples/ directory created
 - [ ] All 8 category directories
 - [ ] README.md templates
@@ -289,6 +308,7 @@ done
 ### Phase 3: Content Migration (Week 2, Days 3-5)
 
 **Tasks**:
+
 1. Copy examples from VirtOS-Examples
 2. Reorganize into new structure
 3. Update all references:
@@ -299,6 +319,7 @@ done
 5. Update scripts for consistency
 
 **Example Migration**:
+
 ```bash
 # From VirtOS-Examples
 examples/multi-tier/three-tier-webapp/
@@ -317,6 +338,7 @@ examples/02-platform-java/multi-tier/
 ```
 
 **Deliverables**:
+
 - [ ] All examples migrated
 - [ ] References updated
 - [ ] Documentation added
@@ -325,6 +347,7 @@ examples/02-platform-java/multi-tier/
 ### Phase 4: Validation (Week 3, Days 1-3)
 
 **Tasks**:
+
 1. Test each example manually
 2. Add syntax validation to CI
 3. Add YAML linting to CI
@@ -332,6 +355,7 @@ examples/02-platform-java/multi-tier/
 5. Document how to run examples
 
 **CI Integration** (.github/workflows/examples.yml):
+
 ```yaml
 name: Validate Examples
 
@@ -350,49 +374,49 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Validate Bash syntax
         run: |
           find examples -name "*.sh" -type f | while read script; do
             echo "Checking $script..."
             bash -n "$script" || exit 1
           done
-      
+
       - name: Run shellcheck
         run: |
           sudo apt-get install -y shellcheck
           find examples -name "*.sh" -type f -exec shellcheck {} +
-  
+
   validate-yaml:
     name: Validate YAML Files
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Install yamllint
         run: pip install yamllint
-      
+
       - name: Validate YAML
         run: |
           find examples -name "*.yaml" -o -name "*.yml" | while read yaml; do
             echo "Checking $yaml..."
             yamllint "$yaml" || exit 1
           done
-  
+
   test-examples:
     name: Test Examples
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Install dependencies
         run: |
           # Install libvirt, QEMU, etc.
           sudo apt-get update
           sudo apt-get install -y qemu-kvm libvirt-daemon-system
-      
+
       - name: Run example tests
         run: |
           cd examples/08-testing/integration
@@ -400,6 +424,7 @@ jobs:
 ```
 
 **Deliverables**:
+
 - [ ] All examples tested manually
 - [ ] CI validation configured
 - [ ] Test suite created
@@ -408,6 +433,7 @@ jobs:
 ### Phase 5: Documentation Update (Week 3, Days 4-5)
 
 **Tasks**:
+
 1. Create comprehensive examples/README.md
 2. Update main README.md
 3. Add "Examples" section to docs/
@@ -415,6 +441,7 @@ jobs:
 5. Create examples index
 
 **examples/README.md**:
+
 ```markdown
 # VirtOS Examples
 
@@ -435,32 +462,41 @@ cd examples/02-platform-java/multi-tier
 ## Categories
 
 ### 01-quickstart/
+
 Getting started examples for new users.
 
 ### 02-platform-java/
+
 platform-java workload deployments (VMs, containers, applications).
 
 ### 03-networking/
+
 Network configuration examples (bridges, VLANs, NAT).
 
 ### 04-storage/
+
 Storage pool examples (LVM, Btrfs, ZFS, NFS, Ceph, GlusterFS).
 
 ### 05-ha-dr/
+
 High availability and disaster recovery examples.
 
 ### 06-monitoring/
+
 Monitoring and observability setups (Prometheus, Grafana).
 
 ### 07-advanced/
+
 Advanced features (GPU passthrough, SR-IOV, templates, automation).
 
 ### 08-testing/
+
 Integration tests and test fixtures (used by CI).
 
 ## Usage
 
 All examples are self-contained and include:
+
 - README.md with overview and instructions
 - Working scripts or YAML files
 - Helper scripts for deployment
@@ -469,6 +505,7 @@ All examples are self-contained and include:
 ## Testing
 
 Examples are automatically validated in CI:
+
 - Bash syntax checking
 - YAML linting
 - Integration test execution
@@ -478,6 +515,7 @@ Examples are automatically validated in CI:
 - [Getting Started](../docs/GETTING-STARTED.md)
 - [platform-java Integration](../docs/PLATFORM-JAVA_INTEGRATION.md)
 - [Quick Reference](../docs/QUICK-REFERENCE.md)
+
 ```
 
 **Deliverables**:
@@ -513,6 +551,7 @@ git clone https://github.com/FlossWare/VirtOS-Examples.git
 ```
 
 Use:
+
 ```bash
 git clone https://github.com/FlossWare/VirtOS.git
 cd VirtOS/examples
@@ -525,7 +564,8 @@ cd VirtOS/examples
 
 ## Questions
 
-Please file issues at: https://github.com/FlossWare/VirtOS/issues
+Please file issues at: <https://github.com/FlossWare/VirtOS/issues>
+
 ```
 
 **Deliverables**:

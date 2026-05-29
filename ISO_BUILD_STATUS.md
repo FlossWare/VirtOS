@@ -47,6 +47,7 @@ The VirtOS ISO build system is **well-implemented and structurally sound**, but 
 | **tinycorelinux.net** | ⚠️ Unreachable | Cannot download TC base system |
 
 **Note**: Network issue may be temporary or due to firewall/DNS. Build system expects to download:
+
 - Tiny Core Linux base image (core.gz, vmlinuz)
 - TCZ packages from Tiny Core repository
 
@@ -104,6 +105,7 @@ Features Enabled:
 ```
 
 **7 Available Profiles**:
+
 1. `minimal` - Base system only, minimal footprint
 2. `standard` - VMs + containers (default)
 3. `full` - All VirtOS features and tools
@@ -174,6 +176,7 @@ Expected size: 50-150MB (depending on profile)
 ### ISO Features
 
 The ISO should:
+
 - Boot via BIOS or UEFI
 - Boot from CD/DVD or USB drive (hybrid ISO)
 - Present isolinux boot menu
@@ -190,10 +193,11 @@ The ISO should:
 ### Critical (Must Fix)
 
 1. **Install genisoimage**
+
    ```bash
    # Fedora (current system)
    sudo dnf install genisoimage syslinux
-   
+
    # Debian/Ubuntu
    sudo apt install genisoimage syslinux-utils
    ```
@@ -206,6 +210,7 @@ The ISO should:
 ### Optional (Can Work Around)
 
 - **shellcheck** (recommended but not required)
+
   ```bash
   sudo dnf install shellcheck  # Fedora
   sudo apt install shellcheck  # Debian/Ubuntu
@@ -224,12 +229,14 @@ The ISO should:
 ### Phase 2: Build Execution ⏳ PENDING
 
 **Prerequisites**:
+
 ```bash
 sudo dnf install genisoimage syslinux
 # Ensure tinycorelinux.net is reachable
 ```
 
 **Test Steps**:
+
 ```bash
 cd build/scripts
 
@@ -256,6 +263,7 @@ sha256sum -c ../output/VirtOS-*.iso.sha256
 ### Phase 3: ISO Boot Testing ⏳ PENDING
 
 **Test in QEMU**:
+
 ```bash
 qemu-system-x86_64 \
   -enable-kvm \
@@ -265,6 +273,7 @@ qemu-system-x86_64 \
 ```
 
 **Validation Checklist**:
+
 - [ ] ISO boots successfully
 - [ ] Bootloader appears (isolinux menu)
 - [ ] Kernel loads without errors
@@ -276,6 +285,7 @@ qemu-system-x86_64 \
 ### Phase 4: Hardware Testing ⏳ PENDING
 
 **Write to USB**:
+
 ```bash
 # DANGER: Double-check device name!
 sudo dd if=build/output/VirtOS-*.iso of=/dev/sdX bs=4M status=progress
@@ -283,6 +293,7 @@ sync
 ```
 
 **Boot from USB**:
+
 - [ ] BIOS boot works
 - [ ] UEFI boot works (if supported)
 - [ ] Persistence works (optional)
@@ -295,7 +306,8 @@ sync
 
 **Problem**: Build requires download from tinycorelinux.net  
 **Impact**: Cannot build offline  
-**Workaround**: 
+**Workaround**:
+
 1. Download TC base manually from mirror
 2. Place in `build/downloads/`
 3. Modify `prepare.sh` to skip download if files exist
@@ -305,6 +317,7 @@ sync
 **Problem**: Only `standard` profile tested in quick-test  
 **Impact**: Other 6 profiles may have issues  
 **Solution**: Test each profile individually:
+
 ```bash
 export PROFILE=minimal && ./build-all.sh
 export PROFILE=kubernetes && ./build-all.sh
@@ -315,6 +328,7 @@ export PROFILE=kubernetes && ./build-all.sh
 
 **Status**: ✅ **RESOLVED**  
 **Solution**: `iso.sh` correctly reads from VERSION file (lines 16-20):
+
 ```bash
 if [ -f "$PROJECT_ROOT/VERSION" ]; then
     VERSION="$(cat "$PROJECT_ROOT/VERSION")-alpha"
@@ -322,6 +336,7 @@ else
     VERSION="0.1-alpha"
 fi
 ```
+
 No changes needed - version syncing works correctly.
 
 ---
@@ -331,23 +346,27 @@ No changes needed - version syncing works correctly.
 ### Immediate Actions
 
 1. **Install genisoimage**
+
    ```bash
    sudo dnf install genisoimage syslinux
    ```
 
 2. **Verify TC network access**
+
    ```bash
    wget -q --spider https://tinycorelinux.net/15.x/x86_64/release/distribution_files/core.gz
    echo $?  # Should be 0
    ```
 
 3. **Run full build test**
+
    ```bash
    cd build/scripts
    ./build-all.sh
    ```
 
 4. **Test in QEMU**
+
    ```bash
    qemu-system-x86_64 -enable-kvm -m 2048 -cdrom build/output/VirtOS-*.iso
    ```
@@ -355,11 +374,13 @@ No changes needed - version syncing works correctly.
 ### Code Status
 
 **VERSION sync** - ✅ Already implemented correctly:
+
 - `iso.sh` (lines 16-20): Reads from VERSION file ✅
 - `customize.sh`: Fixed to read from VERSION file ✅
 - `build.conf`: Fixed to read from VERSION file ✅
 
 **Add offline build support** (prepare.sh):
+
 ```bash
 # Skip download if files already exist
 if [ -f "$DOWNLOADS_DIR/core.gz" ] && [ -f "$DOWNLOADS_DIR/vmlinuz64" ]; then
@@ -371,6 +392,7 @@ fi
 ```
 
 **Add profile validation**:
+
 ```bash
 VALID_PROFILES="minimal standard full containers developer kubernetes storage"
 if ! echo "$VALID_PROFILES" | grep -q "\b$PROFILE\b"; then
@@ -409,16 +431,19 @@ fi
 ### To Close Issue #3
 
 1. Install build dependencies:
+
    ```bash
    sudo dnf install genisoimage syslinux
    ```
 
 2. Execute full build:
+
    ```bash
    cd build/scripts && ./build-all.sh
    ```
 
 3. Test ISO in QEMU:
+
    ```bash
    qemu-system-x86_64 -enable-kvm -m 2048 -cdrom build/output/VirtOS-*.iso
    ```

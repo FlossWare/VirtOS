@@ -696,6 +696,7 @@ virtos-dr update-dns-to-primary
 
 # 8. Notify users failback complete
 ```
+
 ```
 
 ## Recovery Validation Checklist
@@ -794,7 +795,7 @@ DR successfully executed. Service restored within acceptable RTO for all tiers.
 
 ## Getting Help
 
-- **DR Planning**: consulting@flossware.org
+- **DR Planning**: <consulting@flossware.org>
 - **Emergency DR Support**: +1-555-DR-HELP (24/7)
 - **Documentation**: [docs/DR-PROCEDURES.md](DR-PROCEDURES.md)
 

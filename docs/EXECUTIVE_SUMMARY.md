@@ -65,16 +65,19 @@ Traditional virtualization platforms are **expensive and wasteful**:
 ## Real-World Impact
 
 ### Small Business (25 hosts)
+
 - **Avoided cost**: $25,000 VMware licensing
 - **RAM recovered**: 12GB (24 more VMs)
 - **Deployment speed**: 30 min → 2 min per VM
 
 ### Enterprise Edge (500 stores)
+
 - **Avoided cost**: $500,000 VMware licensing
 - **Footprint**: 100MB fits on Intel NUCs
 - **5-year savings**: $650,000 (licensing + hardware + support)
 
 ### MSP (200 hosts)
+
 - **Annual savings**: $200,000 licensing costs
 - **Margin improvement**: 30% → 45% (15 points)
 - **Customer onboarding**: 16 hours → 2 hours (8x faster)
@@ -111,6 +114,7 @@ Traditional virtualization platforms are **expensive and wasteful**:
 Built on **Linux KVM** - powers 70% of public cloud. Core VM management production-ready, awaiting full validation.
 
 **"What about support?"**  
+
 - Community (free)
 - Commercial SLA ($500-$10k/year, optional)
 - Self-support (open source)
@@ -145,20 +149,23 @@ Standard formats (QCOW2, libvirt) = migrate to Proxmox/OpenStack in 1-2 days. **
 ## Next Steps
 
 **For Decision Makers**:
+
 1. Review full business case: [BUSINESS_CASE.md](BUSINESS_CASE.md)
 2. Calculate your savings (# hosts × current licensing cost)
 3. Request technical briefing
 4. Approve pilot (3-5 hosts, $2k-$5k)
 
 **For Technical Teams**:
+
 1. Download/build VirtOS ISO (when available)
 2. Deploy test environment (3-5 hosts)
 3. Benchmark vs current platform
 4. Present findings to management
 
 **Contact**:
-- **GitHub**: https://github.com/FlossWare/VirtOS
-- **Issues**: https://github.com/FlossWare/VirtOS/issues
+
+- **GitHub**: <https://github.com/FlossWare/VirtOS>
+- **Issues**: <https://github.com/FlossWare/VirtOS/issues>
 - **Commercial**: [Contact FlossWare]
 
 ---
@@ -166,6 +173,7 @@ Standard formats (QCOW2, libvirt) = migrate to Proxmox/OpenStack in 1-2 days. **
 ## The Bottom Line
 
 **50-host deployment over 5 years**:
+
 - **VirtOS**: $57,000
 - **VMware**: $297,000
 - **Your savings**: **$240,000**
@@ -178,4 +186,4 @@ Standard formats (QCOW2, libvirt) = migrate to Proxmox/OpenStack in 1-2 days. **
 
 **Ready to cut your virtualization costs by 60-80%?**
 
-Start here: https://github.com/FlossWare/VirtOS
+Start here: <https://github.com/FlossWare/VirtOS>

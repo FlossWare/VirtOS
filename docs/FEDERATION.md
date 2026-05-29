@@ -5,6 +5,7 @@ Multi-cloud and hybrid cloud federation for unified infrastructure management.
 ## Overview
 
 VirtOS Federation allows you to create a unified virtualization platform spanning:
+
 - **Multiple VirtOS hosts** (on-premises cluster)
 - **Public cloud providers** (AWS, Azure, GCP)
 - **Hybrid deployments** (mix of on-prem and cloud)
@@ -34,31 +35,37 @@ Federation connects disparate infrastructure into a single logical system:
 ## Features
 
 ### Unified Management
+
 - **Single interface** for all infrastructure
 - **One set of tools** (`virtos-*` commands work everywhere)
 - **Consistent workflows** across providers
 
 ### Federated Identity (SSO)
+
 - **SAML 2.0** integration
 - **Single sign-on** across all clouds
 - **Role synchronization** and attribute mapping
 
 ### Cross-Cloud Networking
+
 - **VPN tunnels** between providers
 - **Unified network namespace** (10.0.0.0/8 everywhere)
 - **Service mesh** across clouds
 
 ### Multi-Cloud Load Balancing
+
 - **Geographic distribution** of workloads
 - **Automatic failover** between providers
 - **Cost-aware** routing
 
 ### Workload Migration
+
 - **Live migration** between clouds
 - **Snapshot and transfer** workflow
 - **Automatic format conversion**
 
 ### Cost Optimization
+
 - **Compare provider costs** for workloads
 - **Placement recommendations** (cheapest region/instance type)
 - **Budget tracking** across all clouds
@@ -68,6 +75,7 @@ Federation connects disparate infrastructure into a single logical system:
 ### 1. Initialize Federation
 
 **Via TUI:**
+
 ```bash
 virtos-tui
 → 23. Cloud Federation
@@ -76,11 +84,13 @@ virtos-tui
 ```
 
 **Via CLI:**
+
 ```bash
 virtos-federation federation-init my-company-fed
 ```
 
 Creates:
+
 - Federation metadata at `/var/lib/virtos/federation/`
 - Configuration at `/etc/virtos/federation.conf`
 - Registers local on-premises provider automatically
@@ -88,6 +98,7 @@ Creates:
 ### 2. Register Cloud Providers
 
 **Register AWS:**
+
 ```bash
 virtos-federation provider-register \
   aws \
@@ -98,6 +109,7 @@ virtos-federation provider-register \
 ```
 
 **Register Azure:**
+
 ```bash
 virtos-federation provider-register \
   azure-prod \
@@ -108,6 +120,7 @@ virtos-federation provider-register \
 ```
 
 **Register GCP:**
+
 ```bash
 virtos-federation provider-register \
   gcp-us \
@@ -124,6 +137,7 @@ virtos-federation provider-list
 ```
 
 Output:
+
 ```
 Name                 Type      Endpoint              Status
 -------------------- --------- --------------------- ------
@@ -140,6 +154,7 @@ virtos-federation vm-deploy web-server aws t3.medium
 ```
 
 Provisions:
+
 - EC2 instance in AWS
 - Connects to federation VPN
 - Registers in unified DNS
@@ -152,6 +167,7 @@ virtos-federation federation-status
 ```
 
 Shows:
+
 - All registered providers
 - VM count per provider
 - Network connectivity
@@ -163,11 +179,13 @@ Shows:
 ### Scenario 1: Hybrid Cloud Web App
 
 **Setup:**
+
 - **Database**: On-premises VirtOS (compliance requirement)
 - **Web tier**: AWS (auto-scaling)
 - **Media processing**: GCP (GPU instances)
 
 **Implementation:**
+
 ```bash
 # Initialize federation
 virtos-federation federation-init webapp-fed
@@ -197,6 +215,7 @@ virtos-federation loadbalance-setup web aws
 ```
 
 **Result:**
+
 - Database stays on-prem (compliance)
 - Web tier auto-scales in AWS
 - GPU work happens in GCP
@@ -206,11 +225,13 @@ virtos-federation loadbalance-setup web aws
 ### Scenario 2: Geographic Distribution
 
 **Requirements:**
+
 - Serve users in US, EU, Asia
 - Low latency everywhere
 - Single deployment workflow
 
 **Implementation:**
+
 ```bash
 # Initialize
 virtos-federation federation-init global-app
@@ -230,6 +251,7 @@ virtos-federation loadbalance-setup app global --geo-routing
 ```
 
 **Result:**
+
 - VMs in 3 regions (US, EU, Asia)
 - Geo-DNS routes to nearest region
 - Unified monitoring and updates
@@ -238,10 +260,12 @@ virtos-federation loadbalance-setup app global --geo-routing
 ### Scenario 3: Cloud Bursting
 
 **Scenario:**
+
 - Normal load: On-prem capacity sufficient
 - Peak load: Burst to AWS
 
 **Implementation:**
+
 ```bash
 # Setup federation
 virtos-federation federation-init burst-cluster
@@ -256,6 +280,7 @@ virtos-federation hybrid-orchestrate \
 ```
 
 **Behavior:**
+
 - When on-prem CPU > 80%, launch AWS instances
 - When load drops < 60%, terminate AWS instances
 - Automatic workload migration
@@ -264,12 +289,14 @@ virtos-federation hybrid-orchestrate \
 ### Scenario 4: Disaster Recovery Across Clouds
 
 **Setup:**
+
 - **Primary**: On-premises VirtOS
 - **DR**: Azure (different geographic region)
 - **RPO**: 1 hour (max data loss)
 - **RTO**: 4 hours (max recovery time)
 
 **Implementation:**
+
 ```bash
 # Initialize federation
 virtos-federation federation-init dr-setup
@@ -288,6 +315,7 @@ virtos-dr plan-execute prod-failover --test
 ```
 
 **Failover Process:**
+
 1. Detect primary site failure
 2. Automatically start replicas in Azure
 3. Update DNS to point to Azure
@@ -298,6 +326,7 @@ virtos-dr plan-execute prod-failover --test
 **Goal:** Run workloads on cheapest provider
 
 **Implementation:**
+
 ```bash
 # Initialize with all major clouds
 virtos-federation federation-init cost-optimized
@@ -310,6 +339,7 @@ virtos-federation cost-optimize --workload "4 CPU, 16GB RAM, 100GB disk"
 ```
 
 Output:
+
 ```
 Workload: 4 CPU, 16GB RAM, 100GB disk
 Cost Analysis (per month):
@@ -349,6 +379,7 @@ COST_OPTIMIZATION="yes"           # Cost-aware placement
 Location: `/var/lib/virtos/federation/providers/*.provider`
 
 Example: `aws.provider`
+
 ```json
 {
   "name": "aws",
@@ -373,6 +404,7 @@ Example: `aws.provider`
 Location: `/var/lib/virtos/federation/identity/*.conf`
 
 Example SAML configuration:
+
 ```json
 {
   "provider": "aws",
@@ -396,16 +428,19 @@ Example SAML configuration:
 ### Federated Identity Setup
 
 **Enable SSO for AWS:**
+
 ```bash
 virtos-federation identity-setup aws
 ```
 
 Configures:
+
 - SAML 2.0 trust relationship
 - Attribute mapping (email, name, groups)
 - Role federation (admin, operator, viewer)
 
 **Result:**
+
 - Log in once to VirtOS
 - Access AWS console without re-auth
 - Permissions synchronized
@@ -413,17 +448,20 @@ Configures:
 ### Cross-Cloud Networking
 
 **Create VPN between on-prem and AWS:**
+
 ```bash
 virtos-federation network-setup on-prem aws
 ```
 
 Establishes:
+
 - Site-to-site VPN tunnel
 - Unified IP addressing (10.0.0.0/8)
 - Routing between networks
 - Firewall rules
 
 **Check connectivity:**
+
 ```bash
 # From on-prem VM
 ping 10.1.1.10  # AWS VM
@@ -435,6 +473,7 @@ ping 10.0.1.10  # On-prem VM
 ### Multi-Cloud Load Balancing
 
 **Setup global load balancer:**
+
 ```bash
 virtos-federation loadbalance-setup web-tier global \
   --providers on-prem,aws,azure \
@@ -443,12 +482,14 @@ virtos-federation loadbalance-setup web-tier global \
 ```
 
 Behavior:
+
 - Routes users to nearest provider
 - Health checks every 30 seconds
 - Automatic failover if provider down
 - SSL termination and routing
 
 **Example traffic flow:**
+
 - User in New York → AWS us-east-1
 - User in London → Azure westeurope
 - User in Tokyo → GCP asia-northeast1
@@ -456,6 +497,7 @@ Behavior:
 ### Hybrid Orchestration
 
 **Auto-burst configuration:**
+
 ```bash
 virtos-federation hybrid-orchestrate \
   --on-prem-capacity 100 \
@@ -466,6 +508,7 @@ virtos-federation hybrid-orchestrate \
 ```
 
 Automated behavior:
+
 1. Monitor on-prem CPU usage
 2. If usage > 80%, launch AWS instance
 3. Migrate workload to cloud
@@ -473,6 +516,7 @@ Automated behavior:
 5. Terminate cloud instance
 
 **Cost awareness:**
+
 - Only burst during actual load
 - Prefer on-prem (already paid for)
 - Cloud is overflow capacity
@@ -480,11 +524,13 @@ Automated behavior:
 ### Cost Optimization Reports
 
 **Monthly cost analysis:**
+
 ```bash
 virtos-federation cost-optimize --report monthly
 ```
 
 Output:
+
 ```
 VirtOS Federation Cost Report (May 2026)
 
@@ -508,11 +554,13 @@ Total potential savings: $492/month (17.8%)
 ### VM Migration Between Clouds
 
 **Migrate from on-prem to AWS:**
+
 ```bash
 virtos-federation vm-migrate database-1 on-prem aws
 ```
 
 5-phase migration:
+
 1. **Snapshot** source VM (disk + config)
 2. **Transfer** to target cloud (VPN/direct connect)
 3. **Deploy** on target (format conversion, provisioning)
@@ -520,6 +568,7 @@ virtos-federation vm-migrate database-1 on-prem aws
 5. **Cleanup** source (optional, manual confirmation)
 
 **Live migration** (for clustered VMs):
+
 ```bash
 virtos-federation vm-migrate web-3 on-prem aws --live
 ```
@@ -628,6 +677,7 @@ virtos-tui
 ```
 
 **TUI Menu Options:**
+
 1. Initialize Federation
 2. Register Cloud Provider
 3. Remove Cloud Provider
@@ -675,6 +725,7 @@ virtos-tui
 ### Data Flow
 
 **VM Deployment:**
+
 1. User: `virtos-federation vm-deploy myvm aws`
 2. Federation validates provider
 3. Federation selects region/instance type
@@ -685,6 +736,7 @@ virtos-tui
 8. Returns VM details
 
 **Cross-Cloud Migration:**
+
 1. Snapshot source VM
 2. Transfer via VPN/direct connect
 3. Convert disk format if needed
@@ -702,6 +754,7 @@ virtos-tui
 **Cause:** Invalid credentials
 
 **Fix:**
+
 ```bash
 # Verify credentials
 aws sts get-caller-identity  # For AWS
@@ -720,6 +773,7 @@ virtos-federation provider-register aws aws ec2.amazonaws.com CORRECT_KEY CORREC
 **Cause:** Firewall blocking IPsec/IKE
 
 **Fix:**
+
 ```bash
 # Check firewall rules (on-prem)
 iptables -L | grep -E "500|4500"
@@ -739,6 +793,7 @@ virtos-federation network-setup on-prem aws
 **Cause:** Slow network transfer
 
 **Fix:**
+
 ```bash
 # Check transfer speed
 virtos-federation network-status
@@ -756,6 +811,7 @@ pkill -CONT virtos-federation
 **Cause:** No cost data available (new provider)
 
 **Fix:**
+
 ```bash
 # Cost data collected hourly, wait 1-2 hours
 # Or manually refresh
@@ -770,6 +826,7 @@ aws ce get-cost-and-usage --time-period Start=2026-05-01,End=2026-05-31 --granul
 ### Credential Storage
 
 **Provider credentials** stored encrypted:
+
 - Location: `/var/lib/virtos/federation/providers/*.provider`
 - Secrets redacted in JSON
 - Actual keys stored in secure keyring
@@ -778,11 +835,13 @@ aws ce get-cost-and-usage --time-period Start=2026-05-01,End=2026-05-31 --granul
 ### Network Security
 
 **VPN encryption:**
+
 - IPsec with AES-256
 - Perfect forward secrecy (PFS)
 - Regular key rotation
 
 **Firewall rules:**
+
 - Minimal ports opened (500, 4500 for IPsec)
 - Source IP whitelisting
 - Cloud security groups configured
@@ -790,6 +849,7 @@ aws ce get-cost-and-usage --time-period Start=2026-05-01,End=2026-05-31 --granul
 ### Identity Security
 
 **SSO security:**
+
 - SAML assertions signed and encrypted
 - Token expiration (1 hour default)
 - Multi-factor authentication supported
@@ -800,6 +860,7 @@ aws ce get-cost-and-usage --time-period Start=2026-05-01,End=2026-05-31 --granul
 ### Expected Latency
 
 **Cross-cloud communication:**
+
 - On-prem ↔ AWS (us-east-1): 10-20ms
 - On-prem ↔ Azure (eastus): 15-25ms
 - On-prem ↔ GCP (us-central1): 20-30ms
@@ -807,6 +868,7 @@ aws ce get-cost-and-usage --time-period Start=2026-05-01,End=2026-05-31 --granul
 - AWS ↔ GCP: 40-60ms
 
 **Migration speeds:**
+
 - On-prem → AWS: 100-500 Mbps (depends on uplink)
 - AWS → Azure: 500-1000 Mbps (cloud peering)
 - Within region: 1-10 Gbps
@@ -814,6 +876,7 @@ aws ce get-cost-and-usage --time-period Start=2026-05-01,End=2026-05-31 --granul
 ### Scaling
 
 **Federation limits:**
+
 - Providers: Unlimited (tested up to 50)
 - Federated VMs: 10,000+ per federation
 - VPN tunnels: 100+ concurrent
@@ -822,6 +885,7 @@ aws ce get-cost-and-usage --time-period Start=2026-05-01,End=2026-05-31 --granul
 ## Best Practices
 
 ### 1. Start Small
+
 ```bash
 # Begin with 2 providers
 virtos-federation federation-init test-fed
@@ -838,6 +902,7 @@ ssh <vm-ip>
 ```
 
 ### 2. Cost Awareness
+
 - Use cost reports monthly
 - Set budget alerts
 - Prefer on-prem for steady workloads
@@ -845,18 +910,21 @@ ssh <vm-ip>
 - Reserved instances for predictable cloud workloads
 
 ### 3. Network Planning
+
 - Plan IP address ranges (avoid overlap)
 - Use /16 or /24 per provider
 - Document subnet assignments
 - Test VPN before production
 
 ### 4. Identity Management
+
 - Enable SSO early
 - Map roles consistently
 - Use groups for permissions
 - Audit access regularly
 
 ### 5. Disaster Recovery
+
 - Replicate critical VMs to cloud
 - Test failover quarterly
 - Document runbooks
@@ -865,6 +933,7 @@ ssh <vm-ip>
 ## Examples Repository
 
 See **[VirtOS-Examples](https://github.com/FlossWare/VirtOS-Examples)** for:
+
 - Multi-cloud web app example
 - Hybrid Kubernetes cluster
 - DR failover demo
@@ -883,8 +952,8 @@ See **[VirtOS-Examples](https://github.com/FlossWare/VirtOS-Examples)** for:
 - Command help: `virtos-federation --help`
 - Interactive wizard: `virtos-federation federation-wizard`
 - TUI: `virtos-tui → Cloud Federation`
-- Issues: https://github.com/FlossWare/VirtOS/issues
-- Discussions: https://github.com/FlossWare/VirtOS/discussions
+- Issues: <https://github.com/FlossWare/VirtOS/issues>
+- Discussions: <https://github.com/FlossWare/VirtOS/discussions>
 
 ---
 

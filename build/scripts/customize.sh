@@ -60,7 +60,7 @@ else
     echo "  WARNING: VERSION file not found, using default: $FW_VERSION"
 fi
 
-cat > /tmp/version.txt << EOF
+cat >/tmp/version.txt <<EOF
 FlossWare VirtOS
 Version: $FW_VERSION
 Build Date: $(date)
@@ -70,7 +70,7 @@ sudo mv /tmp/version.txt etc/virtos/version.txt
 
 # Add motd
 echo "  Adding message of the day..."
-cat > /tmp/motd << 'EOF'
+cat >/tmp/motd <<'EOF'
 
  ██╗   ██╗██╗██████╗ ████████╗ ██████╗ ███████╗
  ██║   ██║██║██╔══██╗╚══██╔══╝██╔═══██╗██╔════╝
@@ -90,7 +90,7 @@ sudo mv /tmp/motd etc/motd
 # Create documentation
 echo "  Adding documentation..."
 sudo mkdir -p usr/local/share/doc/virtos
-cat > /tmp/README << 'EOF'
+cat >/tmp/README <<'EOF'
 FlossWare VirtOS
 ================
 
@@ -158,7 +158,7 @@ fi
 echo "  Adding helper scripts..."
 
 # KVM check script
-cat > /tmp/check-kvm << 'EOF'
+cat >/tmp/check-kvm <<'EOF'
 #!/bin/sh
 echo "=== KVM Status ==="
 echo ""
@@ -201,7 +201,7 @@ sudo mv /tmp/check-kvm usr/local/bin/check-kvm
 sudo chmod +x usr/local/bin/check-kvm
 
 # VM creation helper
-cat > /tmp/create-vm << 'EOF'
+cat >/tmp/create-vm <<'EOF'
 #!/bin/sh
 # Simple VM creation helper
 
@@ -255,14 +255,14 @@ sudo chmod +x usr/local/bin/create-vm
 echo ""
 echo "Repacking initrd..."
 cd "$INITRD_DIR"
-sudo find . | sudo cpio -o -H newc | gzip -9 > "$WORKSPACE_DIR/core.gz.custom"
+sudo find . | sudo cpio -o -H newc | gzip -9 >"$WORKSPACE_DIR/core.gz.custom"
 
 # Replace in ISO contents
 echo "Updating ISO contents..."
 sudo cp "$WORKSPACE_DIR/core.gz.custom" "$WORKSPACE_DIR/iso-contents/boot/core.gz"
 
 # Create marker
-date > "$WORKSPACE_DIR/.customized"
+date >"$WORKSPACE_DIR/.customized"
 
 echo ""
 echo "=== Customization Complete ==="

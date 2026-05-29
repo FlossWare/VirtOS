@@ -12,6 +12,7 @@
 **VirtOS** is a minimal virtualization operating system that **reduces infrastructure costs by 60-80%** compared to traditional hypervisors while providing unified management of VMs, containers, and cloud resources.
 
 **Key Value Proposition**:
+
 - **10x smaller** than VMware ESXi (100MB vs 1GB+)
 - **5x faster deployment** (5 minutes vs 30+ minutes)
 - **Zero licensing costs** (100% open source)
@@ -27,18 +28,21 @@
 ### Current Market Challenges
 
 **VMware ESXi**:
+
 - License cost: **$995-$6,000+** per CPU
 - Footprint: **1GB+ RAM just for hypervisor**
 - Complexity: **30+ minute deployment**
 - Lock-in: **Proprietary, vendor-dependent**
 
 **Proxmox**:
+
 - Free (open source) but:
 - Footprint: **500MB+ RAM**
 - Debian-based: **Full Linux overhead**
 - Complexity: **Medium learning curve**
 
 **Microsoft Hyper-V**:
+
 - License: **Bundled with Windows Server ($1,000+)**
 - Footprint: **2GB+ RAM**
 - Platform: **Windows-only**
@@ -46,17 +50,20 @@
 ### The Hidden Costs
 
 **Infrastructure Waste**:
+
 - Average hypervisor consumes **512MB-2GB RAM** doing nothing
 - **10-node cluster** wastes **5-20GB RAM** on hypervisor overhead
 - That's **5-20 additional VMs** you could run instead
 
 **Operational Costs**:
+
 - Deployment time: **30-60 minutes per host**
 - Patch management: **Monthly updates, reboots**
 - Training: **$2,000-$5,000 per admin**
 - Support contracts: **$500-$5,000/year**
 
 **Vendor Lock-in**:
+
 - Switching costs: **$50,000-$500,000** for mid-sized infrastructure
 - Limited negotiating power
 - Forced upgrade cycles
@@ -76,6 +83,7 @@
 5. **Zero licensing costs** (100% open source)
 
 **Technical Foundation**:
+
 - Built on proven technologies: **Linux KVM, QEMU, libvirt**
 - Same hypervisor technology as **Google Cloud, AWS EC2**
 - Industry-standard APIs (libvirt, Docker)
@@ -83,18 +91,21 @@
 ### Why VirtOS is Different
 
 **Minimal by Design**:
+
 - **100MB footprint** (Minimal profile) vs 1GB+ competitors
 - **64MB RAM** for OS vs 512MB-2GB competitors
 - **5-minute boot** vs 10-30 minutes
 - **Zero bloat** - only what you need
 
 **Flexible Profiles**:
+
 - **Minimal** (100MB) - VM-only
 - **Standard** (200MB) - VMs + containers
 - **Full** (400MB) - All features
 - **Customize** - Build exactly what you need
 
 **No Lock-in**:
+
 - **Open source** (MIT/GPL licenses)
 - **Standard APIs** (libvirt, Docker, Kubernetes)
 - **Portable VMs** (QCOW2, raw formats)
@@ -183,6 +194,7 @@
 **ROI**: **867-3,084% first year**
 
 **5-Year TCO**:
+
 - VMware: **$547,600 + (4 × $79,600)** = **$866,000**
 - VirtOS: **$56,670 + (4 × $10,000)** = **$96,670**
 - **Total 5-year savings: $769,330**
@@ -229,6 +241,7 @@
 **Problem**: Traditional hypervisors waste memory
 
 **Example**: 50-node cluster
+
 - VMware ESXi: 50 × 1GB = **50GB wasted**
 - Proxmox: 50 × 500MB = **25GB wasted**
 - VirtOS: 50 × 64MB = **3.2GB used**
@@ -236,6 +249,7 @@
 **VirtOS advantage**: **21.8-46.8GB RAM recovered** (relative to alternatives)
 
 **Business impact**:
+
 - **40-90 additional VMs** at 512MB each
 - **Delay hardware upgrades** by 1-2 years
 - **$20,000-$100,000 CapEx savings** (depending on scale)
@@ -243,12 +257,14 @@
 ### Storage Efficiency
 
 **ISO Size Comparison**:
+
 - VMware ESXi: **350MB-1GB** installer
 - Proxmox: **1-2GB** installer
 - VirtOS Minimal: **100MB** complete system
 - VirtOS Standard: **200MB** (VMs + containers)
 
 **Benefits**:
+
 - **Faster USB installs** (10-30 seconds vs 5-10 minutes)
 - **Lower bandwidth** for remote deployments
 - **Smaller backup images**
@@ -259,6 +275,7 @@
 **Smaller OS = Less CPU usage = Lower power**
 
 **10-node cluster savings**:
+
 - Reduced idle CPU: **5-10W per host**
 - Total: **50-100W saved**
 - Annual: **438-876 kWh**
@@ -273,11 +290,13 @@
 ### 1. Lower Total Cost of Ownership (TCO)
 
 **CapEx Reduction**:
+
 - ✅ **$0 licensing costs** vs $500-$6,000 per host
 - ✅ **Less hardware needed** (lower RAM/storage overhead)
 - ✅ **Delay upgrades** (better utilization)
 
 **OpEx Reduction**:
+
 - ✅ **Lower power consumption** (smaller footprint)
 - ✅ **Less admin time** (faster operations)
 - ✅ **Lower training costs** (simpler, documented)
@@ -289,11 +308,13 @@
 ### 2. Faster Time-to-Value
 
 **Rapid Deployment**:
+
 - ✅ **5-minute installs** vs 30-60 minutes
 - ✅ **Automated clustering** (Avahi/mDNS discovery)
 - ✅ **Pre-configured profiles** (minimal, standard, full)
 
 **Quick VM Provisioning**:
+
 - ✅ **30-second VM creation** via CLI
 - ✅ **Templates** for common workloads
 - ✅ **API-driven automation** (REST + CLI)
@@ -305,12 +326,14 @@
 ### 3. Flexibility & Scalability
 
 **Multiple Workload Types**:
+
 - ✅ **Virtual Machines** (full isolation)
 - ✅ **Containers** (lightweight, fast)
 - ✅ **Bare metal** (via platform-java)
 - ✅ **Hybrid** (mix and match)
 
 **Scaling Options**:
+
 - ✅ **Scale up**: Add VMs to existing hosts
 - ✅ **Scale out**: Add hosts to cluster
 - ✅ **Scale down**: Minimal profile for edge
@@ -322,12 +345,14 @@
 ### 4. No Vendor Lock-in
 
 **Open Standards**:
+
 - ✅ **libvirt API** (industry standard)
 - ✅ **QCOW2 disk format** (portable)
 - ✅ **Docker/OCI** (container standard)
 - ✅ **Open source** (full source access)
 
 **Freedom to Choose**:
+
 - ✅ **Move VMs** to other KVM platforms
 - ✅ **Switch providers** (no migration lock-in)
 - ✅ **Self-support** or commercial support
@@ -340,11 +365,13 @@
 ### 5. Edge & IoT Ready
 
 **Minimal Footprint**:
+
 - ✅ **100MB ISO** fits anywhere
 - ✅ **64MB RAM** runs on constrained devices
 - ✅ **Low power** (ARM support possible)
 
 **Use Cases**:
+
 - ✅ **Retail edge** (point-of-sale, kiosks)
 - ✅ **Industrial IoT** (factory floor)
 - ✅ **Remote offices** (branch locations)
@@ -408,6 +435,7 @@ Built on proven technologies (Linux KVM, the same hypervisor powering Google Clo
 If you're running VMware ESXi on 50 hosts, you're burning **50GB of RAM** - enough for 100 additional VMs - just running the hypervisor. And you paid **$50,000 in licensing** for that privilege.
 
 **VirtOS solves this**. We're a minimal virtualization operating system that:
+
 - Uses **64MB RAM instead of 1GB+** (15x less)
 - Costs **$0 instead of $1,000 per host**
 - Boots in **30 seconds instead of 10 minutes** (20x faster)
@@ -430,6 +458,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Pain Point**: **Can't afford VMware, need better than free ESXi**
 
 **VirtOS Solution**:
+
 - ✅ **Enterprise features** without enterprise pricing
 - ✅ **Full API** (free ESXi has none)
 - ✅ **Clustering** (free ESXi has none)
@@ -444,6 +473,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Pain Point**: **Traditional hypervisors too large for edge devices**
 
 **VirtOS Solution**:
+
 - ✅ **100MB footprint** (10x smaller)
 - ✅ **64MB RAM** (runs on constrained hardware)
 - ✅ **Fast boot** (critical for edge reliability)
@@ -458,6 +488,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Pain Point**: **Want professional tools without professional costs**
 
 **VirtOS Solution**:
+
 - ✅ **$0 cost** (no license, no support required)
 - ✅ **Full features** (API, clustering, containers)
 - ✅ **Educational** (learn real hypervisor tech)
@@ -472,6 +503,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Pain Point**: **High per-seat licensing, margin pressure**
 
 **VirtOS Solution**:
+
 - ✅ **No per-host fees** (better margins)
 - ✅ **Fast deployment** (lower labor costs)
 - ✅ **Standardized** (same platform everywhere)
@@ -486,6 +518,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Pain Point**: **Need frequent setup/teardown, limited budget**
 
 **VirtOS Solution**:
+
 - ✅ **Fast deployment** (5 minutes)
 - ✅ **Low overhead** (more VMs per host)
 - ✅ **Container integration** (Docker, Kubernetes)
@@ -500,6 +533,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Pain Point**: **Budget constraints, teaching real-world skills**
 
 **VirtOS Solution**:
+
 - ✅ **Free** (critical for education budgets)
 - ✅ **Production-grade** (same tech as AWS/Google)
 - ✅ **Simple** (students learn quickly)
@@ -514,6 +548,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Pain Point**: **Proxmox works but still heavyweight**
 
 **VirtOS Solution**:
+
 - ✅ **Same underlying tech** (KVM/QEMU/libvirt)
 - ✅ **40% smaller** (100-200MB vs 500MB+)
 - ✅ **Simpler** (minimal components)
@@ -579,6 +614,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Answer**: **Prioritize by need**:
 
 **What VirtOS has today**:
+
 - ✅ VM lifecycle (create, start, stop, migrate)
 - ✅ Storage pools & volumes
 - ✅ Network bridges & NAT
@@ -588,6 +624,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 - ✅ REST API + Web UI (Cockpit)
 
 **What's roadmap/partial**:
+
 - ⏳ Advanced HA/DR (basic works, advanced planned)
 - ⏳ Live migration (code exists, needs testing)
 - ⏳ GPU passthrough (code exists, needs testing)
@@ -603,6 +640,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Objective**: **Validate VirtOS in non-critical environment**
 
 **Scope**:
+
 - Deploy **3-5 hosts** in dev/test
 - Run **10-20 test VMs**
 - Evaluate **manageability** (CLI, API, Web UI)
@@ -612,6 +650,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Investment**: **$2,000-$5,000** (labor only, no licenses)
 
 **Success Criteria**:
+
 - VMs run stable for 30+ days
 - Performance comparable to current platform
 - Team comfortable with tooling
@@ -623,6 +662,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Objective**: **Expand to more environments**
 
 **Scope**:
+
 - Deploy **10-20 additional hosts**
 - Move **dev/test workloads** from old platform
 - Establish **operational procedures**
@@ -632,6 +672,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Investment**: **$5,000-$15,000** (labor + hardware if needed)
 
 **Success Criteria**:
+
 - 50+ VMs running across 20+ hosts
 - Incident rate < current platform
 - Team productivity maintained or improved
@@ -643,6 +684,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Objective**: **Production workloads on VirtOS**
 
 **Scope**:
+
 - Deploy **remaining hosts**
 - **Migrate production VMs** (low-risk first)
 - Establish **SLAs** and monitoring
@@ -651,6 +693,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Investment**: **$10,000-$50,000** (labor for migration)
 
 **Success Criteria**:
+
 - Production stable for 90+ days
 - Cost savings realized ($50k-$500k+ depending on scale)
 - Team endorses platform
@@ -660,12 +703,14 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 ### Total Implementation Cost
 
 **50-host deployment**:
+
 - Pilot: $2,000-$5,000
 - Expansion: $5,000-$15,000
 - Production: $10,000-$50,000
 - **Total: $17,000-$70,000**
 
 **vs VMware replacement**:
+
 - **VMware 5-year TCO**: $297,000
 - **VirtOS 5-year TCO**: $57,000 (including $17k-$70k implementation)
 - **Net savings**: **$227,000-$240,000**
@@ -680,17 +725,20 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 
 **Company**: Mid-sized manufacturer, 500 employees
 
-**Challenge**: 
+**Challenge**:
+
 - Running VMware ESXi free (no API, no clustering)
 - Needed automation for manufacturing systems
 - Budget: $0 for virtualization
 
 **Solution**:
+
 - Deployed VirtOS Standard across 25 hosts
 - Implemented API-driven provisioning
 - Integrated with manufacturing execution system (MES)
 
 **Results**:
+
 - **$0 licensing costs** (vs $25,000 for VMware Standard)
 - **12GB RAM recovered** (24 additional VMs)
 - **VM deployment time**: 30 min → 2 min (15x faster)
@@ -703,16 +751,19 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Company**: Managed service provider, 50 customers
 
 **Challenge**:
+
 - Per-host VMware fees eating margins (30-40% margin pressure)
 - Needed standardized platform across customers
 - Frequent setup/teardown for new customers
 
 **Solution**:
+
 - Standardized on VirtOS across all customers
 - Built automation for customer provisioning
 - 5-minute per-host deployment
 
 **Results**:
+
 - **$200,000 annual licensing savings** (avoided)
 - **16 hours → 2 hours** for new customer setup (8x faster)
 - **Margin improvement**: 30% → 45% (15 point improvement)
@@ -727,16 +778,19 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 **Company**: National retail chain, 500 stores
 
 **Challenge**:
+
 - VMware too expensive for edge ($500k+ for 500 licenses)
 - Each store needs 2-4 VMs (POS, inventory, security cameras)
 - Limited IT staff at stores (remote management critical)
 
 **Solution**:
+
 - VirtOS Minimal (100MB) on Intel NUCs at each store
 - Centralized management via API
 - Automated deployment from headquarters
 
 **Results**:
+
 - **$500,000 licensing savings** (avoided VMware)
 - **100MB vs 1GB** fits on smaller devices (lower hardware cost)
 - **30-second boot** improves store opening reliability
@@ -752,7 +806,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 
 **To Evaluate VirtOS**:
 
-1. **Review documentation**: https://github.com/FlossWare/VirtOS
+1. **Review documentation**: <https://github.com/FlossWare/VirtOS>
    - Architecture (docs/ARCHITECTURE.md)
    - TCZ Packages (docs/TCZ_PACKAGES.md)
    - Build Profiles (build/profiles/)
@@ -790,6 +844,7 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 6. **Document findings** for management review
 
 **Test checklist**:
+
 - [ ] ISO boots successfully
 - [ ] VMs create and start
 - [ ] Networking works (bridged, NAT)
@@ -812,12 +867,14 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 - **Unified platform** (VMs + containers + cloud)
 
 **The business case is clear**:
+
 - **50-host deployment**: Save $240k over 5 years vs VMware
 - **200-host deployment**: Save $770k over 5 years vs VMware
 - **Recover 40-90 VMs worth of RAM** on existing hardware
 - **Deploy infrastructure in hours** instead of days
 
 **Perfect for organizations seeking**:
+
 - Lower virtualization costs
 - Edge/IoT deployments  
 - No vendor lock-in
@@ -828,9 +885,10 @@ We're built on **Linux KVM** - the same proven hypervisor running **Google Cloud
 
 ---
 
-**Questions?** 
-- **GitHub**: https://github.com/FlossWare/VirtOS
-- **Issues**: https://github.com/FlossWare/VirtOS/issues
+**Questions?**
+
+- **GitHub**: <https://github.com/FlossWare/VirtOS>
+- **Issues**: <https://github.com/FlossWare/VirtOS/issues>
 - **Commercial inquiries**: [Contact FlossWare]
 
 **Ready to reduce your virtualization costs by 60-80%? Start with VirtOS.**

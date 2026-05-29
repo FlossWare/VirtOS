@@ -36,6 +36,7 @@ VirtOS has achieved comprehensive test coverage with a robust testing infrastruc
 ### Test Types
 
 Each script test file includes:
+
 1. **Existence & Permissions** - Verifies script exists and is executable
 2. **Help Output** - Validates `--help` flag functionality
 3. **Version Output** - Validates `--version` flag functionality
@@ -60,6 +61,7 @@ Each script test file includes:
 ### Advanced Features Tests (19 files)
 
 Includes tests for:
+
 - Template management (virtos-template)
 - High availability (virtos-ha)
 - Disaster recovery (virtos-dr)
@@ -96,6 +98,7 @@ Includes tests for:
 ### Experimental/Demo Tests (14 files)
 
 Minimal validation for demonstration features:
+
 - AI/ML workloads (virtos-ai, virtos-ai-advanced)
 - Quantum computing (virtos-quantum, virtos-quantum-hardware)
 - Blockchain integration (virtos-blockchain, virtos-blockchain-advanced)
@@ -106,6 +109,7 @@ Minimal validation for demonstration features:
 ### Library Tests (virtos-common.sh)
 
 **2 test files, 250+ tests** covering:
+
 - Input validation functions (10+ tests per function)
 - Path traversal protection
 - Command injection prevention
@@ -165,6 +169,7 @@ All integration tests are marked with `skip "Requires VirtOS runtime environment
 ### Test Coverage Reporting
 
 The CI generates a test coverage report with:
+
 - Test file count
 - Coverage percentage (100%)
 - Status indicators (✅ for 100%, ⚠️ for 50-79%, ❌ for <50%)
@@ -173,12 +178,14 @@ The CI generates a test coverage report with:
 ### Continuous Deployment
 
 **Package validation before deployment**:
+
 1. Squashfs format validation
 2. Package contents verification
 3. Metadata field checks
 4. Syntax validation of packaged scripts
 
 **Automated releases**:
+
 - Version auto-increment
 - GitHub Releases created
 - TCZ packages attached
@@ -218,18 +225,21 @@ sudo bats 01-vm-lifecycle.bats
 ## Test Quality Metrics
 
 ### Test Reliability
+
 - ✅ All tests deterministic (no flaky tests)
 - ✅ No test interdependencies
 - ✅ Clean setup/teardown for each test
 - ✅ Proper error handling in tests
 
 ### Test Maintainability
+
 - ✅ Consistent test structure across all files
 - ✅ Clear test names describing intent
 - ✅ Descriptive skip messages
 - ✅ Proper use of BATS setup/teardown functions
 
 ### Test Performance
+
 - **Average test execution time**: <1 second per test
 - **Total unit test suite**: ~30 seconds in CI
 - **CI full workflow**: ~2-3 minutes
@@ -256,6 +266,7 @@ v0.44-0.59: CI fixes and enhancements
 ## Testing Best Practices
 
 ### Unit Test Guidelines
+
 1. Test structure (existence, permissions) before functionality
 2. Always validate help and version outputs
 3. Use skip for runtime-dependent tests with descriptive messages
@@ -263,6 +274,7 @@ v0.44-0.59: CI fixes and enhancements
 5. Include setup/teardown for resource cleanup
 
 ### Integration Test Guidelines
+
 1. Test complete workflows, not individual functions
 2. Verify dependencies before running tests (skip if unavailable)
 3. Clean up test resources in teardown
@@ -270,6 +282,7 @@ v0.44-0.59: CI fixes and enhancements
 5. Test error conditions and edge cases
 
 ### CI Test Guidelines
+
 1. Keep tests fast (<5 minutes total)
 2. Parallelize independent tests
 3. Fail fast on critical errors
@@ -279,6 +292,7 @@ v0.44-0.59: CI fixes and enhancements
 ## Known Limitations
 
 ### Current Gaps
+
 - Integration tests not executed (awaiting VirtOS runtime)
 - ISO build not tested on real hardware
 - platform-java integration not validated end-to-end
@@ -286,6 +300,7 @@ v0.44-0.59: CI fixes and enhancements
 - Performance benchmarks not established
 
 ### Planned Improvements
+
 1. Execute integration tests in VirtOS environment
 2. ISO testing on multiple hardware platforms
 3. Performance benchmarking suite

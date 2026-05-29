@@ -269,6 +269,7 @@ PROFILE="kubernetes"
 ```
 
 Includes:
+
 - K3s
 - kubectl
 - Helm (package manager)
@@ -278,6 +279,7 @@ Includes:
 - ~250MB ISO
 
 vs **containers** profile:
+
 - containers = Docker/Podman/containerd without orchestration
 - kubernetes = Same + K3s orchestration layer
 
@@ -420,12 +422,14 @@ sed -i 's/127.0.0.1/virtos-1.local/g' ~/.kube/virtos-config
 ### Service Types
 
 **ClusterIP** (default):
+
 ```bash
 # Internal only
 kubectl expose deployment myapp --port=80
 ```
 
 **NodePort**:
+
 ```bash
 # Accessible on each node's IP:port
 kubectl expose deployment myapp --port=80 --type=NodePort
@@ -433,6 +437,7 @@ kubectl expose deployment myapp --port=80 --type=NodePort
 ```
 
 **LoadBalancer**:
+
 ```bash
 # External IP (uses K3s built-in load balancer)
 kubectl expose deployment myapp --port=80 --type=LoadBalancer
@@ -495,7 +500,8 @@ spec:
 | **Rolling updates** | Manual | Built-in |
 | **Best for** | Simple apps, learning | Production, complex apps |
 
-**Recommendation**: 
+**Recommendation**:
+
 - Learning/home lab: Start with Docker/Podman
 - Production workloads: Use K3s
 - Hybrid: Both! Run K3s for microservices, Docker for one-offs
@@ -575,6 +581,7 @@ kubectl port-forward svc/monitoring-grafana 3000:80
 ### 1. Microservices Platform
 
 Deploy cloud-native apps across VirtOS cluster:
+
 - Auto-scaling based on load
 - Rolling updates
 - Service mesh (Istio/Linkerd)
@@ -583,6 +590,7 @@ Deploy cloud-native apps across VirtOS cluster:
 ### 2. Development Environment
 
 Local K8s for dev/test:
+
 - Match production (cloud) architecture
 - Test Kubernetes manifests
 - Learn K8s without cloud costs
@@ -590,6 +598,7 @@ Local K8s for dev/test:
 ### 3. Home Lab Services
 
 Self-hosted apps:
+
 - Media server (Plex, Jellyfin)
 - Home automation
 - Network services (Pi-hole, VPN)
@@ -598,6 +607,7 @@ Self-hosted apps:
 ### 4. Edge Computing
 
 Run K3s on VirtOS at edge locations:
+
 - IoT data processing
 - Local ML inference
 - Distributed applications
@@ -665,16 +675,19 @@ kubectl run test --image=busybox -it --rm -- ping <other-pod-ip>
 ## Migration Path
 
 ### Phase 1: Docker/Podman (Current)
+
 - Direct container management
 - Learning basics
 - Simple deployments
 
 ### Phase 2: Docker Compose
+
 - Multi-container apps
 - Service definitions
 - Still single-host
 
 ### Phase 3: K3s
+
 - Multi-host orchestration
 - Production workloads
 - Auto-scaling, HA

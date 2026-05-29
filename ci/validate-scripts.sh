@@ -188,7 +188,7 @@ generate_report() {
 
     # Calculate compliance percentage
     if [ $total_scripts -gt 0 ]; then
-        local compliance=$(( (passed_scripts * 100) / total_scripts ))
+        local compliance=$(((passed_scripts * 100) / total_scripts))
         echo -e "Compliance: ${compliance}%"
 
         if [ $compliance -ge 90 ]; then
@@ -216,20 +216,20 @@ show_summary() {
     SUMMARY_ONLY=true
     for script in "$SCRIPTS_DIR"/virtos-*; do
         [ ! -f "$script" ] && continue
-        validate_script "$script" > /dev/null 2>&1
+        validate_script "$script" >/dev/null 2>&1
     done
 
     echo -e "${BLUE}Quick Validation Summary${NC}"
     echo "========================"
     echo "Total scripts: $total_scripts"
-    echo -e "${GREEN}Passed: $passed_scripts${NC} ($(( (passed_scripts * 100) / total_scripts ))%)"
+    echo -e "${GREEN}Passed: $passed_scripts${NC} ($(((passed_scripts * 100) / total_scripts))%)"
     [ $failed_scripts -gt 0 ] && echo -e "${RED}Failed: $failed_scripts${NC}" || echo "Failed: 0"
     echo -e "${YELLOW}Warnings: $warnings${NC}"
 }
 
 # Parse arguments
 case "${1:-}" in
-    -h|--help)
+    -h | --help)
         show_help
         exit 0
         ;;

@@ -13,6 +13,7 @@ This document describes the design for a **VirtOS-specific Cockpit module** that
 ### Current State
 
 VirtOS already integrates with Cockpit via `virtos-web`:
+
 - Users access Cockpit at `https://virtos-host:9090`
 - Standard "Virtual Machines" tab shows libvirt VMs
 - Generic Linux web console (no VirtOS branding)
@@ -20,6 +21,7 @@ VirtOS already integrates with Cockpit via `virtos-web`:
 ### Why a Custom Module?
 
 **Benefits**:
+
 - ✅ VirtOS branding and professional appearance
 - ✅ Cluster view (multi-host management)
 - ✅ VirtOS-specific shortcuts and workflows
@@ -27,6 +29,7 @@ VirtOS already integrates with Cockpit via `virtos-web`:
 - ✅ One-click actions beyond standard libvirt
 
 **Similar Projects**:
+
 - **oVirt** - Custom Cockpit plugin for datacenter management
 - **Foreman** - Host provisioning plugin
 - **FreeIPA** - Identity management plugin
@@ -57,16 +60,19 @@ All provide branded experiences within Cockpit.
 ### Technology Stack
 
 **Frontend**:
+
 - HTML5 + JavaScript (no framework for simplicity)
 - PatternFly CSS (Cockpit's UI framework)
 - Cockpit JavaScript API (`cockpit.js`)
 
 **Backend**:
+
 - virtos-api (REST API server, already exists)
 - Cockpit D-Bus API (for system integration)
 - virtos-* scripts (called via shell commands)
 
 **Communication**:
+
 - REST API → virtos-api endpoints
 - D-Bus → Cockpit services (authentication, shell, etc.)
 - WebSockets → Live updates (future enhancement)
@@ -97,6 +103,7 @@ All provide branded experiences within Cockpit.
 ```
 
 **Fields**:
+
 - `name`: Module identifier (must be "virtos")
 - `menu`: Sidebar entries (Dashboard and Cluster tabs)
 - `order`: Menu position (10 = near top)
@@ -141,23 +148,27 @@ All provide branded experiences within Cockpit.
 ### Features
 
 **Quick Stats**:
+
 - Total VMs (running / stopped)
 - Cluster CPU usage (aggregate)
 - Cluster RAM usage
 - Storage used/available
 
 **Recent Activity**:
+
 - Last 10 VM operations
 - Auto-refresh every 5 seconds
 - Links to relevant VMs
 
 **Quick Actions**:
+
 - Create VM → Opens virtos-create-vm wizard
 - Start All → Starts all stopped VMs
 - Stop All → Gracefully stops all running VMs
 - Backup Now → Triggers virtos-backup
 
 **VM Table**:
+
 - Sortable columns (name, state, CPU, RAM)
 - Filter by state (running/stopped/all)
 - Per-VM actions (start, stop, console, delete)
@@ -281,10 +292,10 @@ var VirtOS = {
     init: function() {
         // Initialize virtos-api client
         this.api = new VirtOSAPI('http://localhost:8080/api/v1');
-        
+
         // Load initial data
         this.refresh();
-        
+
         // Auto-refresh every 5 seconds
         this.refreshInterval = setInterval(() => this.refresh(), 5000);
     },
@@ -295,12 +306,12 @@ var VirtOS = {
             this.updateQuickStats(vms);
             this.updateVMTable(vms);
         });
-        
+
         // Fetch cluster status
         this.api.getCluster().then(cluster => {
             this.updateClusterStats(cluster);
         });
-        
+
         // Fetch activity feed
         this.loadActivity();
     },
@@ -309,7 +320,7 @@ var VirtOS = {
         const running = vms.filter(vm => vm.state === 'running').length;
         document.getElementById('vm-count').textContent = vms.length;
         document.getElementById('vm-running').textContent = `${running} running`;
-        
+
         // Calculate aggregate CPU/RAM
         let totalCPU = 0, totalRAM = 0;
         vms.forEach(vm => {
@@ -318,17 +329,17 @@ var VirtOS = {
                 totalRAM += vm.ram_percent || 0;
             }
         });
-        
-        document.getElementById('cpu-usage').textContent = 
+
+        document.getElementById('cpu-usage').textContent =
             Math.round(totalCPU / vms.length) + '%';
-        document.getElementById('ram-usage').textContent = 
+        document.getElementById('ram-usage').textContent =
             Math.round(totalRAM / vms.length) + '%';
     },
 
     updateVMTable: function(vms) {
         const tbody = document.querySelector('#vm-table tbody');
         tbody.innerHTML = '';
-        
+
         vms.forEach(vm => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -358,7 +369,7 @@ var VirtOS = {
                 const lines = data.split('\n').slice(-10).reverse();
                 const feed = document.getElementById('activity-feed');
                 feed.innerHTML = '';
-                
+
                 lines.forEach(line => {
                     if (line.trim()) {
                         const li = document.createElement('li');
@@ -397,7 +408,7 @@ var VirtOS = {
 
     console: function(name) {
         // Open console in new window
-        cockpit.jump(`/machines#/vm?name=${name}&connection=system`, 
+        cockpit.jump(`/machines#/vm?name=${name}&connection=system`,
                      undefined, 'blank');
     },
 
@@ -480,17 +491,20 @@ document.addEventListener('DOMContentLoaded', () => VirtOS.init());
 ### Features
 
 **Cluster Overview**:
+
 - Total nodes (online/offline)
 - Total VMs across cluster
 - Aggregate resources
 
 **Node Table**:
+
 - Per-node status (online/offline)
 - VM count per node
 - Resource usage per node
 - Click node → Node detail page
 
 **Cluster Actions**:
+
 - Add Node → Join new host to cluster
 - Migrate VMs → Move VMs between nodes
 - Rebalance → Automatically distribute VMs
@@ -509,11 +523,11 @@ class VirtOSAPI {
             method: method,
             headers: {'Content-Type': 'application/json'}
         };
-        
+
         if (body) {
             options.body = JSON.stringify(body);
         }
-        
+
         const response = await fetch(this.baseURL + path, options);
         if (!response.ok) {
             throw new Error(`API error: ${response.status}`);
@@ -751,6 +765,7 @@ sudo systemctl restart cockpit
 ### Authentication
 
 Cockpit module uses Cockpit's PAM authentication:
+
 - Inherits system users and permissions
 - No separate authentication needed
 - Respects sudo rules
@@ -771,6 +786,7 @@ cockpit.user().then(user => {
 ### HTTPS/TLS
 
 Cockpit handles TLS:
+
 - Self-signed cert by default
 - Configure custom cert in `/etc/cockpit/ws-certs.d/`
 
@@ -798,12 +814,14 @@ Cockpit handles TLS:
 ## Future Enhancements
 
 ### Phase 1 (MVP - This Design)
+
 - [x] Dashboard with quick stats
 - [x] VM table with basic actions
 - [x] Cluster view
 - [x] Activity feed
 
 ### Phase 2 (Planned)
+
 - [ ] VM creation wizard (integrated virtos-create-vm)
 - [ ] Real-time metrics (charts)
 - [ ] Snapshot management UI
@@ -811,6 +829,7 @@ Cockpit handles TLS:
 - [ ] Storage pool management UI
 
 ### Phase 3 (Advanced)
+
 - [ ] WebSocket live updates
 - [ ] Drag-and-drop VM migration
 - [ ] Network topology diagram
@@ -820,12 +839,14 @@ Cockpit handles TLS:
 ## Limitations
 
 **Current**:
+
 - Read-only for some operations (must use CLI)
 - No WebSocket support (polling only)
 - Basic styling (PatternFly defaults)
 - No customizable dashboard
 
 **By Design**:
+
 - Requires Cockpit (100+ MB overhead)
 - Web-only (no CLI equivalent)
 - JavaScript required (no graceful degradation)

@@ -3,12 +3,14 @@
 ## Prerequisites
 
 ### Development Machine
+
 - Linux system (for building)
 - 4GB+ RAM
 - 20GB+ free disk space
 - Internet connection
 
 ### Target System (where FlossWare Virt will run)
+
 - x86_64 CPU with VT-x (Intel) or AMD-V (AMD)
 - 4GB+ RAM (8GB+ recommended)
 - 20GB+ storage
@@ -17,6 +19,7 @@
 ## Step 1: Check CPU Virtualization Support
 
 On your target system:
+
 ```bash
 # Check for virtualization extensions
 grep -E 'vmx|svm' /proc/cpuinfo
@@ -204,25 +207,29 @@ qemu-system-x86_64 -enable-kvm -m 512 -nographic -serial mon:stdio
 ## Troubleshooting
 
 ### No /dev/kvm
+
 - Check BIOS virtualization is enabled
 - Verify CPU supports VT-x/AMD-V
 - Ensure kvm modules are loaded
 
 ### Module not found
+
 - Kernel may not have KVM compiled
 - Need to recompile kernel or use different Tiny Core version
 
 ### QEMU too slow
+
 - Ensure `-enable-kvm` flag is used
 - Check KVM acceleration is active
 
 ### Network issues
+
 - Verify bridge created: `brctl show`
 - Check IP routing: `ip route`
 - Verify iptables rules allow forwarding
 
 ## Resources
 
-- Tiny Core Wiki: https://wiki.tinycorelinux.net
-- KVM Documentation: https://www.linux-kvm.org
+- Tiny Core Wiki: <https://wiki.tinycorelinux.net>
+- KVM Documentation: <https://www.linux-kvm.org>
 - This project's docs: See `/docs` directory

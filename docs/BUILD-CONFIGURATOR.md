@@ -11,6 +11,7 @@ An interactive Text User Interface (TUI) for configuring VirtOS ISO builds, maki
 ## Problem Statement
 
 **Current build process** requires users to:
+
 - Manually edit `build/build.conf`
 - Remember all 50+ configuration options
 - Know dependencies between options
@@ -22,6 +23,7 @@ An interactive Text User Interface (TUI) for configuring VirtOS ISO builds, maki
 ## Solution: virtos-configure
 
 An interactive TUI that:
+
 - Shows all available options with descriptions
 - Calculates ISO size and build time estimates
 - Validates dependencies automatically
@@ -369,10 +371,10 @@ source "$(dirname "$0")/lib/config-estimate.sh"
 # Main menu
 show_main_menu() {
     local config_file="${1:-build/build.conf}"
-    
+
     # Load current config or defaults
     load_config "$config_file"
-    
+
     while true; do
         local choice=$(dialog --clear --backtitle "VirtOS Build Configurator v$VERSION" \
             --title "Main Menu" \
@@ -384,7 +386,7 @@ show_main_menu() {
             5 "Build Now" \
             0 "Exit" \
             3>&1 1>&2 2>&3)
-        
+
         case $choice in
             1) select_profile ;;
             2) configure_options ;;
@@ -410,7 +412,7 @@ select_profile() {
         storage "~350 MB - Advanced storage features" \
         custom "varies - Choose your own options" \
         3>&1 1>&2 2>&3)
-    
+
     if [ -n "$profile" ]; then
         load_profile "$profile"
         dialog --msgbox "Profile '$profile' loaded successfully!" 6 50
@@ -421,23 +423,23 @@ select_profile() {
 configure_options() {
     while true; do
         local options=$(build_checklist)
-        
+
         local selected=$(dialog --clear --backtitle "VirtOS Build Configurator" \
             --title "Configure Build Options" \
             --checklist "Select components (Space to toggle):" \
             25 80 15 \
             $options \
             3>&1 1>&2 2>&3)
-        
+
         if [ $? -eq 0 ]; then
             update_config "$selected"
-            
+
             # Check dependencies
             resolve_dependencies
-            
+
             # Show warnings if any
             show_validation_warnings
-            
+
             break
         else
             break
@@ -467,26 +469,26 @@ resolve_dependencies() {
             INCLUDE_AI_OPERATIONS="no"
         fi
     fi
-    
+
     # Similar logic for other dependencies
 }
 
 # Validation warnings
 show_validation_warnings() {
     local warnings=""
-    
+
     # Check ZFS + RAM
     local ram_gb=$(free -g | awk '/^Mem:/{print $2}')
     if [ "$INCLUDE_ZFS" = "yes" ] && [ "$ram_gb" -lt 8 ]; then
         warnings="$warnings\n⚠️  ZFS selected but RAM < 8 GB (detected: ${ram_gb}GB)"
     fi
-    
+
     # Check ISO size
     local size=$(estimate_iso_size)
     if [ "$size" -gt 600 ]; then
         warnings="$warnings\n⚠️  Large ISO size: ${size}MB"
     fi
-    
+
     if [ -n "$warnings" ]; then
         dialog --msgbox "Configuration Warnings:$warnings\n\nYou can continue anyway or review configuration." 12 60
     fi
@@ -499,7 +501,7 @@ main() {
         echo "Install with: sudo apt install dialog"
         exit 1
     fi
-    
+
     show_main_menu "$@"
 }
 
@@ -524,26 +526,31 @@ main "$@"
 ### Presets
 
 **Minimal** (~100 MB):
+
 - KVM/QEMU only
 - libvirt
 - virtos-tools
 
 **Standard** (~200 MB):
+
 - Minimal + Docker + containerd + LXC
 - Clustering
 - Web UI
 
 **AI Native** (~700 MB):
+
 - Standard + all AI packages
 - Local LLM (Ollama)
 - GPU support
 
 **Custom**:
+
 - User chooses everything
 
 ## Benefits
 
 ### For Users
+
 ✅ **Easier configuration** - No config file editing  
 ✅ **Visual feedback** - See size/time estimates  
 ✅ **Fewer errors** - Validation before build  
@@ -551,6 +558,7 @@ main "$@"
 ✅ **Faster workflow** - Configure and build in one session
 
 ### For VirtOS
+
 ✅ **Lower barrier to entry** - New users can build easily  
 ✅ **Better UX** - Professional, guided experience  
 ✅ **Reduced support** - Fewer config errors  

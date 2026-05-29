@@ -56,7 +56,7 @@ scrape_configs:
   - job_name: 'virtos-host'
     static_configs:
       - targets: ['localhost:9100']  # Node exporter
-      
+
   - job_name: 'libvirt'
     static_configs:
       - targets: ['localhost:9177']  # libvirt exporter
@@ -266,14 +266,14 @@ route:
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 3h
-  
+
   routes:
     # Critical alerts to PagerDuty
     - match:
         severity: critical
       receiver: 'pagerduty'
       continue: true
-    
+
     # All alerts to email and Slack
     - match_re:
         severity: .*
@@ -286,7 +286,7 @@ receivers:
       - to: 'ops@example.com'
         headers:
           Subject: 'VirtOS Alert: {{ .GroupLabels.alertname }}'
-    
+
     slack_configs:
       - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
         channel: '#virtos-alerts'
@@ -483,24 +483,24 @@ while true; do
     RUNNING=$(virsh list --state-running --name | wc -l)
     STOPPED=$(virsh list --state-shutoff --name | wc -l)
     PAUSED=$(virsh list --state-paused --name | wc -l)
-    
+
     # Storage pool usage
     POOL_SIZE=$(virsh pool-info default | awk '/Capacity:/ {print $2}')
     POOL_USED=$(virsh pool-info default | awk '/Allocation:/ {print $2}')
-    
+
     # Output in Prometheus format
     echo "# HELP virtos_vms_running Number of running VMs"
     echo "# TYPE virtos_vms_running gauge"
     echo "virtos_vms_running $RUNNING"
-    
+
     echo "# HELP virtos_vms_stopped Number of stopped VMs"
     echo "# TYPE virtos_vms_stopped gauge"
     echo "virtos_vms_stopped $STOPPED"
-    
+
     echo "# HELP virtos_storage_pool_size_bytes Storage pool size"
     echo "# TYPE virtos_storage_pool_size_bytes gauge"
     echo "virtos_storage_pool_size_bytes $POOL_SIZE"
-    
+
     sleep 15
 done
 
@@ -690,8 +690,8 @@ curl http://localhost:9093/api/v1/alerts \
 
 ## Getting Help
 
-- **Prometheus**: https://prometheus.io/docs/
-- **Grafana**: https://grafana.com/docs/
+- **Prometheus**: <https://prometheus.io/docs/>
+- **Grafana**: <https://grafana.com/docs/>
 - **VirtOS Monitoring**: [ADMIN-GUIDE.md](ADMIN-GUIDE.md)
 
 ---

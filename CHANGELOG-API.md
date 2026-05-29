@@ -15,9 +15,11 @@ All scripts are currently at **API 1.0** (initial stable release as of 2026-05-2
 ## virtos-audit
 
 ### API 1.0 (2026-05-29)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-audit recent [N]              # Show last N events (default: 10)
 virtos-audit stats                   # Show statistics
@@ -34,9 +36,11 @@ virtos-audit rotate                  # Manual log rotation
 ## virtos-setup
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-setup                         # Interactive setup wizard
 virtos-setup --auto                  # Non-interactive setup
@@ -51,9 +55,11 @@ virtos-setup --storage <path>        # Storage configuration
 ## virtos-create-vm
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-create-vm --name <name> --cpu <count> --memory <size> --disk <size>
 virtos-create-vm --template <name>   # Create from template
@@ -67,9 +73,11 @@ virtos-create-vm --no-start          # Don't start after creation
 ## virtos-migrate
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-migrate --vm <name> --dest <uri>
 virtos-migrate --live                # Live migration
@@ -83,9 +91,11 @@ virtos-migrate --persistent          # Make migration persistent
 ## virtos-snapshot
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-snapshot create <vm> <name> [description]
 virtos-snapshot list <vm>
@@ -100,9 +110,11 @@ virtos-snapshot restore <vm> <name>
 ## virtos-network
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-network list
 virtos-network create --name <name> --type <type> --subnet <cidr>
@@ -118,9 +130,11 @@ virtos-network delete <name>
 ## virtos-storage
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-storage list-pools
 virtos-storage create-pool --name <name> --type <type> --path <path>
@@ -137,9 +151,11 @@ virtos-storage delete-pool <pool>
 ## virtos-backup
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-backup backup <vm> <backup-file>
 virtos-backup restore <backup-file>
@@ -153,9 +169,11 @@ virtos-backup list
 ## virtos-monitor
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-monitor stats <vm>
 virtos-monitor system
@@ -169,9 +187,11 @@ virtos-monitor watch <vm> --interval <seconds>
 ## virtos-cluster
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-cluster discover
 virtos-cluster join <cluster-name>
@@ -186,9 +206,11 @@ virtos-cluster status
 ## virtos-tui
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 **Interface**:
+
 ```bash
 virtos-tui                           # Launch interactive TUI
 ```
@@ -202,11 +224,13 @@ virtos-tui                           # Launch interactive TUI
 ## All Other Scripts
 
 ### API 1.0 (2026-05-01)
+
 **Initial Release**
 
 All remaining VirtOS management scripts (virtos-template, virtos-gpu, virtos-usb, virtos-ha, virtos-dr, virtos-api, virtos-automation, virtos-devops, virtos-security, virtos-security-advanced, virtos-cloud-init, virtos-analytics, virtos-observability, virtos-telemetry, virtos-quota, virtos-billing, virtos-datacenter, virtos-web, etc.) are at API 1.0.
 
-**Stability**: 
+**Stability**:
+
 - ✅ Stable: 29 scripts with working backends
 - 🟡 Partial: 9 scripts needing backend integration
 - 🔷 Experimental: 14 scripts (no API stability guarantees)
@@ -220,6 +244,7 @@ See [docs/EXPERIMENTAL_FEATURES.md](docs/EXPERIMENTAL_FEATURES.md) for categoriz
 ### Planned for API 1.1
 
 **No breaking changes planned**. Potential additions:
+
 - Add `--format json` to output commands (virtos-monitor, virtos-cluster)
 - Add `--dry-run` to destructive operations
 - Add `--verbose` to increase output detail
@@ -230,6 +255,7 @@ All additions will be backward compatible.
 ### Planned for API 2.0 (Not Before 2027-01-01)
 
 **Potential breaking changes** (under consideration):
+
 - Change default output format to JSON (with `--format text` fallback)
 - Standardize argument naming across all scripts
 - Consolidate similar flags (e.g., `--vm` vs `--name`)
@@ -256,6 +282,7 @@ Migration guide will be published at least 6 months before API 2.0 release.
 **Current**: No deprecations.
 
 **How to Handle Deprecations**:
+
 1. Monitor stderr for deprecation warnings
 2. Update scripts/automation before removal
 3. Test in non-production environment first

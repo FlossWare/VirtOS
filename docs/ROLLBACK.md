@@ -19,6 +19,7 @@ VirtOS has an automated rollback mechanism to quickly revert to a previous versi
 ### Critical Issues (Immediate Rollback)
 
 Roll back immediately if the new version:
+
 - ❌ Prevents VirtOS from booting
 - ❌ Breaks core VM operations (create/start/stop)
 - ❌ Causes data corruption
@@ -28,6 +29,7 @@ Roll back immediately if the new version:
 ### Major Issues (Consider Rollback)
 
 Consider rollback if:
+
 - ⚠️ Critical features broken (networking, storage)
 - ⚠️ Multiple user reports of failures
 - ⚠️ Performance degradation >50%
@@ -36,6 +38,7 @@ Consider rollback if:
 ### Minor Issues (Do Not Rollback)
 
 Fix forward instead of rolling back:
+
 - ✅ Documentation errors
 - ✅ Minor UI issues
 - ✅ Non-critical feature bugs
@@ -59,6 +62,7 @@ gh release view v0.5 --repo FlossWare/VirtOS
 ```
 
 **Target Selection**:
+
 - Use the last stable release (usually N-1)
 - Avoid versions with known critical bugs
 - Check release notes for issues
@@ -66,7 +70,8 @@ gh release view v0.5 --repo FlossWare/VirtOS
 ### Step 2: Trigger Rollback Workflow
 
 **Via GitHub Web UI**:
-1. Go to https://github.com/FlossWare/VirtOS/actions/workflows/rollback.yml
+
+1. Go to <https://github.com/FlossWare/VirtOS/actions/workflows/rollback.yml>
 2. Click "Run workflow"
 3. Fill in:
    - **Version**: `0.5` (without 'v' prefix)
@@ -74,6 +79,7 @@ gh release view v0.5 --repo FlossWare/VirtOS
 4. Click "Run workflow"
 
 **Via GitHub CLI**:
+
 ```bash
 gh workflow run rollback.yml \
   --repo FlossWare/VirtOS \
@@ -84,6 +90,7 @@ gh workflow run rollback.yml \
 ### Step 3: Monitor Rollback
 
 Watch the workflow execution:
+
 ```bash
 # Via GitHub CLI
 gh run watch --repo FlossWare/VirtOS
@@ -93,6 +100,7 @@ gh run watch --repo FlossWare/VirtOS
 ```
 
 **Workflow Steps**:
+
 1. ✅ Validates version exists
 2. ✅ Checks out old version from git
 3. ✅ Rebuilds packages
@@ -116,6 +124,7 @@ curl -s https://packagecloud.io/api/v1/repos/flossware/virtos/packages.json | jq
 ```
 
 **Verification Checklist**:
+
 - [ ] Rollback release exists
 - [ ] Packages downloadable from GitHub
 - [ ] Packages available on packagecloud.io
@@ -132,6 +141,7 @@ The workflow automatically creates a notification issue, but also:
 4. **Plan Fix** - Schedule fix and validation
 
 **Example Communication**:
+
 ```markdown
 ## ⚠️ Rollback Notice
 
@@ -197,6 +207,7 @@ done
 If you need to downgrade after a bad release:
 
 **Option 1: Fresh Install**
+
 ```bash
 # 1. Download rollback ISO (if available)
 # 2. Boot from ISO
@@ -204,6 +215,7 @@ If you need to downgrade after a bad release:
 ```
 
 **Option 2: Package Downgrade**
+
 ```bash
 # 1. Download rollback packages
 wget https://github.com/FlossWare/VirtOS/releases/download/v0.5-rollback/virtos-tools.tcz
@@ -231,6 +243,7 @@ virtos-setup --version
 ```
 
 **Option 3: Snapshot Rollback** (if you took snapshots)
+
 ```bash
 # Restore system snapshot from before upgrade
 # (Implementation depends on your snapshot tool)
@@ -243,11 +256,13 @@ virtos-setup --version
 ### Pre-Deployment Validation
 
 **Smoke Tests** (already in CD pipeline):
+
 - ✅ Package integrity checks
 - ✅ Syntax validation
 - ✅ Metadata verification
 
 **Should Add**:
+
 - [ ] Integration tests in staging environment
 - [ ] Canary deployment (1% of users first)
 - [ ] Automated rollback on failure detection
@@ -261,7 +276,7 @@ virtos-setup --version
 # .github/workflows/cd.yml (future enhancement)
 - name: Deploy to staging
   run: package_cloud push flossware/virtos-staging "$package"
-  
+
 - name: Run integration tests against staging
   run: |
     # Download from staging
@@ -272,6 +287,7 @@ virtos-setup --version
 ### Monitoring and Alerts
 
 **Should Implement**:
+
 - [ ] Error rate monitoring (libvirt failures, crashes)
 - [ ] Performance monitoring (response times, resource usage)
 - [ ] Automated alerts on anomalies
@@ -308,6 +324,7 @@ Test rollback process without affecting production:
 ### Rollback Drill
 
 Schedule regular rollback drills (quarterly):
+
 1. Pick a stable old version
 2. Perform full rollback
 3. Verify all steps complete
@@ -325,6 +342,7 @@ Schedule regular rollback drills (quarterly):
 ### Q: What happens to data during rollback?
 
 **A**: Packages are rolled back, but **user data is preserved**:
+
 - VMs, snapshots, networks remain
 - Configuration files unchanged
 - Only VirtOS scripts are replaced
@@ -337,14 +355,16 @@ Schedule regular rollback drills (quarterly):
 
 ### Q: How long does rollback take?
 
-**A**: 
+**A**:
+
 - Automated workflow: ~5-10 minutes
 - Manual rollback: ~15-30 minutes
 - User downgrade: ~5 minutes (if packages cached)
 
 ### Q: What if the rollback itself fails?
 
-**A**: 
+**A**:
+
 1. Use manual rollback procedure
 2. If that fails, keep current version and fix forward
 3. Worst case: fresh install of last stable version

@@ -34,21 +34,25 @@ make build    # Will prompt for confirmation (downloads ~500MB)
 Install build dependencies for your distribution:
 
 **Fedora / RHEL**:
+
 ```bash
 sudo dnf install -y genisoimage syslinux wget bash cpio gzip squashfs-tools
 ```
 
 **Debian / Ubuntu**:
+
 ```bash
 sudo apt install -y genisoimage syslinux-utils wget bash cpio gzip squashfs-tools
 ```
 
 **Arch Linux**:
+
 ```bash
 sudo pacman -S --needed cdrtools syslinux wget bash cpio gzip squashfs-tools
 ```
 
 Or use the Makefile:
+
 ```bash
 make install-deps-fedora    # For Fedora
 make install-deps-ubuntu    # For Ubuntu/Debian
@@ -94,6 +98,7 @@ PROFILE="standard"
 ```
 
 Available profiles:
+
 - **minimal** - Minimal system (~100MB ISO)
 - **standard** - Standard virtualization tools (~200MB ISO)
 - **full** - All VirtOS features (~400MB ISO)
@@ -113,23 +118,27 @@ make packages
 ```
 
 This creates:
+
 - `packages/output/virtos-tools.tcz` - Core management scripts
 - `packages/output/virtos-platform-java.tcz` - platform-java integration
 
 ### Step 4: Build ISO
 
 Using Makefile (recommended):
+
 ```bash
 make build
 ```
 
 Or manually:
+
 ```bash
 cd build/scripts
 ./build-all.sh
 ```
 
 **Build Process**:
+
 1. **Download Tiny Core Linux** (~500MB, cached for future builds)
    - `CorePure64-15.0.iso` or version from build.conf
    - Stored in `build/downloads/`
@@ -145,6 +154,7 @@ cd build/scripts
 ### Step 5: Verify Build
 
 Check build output:
+
 ```bash
 ls -lh build/output/
 # Should show:
@@ -153,6 +163,7 @@ ls -lh build/output/
 ```
 
 Verify checksum:
+
 ```bash
 cd build/output
 md5sum -c VirtOS-*.iso.md5
@@ -161,42 +172,49 @@ md5sum -c VirtOS-*.iso.md5
 ## Build Profiles
 
 ### minimal
+
 - **Size**: ~100MB
 - **Components**: Core Linux, busybox, basic networking
 - **Use Case**: Embedded systems, minimal resource environments
 - **Included**: virtos-setup, basic VM tools
 
 ### standard (Default)
+
 - **Size**: ~200MB
 - **Components**: KVM/QEMU, libvirt, networking, storage
 - **Use Case**: General virtualization host
 - **Included**: All virtos-* scripts, virtos-tui, clustering
 
 ### full
+
 - **Size**: ~400MB
 - **Components**: Everything from standard + containers, monitoring, advanced tools
 - **Use Case**: Production environments, full-featured deployments
 - **Included**: Docker, LXC, advanced networking, platform-java
 
 ### containers
+
 - **Size**: ~250MB
 - **Components**: Docker, LXC, container networking
 - **Use Case**: Container-focused hosts
 - **Included**: Container management, orchestration
 
 ### developer
+
 - **Size**: ~300MB
 - **Components**: Development tools, compilers, debuggers
 - **Use Case**: VirtOS development
 - **Included**: gcc, make, git, vim, debugging tools
 
 ### kubernetes
+
 - **Size**: ~350MB
 - **Components**: K8s client tools, kubectl, helm
 - **Use Case**: Kubernetes management nodes
 - **Included**: kubectl, kubeadm, helm, container runtime
 
 ### storage
+
 - **Size**: ~280MB
 - **Components**: Storage tools, NFS, Ceph, iSCSI
 - **Use Case**: Storage servers
@@ -271,6 +289,7 @@ See [RUNTIME_TESTING_PLAN.md](../RUNTIME_TESTING_PLAN.md) for comprehensive test
 ### "genisoimage: command not found"
 
 **Solution**: Install build dependencies
+
 ```bash
 # See Prerequisites section for your distribution
 make install-deps-fedora  # or ubuntu/arch
@@ -279,11 +298,13 @@ make install-deps-fedora  # or ubuntu/arch
 ### "Failed to download Tiny Core Linux"
 
 **Causes**:
+
 - No internet connection
 - tinycorelinux.net is down
 - Firewall blocking downloads
 
 **Solutions**:
+
 ```bash
 # 1. Check network
 ping tinycorelinux.net
@@ -301,6 +322,7 @@ See [BUILD_DEPENDENCIES.md](../BUILD_DEPENDENCIES.md) for offline builds.
 ### "Permission denied" during build
 
 **Solution**: Don't run build as root
+
 ```bash
 # Build as regular user
 ./build-all.sh
@@ -311,11 +333,13 @@ See [BUILD_DEPENDENCIES.md](../BUILD_DEPENDENCIES.md) for offline builds.
 ### ISO boots but no VMs can be created
 
 **Causes**:
+
 - CPU virtualization (VT-x/AMD-V) disabled
 - KVM module not loaded
 - Permission issues
 
 **Solutions**:
+
 ```bash
 # Check CPU virtualization
 lscpu | grep Virtualization
@@ -335,6 +359,7 @@ sudo modprobe kvm_intel  # or kvm_amd
 ### Build runs out of disk space
 
 **Solution**: Clean old builds
+
 ```bash
 make clean-all
 # Removes: workspace, downloads, output
@@ -344,11 +369,13 @@ make clean-all
 ### Slow builds
 
 **Causes**:
+
 - Downloading Tiny Core Linux (first build only)
 - Slow disk I/O
 - Running on low-end hardware
 
 **Solutions**:
+
 ```bash
 # 1. Use faster disk (SSD)
 # 2. Increase parallel jobs
@@ -420,6 +447,7 @@ Version bumping is automated in CD pipeline.
 For air-gapped environments:
 
 1. Download Tiny Core Linux on internet-connected system:
+
    ```bash
    wget https://tinycorelinux.net/15.x/x86_64/release/CorePure64-15.0.iso
    ```
@@ -427,6 +455,7 @@ For air-gapped environments:
 2. Transfer to offline system → `build/downloads/`
 
 3. Build normally:
+
    ```bash
    make build
    ```

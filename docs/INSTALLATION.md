@@ -9,18 +9,21 @@ This guide walks you through installing VirtOS from ISO to a working virtualizat
 ### Hardware Requirements
 
 **Minimum**:
+
 - CPU: 4+ cores with VT-x (Intel) or AMD-V (AMD)
 - RAM: 8 GB
 - Disk: 100 GB free space
 - Network: 1 Gigabit Ethernet
 
 **Recommended**:
+
 - CPU: 8+ cores with VT-x/AMD-V
 - RAM: 32 GB or more
 - Disk: 500 GB SSD
 - Network: 1+ Gigabit Ethernet, static IP
 
 **Production**:
+
 - CPU: 16+ cores with VT-x/AMD-V
 - RAM: 64 GB or more
 - Disk: 1+ TB NVMe SSD
@@ -101,6 +104,7 @@ sudo isohybrid --uefi VirtOS.iso
 ### USB Drive (Windows)
 
 Use [Rufus](https://rufus.ie/):
+
 1. Select VirtOS.iso
 2. Partition scheme: GPT
 3. Target system: UEFI (or BIOS)
@@ -171,20 +175,22 @@ The wizard will guide you through:
    - Press ENTER to continue
 
 2. **Network Configuration**:
+
    ```
    Configure Network
    =================
    [X] DHCP (automatic)
    [ ] Static IP
-   
+
    DHCP is recommended for initial setup.
    You can configure static IP later.
    ```
 
 3. **Hostname**:
+
    ```
    Enter hostname: [virtos-host-01]
-   
+
    Hostname will be used for:
    - System identification
    - Cluster discovery
@@ -192,44 +198,48 @@ The wizard will guide you through:
    ```
 
 4. **Storage Configuration**:
+
    ```
    Select VM storage location:
-   
+
    [ ] /var/lib/libvirt/images (default)
    [ ] /mnt/vm-storage (custom)
-   
+
    Free space: 450 GB
    ```
 
 5. **User Account**:
+
    ```
    Create admin user:
-   
+
    Username: [admin]
    Password: ********
    Confirm:  ********
-   
+
    This user will have sudo privileges.
    ```
 
 6. **Install System**:
+
    ```
    Ready to install VirtOS
    =======================
-   
+
    Hostname: virtos-host-01
    Network:  DHCP (192.168.1.100)
    Storage:  /var/lib/libvirt/images
    User:     admin
-   
+
    Install? [Yes/No]: Yes
    ```
 
 7. **Installation Progress**:
+
    ```
    Installing VirtOS...
    [=====>              ] 35% - Installing packages...
-   
+
    Steps:
    ✓ Partitioning disk
    ✓ Installing base system
@@ -240,19 +250,20 @@ The wizard will guide you through:
    ```
 
 8. **Installation Complete**:
+
    ```
    Installation Complete!
    ======================
-   
+
    Remove installation media and reboot.
-   
+
    After reboot:
    - Login as: admin
    - Run: virtos-tui (menu system)
    - Or use: virtos-* commands
-   
+
    Documentation: /usr/share/doc/virtos/
-   
+
    [Press ENTER to reboot]
    ```
 
@@ -412,6 +423,7 @@ virtos-tui --help
 ```
 
 Expected output:
+
 ```
 ✓ VirtOS version: 0.89
 ✓ libvirt version: 9.0.0
@@ -452,6 +464,7 @@ virsh console ubuntu-01
 **Problem**: Setup wizard exits with error
 
 **Solution**:
+
 ```bash
 # Check logs
 sudo tail -f /var/log/virtos-setup.log
@@ -470,6 +483,7 @@ sudo virtos-setup --debug
 **Problem**: System hangs during boot
 
 **Solution**:
+
 1. Reboot and select "Safe Mode" from boot menu
 2. Check hardware compatibility
 3. Disable problematic drivers in boot options
@@ -480,6 +494,7 @@ sudo virtos-setup --debug
 **Problem**: `egrep '(vmx|svm)' /proc/cpuinfo` shows nothing
 
 **Solution**:
+
 1. Reboot into BIOS
 2. Enable VT-x (Intel) or AMD-V (AMD)
 3. Save and exit
@@ -491,6 +506,7 @@ sudo virtos-setup --debug
 **Problem**: No network connectivity after installation
 
 **Solution**:
+
 ```bash
 # Check network interfaces
 ip link show

@@ -20,6 +20,7 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 **TL;DR**: VirtOS has **working code** for core VM management, but has **never been tested on real hardware**. Great for learning and development, **not ready for production**.
 
 **What Works** ✅:
+
 - **29/54 scripts** with functional backends (Core VM management)
 - Core VM lifecycle: create, start, stop, migrate, snapshot, backup
 - Storage and network management
@@ -27,15 +28,18 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 - Cloud-init support
 
 **Partial Implementation** 🟡:
+
 - **9/54 scripts** need backend integration (auth, database, secrets, etc.)
 
 **Research Prototypes** 🔬:
+
 - **14/54 scripts** are experimental demos (AI, quantum, blockchain, etc.)
 - These show *potential* future features but are NOT functional
 - Included as design examples and conversation starters
 - **See [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md) for complete details**
 
 **What's Missing** ❌:
+
 - ISO boot testing: 0/47 checks completed
 - Runtime validation: Never tested in actual VirtOS environment
 - Security audit: External penetration testing needed
@@ -61,6 +65,7 @@ FlossWare VirtOS is designed to be a lightweight, efficient hypervisor platform 
 ## Philosophy
 
 Built on Tiny Core Linux principles:
+
 - **Minimal** - Only include what's necessary
 - **Modular** - Extensions loaded on-demand
 - **Fast** - Quick boot times, low overhead
@@ -110,21 +115,25 @@ virtualization/
 ### Required Packages
 
 **Fedora/RHEL**:
+
 ```bash
 sudo dnf install -y genisoimage syslinux wget bash cpio gzip squashfs-tools
 ```
 
 **Debian/Ubuntu**:
+
 ```bash
 sudo apt install -y genisoimage syslinux-utils wget bash cpio gzip squashfs-tools
 ```
 
 **Arch Linux**:
+
 ```bash
 sudo pacman -S --needed cdrtools syslinux wget bash cpio gzip squashfs-tools
 ```
 
 Or use the Makefile:
+
 ```bash
 make install-deps-fedora   # For Fedora
 make install-deps-ubuntu   # For Ubuntu/Debian
@@ -196,12 +205,14 @@ qemu-system-x86_64 -enable-kvm -m 2048 \
 ### First-Time Setup
 
 **Interactive setup wizard (ncurses TUI):**
+
 ```bash
 # Boot VirtOS, then run:
 sudo virtos-setup
 ```
 
 **Setup wizard configures:**
+
 - Hostname and networking (DHCP or static IP)
 - Storage for VMs (ext4, Btrfs, LVM, ZFS)
 - Clustering (optional multi-host)
@@ -215,7 +226,9 @@ sudo virtos-setup
 VirtOS provides **three ways** to manage your infrastructure:
 
 #### 1. Command Line Interface (CLI)
+
 **Direct virtos-* commands for scripting and automation:**
+
 ```bash
 virtos-create-vm --name web-01 --cpu 4 --ram 8192
 virtos-start web-01
@@ -223,12 +236,15 @@ virtos-status web-01
 ```
 
 #### 2. Text User Interface (TUI)
+
 **Text-based management console (ncurses/dialog):**
+
 ```bash
 virtos-tui
 ```
 
 **Features:**
+
 - System monitoring (CPU, RAM, disk)
 - VM management (start, stop, console)
 - Container management (Docker, Podman, LXC)
@@ -240,7 +256,9 @@ virtos-tui
 **Perfect for remote SSH management.** See [docs/TUI.md](docs/TUI.md) for full guide.
 
 #### 3. Web User Interface (Web UI)
+
 **Browser-based management via Cockpit integration:**
+
 ```bash
 # Install Cockpit web console
 virtos-web install cockpit
@@ -252,6 +270,7 @@ virtos-web start
 ```
 
 **Cockpit Features:**
+
 - 🖥️ **Dashboard** - System metrics, CPU, RAM, disk, network graphs
 - 🔧 **VM Management** - Create, start, stop, delete VMs via web interface
 - 📊 **Performance Monitoring** - Real-time charts and historical data
@@ -260,6 +279,7 @@ virtos-web start
 - ⚙️ **Service Management** - Start/stop systemd services
 
 **REST API** for automation and custom integrations:
+
 ```bash
 # Start API server
 virtos-api start
@@ -271,6 +291,7 @@ curl -X POST http://localhost:8080/api/v1/vms/web-01/start
 ```
 
 **API Endpoints:**
+
 - `GET /api/v1/vms` - List all VMs
 - `GET /api/v1/vms/<name>` - Get VM details
 - `POST /api/v1/vms/<name>/start` - Start VM
@@ -317,6 +338,7 @@ ssh admin@web-server.local
 ```
 
 **What cloud-init can do:**
+
 - ✅ Create users with SSH keys
 - ✅ Install packages automatically  
 - ✅ Configure static IP or DHCP
@@ -325,6 +347,7 @@ ssh admin@web-server.local
 - ✅ Format and mount disks
 
 **See the [Cloud-init Guide](docs/CLOUD-INIT.md) for:**
+
 - Complete command reference
 - Common use cases (web servers, databases, Kubernetes nodes)
 - Advanced examples
@@ -333,6 +356,7 @@ ssh admin@web-server.local
 ### Remote Management
 
 **Connect with virt-manager from your desktop:**
+
 ```bash
 virt-manager -c qemu+ssh://vmadmin@virtos/system
 ```
@@ -342,6 +366,7 @@ VirtOS includes SSH and libvirt for remote management. See [docs/REMOTE-ACCESS.m
 ### Clustering
 
 **Run multiple VirtOS instances that discover each other:**
+
 ```bash
 # On any VirtOS host
 virtos-cluster list
@@ -357,6 +382,7 @@ Automatic discovery via mDNS/Avahi - hosts appear as `virtos-X.local`. See [docs
 ### Kubernetes (Optional)
 
 **Deploy K3s across your VirtOS cluster:**
+
 ```bash
 # On virtos-1
 curl -sfL https://get.k3s.io | sh -
@@ -374,6 +400,7 @@ K3s provides orchestration, auto-scaling, and self-healing for containers. See [
 ### IaaS - Automated VM Placement
 
 **Request VMs and let the cluster decide where to run them:**
+
 ```bash
 # Just specify what you need - no manual host selection!
 virtos-create-vm \
@@ -392,6 +419,7 @@ Infrastructure as a Service - simplified! See [docs/IAAS.md](docs/IAAS.md) for a
 ### Cloud Federation - Multi-Cloud & Hybrid
 
 **Manage on-premises AND public cloud from one interface:**
+
 ```bash
 # Initialize federation
 virtos-federation federation-init my-company-fed
@@ -412,6 +440,7 @@ virtos-federation cost-optimize --report monthly
 ```
 
 **Federation features:**
+
 - **Unified management** across on-prem + AWS + Azure + GCP
 - **Cross-cloud networking** (VPN tunnels, unified IP space)
 - **Federated identity (SSO)** with SAML 2.0
@@ -442,6 +471,7 @@ Or use a profile as starting point. See [docs/PROFILES.md](docs/PROFILES.md).
 **vs Proxmox, ESXi, oVirt, XCP-ng, Harvester, etc.**
 
 VirtOS occupies a unique niche:
+
 - **Smaller** - 100-400MB vs 1GB+ for most alternatives
 - **Faster** - <10s boot vs 30-120s for others
 - **More flexible** - Choose only what you need (7 profiles)
@@ -449,6 +479,7 @@ VirtOS occupies a unique niche:
 - **Text-first** - TUI works great over SSH, no web overhead
 
 **Trade-offs:**
+
 - Less mature (new project vs 10+ years)
 - No web UI (terminal/SSH only)
 - Smaller community
@@ -465,6 +496,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 **VirtOS is alpha software.** Compared to mature platforms (Proxmox, VMware, OpenStack):
 
 **✅ Already Implemented**:
+
 - ✅ Automated backup/restore (`virtos-backup` - 649 lines, working)
 - ✅ VM snapshots (`virtos-snapshot` - 389 lines, working)
 - ✅ Live migration (`virtos-migrate` - 363 lines, working)
@@ -480,11 +512,13 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 - ✅ VM templates (`virtos-template` - working)
 
 **🟡 Partial Implementation**:
+
 - 🟡 User authentication/RBAC (`virtos-auth` - interface only, needs LDAP backend)
 - 🟡 HA/failover (`virtos-ha` - basic features working, advanced needs testing)
 - 🟡 Update mechanism (`virtos-update` - interface only, needs TCZ backend)
 
 **📅 Planned / Not Started**:
+
 - 📅 Multi-datacenter federation (research prototype exists)
 - 📅 AI-powered optimization (research prototype exists)
 - 📅 Kubernetes integration (planned)
@@ -492,6 +526,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 - 📅 Web UI (by design - TUI only)
 
 **❌ Critical Gaps (Blocking Production)**:
+
 - ❌ Hardware testing (0/47 ISO boot checks)
 - ❌ Runtime validation (never tested end-to-end)
 - ❌ External security audit
@@ -511,6 +546,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 VirtOS now has a **fully functional package build system** that creates real artifacts:
 
 **Built & Tested:**
+
 - ✅ **virtos-tools.tcz** (332KB) - All 54 management scripts packaged
 - ✅ Automated package building (`packages/build-all.sh`)
 - ✅ Build validation (`build/scripts/validate-build.sh`)
@@ -518,6 +554,7 @@ VirtOS now has a **fully functional package build system** that creates real art
 - ✅ Comprehensive build documentation ([BUILD.md](BUILD.md))
 
 **Test Results:**
+
 ```
 ✓ Package built successfully (332KB)
 ✓ All 53 virtos scripts syntax validated
@@ -526,6 +563,7 @@ VirtOS now has a **fully functional package build system** that creates real art
 ```
 
 **Try it yourself:**
+
 ```bash
 build/scripts/quick-test.sh  # 5-second validation
 cd packages && ./build-all.sh  # Build the package
@@ -556,6 +594,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 | ISO building | ✅ | ⚠️ | ❌ | **UNTESTED** |
 
 **Status Icon Legend**:
+
 - ✅ **Complete** - Implemented, tested, working
 - 🟡 **Partial** - Interface complete, backend needed
 - 🔬 **Demo** - Prototype/research only
@@ -565,6 +604,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 ### ✅ Working Features (29/54 scripts - 54%)
 
 **Core VM Management** (10 scripts - libvirt/QEMU backends):
+
 - `virtos-setup` - Complete system setup wizard with dialog UI
 - `virtos-create-vm` - VM creation with qemu-img + virsh
 - `virtos-migrate` - Live VM migration between hosts
@@ -577,6 +617,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 - `virtos-tui` - Complete ncurses management console (6,941 lines)
 
 **Advanced Features** (19 scripts with working backends):
+
 - VM: virtos-template, virtos-gpu, virtos-usb
 - Container: virtos-container-security
 - HA/DR: virtos-ha, virtos-dr
@@ -586,6 +627,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 - Operations: virtos-quota, virtos-billing, virtos-datacenter, virtos-web
 
 **Infrastructure**:
+
 - ✅ Build system and package validation
 - ✅ CI/CD pipelines (GitHub Actions)
 - ✅ Auto-versioning (v0.87)
@@ -598,6 +640,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 ### 🟡 Partial Implementation (9 scripts)
 
 **Infrastructure Components** (interface complete, need backends):
+
 - `virtos-auth` (547 lines) - LDAP/Active Directory/OAuth integration needed
 - `virtos-database` (422 lines) - PostgreSQL/MySQL/MongoDB backends needed
 - `virtos-directory` (544 lines) - OpenLDAP/FreeIPA integration needed
@@ -613,6 +656,7 @@ See [Issue #87](https://github.com/FlossWare/VirtOS/issues/87) for backend imple
 ### 🔬 Experimental/Demo (14 scripts)
 
 **Research Prototypes** (intentional demonstrations, not production features):
+
 - **AI**: virtos-ai (684 lines), virtos-ai-advanced (959 lines)
 - **Quantum**: virtos-quantum (594 lines), virtos-quantum-hardware (828 lines)
 - **Blockchain**: virtos-blockchain (719 lines), virtos-blockchain-advanced (688 lines)
@@ -625,12 +669,14 @@ These scripts demonstrate interface design for potential future features.
 ### ⚠️ Critical Gaps (Blocking Production Use)
 
 **Never Tested on Real Hardware**:
+
 - ❌ ISO boot testing: 0/47 validation checks completed ([Issue #86](https://github.com/FlossWare/VirtOS/issues/86))
 - ❌ Runtime validation: Never executed in actual VirtOS environment ([Issue #1](https://github.com/FlossWare/VirtOS/issues/1))
 - ❌ Hardware compatibility: No physical hardware testing
 - ❌ VM lifecycle: Core operations never validated end-to-end
 
 **Production Requirements Not Met**:
+
 - Infrastructure backends incomplete (9 scripts, [Issue #87](https://github.com/FlossWare/VirtOS/issues/87))
 - Security audit incomplete (external penetration testing needed)
 - Stability testing: No 90-day validation
@@ -650,6 +696,7 @@ See [Production Readiness Checklist](https://github.com/FlossWare/VirtOS/issues/
 ### Backend Implementation Detail
 
 **Fully Functional Backends (29 scripts)**:
+
 - **libvirt/virsh** for VM management (create, start, stop, migrate, snapshot)
 - **qemu-img** for disk operations (create, resize, convert)
 - **Avahi/mDNS** for cluster discovery and coordination
@@ -658,6 +705,7 @@ See [Production Readiness Checklist](https://github.com/FlossWare/VirtOS/issues/
 - **Docker/LXC** integration (partial, container-security only)
 
 **Backend Technologies Used**:
+
 ```bash
 # VM Management
 virsh create/start/stop/migrate/snapshot
@@ -685,12 +733,14 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for detaile
 VirtOS prioritizes **interface design first, implementation later**:
 
 **Why This Approach?**
+
 - Defines complete system vision before coding
 - Creates consistent user experience across features
 - Enables modular, incremental implementation
 - Provides documentation-driven development
 
 **What It Means:**
+
 - Many "features" are really API prototypes
 - Scripts show intended workflow, not working code
 - "54 management scripts" ≠ "52 working features"
@@ -711,6 +761,7 @@ To make VirtOS actually functional:
 **VirtOS Alpha Status - Use With Caution**:
 
 **✅ What Works**:
+
 - Package building and TCZ creation
 - Management script interfaces (54 scripts)
 - Core VM backend integration (29 scripts with libvirt/QEMU)
@@ -719,18 +770,21 @@ To make VirtOS actually functional:
 - Security library and input validation
 
 **❌ What's Not Ready**:
+
 - **ISO boot testing**: Never tested on real hardware (0/47 checks)
 - **Runtime validation**: Scripts never executed in actual VirtOS environment
 - **Production deployment**: No stability, security, or performance validation
 - **Infrastructure backends**: 9 scripts need implementation (auth, secrets, database)
 
 **DO NOT use VirtOS for:**
+
 - ❌ Production environments with SLAs
 - ❌ Mission-critical workloads
 - ❌ Any deployment requiring guaranteed uptime
 - ❌ Systems managing sensitive data (until security audit complete)
 
 **VirtOS IS suitable for:**
+
 - ✅ Development and testing environments
 - ✅ Proof-of-concept deployments
 - ✅ Learning virtualization concepts
@@ -754,6 +808,7 @@ See [Production Readiness Master Checklist](https://github.com/FlossWare/VirtOS/
 ### 🚀 Contributing
 
 **Most Valuable Contributions:**
+
 1. Implement backend integration for existing prototypes
 2. Add unit tests for management scripts
 3. Perform security review and add input validation
@@ -763,6 +818,7 @@ See [Production Readiness Master Checklist](https://github.com/FlossWare/VirtOS/
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md) for detailed guidance.
 
 ### How You Can Help
+
 - **Test the build**: Try building the ISO and report issues
 - **Integration work**: Connect management scripts to actual backends
 - **Kernel config**: Contribute KVM-optimized kernel configurations
@@ -772,6 +828,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md) for detailed g
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 **Developer Tools**:
+
 - `./ci/validate-scripts.sh --report` - Comprehensive script quality validation
 - `./ci/migrate-error-handling.sh --report` - Error handling analysis
 
@@ -782,6 +839,7 @@ Ready-to-deploy examples and patterns for VirtOS:
 **[VirtOS-Examples Repository](https://github.com/FlossWare/VirtOS-Examples)**
 
 Includes:
+
 - Microservices with docker-compose
 - Kubernetes deployments
 - API Gateway patterns
@@ -808,12 +866,14 @@ Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** fo
 ### Community Support
 
 📢 **New to VirtOS?** See our **[Community Guide](COMMUNITY.md)** for:
+
 - Communication channels (GitHub Discussions, Issues)
 - How to ask questions and get help
 - Community guidelines and support resources
 - Contributing and recognition
 
 **Quick Links**:
+
 - **GitHub Issues**: [Report bugs or request features](https://github.com/FlossWare/VirtOS/issues)
 - **Discussions**: [Ask questions and share ideas](https://github.com/FlossWare/VirtOS/discussions) *(Setup in progress)*
 - **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -821,12 +881,14 @@ Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** fo
 ### Documentation
 
 #### Business & Planning
+
 - **[Executive Summary](docs/EXECUTIVE_SUMMARY.md)** - One-page overview for decision makers
 - **[Business Case](docs/BUSINESS_CASE.md)** - ROI analysis, cost savings, competitive comparison
 - **[v1.0 Roadmap](docs/V1_0_ROADMAP.md)** - **NEW!** Path to production-ready v1.0 (12-week plan)
 - **[TCZ Packages](docs/TCZ_PACKAGES.md)** - Package strategy across build profiles
 
 #### Technical Guides
+
 - **[Architecture](docs/ARCHITECTURE.md)** - System design and components
 - **[Build Guide](docs/BUILD.md)** - Complete build instructions
 - **[Cloud-init Guide](docs/CLOUD-INIT.md)** - Automated VM configuration

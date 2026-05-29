@@ -56,7 +56,7 @@ for script in virtos-*; do
             next
         }
         { print }
-        ' "$script" > "$script.tmp"
+        ' "$script" >"$script.tmp"
 
         mv "$script.tmp" "$script"
     fi
@@ -72,7 +72,7 @@ for script in virtos-*; do
         /virtos-common.sh/ { in_source = 1 }
         in_source && /^fi/ { print; print ""; print "VERSION=$(get_version)"; in_source = 0; next }
         { print }
-        ' "$script" > "$script.tmp"
+        ' "$script" >"$script.tmp"
         mv "$script.tmp" "$script"
     fi
 
@@ -105,7 +105,7 @@ for script in virtos-*; do
                 added = 1
             }
             { print }
-            ' "$script" > "$script.tmp"
+            ' "$script" >"$script.tmp"
             mv "$script.tmp" "$script"
         fi
     fi

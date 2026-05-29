@@ -3,7 +3,7 @@
 # Integrates platform-java with VirtOS for unified VM/container/app orchestration
 
 set -e
-set -u  # Fail on unset variables
+set -u # Fail on unset variables
 
 PACKAGE="virtos-platform-java"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -64,7 +64,7 @@ mkdir -p "$SCRIPT_DIR/src/var/lib/platform-java/volumes"
 
 # Create platform-java wrapper script
 echo "Creating platform-java wrapper scripts..."
-cat > "$SCRIPT_DIR/src/usr/local/bin/platform-java" << 'EOF'
+cat >"$SCRIPT_DIR/src/usr/local/bin/platform-java" <<'EOF'
 #!/bin/sh
 # platform-java command-line interface for VirtOS
 # Manages VMs, containers, Java apps, and native binaries
@@ -96,7 +96,7 @@ EOF
 chmod +x "$SCRIPT_DIR/src/usr/local/bin/platform-java"
 
 # Create installation script
-cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-install" << 'EOF'
+cat >"$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-install" <<'EOF'
 #!/bin/sh
 # Installs platform-java on VirtOS
 # Downloads and configures platform-java with VM management support
@@ -244,7 +244,7 @@ EOF
 chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-install"
 
 # Create uninstall script
-cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-uninstall" << 'EOF'
+cat >"$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-uninstall" <<'EOF'
 #!/bin/sh
 # Uninstalls platform-java from VirtOS
 
@@ -270,7 +270,7 @@ EOF
 chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-uninstall"
 
 # Create status/info script
-cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-info" << 'EOF'
+cat >"$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-info" <<'EOF'
 #!/bin/sh
 # Display platform-java status and configuration
 
@@ -332,7 +332,7 @@ chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-info"
 
 # Create post-install script
 echo "Creating post-install script..."
-cat > "$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE" << 'EOF'
+cat >"$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE" <<'EOF'
 #!/bin/sh
 # Post-install script for virtos-platform-java
 
@@ -349,7 +349,7 @@ chmod +x "$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE"
 
 # Copy documentation
 echo "Copying documentation..."
-cat > "$SCRIPT_DIR/src/usr/local/share/doc/platform-java/README.md" << 'DOC_EOF'
+cat >"$SCRIPT_DIR/src/usr/local/share/doc/platform-java/README.md" <<'DOC_EOF'
 # platform-java on VirtOS
 
 platform-java provides unified orchestration for VMs, containers, Java applications,
@@ -419,7 +419,7 @@ else
     echo "Warning: VERSION file not found, using default version $PACKAGE_VERSION"
 fi
 
-cat > "$SCRIPT_DIR/${PACKAGE}.tcz.info" << INFO_EOF
+cat >"$SCRIPT_DIR/${PACKAGE}.tcz.info" <<INFO_EOF
 Title:          virtos-platform-java.tcz
 Description:    platform-java integration for VirtOS - unified VM/container/app orchestration
 Version:        ${PACKAGE_VERSION}
@@ -436,7 +436,7 @@ Current:        2026-05-25
 INFO_EOF
 
 # Create dependencies file
-cat > "$SCRIPT_DIR/${PACKAGE}.tcz.dep" << 'EOF'
+cat >"$SCRIPT_DIR/${PACKAGE}.tcz.dep" <<'EOF'
 openjdk-21-jre.tcz
 libvirt.tcz
 EOF
@@ -444,21 +444,21 @@ EOF
 # Create package
 echo "Creating TCZ package..."
 cd "$SCRIPT_DIR/src"
-sudo find usr -not -type d > "$SCRIPT_DIR/${PACKAGE}.tcz.list"
-sudo find etc -not -type d >> "$SCRIPT_DIR/${PACKAGE}.tcz.list" 2>/dev/null || true
-sudo find var -not -type d >> "$SCRIPT_DIR/${PACKAGE}.tcz.list" 2>/dev/null || true
+sudo find usr -not -type d >"$SCRIPT_DIR/${PACKAGE}.tcz.list"
+sudo find etc -not -type d >>"$SCRIPT_DIR/${PACKAGE}.tcz.list" 2>/dev/null || true
+sudo find var -not -type d >>"$SCRIPT_DIR/${PACKAGE}.tcz.list" 2>/dev/null || true
 sudo mksquashfs . "$SCRIPT_DIR/${PACKAGE}.tcz" -noappend -no-xattrs 2>/dev/null
 
 # Generate MD5
 echo "Generating MD5 checksum..."
 cd "$SCRIPT_DIR"
-md5sum "${PACKAGE}.tcz" > "${PACKAGE}.tcz.md5.txt"
+md5sum "${PACKAGE}.tcz" >"${PACKAGE}.tcz.md5.txt"
 
 echo ""
 echo "Package built successfully!"
 echo "  Package: $SCRIPT_DIR/${PACKAGE}.tcz"
 echo "  Size: $(du -h ${PACKAGE}.tcz | cut -f1)"
-echo "  Files: $(wc -l < ${PACKAGE}.tcz.list)"
+echo "  Files: $(wc -l <${PACKAGE}.tcz.list)"
 echo ""
 echo "To install:"
 echo "  sudo cp ${PACKAGE}.tcz* /mnt/sda1/tce/optional/"

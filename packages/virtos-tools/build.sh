@@ -3,7 +3,7 @@
 # This packages all VirtOS management scripts
 
 set -e
-set -u  # Fail on unset variables
+set -u # Fail on unset variables
 
 PACKAGE="virtos-tools"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -89,25 +89,25 @@ if [ -f "$PROJECT_ROOT/VERSION" ]; then
     cp "$PROJECT_ROOT/VERSION" "$SCRIPT_DIR/src/usr/local/share/virtos/VERSION"
     echo "  VERSION: $(cat "$PROJECT_ROOT/VERSION")"
 else
-    echo "$VERSION" > "$SCRIPT_DIR/src/usr/local/share/virtos/VERSION"
+    echo "$VERSION" >"$SCRIPT_DIR/src/usr/local/share/virtos/VERSION"
     echo "  VERSION: $VERSION (fallback)"
 fi
 
-date -u +"%Y-%m-%d %H:%M:%S UTC" > "$SCRIPT_DIR/src/usr/local/share/virtos/BUILD_DATE"
+date -u +"%Y-%m-%d %H:%M:%S UTC" >"$SCRIPT_DIR/src/usr/local/share/virtos/BUILD_DATE"
 echo "  BUILD_DATE: $(cat "$SCRIPT_DIR/src/usr/local/share/virtos/BUILD_DATE")"
 
 if command -v git >/dev/null 2>&1 && [ -d "$PROJECT_ROOT/.git" ]; then
     cd "$PROJECT_ROOT"
-    git rev-parse HEAD > "$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT"
+    git rev-parse HEAD >"$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT"
     echo "  GIT_COMMIT: $(cat "$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT" | cut -c1-7)"
 else
-    echo "unknown" > "$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT"
+    echo "unknown" >"$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT"
     echo "  GIT_COMMIT: unknown"
 fi
 
 # Create post-install script
 echo "Creating post-install script..."
-cat > "$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE" << 'EOF'
+cat >"$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE" <<'EOF'
 #!/bin/sh
 # Post-install script for virtos-tools
 
@@ -143,7 +143,7 @@ chmod +x "$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE"
 
 # Add documentation
 echo "Adding documentation..."
-cat > "$SCRIPT_DIR/src/usr/local/share/doc/virtos/README" << 'EOF'
+cat >"$SCRIPT_DIR/src/usr/local/share/doc/virtos/README" <<'EOF'
 VirtOS Management Tools
 =======================
 
@@ -211,11 +211,11 @@ if command -v mksquashfs >/dev/null 2>&1; then
     # Generate file list
     echo "Generating file list..."
     cd "$SCRIPT_DIR"
-    unsquashfs -l "${PACKAGE}.tcz" 2>/dev/null | tail -n +4 | sed 's/^squashfs-root//' > "${PACKAGE}.tcz.list"
+    unsquashfs -l "${PACKAGE}.tcz" 2>/dev/null | tail -n +4 | sed 's/^squashfs-root//' >"${PACKAGE}.tcz.list"
 
     # Generate checksum
     echo "Generating checksum..."
-    md5sum "${PACKAGE}.tcz" > "${PACKAGE}.tcz.md5.txt"
+    md5sum "${PACKAGE}.tcz" >"${PACKAGE}.tcz.md5.txt"
 
     # Get size
     SIZE=$(du -h "${PACKAGE}.tcz" | cut -f1)

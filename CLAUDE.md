@@ -15,6 +15,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 #### ✅ Fully Working (29 scripts - 20,000+ LOC)
 
 **Core VM Management (10 scripts)**:
+
 - virtos-setup (549 lines) - libvirt + dialog wizard
 - virtos-create-vm (255 lines) - qemu-img + virsh
 - virtos-migrate (363 lines) - virsh migrate
@@ -27,6 +28,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 - virtos-tui (6,941 lines) - complete menu system
 
 **Advanced Features (19 scripts with backends)**:
+
 - VM: virtos-template, virtos-gpu, virtos-usb
 - Container: virtos-container-security
 - HA/DR: virtos-ha, virtos-dr
@@ -36,6 +38,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 - Operations: virtos-quota, virtos-billing, virtos-datacenter, virtos-web
 
 **Infrastructure**:
+
 - Package build system (working)
 - CI/CD pipelines (working)
 - Version management (working)
@@ -48,6 +51,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 #### 🟡 Partial Implementation (9 scripts)
 
 **Infrastructure Components** (need backend work):
+
 - virtos-auth (547 lines) - needs LDAP/auth integration
 - virtos-database (422 lines) - needs DB backends
 - virtos-directory (544 lines) - needs directory service
@@ -63,6 +67,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 **⚠️ IMPORTANT: These are RESEARCH PROTOTYPES, not working features!**
 
 **Demonstration/Research** (intentional prototypes - interfaces only, no backends):
+
 - AI: virtos-ai (684 lines), virtos-ai-advanced (959 lines)
 - Quantum: virtos-quantum (594 lines), virtos-quantum-hardware (828 lines)
 - Blockchain: virtos-blockchain (719 lines), virtos-blockchain-advanced (688 lines)
@@ -75,6 +80,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 **Do NOT use these in production** - they are conversation starters and design artifacts, not working features.
 
 #### ⚠️ Untested (Working Code, No Runtime Validation)
+
 - ISO building system - See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for validation checklist
 - VirtOS on real hardware - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
 - platform-java integration in VirtOS environment - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
@@ -107,20 +113,24 @@ VirtOS/
 ### Important Files
 
 #### Core Build Files
+
 - `packages/build-all.sh` - Build all TCZ packages
 - `packages/virtos-tools/build.sh` - Build virtos-tools package
 - `packages/virtos-platform-java/build.sh` - Build platform-java integration
 - `VERSION` - Current version (0.1)
 
 #### Management Scripts
+
 - `packages/virtos-tools/src/usr/local/bin/virtos-*` - 54 management scripts
 - `config/custom-scripts/virtos-tui` - Text user interface (menu system)
 
 #### Configuration
+
 - `build/build.conf` - Build configuration with 7 profiles
 - `.github/workflows/cd.yml` - Auto-version bump and deployment
 
 #### Documentation
+
 - `README.md` - Project overview and quick start
 - `INTEGRATION_TEST_REPORT.md` - Build verification status
 - `docs/ARCHITECTURE.md` - Detailed architecture
@@ -193,6 +203,7 @@ main "$@"
 ### Testing Requirements
 
 #### Syntax Validation
+
 ```bash
 # All scripts must pass
 bash -n virtos-script-name
@@ -200,6 +211,7 @@ shellcheck virtos-script-name  # If available
 ```
 
 #### Unit Tests (Desired)
+
 ```bash
 # Use BATS framework
 # tests/virtos-script-name.bats
@@ -211,6 +223,7 @@ shellcheck virtos-script-name  # If available
 ```
 
 #### Integration Tests
+
 ```bash
 # Test workflows end-to-end
 # Example: VM creation workflow
@@ -232,6 +245,7 @@ virtos-vm-delete test-vm
 5. **Permissions**: Minimal permissions, no unnecessary sudo
 
 Example:
+
 ```bash
 # BAD - Unsafe user input
 vm_name="$1"
@@ -284,6 +298,7 @@ grep Version: packages/*/virtos-*.tcz.info
 VirtOS integrates platform-java for unified workload orchestration:
 
 ### Architecture
+
 ```
 ┌─────────────────────────────────────┐
 │   VirtOS (Virtualization OS)       │
@@ -312,6 +327,7 @@ VirtOS integrates platform-java for unified workload orchestration:
 4. **Multi-tier examples** - Database VM + Java app + NGINX container
 
 ### Example Workflow
+
 ```bash
 # Deploy multi-tier application
 platform-java deploy examples/multi-tier/three-tier-webapp/1-database-tier.yaml
@@ -434,6 +450,7 @@ See [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) for current work
    - Include test results
 
 ### Example PR Template
+
 ```markdown
 ## Summary
 Brief description of changes
@@ -483,6 +500,7 @@ Fixes #X, Addresses #Y
 ### What Actually Works RIGHT NOW
 
 **Backend Integration** ✅:
+
 - libvirt/virsh for VM management (10 scripts)
 - qemu-img for disk operations
 - Avahi/mDNS for cluster discovery
@@ -491,6 +509,7 @@ Fixes #X, Addresses #Y
 - Docker/LXC integration (partial)
 
 **Security Features** ✅:
+
 - virtos-common.sh library (361 lines)
 - Input validation (10+ functions)
 - Command injection prevention
@@ -498,6 +517,7 @@ Fixes #X, Addresses #Y
 - 250+ security-focused unit tests
 
 **Test Infrastructure** ✅:
+
 - BATS framework configured
 - 54 unit test files (450+ tests)
 - 5 integration test suites (54 tests)
@@ -544,6 +564,7 @@ Fixes #X, Addresses #Y
 
 **Q: What actually works right now?**
 A: **30/54 scripts (56%) are fully functional**, including:
+
 - Complete VM lifecycle (create, start, stop, migrate, snapshot, backup)
 - Storage pools and volumes
 - Network bridges and NAT
@@ -555,12 +576,14 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for details
 
 **Q: Can I use VirtOS in production?**
 A: **Core functionality is production-ready** (with libvirt installed), but needs:
+
 - Runtime testing on real hardware (Issue #1)
 - ISO build validation (Issue #3)
 - Expanded test coverage (Issue #15)
 
 **Q: Why does documentation say "prototypes only"?**
 A: **Documentation was outdated**. Code audit (2026-05-25) revealed:
+
 - 29 scripts have working backends (not prototypes)
 - 20,000+ lines of functional code
 - Security hardening implemented
@@ -568,6 +591,7 @@ A: **Documentation was outdated**. Code audit (2026-05-25) revealed:
 
 **Q: What's missing?**
 A: **Not implementation** (that's done for core), but:
+
 1. Testing in real VirtOS environment
 2. Infrastructure script backends (9 scripts)
 3. ISO build validation

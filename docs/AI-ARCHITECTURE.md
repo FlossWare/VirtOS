@@ -50,6 +50,7 @@ virtos-create-vm --name web-server --ai-placement
 ```
 
 **Implementation**:
+
 - ML model trained on historical placement success/failure
 - Real-time resource monitoring across cluster
 - Considers affinity/anti-affinity rules
@@ -80,6 +81,7 @@ virtos-ai autoscale enable web-tier \
 ```
 
 **Implementation**:
+
 - Predictive scaling using time-series ML models
 - Considers historical load patterns
 - Accounts for VM startup time
@@ -107,6 +109,7 @@ virtos-gpu assign nvidia-a100 --vm llm-server --ai-optimize
 ```
 
 **Implementation**:
+
 - GPU workload profiling
 - Automatic mode selection (passthrough vs vGPU)
 - Multi-tenancy optimization
@@ -136,6 +139,7 @@ virtos-ai security-monitor enable
 ```
 
 **Implementation**:
+
 - Baseline behavioral models per VM
 - Anomaly detection using statistical ML
 - Integration with virtos-security
@@ -165,6 +169,7 @@ virtos-ai waste-report
 ```
 
 **Implementation**:
+
 - Usage pattern analysis
 - Cost modeling per resource
 - Optimization recommendations
@@ -193,6 +198,7 @@ virtos-ai self-heal enable --vm database-01
 ```
 
 **Implementation**:
+
 - Health check framework
 - Automated recovery procedures
 - Integration with virtos-ha
@@ -204,6 +210,7 @@ virtos-ai self-heal enable --vm database-01
 **Why VirtOS**: Host/VM level observability
 
 **Capabilities**:
+
 - Predictive capacity planning
 - Performance bottleneck detection
 - Resource trend analysis
@@ -235,6 +242,7 @@ platform-java ml project create fraud-detection
 ```
 
 **Components**:
+
 - Development environments (Jupyter, VSCode)
 - Experiment tracking (MLflow, W&B)
 - Training orchestration (distributed jobs)
@@ -263,6 +271,7 @@ platform-java ml marketplace deploy llama-3-70b \
 ```
 
 **Features**:
+
 - Curated model catalog (open source + custom)
 - One-click deployment
 - Version management
@@ -290,6 +299,7 @@ platform-java ml llm deploy gpt-j-6b \
 ```
 
 **Optimizations**:
+
 - Quantization (int8, int4)
 - Request batching
 - KV cache management
@@ -317,6 +327,7 @@ platform-java ml rag create docs-assistant \
 ```
 
 **Components**:
+
 - Document processors
 - Embedding models
 - Vector databases
@@ -360,6 +371,7 @@ platform-java ml governance enable
 ```
 
 **Features**:
+
 - Model approval workflows
 - Bias/fairness testing
 - Explainability (SHAP, LIME)
@@ -509,6 +521,7 @@ Total Cost: ML Training Job "fraud-detection"
 ### VirtOS Infrastructure AI
 
 **Phase 4** (Months 19-24):
+
 1. ✅ VM placement optimization (ML model)
 2. ✅ Predictive auto-scaling
 3. ✅ Infrastructure security (anomaly detection)
@@ -520,6 +533,7 @@ Total Cost: ML Training Job "fraud-detection"
 ### platform-java Application AI
 
 **Phase 4** (Months 19-24):
+
 1. ✅ MLOps platform basics (Jupyter, MLflow)
 2. ✅ Model marketplace (curated catalog)
 3. ✅ LLM inference serving
@@ -553,18 +567,21 @@ Total Cost: ML Training Job "fraud-detection"
 ## Benefits of This Split
 
 ### For VirtOS
+
 ✅ **Focused scope**: Infrastructure AI only, no application complexity  
 ✅ **Lightweight**: Small ML models, fast inference  
 ✅ **Independent**: Works standalone without platform-java  
 ✅ **Minimal**: Stays true to Tiny Core philosophy
 
 ### For platform-java
+
 ✅ **Rich ecosystem**: Full Java ML libraries available  
 ✅ **Pluggable**: Easy to add new ML frameworks  
 ✅ **Scalable**: Distributed training and inference  
 ✅ **Flexible**: Deploy on any infrastructure
 
 ### For Users
+
 ✅ **Clear separation**: Infrastructure vs. application concerns  
 ✅ **Flexible deployment**: Use VirtOS alone or with platform-java  
 ✅ **Best of both worlds**: Optimal infrastructure + rich ML workloads  
@@ -577,12 +594,14 @@ Total Cost: ML Training Job "fraud-detection"
 **User Goal**: Train and deploy a large language model
 
 **VirtOS provides** (Infrastructure AI):
+
 - Optimal GPU host placement for training VM
 - Auto-scaling: Add GPUs during training, reduce for inference
 - Cost tracking: GPU hours, storage costs
 - Self-healing: Restart training if VM fails
 
 **platform-java provides** (Application AI):
+
 - MLOps: Jupyter for development, MLflow for tracking
 - Training orchestration: Distributed training across GPUs
 - Model registry: Version control for checkpoints
@@ -590,6 +609,7 @@ Total Cost: ML Training Job "fraud-detection"
 - Monitoring: Training metrics, inference latency
 
 **Workflow**:
+
 ```bash
 # 1. platform-java requests training VM from VirtOS
 platform-java ml train start llm-custom \
@@ -626,6 +646,7 @@ platform-java ml deploy llm-custom \
 **User Goal**: Reduce infrastructure costs
 
 **VirtOS provides** (Infrastructure AI):
+
 ```bash
 # Run cost optimization analysis
 virtos-ai waste-report
@@ -646,6 +667,7 @@ virtos-ai waste-report
 ```
 
 **platform-java provides** (Application AI):
+
 ```bash
 # Optimize ML workload costs
 platform-java ml optimize costs

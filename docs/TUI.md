@@ -9,6 +9,7 @@ VirtOS provides two ncurses-based TUI applications:
 ### 1. virtos-setup - Setup Wizard
 
 **First-time configuration wizard** for initial VirtOS setup:
+
 - Hostname and networking
 - Storage configuration
 - Clustering setup
@@ -20,6 +21,7 @@ VirtOS provides two ncurses-based TUI applications:
 ### 2. virtos-tui - Management Console
 
 **Comprehensive management interface** for day-to-day operations:
+
 - System monitoring (CPU, RAM, disk, uptime)
 - Virtual machine management
 - Container management (Docker, Podman, LXC)
@@ -78,6 +80,7 @@ sudo virtos-setup
 #### 2. Hostname Configuration
 
 **Prompts:**
+
 - Hostname (e.g., `virtos-1`)
 - Domain name (e.g., `local`)
 
@@ -88,11 +91,13 @@ sudo virtos-setup
 **Choose networking mode:**
 
 **DHCP (Recommended)**
+
 - Automatic IP assignment
 - No manual configuration
 - Works immediately
 
 **Static IP**
+
 - Manual IP address
 - Netmask
 - Gateway
@@ -103,6 +108,7 @@ sudo virtos-setup
 #### 4. Storage Configuration
 
 **Detects available disks:**
+
 ```
 /dev/sda  238G
 /dev/sdb  1.8T
@@ -110,10 +116,12 @@ sudo virtos-setup
 ```
 
 **Configure dedicated storage for VMs?**
+
 - Yes → Choose disk and filesystem
 - No → Skip (use default storage)
 
 **Filesystem options:**
+
 - **ext4** - Simple and reliable
 - **btrfs** - Snapshots (recommended)
 - **lvm** - Flexible volumes
@@ -130,6 +138,7 @@ sudo virtos-setup
 **Enable multi-host clustering?**
 
 If yes:
+
 - **Cluster name** - All hosts must match (e.g., `homelab`)
 - **NFS role:**
   - **None** - No shared storage
@@ -154,10 +163,12 @@ If yes:
 **Create admin user for remote access?**
 
 If yes:
+
 - **Username** (default: `vmadmin`)
 - **Password** (hidden input)
 
 User gets:
+
 - SSH access
 - libvirt permissions (for virt-manager)
 - sudo access
@@ -167,6 +178,7 @@ User gets:
 #### 8. Review Configuration
 
 **Configuration Summary:**
+
 ```
 Hostname: virtos-1.local
 Network: dhcp
@@ -178,12 +190,14 @@ Admin user: vmadmin
 ```
 
 **Apply this configuration?**
+
 - Yes → Proceed
 - No → Cancel (no changes)
 
 #### 9. Apply Configuration
 
 **Progress:**
+
 ```
 Applying configuration...
 
@@ -203,6 +217,7 @@ Configuration complete!
 #### 10. Completion Screen
 
 **Setup Complete!**
+
 ```
 Your VirtOS instance is now configured:
 
@@ -222,29 +237,34 @@ Configuration saved to: /etc/virtos/setup.conf
 ```
 
 **Reboot now?**
+
 - Yes → System reboots
 - No → Continue
 
 ### Setup Features
 
 #### Smart Defaults
+
 - DHCP networking (most common)
 - No dedicated storage (works immediately)
 - Clustering disabled (simple single-host)
 - Minimal services (save resources)
 
 #### Safety Warnings
+
 - Disk format warning (data loss prevention)
 - Configuration review (verify before applying)
 - Already-configured check (prevent overwrite)
 
 #### Validation
+
 - Checks for required tools
 - Detects available hardware
 - Verifies disk availability
 - Confirms service availability
 
 #### Configuration Persistence
+
 - Saves to `/etc/virtos/setup.conf`
 - Backed up via `filetool.sh`
 - Survives reboot
@@ -259,6 +279,7 @@ sudo virtos-setup
 ```
 
 **Warning shown:**
+
 ```
 VirtOS appears to be already configured.
 
@@ -363,6 +384,7 @@ echo "nameserver 8.8.8.8" > /etc/resolv.conf
 Setup TUI not available.
 
 **Solution:**
+
 ```bash
 tce-load -i dialog
 sudo virtos-setup
@@ -373,6 +395,7 @@ sudo virtos-setup
 Permissions issue.
 
 **Solution:**
+
 ```bash
 sudo virtos-setup
 # Not: virtos-setup
@@ -383,6 +406,7 @@ sudo virtos-setup
 Disk not recognized.
 
 **Solutions:**
+
 - Check cable connections
 - Run `lsblk` to verify disk visibility
 - Try different port/cable
@@ -394,6 +418,7 @@ Build doesn't include clustering.
 
 **Solution:**
 Rebuild ISO with:
+
 ```bash
 ENABLE_CLUSTERING="yes" in build.conf
 ```
@@ -403,6 +428,7 @@ ENABLE_CLUSTERING="yes" in build.conf
 NFS server not starting.
 
 **Solutions:**
+
 - Check `/etc/exports` syntax
 - Run `exportfs -av` manually
 - Check firewall (allow NFS ports)
@@ -537,6 +563,7 @@ Displays comprehensive system information:
 - **Containers**: Running containers across all runtimes
 
 **Use cases:**
+
 - Quick health check
 - Resource availability
 - System status at a glance
@@ -545,7 +572,8 @@ Displays comprehensive system information:
 
 Manage KVM/QEMU virtual machines:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List All VMs** - Show all VMs with status
 - **Start VM** - Boot a VM
 - **Shutdown VM** - Graceful shutdown
@@ -555,6 +583,7 @@ Manage KVM/QEMU virtual machines:
 - **Create New VM** - Launch via IaaS (virtos-create-vm)
 
 #### Example: Start VM
+
 ```
 1. Select "Start VM"
 2. Enter VM name: web-1
@@ -563,6 +592,7 @@ Manage KVM/QEMU virtual machines:
 ```
 
 #### Example: VM Console
+
 ```
 1. Select "VM Console"
 2. Enter VM name: web-1
@@ -571,6 +601,7 @@ Manage KVM/QEMU virtual machines:
 ```
 
 **Use cases:**
+
 - Quick VM management over SSH
 - Check VM status remotely
 - Emergency VM console access
@@ -579,7 +610,8 @@ Manage KVM/QEMU virtual machines:
 
 Automated backup and restore for VMs using virtos-backup:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List All Backups** - Show available backups
 - **Backup a VM** - Create VM backup (local or remote)
 - **Restore a VM** - Restore from backup by date
@@ -588,6 +620,7 @@ Automated backup and restore for VMs using virtos-backup:
 - **View Backup Statistics** - Backup summary and status
 
 #### Example: Backup a VM
+
 ```
 1. Select "Backup a VM"
 2. Enter VM name: web-server-1
@@ -598,6 +631,7 @@ Automated backup and restore for VMs using virtos-backup:
 ```
 
 #### Example: Schedule Backups
+
 ```
 1. Select "Schedule Automatic Backups"
 2. Enter VM name: db-server
@@ -607,6 +641,7 @@ Automated backup and restore for VMs using virtos-backup:
 ```
 
 **Use cases:**
+
 - Protect critical VMs
 - Automated backup workflows
 - Remote backup to off-site storage
@@ -616,7 +651,8 @@ Automated backup and restore for VMs using virtos-backup:
 
 VM template library and cloning using virtos-template:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List Templates** - Show available templates
 - **Create Template from VM** - Convert VM to reusable template
 - **Clone VM from Template** - Fast VM creation via copy-on-write
@@ -624,6 +660,7 @@ VM template library and cloning using virtos-template:
 - **Delete Template** - Remove template
 
 #### Example: Create Template
+
 ```
 1. Select "Create Template from VM"
 2. Enter source VM name: ubuntu-base (must be shut down)
@@ -632,6 +669,7 @@ VM template library and cloning using virtos-template:
 ```
 
 #### Example: Clone from Template
+
 ```
 1. Select "Clone VM from Template"
 2. See available templates
@@ -642,6 +680,7 @@ VM template library and cloning using virtos-template:
 ```
 
 **Use cases:**
+
 - Fast VM provisioning
 - Consistent base images
 - Dev/test VM creation
@@ -651,7 +690,8 @@ VM template library and cloning using virtos-template:
 
 Point-in-time VM snapshots using virtos-snapshot:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List Snapshots for VM** - Show all snapshots
 - **Create Snapshot** - Take VM snapshot (disk-only or with RAM)
 - **Revert to Snapshot** - Restore VM to snapshot state
@@ -660,6 +700,7 @@ Point-in-time VM snapshots using virtos-snapshot:
 - **Cleanup Old Snapshots** - Remove old snapshots with retention
 
 #### Example: Create Snapshot
+
 ```
 1. Select "Create Snapshot"
 2. Enter VM name: web-server-1
@@ -671,6 +712,7 @@ Point-in-time VM snapshots using virtos-snapshot:
 ```
 
 #### Example: Revert Snapshot
+
 ```
 1. Select "Revert to Snapshot"
 2. Enter VM name: web-server-1
@@ -681,6 +723,7 @@ Point-in-time VM snapshots using virtos-snapshot:
 ```
 
 **Use cases:**
+
 - Pre-upgrade snapshots
 - Development checkpoints
 - Quick rollback capability
@@ -690,7 +733,8 @@ Point-in-time VM snapshots using virtos-snapshot:
 
 Guided VM creation with automatic cluster placement using virtos-create-vm:
 
-#### Wizard Steps:
+#### Wizard Steps
+
 1. **VM Name** - Unique VM identifier
 2. **CPU Cores** - Number of vCPUs
 3. **Memory (RAM)** - RAM in MB
@@ -708,6 +752,7 @@ Guided VM creation with automatic cluster placement using virtos-create-vm:
 9. **Confirmation** - Create VM on selected host
 
 #### Example: Create VM
+
 ```
 1. Select "IaaS VM Creation"
 2. Enter VM name: app-server-1
@@ -724,6 +769,7 @@ Guided VM creation with automatic cluster placement using virtos-create-vm:
 ```
 
 **Use cases:**
+
 - Hands-free VM placement
 - Multi-host resource optimization
 - IaaS-style VM provisioning
@@ -733,18 +779,21 @@ Guided VM creation with automatic cluster placement using virtos-create-vm:
 
 Manage containers across all runtimes:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Docker Containers** - View Docker containers
 - **Podman Containers** - View Podman containers
 - **LXC Containers** - View LXC containers
 - **All Containers (overview)** - Combined view
 
 Displays:
+
 - Container names
 - Status (running, stopped, exited)
 - Runtime (Docker/Podman/LXC)
 
 **Use cases:**
+
 - Check container status
 - Overview of all container workloads
 - Quick runtime comparison
@@ -753,7 +802,8 @@ Displays:
 
 Comprehensive storage administration:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Disk Usage Overview** - `df -h` output
 - **Mounted Filesystems** - All mounts
 - **Btrfs Subvolumes/Snapshots** - Btrfs management
@@ -763,24 +813,31 @@ Comprehensive storage administration:
 - **All Storage Info** - Combined view
 
 #### Btrfs View
+
 Shows:
+
 - All Btrfs mount points
 - Subvolumes list
 - Snapshot information
 
 #### LVM View
+
 Shows:
+
 - Volume groups with sizes
 - Logical volumes
 - Free space
 
 #### ZFS View
+
 Shows:
+
 - Pool status and health
 - Datasets and compression ratios
 - Available space
 
 **Use cases:**
+
 - Monitor disk space
 - Check filesystem health
 - Verify snapshots exist
@@ -790,19 +847,22 @@ Shows:
 
 Multi-host cluster management:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List Cluster Members** - All VirtOS nodes
 - **Cluster Resources** - Aggregated capacity
 - **Node Details** - Specific node information
 - **Refresh Discovery** - Update cluster cache
 
 Shows:
+
 - Node names and IP addresses
 - Status (up/down)
 - VM count per node
 - Available resources
 
 **Use cases:**
+
 - Cluster health monitoring
 - Resource planning
 - Node status verification
@@ -812,7 +872,8 @@ Shows:
 
 Network configuration and status:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Network Interfaces** - All NICs
 - **IP Addresses** - IP configuration
 - **Routing Table** - Routes
@@ -820,6 +881,7 @@ Network configuration and status:
 - **Firewall Rules** - iptables rules
 
 **Use cases:**
+
 - Network troubleshooting
 - Verify bridge configuration
 - Check firewall rules
@@ -829,7 +891,8 @@ Network configuration and status:
 
 Manage VirtOS services:
 
-#### Available Services:
+#### Available Services
+
 - **libvirtd** - Status and restart
 - **Docker** - Status and restart
 - **K3s** - Kubernetes status (if installed)
@@ -838,6 +901,7 @@ Manage VirtOS services:
 - **All processes** - Running processes view
 
 **Use cases:**
+
 - Service health checks
 - Restart failed services
 - Verify clustering services
@@ -847,7 +911,8 @@ Manage VirtOS services:
 
 View system and service logs:
 
-#### Log Options:
+#### Log Options
+
 - **System Messages** - dmesg output
 - **Kernel Errors** - Error/warning messages
 - **libvirt Logs** - Virtualization logs
@@ -857,6 +922,7 @@ View system and service logs:
 Shows last 50 lines by default.
 
 **Use cases:**
+
 - Troubleshooting errors
 - Service debugging
 - System diagnostics
@@ -866,7 +932,8 @@ Shows last 50 lines by default.
 
 Automated monitoring and alerting using virtos-monitor:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Show Monitoring Status** - View daemon status and alert history
 - **View Active Alerts** - List current alerts
 - **Run Health Checks Now** - Execute manual health check
@@ -877,6 +944,7 @@ Automated monitoring and alerting using virtos-monitor:
 - **Configure Email Alerts** - Set email address for alerts
 
 #### Example: Start Monitoring
+
 ```
 1. Select "Start Monitoring Daemon"
 2. Daemon starts with default thresholds
@@ -885,6 +953,7 @@ Automated monitoring and alerting using virtos-monitor:
 ```
 
 **Use cases:**
+
 - Automated infrastructure monitoring
 - Alert on resource issues
 - Track system health
@@ -894,7 +963,8 @@ Automated monitoring and alerting using virtos-monitor:
 
 Automatic VM failover using virtos-ha:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List HA-Enabled VMs** - Show VMs with HA configured
 - **Enable HA for VM** - Configure automatic restart/failover
 - **Disable HA for VM** - Remove HA protection
@@ -904,6 +974,7 @@ Automatic VM failover using virtos-ha:
 - **Stop HA Daemon** - Stop HA monitoring
 
 #### Example: Enable HA
+
 ```
 1. Select "Enable HA for VM"
 2. Enter VM name: web-server-1
@@ -913,6 +984,7 @@ Automatic VM failover using virtos-ha:
 ```
 
 **Use cases:**
+
 - Protect critical VMs
 - Automatic recovery from failures
 - Minimize downtime
@@ -922,7 +994,8 @@ Automatic VM failover using virtos-ha:
 
 Live and offline VM migration using virtos-migrate:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Live Migration (Shared Storage)** - Migrate running VM with shared disk
 - **Block Migration** - Migrate VM without shared storage
 - **Offline Migration** - Migrate stopped VM
@@ -930,6 +1003,7 @@ Live and offline VM migration using virtos-migrate:
 - **Compressed Migration** - Reduce transfer size
 
 #### Example: Live Migration
+
 ```
 1. Select "Live Migration (Shared Storage)"
 2. Enter VM name: web-1
@@ -939,6 +1013,7 @@ Live and offline VM migration using virtos-migrate:
 ```
 
 **Use cases:**
+
 - Load balancing
 - Hardware maintenance
 - Resource optimization
@@ -948,7 +1023,8 @@ Live and offline VM migration using virtos-migrate:
 
 Resource limits and quotas using virtos-quota:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List All Quotas** - Show configured limits
 - **Set VM Quota** - Limit CPU/memory/disk for VM
 - **Check VM Compliance** - Verify VM within limits
@@ -957,6 +1033,7 @@ Resource limits and quotas using virtos-quota:
 - **Enable/Disable Enforcement** - Toggle quota enforcement
 
 #### Example: Set VM Limits
+
 ```
 1. Select "Set VM Quota"
 2. Enter VM name: dev-vm
@@ -967,6 +1044,7 @@ Resource limits and quotas using virtos-quota:
 ```
 
 **Use cases:**
+
 - Resource fairness
 - Prevent resource hogging
 - Capacity planning
@@ -976,7 +1054,8 @@ Resource limits and quotas using virtos-quota:
 
 Authentication and role-based access control using virtos-auth:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List Users** - Show all VirtOS users
 - **Add User** - Create new user with role
 - **Delete User** - Remove user
@@ -987,6 +1066,7 @@ Authentication and role-based access control using virtos-auth:
 - **Create Custom Role** - Define new role
 
 #### Example: Add User
+
 ```
 1. Select "Add User"
 2. Enter username: alice
@@ -996,12 +1076,14 @@ Authentication and role-based access control using virtos-auth:
 ```
 
 **Roles:**
+
 - **admin** - Full access to all resources
 - **operator** - Manage VMs, limited admin
 - **viewer** - Read-only access
 - **backup-admin** - Backup/restore only
 
 **Use cases:**
+
 - Multi-user environments
 - Least-privilege access
 - Audit and compliance
@@ -1011,7 +1093,8 @@ Authentication and role-based access control using virtos-auth:
 
 VM provisioning with cloud-init using virtos-cloud-init:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Create Config** - Generate cloud-init configuration
 - **Generate ISO** - Build cloud-init ISO
 - **Attach ISO to VM** - Mount cloud-init disk
@@ -1020,6 +1103,7 @@ VM provisioning with cloud-init using virtos-cloud-init:
 - **Quick Setup (SSH)** - Fast VM setup with SSH key
 
 #### Example: Quick VM Setup
+
 ```
 1. Select "Quick Setup (SSH)"
 2. Enter VM name: ubuntu-vm
@@ -1032,6 +1116,7 @@ VM provisioning with cloud-init using virtos-cloud-init:
 ```
 
 **Configuration options:**
+
 - Hostname and users
 - SSH keys
 - Static IP networking
@@ -1039,6 +1124,7 @@ VM provisioning with cloud-init using virtos-cloud-init:
 - Custom scripts
 
 **Use cases:**
+
 - Automated VM provisioning
 - Consistent VM configuration
 - Infrastructure as Code
@@ -1048,7 +1134,8 @@ VM provisioning with cloud-init using virtos-cloud-init:
 
 REST API server for programmatic access using virtos-api:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Start API Server** - Launch HTTP API on port 8080
 - **Stop API Server** - Shutdown API
 - **Show API Status** - View server state
@@ -1056,6 +1143,7 @@ REST API server for programmatic access using virtos-api:
 - **Show Endpoints** - List available API routes
 
 #### Example: Start API
+
 ```
 1. Select "Start API Server"
 2. Choose port (default: 8080)
@@ -1065,6 +1153,7 @@ REST API server for programmatic access using virtos-api:
 ```
 
 **API Endpoints:**
+
 - GET /api/v1/health - Health check
 - GET /api/v1/vms - List VMs
 - GET /api/v1/vms/<name> - VM details
@@ -1073,6 +1162,7 @@ REST API server for programmatic access using virtos-api:
 - GET /api/v1/cluster - Cluster status
 
 **Use cases:**
+
 - Programmatic VM management
 - Integration with tools
 - Automation scripts
@@ -1082,7 +1172,8 @@ REST API server for programmatic access using virtos-api:
 
 VirtOS update management using virtos-update:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Check for Updates** - Scan for new versions
 - **List Available Updates** - Show pending updates
 - **Install Update** - Apply specific update
@@ -1092,6 +1183,7 @@ VirtOS update management using virtos-update:
 - **Enable Auto-Updates** - Schedule automatic updates
 
 #### Example: Update System
+
 ```
 1. Select "Check for Updates"
 2. View available updates
@@ -1102,6 +1194,7 @@ VirtOS update management using virtos-update:
 ```
 
 **Features:**
+
 - Automatic backups before update
 - Rollback capability
 - Update history tracking
@@ -1109,6 +1202,7 @@ VirtOS update management using virtos-update:
 - Keep last 5 backups
 
 **Use cases:**
+
 - Keep VirtOS current
 - Security patches
 - Feature updates
@@ -1118,7 +1212,8 @@ VirtOS update management using virtos-update:
 
 DR planning and orchestration using virtos-dr:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List DR Plans** - Show configured plans
 - **Create DR Plan** - Define recovery plan with RPO/RTO
 - **Show Plan Details** - View plan configuration
@@ -1130,6 +1225,7 @@ DR planning and orchestration using virtos-dr:
 - **Cluster Backup** - Backup entire cluster
 
 #### Example: Create DR Plan
+
 ```
 1. Select "Create DR Plan"
 2. Enter plan name: production
@@ -1141,6 +1237,7 @@ DR planning and orchestration using virtos-dr:
 ```
 
 #### Example: Failover
+
 ```
 1. Select "Failover to DR Site"
 2. Enter DR site: dr-site.example.com
@@ -1151,6 +1248,7 @@ DR planning and orchestration using virtos-dr:
 ```
 
 **DR Concepts:**
+
 - **RPO** (Recovery Point Objective) - Max data loss tolerance
 - **RTO** (Recovery Time Objective) - Target recovery time
 - **Replication** - Continuous data sync to DR site
@@ -1158,6 +1256,7 @@ DR planning and orchestration using virtos-dr:
 - **Failback** - Return to primary site
 
 **Use cases:**
+
 - Business continuity planning
 - Disaster preparedness
 - Site-to-site replication
@@ -1167,7 +1266,8 @@ DR planning and orchestration using virtos-dr:
 
 Distributed storage management using virtos-storage:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List All Storage Pools** - Show all configured pools
 - **Initialize Ceph Cluster** - Set up Ceph distributed storage
 - **Ceph Status** - View Ceph cluster health
@@ -1182,6 +1282,7 @@ Distributed storage management using virtos-storage:
 - **Replication Status** - View replication health
 
 #### Example: Initialize Ceph
+
 ```
 1. Select "Initialize Ceph Cluster"
 2. Wait for initialization
@@ -1190,6 +1291,7 @@ Distributed storage management using virtos-storage:
 ```
 
 #### Example: Create GlusterFS Volume
+
 ```
 1. Select "Create GlusterFS Volume"
 2. Enter volume name: vm-storage
@@ -1199,11 +1301,13 @@ Distributed storage management using virtos-storage:
 ```
 
 **Storage Types:**
+
 - **Ceph** - Distributed object/block storage with replication
 - **GlusterFS** - Distributed file system
 - **Clustered NFS** - High-availability NFS exports
 
 **Use cases:**
+
 - HA storage for VMs
 - Distributed VM images
 - Shared storage for live migration
@@ -1213,7 +1317,8 @@ Distributed storage management using virtos-storage:
 
 Software-defined networking using virtos-network:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List VLANs** - Show configured VLANs
 - **Create VLAN** - Create VLAN with ID
 - **Attach VM to VLAN** - Assign VM to VLAN
@@ -1230,6 +1335,7 @@ Software-defined networking using virtos-network:
 - **SDN Status** - View SDN state
 
 #### Example: Create VLAN
+
 ```
 1. Select "Create VLAN"
 2. Enter VLAN ID: 100
@@ -1239,6 +1345,7 @@ Software-defined networking using virtos-network:
 ```
 
 #### Example: Set QoS Limit
+
 ```
 1. Select "Set QoS Limit"
 2. Enter VM name: download-vm
@@ -1247,6 +1354,7 @@ Software-defined networking using virtos-network:
 ```
 
 **Features:**
+
 - VLAN tagging (802.1Q)
 - OVN logical networks
 - Per-VM firewall rules
@@ -1254,6 +1362,7 @@ Software-defined networking using virtos-network:
 - Software-defined networking
 
 **Use cases:**
+
 - Network isolation
 - Multi-tenant networking
 - Bandwidth management
@@ -1263,7 +1372,8 @@ Software-defined networking using virtos-network:
 
 GPU passthrough wizard using virtos-gpu:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Detect GPUs** - Scan for GPUs
 - **List GPUs with IOMMU Groups** - Show GPU details
 - **Check IOMMU Status** - Verify VT-d/IOMMU
@@ -1278,6 +1388,7 @@ GPU passthrough wizard using virtos-gpu:
 - **Schedule Auto-Attach** - Automatic assignment
 
 #### Example: Interactive Wizard
+
 ```
 1. Select "Run Passthrough Wizard"
 2. Wizard checks IOMMU
@@ -1290,6 +1401,7 @@ GPU passthrough wizard using virtos-gpu:
 ```
 
 #### Example: Manual Passthrough
+
 ```
 1. Select "Check IOMMU Status"
 2. Verify IOMMU enabled
@@ -1304,17 +1416,20 @@ GPU passthrough wizard using virtos-gpu:
 ```
 
 **Requirements:**
+
 - IOMMU/VT-d enabled in BIOS
 - Kernel parameters: intel_iommu=on (or amd_iommu=on)
 - vfio-pci kernel module
 - GPU in separate IOMMU group
 
 **vGPU Support:**
+
 - NVIDIA GRID (enterprise GPUs)
 - Intel GVT-g (integrated graphics)
 - SR-IOV capable GPUs
 
 **Use cases:**
+
 - Gaming VMs
 - GPU compute workloads
 - Graphics workstations
@@ -1324,7 +1439,8 @@ GPU passthrough wizard using virtos-gpu:
 
 USB passthrough and management using virtos-usb:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **List USB Devices** - Show connected USB devices
 - **Attach USB to VM** - Assign USB device
 - **Detach USB from VM** - Remove USB device
@@ -1339,6 +1455,7 @@ USB passthrough and management using virtos-usb:
 - **Setup Auto-Attach** - Automatic attachment
 
 #### Example: Attach USB
+
 ```
 1. Select "List USB Devices"
 2. Note BUS:DEV (e.g., 001:004)
@@ -1350,6 +1467,7 @@ USB passthrough and management using virtos-usb:
 ```
 
 #### Example: Create USB Filter
+
 ```
 1. Select "Create USB Filter"
 2. Enter VM name: desktop-vm
@@ -1359,6 +1477,7 @@ USB passthrough and management using virtos-usb:
 ```
 
 #### Example: Hot-Plug
+
 ```
 1. VM must be running
 2. Select "Hot-Plug USB Device"
@@ -1369,11 +1488,13 @@ USB passthrough and management using virtos-usb:
 ```
 
 **Addressing:**
+
 - BUS:DEV format (from lsusb)
 - Example: 001:004
 - Vendor:Product ID filtering
 
 **Features:**
+
 - USB 2.0 and 3.0 support
 - Hot-plug for running VMs
 - Device filtering by vendor/product
@@ -1382,6 +1503,7 @@ USB passthrough and management using virtos-usb:
 - USB monitoring daemon
 
 **Use cases:**
+
 - USB security keys
 - Webcams in VMs
 - USB printers
@@ -1392,7 +1514,8 @@ USB passthrough and management using virtos-usb:
 
 Metrics collection and monitoring using virtos-telemetry:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize Prometheus** - Setup Prometheus server
 - **Start Prometheus** - Start Prometheus service
 - **Stop Prometheus** - Stop Prometheus service
@@ -1411,6 +1534,7 @@ Metrics collection and monitoring using virtos-telemetry:
 - **Run Setup Wizard** - Guided telemetry setup
 
 #### Example: Setup Monitoring
+
 ```
 1. Select "Run Setup Wizard"
 2. Choose Prometheus + Grafana
@@ -1420,6 +1544,7 @@ Metrics collection and monitoring using virtos-telemetry:
 ```
 
 #### Example: Add Custom Target
+
 ```
 1. Select "Add Scrape Target"
 2. Enter target: 192.168.1.50:9100
@@ -1429,6 +1554,7 @@ Metrics collection and monitoring using virtos-telemetry:
 ```
 
 #### Example: View Metrics
+
 ```
 1. Select "View Metrics"
 2. Enter query: up
@@ -1437,12 +1563,14 @@ Metrics collection and monitoring using virtos-telemetry:
 ```
 
 **Exporters:**
+
 - node - System metrics (CPU, RAM, disk)
 - libvirt - VM metrics
 - cAdvisor - Container metrics
 - blackbox - Network probes
 
 **Features:**
+
 - Prometheus time-series database
 - Grafana dashboards
 - Alert manager integration
@@ -1451,6 +1579,7 @@ Metrics collection and monitoring using virtos-telemetry:
 - Multi-target scraping
 
 **Use cases:**
+
 - Infrastructure monitoring
 - VM performance tracking
 - Container resource usage
@@ -1462,7 +1591,8 @@ Metrics collection and monitoring using virtos-telemetry:
 
 Security policy and hardening using virtos-security:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize SELinux** - Setup SELinux (enforcing/permissive/disabled)
 - **Create SELinux Policy** - New SELinux policy template
 - **Compile SELinux Policy** - Compile and install policy
@@ -1480,6 +1610,7 @@ Security policy and hardening using virtos-security:
 - **Security Wizard** - Guided security setup
 
 #### Example: Harden System
+
 ```
 1. Select "Security Wizard"
 2. Choose SELinux mode: Enforcing
@@ -1491,6 +1622,7 @@ Security policy and hardening using virtos-security:
 ```
 
 #### Example: Add Firewall Rule
+
 ```
 1. Select "Add Firewall Rule"
 2. Choose protocol: TCP
@@ -1500,6 +1632,7 @@ Security policy and hardening using virtos-security:
 ```
 
 #### Example: Compliance Check
+
 ```
 1. Select "Compliance Check"
 2. Choose framework: CIS Benchmarks
@@ -1509,6 +1642,7 @@ Security policy and hardening using virtos-security:
 ```
 
 **Security Features:**
+
 - SELinux mandatory access control
 - AppArmor application confinement
 - SSH key-only authentication
@@ -1518,12 +1652,14 @@ Security policy and hardening using virtos-security:
 - Audit logging
 
 **Compliance Frameworks:**
+
 - CIS Benchmarks
 - NIST 800-53
 - PCI-DSS
 - HIPAA
 
 **Use cases:**
+
 - Regulatory compliance
 - Security hardening
 - Access control
@@ -1535,7 +1671,8 @@ Security policy and hardening using virtos-security:
 
 Resource usage and billing using virtos-billing:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize Billing** - Setup billing database
 - **Track VM Usage** - Record VM resource usage
 - **Calculate Costs** - Compute resource costs
@@ -1549,6 +1686,7 @@ Resource usage and billing using virtos-billing:
 - **Setup Wizard** - Guided billing setup
 
 #### Example: Track Costs
+
 ```
 1. Select "Track VM Usage"
 2. Enter VM name: web-server
@@ -1560,6 +1698,7 @@ Resource usage and billing using virtos-billing:
 ```
 
 #### Example: Generate Monthly Invoice
+
 ```
 1. Select "Generate Invoice"
 2. Enter customer: Acme Corp
@@ -1570,6 +1709,7 @@ Resource usage and billing using virtos-billing:
 ```
 
 #### Example: Cost Report
+
 ```
 1. Select "Cost Report"
 2. Choose period: Month
@@ -1580,12 +1720,14 @@ Resource usage and billing using virtos-billing:
 ```
 
 **Pricing Model:**
+
 - CPU: $ per vCPU hour
 - RAM: $ per GB hour
 - Disk: $ per GB month
 - Network: $ per GB transfer
 
 **Features:**
+
 - SQLite database for tracking
 - Customizable pricing
 - Invoice generation
@@ -1595,6 +1737,7 @@ Resource usage and billing using virtos-billing:
 - Payment status tracking
 
 **Use cases:**
+
 - Service provider billing
 - Internal cost allocation
 - Budget tracking
@@ -1606,7 +1749,8 @@ Resource usage and billing using virtos-billing:
 
 Microservices mesh integration using virtos-mesh:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Install Istio** - Deploy Istio service mesh
 - **Install Linkerd** - Deploy Linkerd service mesh
 - **Install Consul Connect** - Deploy Consul Connect mesh
@@ -1622,6 +1766,7 @@ Microservices mesh integration using virtos-mesh:
 - **Setup Wizard** - Guided mesh installation
 
 #### Example: Deploy Istio
+
 ```
 1. Select "Install Istio"
 2. System downloads Istio
@@ -1631,6 +1776,7 @@ Microservices mesh integration using virtos-mesh:
 ```
 
 #### Example: Canary Deployment
+
 ```
 1. Select "Traffic Split"
 2. Enter service: my-app
@@ -1642,6 +1788,7 @@ Microservices mesh integration using virtos-mesh:
 ```
 
 #### Example: Enable mTLS
+
 ```
 1. Select "Enable mTLS"
 2. System configures strict mTLS
@@ -1650,11 +1797,13 @@ Microservices mesh integration using virtos-mesh:
 ```
 
 **Service Mesh Options:**
+
 - Istio - Feature-rich, production-grade
 - Linkerd - Lightweight, simple
 - Consul Connect - Multi-platform
 
 **Features:**
+
 - Mutual TLS (mTLS)
 - Traffic management
 - Load balancing
@@ -1664,6 +1813,7 @@ Microservices mesh integration using virtos-mesh:
 - Service discovery
 
 **Traffic Management:**
+
 - Canary deployments
 - Blue-green deployments
 - A/B testing
@@ -1672,6 +1822,7 @@ Microservices mesh integration using virtos-mesh:
 - URL path routing
 
 **Use cases:**
+
 - Microservices security
 - Zero-trust networking
 - Gradual rollouts
@@ -1683,7 +1834,8 @@ Microservices mesh integration using virtos-mesh:
 
 Multi-datacenter orchestration using virtos-datacenter:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize Datacenter** - Setup local datacenter
 - **Register Remote Datacenter** - Add remote datacenter
 - **List Datacenters** - Show all datacenters
@@ -1699,6 +1851,7 @@ Multi-datacenter orchestration using virtos-datacenter:
 - **Setup Wizard** - Guided datacenter setup
 
 #### Example: Initialize Datacenter
+
 ```
 1. Select "Initialize Datacenter"
 2. Enter datacenter name: dc1
@@ -1708,6 +1861,7 @@ Multi-datacenter orchestration using virtos-datacenter:
 ```
 
 #### Example: Setup Replication
+
 ```
 1. Select "Setup Replication"
 2. Source datacenter: dc1
@@ -1718,6 +1872,7 @@ Multi-datacenter orchestration using virtos-datacenter:
 ```
 
 #### Example: DR Failover
+
 ```
 1. Select "DR Failover"
 2. Failed datacenter: dc1
@@ -1728,6 +1883,7 @@ Multi-datacenter orchestration using virtos-datacenter:
 ```
 
 **Features:**
+
 - Datacenter discovery and registration
 - Cross-datacenter VM placement
 - WAN-optimized replication with bandwidth limits
@@ -1736,6 +1892,7 @@ Multi-datacenter orchestration using virtos-datacenter:
 - Latency-aware routing
 
 **Use cases:**
+
 - Multi-region deployments
 - Disaster recovery
 - Geographic redundancy
@@ -1747,7 +1904,8 @@ Multi-datacenter orchestration using virtos-datacenter:
 
 Advanced analytics using virtos-analytics:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Start Data Collection** - Begin metrics collection
 - **Stop Data Collection** - End collection
 - **Collection Status** - View collection state
@@ -1760,6 +1918,7 @@ Advanced analytics using virtos-analytics:
 - **Setup Wizard** - Guided analytics setup
 
 #### Example: Capacity Prediction
+
 ```
 1. Select "Capacity Prediction"
 2. Select resource: CPU
@@ -1770,6 +1929,7 @@ Advanced analytics using virtos-analytics:
 ```
 
 #### Example: Cost Optimization
+
 ```
 1. Select "Cost Optimization"
 2. System analyzes usage patterns
@@ -1783,6 +1943,7 @@ Advanced analytics using virtos-analytics:
 ```
 
 #### Example: Anomaly Detection
+
 ```
 1. Select "Anomaly Detection"
 2. System scans last 24 hours
@@ -1794,6 +1955,7 @@ Advanced analytics using virtos-analytics:
 ```
 
 **Analytics Features:**
+
 - Resource utilization trends
 - Linear regression capacity planning
 - Statistical anomaly detection
@@ -1802,6 +1964,7 @@ Advanced analytics using virtos-analytics:
 - Custom report generation
 
 **Reports:**
+
 - Hourly resource usage
 - Daily summaries
 - Weekly trends
@@ -1809,6 +1972,7 @@ Advanced analytics using virtos-analytics:
 - Cost optimization suggestions
 
 **Use cases:**
+
 - Capacity planning
 - Cost reduction
 - Performance optimization
@@ -1820,7 +1984,8 @@ Advanced analytics using virtos-analytics:
 
 Edge computing management using virtos-edge:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize Edge Node** - Setup edge/hub node
 - **Register with Cloud Hub** - Connect to cloud
 - **Deploy Workload** - Deploy to edge
@@ -1839,6 +2004,7 @@ Edge computing management using virtos-edge:
 - **Setup Wizard** - Guided edge setup
 
 #### Example: Edge Node Setup
+
 ```
 1. Select "Setup Wizard"
 2. Mode: Edge Node
@@ -1851,6 +2017,7 @@ Edge computing management using virtos-edge:
 ```
 
 #### Example: Workload Placement
+
 ```
 1. Select "Workload Placement"
 2. Workload: pos-system
@@ -1861,6 +2028,7 @@ Edge computing management using virtos-edge:
 ```
 
 #### Example: Offline Operation
+
 ```
 1. Edge node loses connectivity
 2. Select "Enable Offline Mode"
@@ -1872,6 +2040,7 @@ Edge computing management using virtos-edge:
 ```
 
 **Edge Features:**
+
 - Edge and cloud hub modes
 - Intelligent workload placement
 - Bi-directional synchronization
@@ -1880,12 +2049,14 @@ Edge computing management using virtos-edge:
 - Latency-aware decisions
 
 **Sync Strategies:**
+
 - Incremental (only changed files)
 - Full (complete sync)
 - Scheduled or on-demand
 - Bandwidth-limited transfer
 
 **Use cases:**
+
 - Retail point-of-sale systems
 - Factory floor automation
 - Remote offices
@@ -1897,7 +2068,8 @@ Edge computing management using virtos-edge:
 
 Workflow automation using virtos-automation:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Create Workflow** - New workflow template
 - **List Workflows** - Show all workflows
 - **Run Workflow** - Execute workflow
@@ -1915,6 +2087,7 @@ Workflow automation using virtos-automation:
 - **Setup Wizard** - Guided automation setup
 
 #### Example: Create Workflow
+
 ```
 1. Select "Create Workflow"
 2. Name: nightly-backup
@@ -1930,6 +2103,7 @@ Workflow automation using virtos-automation:
 ```
 
 #### Example: Auto-Scaling
+
 ```
 1. Select "Enable Auto-Scaling"
 2. Service: web-app
@@ -1942,6 +2116,7 @@ Workflow automation using virtos-automation:
 ```
 
 #### Example: Self-Healing
+
 ```
 1. Select "Enable Self-Healing"
 2. Resource: vm
@@ -1953,6 +2128,7 @@ Workflow automation using virtos-automation:
 ```
 
 **Automation Features:**
+
 - YAML workflow definitions
 - Event-driven automation
 - Scheduled task execution
@@ -1961,12 +2137,14 @@ Workflow automation using virtos-automation:
 - Webhook notifications
 
 **Triggers:**
+
 - Schedule (cron expressions)
 - Events (vm.created, vm.failed, etc.)
 - Webhooks (HTTP callbacks)
 - Manual execution
 
 **Actions:**
+
 - Shell commands
 - Workflow steps
 - Service scaling
@@ -1974,6 +2152,7 @@ Workflow automation using virtos-automation:
 - External integrations
 
 **Use cases:**
+
 - Automated backups
 - Scheduled maintenance
 - Auto-scaling workloads
@@ -1985,7 +2164,8 @@ Workflow automation using virtos-automation:
 
 AI-powered system optimization using virtos-ai:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize AI Engine** - Set up ML engine (TensorFlow/PyTorch/scikit-learn)
 - **Train Capacity Model** - Train resource prediction model
 - **Train Placement Model** - Train VM placement model
@@ -2000,6 +2180,7 @@ AI-powered system optimization using virtos-ai:
 - **Setup Wizard** - Guided AI setup
 
 #### Example: Train Capacity Model
+
 ```
 1. Select "Initialize AI Engine"
 2. Choose: TensorFlow
@@ -2012,6 +2193,7 @@ AI-powered system optimization using virtos-ai:
 ```
 
 #### Example: Predict Capacity
+
 ```
 1. Select "Predict Capacity"
 2. Resource: CPU
@@ -2024,6 +2206,7 @@ AI-powered system optimization using virtos-ai:
 ```
 
 #### Example: Optimize VM Placement
+
 ```
 1. New VM requested: db-server (8 cores, 32GB RAM)
 2. Select "Optimize VM Placement"
@@ -2040,6 +2223,7 @@ AI-powered system optimization using virtos-ai:
 ```
 
 **AI Features:**
+
 - Multiple ML engines (TensorFlow, PyTorch, scikit-learn)
 - Linear regression for capacity prediction
 - Reinforcement learning for placement
@@ -2048,11 +2232,13 @@ AI-powered system optimization using virtos-ai:
 - Continuous model improvement
 
 **Models:**
+
 - **Capacity Prediction**: Forecast CPU/memory needs
 - **Placement Optimization**: Find optimal host for VMs
 - **Anomaly Detection**: Identify unusual patterns
 
 **Use cases:**
+
 - Predictive capacity planning
 - Intelligent VM placement
 - Anomaly detection before failures
@@ -2063,7 +2249,8 @@ AI-powered system optimization using virtos-ai:
 
 Quantum computing integration using virtos-quantum:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize Quantum Simulator** - Set up quantum environment
 - **Create Quantum Circuit** - Design QASM circuits
 - **Run Quantum Circuit** - Execute circuits with shots
@@ -2077,6 +2264,7 @@ Quantum computing integration using virtos-quantum:
 - **Setup Wizard** - Guided quantum setup
 
 #### Example: Create and Run Circuit
+
 ```
 1. Select "Initialize Quantum Simulator"
 2. Simulator: Qiskit (IBM)
@@ -2096,6 +2284,7 @@ Quantum computing integration using virtos-quantum:
 ```
 
 #### Example: Optimize Algorithm
+
 ```
 1. Select "Optimize Algorithm"
 2. Problem: Network routing
@@ -2110,6 +2299,7 @@ Quantum computing integration using virtos-quantum:
 ```
 
 #### Example: Quantum-Safe Encryption
+
 ```
 1. Select "Enable Quantum-Safe Encryption"
 2. Current encryption vulnerable to quantum attacks
@@ -2122,6 +2312,7 @@ Quantum computing integration using virtos-quantum:
 ```
 
 **Quantum Features:**
+
 - Multiple simulators (Qiskit, Cirq, PennyLane)
 - QASM circuit support
 - Quantum algorithms (Grover, QAOA)
@@ -2130,11 +2321,13 @@ Quantum computing integration using virtos-quantum:
 - Error mitigation
 
 **Algorithms:**
+
 - **Grover's algorithm**: Search optimization
 - **QAOA**: Combinatorial optimization
 - **VQE**: Variational quantum eigensolver
 
 **Use cases:**
+
 - Quantum algorithm research
 - Optimization problems
 - Quantum-safe security
@@ -2145,7 +2338,8 @@ Quantum computing integration using virtos-quantum:
 
 Blockchain-based auditing using virtos-blockchain:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize Blockchain** - Create blockchain network
 - **Verify Blockchain** - Check integrity
 - **View Blockchain Status** - Show chain state
@@ -2160,6 +2354,7 @@ Blockchain-based auditing using virtos-blockchain:
 - **Setup Wizard** - Guided blockchain setup
 
 #### Example: Initialize and Audit VM
+
 ```
 1. Select "Initialize Blockchain"
 2. Consensus: PoA (Proof of Authority)
@@ -2174,6 +2369,7 @@ Blockchain-based auditing using virtos-blockchain:
 ```
 
 #### Example: Smart Contract
+
 ```
 1. Select "Deploy Smart Contract"
 2. Name: quota-policy
@@ -2191,6 +2387,7 @@ Blockchain-based auditing using virtos-blockchain:
 ```
 
 #### Example: Compliance Report
+
 ```
 1. Select "Compliance Report"
 2. Period: Last 30 days
@@ -2204,6 +2401,7 @@ Blockchain-based auditing using virtos-blockchain:
 ```
 
 **Blockchain Features:**
+
 - Immutable audit trails
 - VM lifecycle tracking
 - Configuration change logging
@@ -2213,12 +2411,14 @@ Blockchain-based auditing using virtos-blockchain:
 - SHA256 hashing
 
 **Audit Events:**
+
 - VM creation/deletion/modification
 - Configuration changes
 - User actions
 - System events
 
 **Use cases:**
+
 - Regulatory compliance
 - Audit trail verification
 - Change tracking
@@ -2229,7 +2429,8 @@ Blockchain-based auditing using virtos-blockchain:
 
 Multi-cloud federation using virtos-federation:
 
-#### Submenu Options:
+#### Submenu Options
+
 - **Initialize Federation** - Create federation
 - **Register Cloud Provider** - Add cloud (AWS/Azure/GCP/on-prem)
 - **Remove Cloud Provider** - Remove provider
@@ -2245,6 +2446,7 @@ Multi-cloud federation using virtos-federation:
 - **Setup Wizard** - Guided federation setup
 
 #### Example: Deploy to Multiple Clouds
+
 ```
 1. Select "Initialize Federation"
 2. Name: my-hybrid-cloud
@@ -2263,6 +2465,7 @@ Multi-cloud federation using virtos-federation:
 ```
 
 #### Example: Cross-Cloud Migration
+
 ```
 1. Select "Migrate VM Between Clouds"
 2. VM: web-server-1
@@ -2279,6 +2482,7 @@ Multi-cloud federation using virtos-federation:
 ```
 
 #### Example: Hybrid Orchestration
+
 ```
 1. Select "Hybrid Orchestration"
 2. Strategy: cost-optimized
@@ -2294,6 +2498,7 @@ Multi-cloud federation using virtos-federation:
 ```
 
 **Federation Features:**
+
 - Multi-cloud support (AWS, Azure, GCP, on-prem)
 - Federated identity (SSO)
 - Cross-cloud networking (VPN, interconnect)
@@ -2303,12 +2508,14 @@ Multi-cloud federation using virtos-federation:
 - Cost optimization
 
 **Cloud Providers:**
+
 - **AWS**: EC2, VPC, IAM
 - **Azure**: VMs, VNets, AD
 - **GCP**: Compute Engine, VPC
 - **On-Premises**: KVM/QEMU
 
 **Use cases:**
+
 - Multi-cloud deployments
 - Cloud migration
 - Hybrid cloud orchestration
@@ -2320,14 +2527,17 @@ Multi-cloud federation using virtos-federation:
 
 VirtOS configuration and information:
 
-#### Options:
+#### Options
+
 - **About VirtOS** - Version and info
 - **System Info** - Detailed system info (same as #1)
 - **Installed Components** - Show what's included
 - **Backup Configuration** - Run filetool.sh -b
 
 #### Installed Components View
+
 Shows checkmarks for:
+
 - ✓ KVM/QEMU
 - ✓ libvirt
 - ✓ Docker
@@ -2345,6 +2555,7 @@ Shows checkmarks for:
 - ✓ Phase 11 Tools (virtos-datacenter, virtos-analytics, virtos-edge, virtos-automation)
 
 **Use cases:**
+
 - Verify installation
 - Check VirtOS version
 - Backup before changes
@@ -2355,12 +2566,14 @@ Shows checkmarks for:
 ### Remote Management
 
 **SSH into VirtOS:**
+
 ```bash
 ssh vmadmin@virtos.local
 virtos-tui
 ```
 
 Full management without GUI - perfect for:
+
 - Headless servers
 - Remote datacenters
 - Low-bandwidth connections
@@ -2426,6 +2639,7 @@ Quick diagnostics without grep/tail commands.
 ## Keyboard Shortcuts
 
 ### Global Navigation
+
 - **↑/↓ arrows** - Move between items
 - **←/→ arrows** - Switch between buttons
 - **Enter** - Select/OK
@@ -2434,10 +2648,12 @@ Quick diagnostics without grep/tail commands.
 - **Shift+Tab** - Previous button
 
 ### Menu Shortcuts
+
 - **Number key** - Direct selection (1-9, 0)
 - **First letter** - Jump to item (when available)
 
 ### Text Input
+
 - **Backspace** - Delete character
 - **Ctrl+U** - Clear line
 - **Ctrl+W** - Delete word
@@ -2447,6 +2663,7 @@ Quick diagnostics without grep/tail commands.
 ### Fast Navigation
 
 Use number keys for direct menu access:
+
 ```
 virtos-tui
 Press 2 → VM menu
@@ -2456,6 +2673,7 @@ Press 1 → List VMs
 ### Check Status Quickly
 
 The main menu updates system stats each time it displays:
+
 ```
 ESC back to main menu → See updated stats
 ```
@@ -2463,6 +2681,7 @@ ESC back to main menu → See updated stats
 ### Multiple Windows
 
 Open multiple SSH sessions for comparison:
+
 ```bash
 # Terminal 1
 ssh vmadmin@virtos-1.local
@@ -2478,6 +2697,7 @@ virtos-tui
 ### Copy Output
 
 For dialog-based TUI, output can be captured:
+
 ```bash
 # Run specific command instead
 virsh list --all
@@ -2525,6 +2745,7 @@ esac
 **Error:** `dialog or whiptail required`
 
 **Solution:**
+
 ```bash
 # Load dialog package
 tce-load -i dialog
@@ -2537,6 +2758,7 @@ tce-load -i dialog
 **Issue:** "virsh not available"
 
 **Solution:**
+
 ```bash
 # Ensure libvirt is installed
 INCLUDE_LIBVIRT="yes" in build.conf
@@ -2550,6 +2772,7 @@ tce-load -i libvirt
 **Issue:** Terminal size too small or wrong encoding
 
 **Solution:**
+
 ```bash
 # Resize terminal to at least 80x25
 # Set proper locale
@@ -2561,6 +2784,7 @@ export LANG=en_US.UTF-8
 **Issue:** Some features require root
 
 **Solution:**
+
 ```bash
 sudo virtos-tui
 # Or add user to libvirt group
@@ -2580,12 +2804,14 @@ sudo adduser vmadmin libvirt
 | **Speed** | Very fast | Slower over network |
 
 **Use virtos-tui for:**
+
 - Remote SSH access
 - Low bandwidth
 - Terminal preference
 - Comprehensive management
 
 **Use virt-manager for:**
+
 - GUI preference
 - VNC viewer integrated
 - Visual VM installation
@@ -2600,12 +2826,14 @@ sudo adduser vmadmin libvirt
 | **Scripting** | Not designed for it | Perfect for scripts |
 
 **Use virtos-tui for:**
+
 - Interactive management
 - Quick overview
 - Learning VirtOS
 - Infrequent tasks
 
 **Use CLI for:**
+
 - Automation/scripts
 - Very specific tasks
 - Advanced operations
@@ -2622,6 +2850,7 @@ sudo adduser vmadmin libvirt
 | **Customization** | Easy (shell script) | Harder (plugins) |
 
 **Use virtos-tui for:**
+
 - Minimal footprint
 - SSH-only access
 - VirtOS-optimized
@@ -2629,9 +2858,10 @@ sudo adduser vmadmin libvirt
 
 ## Integration with Other VirtOS Tools
 
-### Works alongside:
+### Works alongside
 
 **virt-manager:**
+
 ```bash
 # Use TUI for quick checks
 virtos-tui → Check VM status
@@ -2641,6 +2871,7 @@ virt-manager -c qemu+ssh://...
 ```
 
 **virtos-cluster:**
+
 ```bash
 # TUI shows cluster status
 virtos-tui → Option 5
@@ -2650,6 +2881,7 @@ virtos-cluster resources
 ```
 
 **virtos-create-vm:**
+
 ```bash
 # TUI provides quick access
 virtos-tui → VMs → Create
@@ -2661,6 +2893,7 @@ virtos-create-vm --name web --cpu 2 --ram 4096 --disk 20G
 ## Future Enhancements
 
 Planned features:
+
 - [ ] Live VM monitoring (CPU/RAM graphs)
 - [ ] Container start/stop actions
 - [ ] Storage snapshot creation
@@ -2675,11 +2908,13 @@ See [ROADMAP.md](ROADMAP.md) for development status.
 ## Getting Help
 
 **In the TUI:**
+
 - Navigate menus to discover features
 - Most screens are informational
 - Confirmation prompts before destructive actions
 
 **Outside the TUI:**
+
 ```bash
 # CLI help
 man virsh
@@ -2719,6 +2954,7 @@ Edit /tmp/dialogrc in virtos-tui script
 ## Summary
 
 **virtos-tui** provides:
+
 - ✓ Full-featured text interface
 - ✓ Works over SSH
 - ✓ Manages VMs, containers, storage, cluster
@@ -2727,6 +2963,7 @@ Edit /tmp/dialogrc in virtos-tui script
 - ✓ Perfect for remote management
 
 **Launch it:**
+
 ```bash
 virtos-tui
 ```

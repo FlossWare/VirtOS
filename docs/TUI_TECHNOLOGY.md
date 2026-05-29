@@ -42,6 +42,7 @@ JVM runtime:        ~100 MB
 ### No JVM Dependency
 
 VirtOS core doesn't require Java:
+
 - ✅ Works on base system
 - ✅ No runtime dependencies
 - ✅ Fast installation
@@ -63,6 +64,7 @@ For quick admin tasks, < 0.1s startup matters.
 ### Universal Availability
 
 dialog/whiptail available on all Unix systems:
+
 - ✅ Pre-installed on most Linux
 - ✅ Works over SSH
 - ✅ No compilation needed
@@ -71,12 +73,14 @@ dialog/whiptail available on all Unix systems:
 ### Perfect for Admin Wizards
 
 VirtOS TUI use cases:
+
 - Setup wizard
 - VM creation wizard
 - Network configuration
 - Simple menu navigation
 
 **These don't need**:
+
 - Multi-panel layouts
 - Real-time updates
 - Mouse support
@@ -89,6 +93,7 @@ dialog provides exactly what's needed, nothing more.
 ### JVM Already Required
 
 platform-java is written in Java:
+
 - JVM is a required dependency
 - Lanterna adds ~2MB (negligible)
 - No additional runtime overhead
@@ -96,6 +101,7 @@ platform-java is written in Java:
 ### Rich Dashboard Features
 
 platform-java needs:
+
 - ✅ Multi-panel dashboards
 - ✅ Real-time metric updates
 - ✅ Complex layouts
@@ -109,6 +115,7 @@ dialog **cannot** do these things.
 Compare maintainability:
 
 **dialog (VirtOS)**:
+
 ```bash
 # 6,941 lines of shell script
 # Complex menu state management
@@ -117,6 +124,7 @@ Compare maintainability:
 ```
 
 **Lanterna (platform-java)**:
+
 ```java
 // Object-oriented components
 Panel panel = new Panel();
@@ -128,6 +136,7 @@ panel.addComponent(new MetricsChart(vm));
 ### Cross-Platform Java
 
 Lanterna is pure Java:
+
 - ✅ Works on Windows, Mac, Linux
 - ✅ Same codebase everywhere
 - ✅ No native dependencies
@@ -152,7 +161,8 @@ Lanterna is pure Java:
 
 ## Use Case Mapping
 
-### Use VirtOS (dialog) for:
+### Use VirtOS (dialog) for
+
 - ✅ System setup wizards
 - ✅ Quick admin tasks
 - ✅ Simple menus
@@ -160,7 +170,8 @@ Lanterna is pure Java:
 - ✅ SSH-based administration
 - ✅ Minimal resource usage
 
-### Use platform-java (Lanterna) for:
+### Use platform-java (Lanterna) for
+
 - ✅ Real-time monitoring dashboards
 - ✅ Complex multi-panel UIs
 - ✅ Application management
@@ -173,6 +184,7 @@ Lanterna is pure Java:
 ### VirtOS TUI (dialog)
 
 **What it does**:
+
 ```
 ┌────────────────────────────────────┐
 │ VirtOS Management Console          │
@@ -196,6 +208,7 @@ Lanterna is pure Java:
 ### platform-java TUI (Lanterna)
 
 **What it does**:
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ platform-java Dashboard            CPU: [████░░] 67%   │
@@ -226,12 +239,14 @@ Lanterna is pure Java:
 ### Q: Are we duplicating effort?
 
 **A**: No - they serve different purposes:
+
 - VirtOS TUI: System administration (minimal, fast)
 - platform-java TUI: Application dashboards (rich, interactive)
 
 ### Q: Could we unify them?
 
 **A**: Not without compromises:
+
 - Using only dialog → lose rich platform-java features
 - Using only Lanterna → violate VirtOS minimal philosophy
 
@@ -240,6 +255,7 @@ Current approach is optimal for both use cases.
 ### Q: What about web UI?
 
 **A**: Both have web UIs too!
+
 - VirtOS: `virtos-web` (optional, uses Cockpit modules)
 - platform-java: REST API + web frontend
 
@@ -250,10 +266,12 @@ TUIs are for SSH/terminal access, not the only interface.
 ### VirtOS dialog Implementation
 
 **Files**:
+
 - `config/custom-scripts/virtos-tui` (6,941 lines)
 - Uses: `dialog` or `whiptail` (fallback)
 
 **Key Functions**:
+
 ```bash
 show_main_menu() {
     dialog --menu "VirtOS Console" 20 60 8 \
@@ -264,6 +282,7 @@ show_main_menu() {
 ```
 
 **Limitations**:
+
 - No real-time updates (must redraw full screen)
 - No mouse support
 - Sequential navigation only
@@ -275,11 +294,12 @@ show_main_menu() {
 **Framework**: Lanterna 3.x
 
 **Key Classes**:
+
 ```java
 public class DashboardUI extends BasicWindow {
     private Panel metricsPanel;
     private WorkloadListComponent workloads;
-    
+
     public void refresh() {
         // Real-time updates every second
         metricsPanel.updateMetrics(vm.getCurrentMetrics());
@@ -288,6 +308,7 @@ public class DashboardUI extends BasicWindow {
 ```
 
 **Features**:
+
 - Threaded real-time updates
 - Mouse support
 - Composable components

@@ -4,9 +4,9 @@ Welcome to the VirtOS community! This document provides guidance on how to parti
 
 ## Quick Links
 
-- **Repository**: https://github.com/FlossWare/VirtOS
-- **Issue Tracker**: https://github.com/FlossWare/VirtOS/issues
-- **GitHub Discussions**: https://github.com/FlossWare/VirtOS/discussions *(to be enabled)*
+- **Repository**: <https://github.com/FlossWare/VirtOS>
+- **Issue Tracker**: <https://github.com/FlossWare/VirtOS/issues>
+- **GitHub Discussions**: <https://github.com/FlossWare/VirtOS/discussions> *(to be enabled)*
 - **Contributing Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Code of Conduct**: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
@@ -30,9 +30,11 @@ Welcome to the VirtOS community! This document provides guidance on how to parti
 ### Where to Ask
 
 #### GitHub Issues
+
 **For**: Bug reports, feature requests, security issues
 
 **Use when**:
+
 - Something doesn't work as expected
 - You want to propose a new feature
 - You found a security vulnerability (report privately)
@@ -40,9 +42,11 @@ Welcome to the VirtOS community! This document provides guidance on how to parti
 **Template**: Use issue templates in `.github/ISSUE_TEMPLATE/`
 
 #### GitHub Discussions *(Coming Soon)*
+
 **For**: Questions, ideas, general discussion
 
 **Categories** (once enabled):
+
 - 📣 **Announcements** - Release updates, important news
 - 💬 **General** - General chat about VirtOS
 - 💡 **Ideas** - Feature ideas and brainstorming
@@ -52,17 +56,20 @@ Welcome to the VirtOS community! This document provides guidance on how to parti
 - 🛠️ **Development** - Contributor discussion
 
 **Use when**:
+
 - You have a question about using VirtOS
 - You want to share your deployment
 - You have an idea but aren't ready to file an issue
 - You want to discuss implementation approaches
 
 #### Discord *(Future)*
+
 **For**: Real-time chat, quick questions
 
 **Status**: Not yet set up (see Issue #101)
 
 **Planned Channels**:
+
 - #announcements - Release updates
 - #general - General chat
 - #support - User help
@@ -72,30 +79,36 @@ Welcome to the VirtOS community! This document provides guidance on how to parti
 ## Support Tiers
 
 ### Community Support (Free)
+
 **Response Time**: Best effort (typically 1-7 days)
 
 **Channels**:
+
 - GitHub Issues
 - GitHub Discussions
 - Documentation
 
 **Coverage**:
+
 - Bug reports
 - Feature requests
 - General questions
 - Documentation improvements
 
 **Who Provides**:
+
 - Project maintainers (volunteer time)
 - Community contributors
 - Other users
 
 ### Commercial Support *(Future)*
+
 **Response Time**: SLA-based (4 hours - 2 business days)
 
 **Status**: Not yet available (planned post-v1.0)
 
 **Will Include**:
+
 - Priority bug fixes
 - Dedicated support engineer
 - Custom feature development
@@ -103,13 +116,14 @@ Welcome to the VirtOS community! This document provides guidance on how to parti
 - Deployment assistance
 - 24/7 emergency support (premium tier)
 
-**Contact**: support@virtos.org *(not yet active)*
+**Contact**: <support@virtos.org> *(not yet active)*
 
 ## How to Contribute
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ### Quick Start
+
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
@@ -119,23 +133,27 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 ### High-Impact Contributions
 
 **Runtime Testing** (CRITICAL):
+
 - Test ISO on real hardware
 - Report hardware compatibility
 - Validate VM lifecycle
 - See [TESTING_ROADMAP.md](docs/TESTING_ROADMAP.md)
 
 **Backend Implementation**:
+
 - Implement infrastructure script backends (Issue #14)
 - 9 scripts need backends (virtos-auth, virtos-database, etc.)
 - See [CLAUDE.md](CLAUDE.md) for details
 
 **Documentation**:
+
 - Write migration guides (Proxmox, VMware)
 - Create video tutorials
 - Improve troubleshooting guides
 - Translate documentation
 
 **Community Building**:
+
 - Answer questions in Discussions
 - Help new users
 - Share your deployment stories
@@ -144,9 +162,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 ## Community Guidelines
 
 ### Code of Conduct
+
 All community members must follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 **Summary**:
+
 - Be respectful and inclusive
 - No harassment or discrimination
 - Constructive feedback only
@@ -157,18 +177,21 @@ All community members must follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 ### Communication Standards
 
 **Be Helpful**:
+
 - Provide context and details
 - Link to relevant documentation
 - Share error messages and logs
 - Describe what you've already tried
 
 **Be Respectful**:
+
 - Remember maintainers are volunteers
 - Be patient waiting for responses
 - Thank people for their help
 - Give credit where due
 
 **Be Clear**:
+
 - Use descriptive titles
 - Format code and logs properly
 - Include environment details (OS, version)
@@ -177,6 +200,7 @@ All community members must follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 ### Issue Etiquette
 
 **Good Issue**:
+
 ```markdown
 Title: virtos-create-vm fails with "domain already exists" error
 
@@ -197,7 +221,9 @@ Title: virtos-create-vm fails with "domain already exists" error
 
 **Logs**:
 ```
+
 ERROR: virsh error: domain 'test-vm' already exists
+
 ```
 
 **What I've Tried**:
@@ -207,6 +233,7 @@ ERROR: virsh error: domain 'test-vm' already exists
 ```
 
 **Bad Issue**:
+
 ```markdown
 Title: doesn't work
 
@@ -216,22 +243,27 @@ it doesn't work help
 ## Governance
 
 ### Current Model
+
 **Benevolent Dictator** (BDFL): Project maintainer(s)
 
 **Decision Making**:
+
 - Maintainers approve PRs
 - Community input valued
 - Major decisions discussed in Issues/Discussions
 - Roadmap guided by community needs
 
 ### Future Model *(When Community Grows)*
+
 **Technical Steering Committee** (TSC)
+
 - 5-7 core contributors
 - Vote on major architectural decisions
 - Term-based membership
 - Public meeting notes
 
 **Contributor Ladder**:
+
 1. **User** - Uses VirtOS
 2. **Contributor** - 1+ merged PR
 3. **Regular Contributor** - 5+ merged PRs
@@ -242,13 +274,17 @@ it doesn't work help
 ## Recognition
 
 ### Contributors
+
 All contributors are recognized in:
+
 - Git commit history
 - GitHub contributors page
 - Release notes (for significant contributions)
 
 ### Hall of Fame *(Future)*
+
 Outstanding contributors recognized with:
+
 - Mention in README.md
 - Blog post featuring their work
 - Invitation to speak at community calls
@@ -259,12 +295,14 @@ Outstanding contributors recognized with:
 **Status**: Not yet scheduled (planned post-v1.0)
 
 **Planned Format**:
+
 - Monthly video calls
 - Open agenda (submit topics in advance)
 - Recorded and posted publicly
 - Inclusive of all timezones (rotating times)
 
 **Topics**:
+
 - Roadmap updates
 - Demo new features
 - Community Q&A
@@ -273,21 +311,24 @@ Outstanding contributors recognized with:
 ## Resources
 
 ### Documentation
+
 - **User Guides**: [docs/](docs/)
 - **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **API Reference**: [docs/API.md](docs/API.md) *(coming soon)*
 - **Roadmap**: [docs/V1_0_ROADMAP.md](docs/V1_0_ROADMAP.md)
 
 ### Development
+
 - **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Build System**: [BUILD.md](BUILD.md)
 - **Testing**: [TESTING_ROADMAP.md](docs/TESTING_ROADMAP.md)
 - **AI Development Guide**: [CLAUDE.md](CLAUDE.md)
 
 ### Project Management
-- **Issue Tracker**: https://github.com/FlossWare/VirtOS/issues
-- **Project Boards**: https://github.com/FlossWare/VirtOS/projects
-- **Milestones**: https://github.com/FlossWare/VirtOS/milestones
+
+- **Issue Tracker**: <https://github.com/FlossWare/VirtOS/issues>
+- **Project Boards**: <https://github.com/FlossWare/VirtOS/projects>
+- **Milestones**: <https://github.com/FlossWare/VirtOS/milestones>
 
 ## FAQ
 
@@ -347,6 +388,7 @@ A: No. GPLv3 requires derivative works to also be GPLv3.
 ## Getting Started
 
 ### New Users
+
 1. Read [README.md](README.md)
 2. Check [docs/QUICK-START.md](docs/QUICK-START.md) *(if exists)*
 3. Try building VirtOS locally (see [BUILD.md](BUILD.md))
@@ -354,6 +396,7 @@ A: No. GPLv3 requires derivative works to also be GPLv3.
 5. Report issues or ask questions
 
 ### New Contributors
+
 1. Read [CONTRIBUTING.md](CONTRIBUTING.md)
 2. Check [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 3. Look for `good-first-issue` labels
@@ -361,6 +404,7 @@ A: No. GPLv3 requires derivative works to also be GPLv3.
 5. Respond to review feedback
 
 ### Testers
+
 1. See [TESTING_ROADMAP.md](docs/TESTING_ROADMAP.md)
 2. Try ISO on real hardware (critical need!)
 3. Report results in Issue #1 or #52
@@ -371,6 +415,7 @@ A: No. GPLv3 requires derivative works to also be GPLv3.
 **Status**: Not yet enabled (requires repository admin)
 
 **Steps for Repository Admin**:
+
 1. Go to repository Settings
 2. Scroll to "Features" section
 3. Check "Discussions"
@@ -385,6 +430,7 @@ A: No. GPLv3 requires derivative works to also be GPLv3.
    - 🛠️ Development
 
 **Initial Post** (suggested):
+
 ```markdown
 Title: Welcome to VirtOS Discussions! 🎉
 
@@ -422,6 +468,7 @@ Looking forward to building VirtOS together! 🚀
 ## Acknowledgments
 
 VirtOS is built on the shoulders of giants:
+
 - **Tiny Core Linux** - Minimal Linux distribution
 - **libvirt/QEMU** - Virtualization infrastructure
 - **LXC** - System containers

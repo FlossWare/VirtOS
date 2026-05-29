@@ -7,6 +7,7 @@
 ## ⚠️ Important Notice
 
 **VirtOS is currently in alpha** and **NOT recommended for production migration** until v1.0 is released. This guide is provided for:
+
 - Evaluation and testing purposes
 - Planning future migrations
 - Understanding feature parity
@@ -21,23 +22,27 @@
 ### Potential Benefits
 
 **Lighter Resource Footprint**:
+
 - VirtOS ISO: ~200MB (vs Proxmox ~1GB installer)
 - Base system RAM: <512MB (vs Proxmox ~2GB)
 - Minimal base system, modular extensions
 - Faster boot times
 
 **Unified VM + Container Management**:
+
 - Native support for KVM, LXC, Docker, Podman, containerd
 - Consistent CLI/TUI for all workload types
 - platform-java orchestration layer
 
 **Open Development Model**:
+
 - Fully open-source (GPLv3)
 - Community-driven development
 - No commercial entity control
 - Transparent roadmap
 
 **Flexibility**:
+
 - Choice of container runtimes (Docker/Podman/containerd)
 - Modular package system (TCZ)
 - Customizable profiles
@@ -46,12 +51,14 @@
 ### Trade-offs to Consider
 
 **What You Gain**:
+
 - Smaller footprint
 - More container options
 - Lighter weight
 - Terminal-centric workflow
 
 **What You Lose** (vs Proxmox):
+
 - ❌ Web UI (CLI/TUI only) - planned for v1.5
 - ❌ Mature ecosystem (Proxmox has 15+ years)
 - ❌ Commercial support options
@@ -109,6 +116,7 @@
 | Firewall | ✅ GUI | ✅ CLI | ✅ CLI |
 
 **Legend**:
+
 - ✅ Full/Working - Feature implemented and functional
 - 🟡 Partial - Partial implementation or interface only
 - ❌ No - Not implemented
@@ -121,24 +129,28 @@
 ### Before You Begin
 
 **System Requirements**:
+
 - VirtOS v1.0+ installed (wait for release)
 - Sufficient storage for VM exports
 - Network connectivity between Proxmox and VirtOS
 - At least 2x storage space of VMs to migrate
 
 **Proxmox Requirements**:
+
 - Proxmox VE 7.x or 8.x
 - All VMs stopped during export
 - Backup of all VMs (safety net)
 - Note of network configurations
 
 **VirtOS Requirements**:
+
 - Installed and validated
 - Storage pools configured
 - Networks configured to match Proxmox
 - Sufficient resources (CPU, RAM, disk)
 
 **Skills Required**:
+
 - Comfortable with Linux command line
 - Understanding of virtualization concepts
 - Ability to troubleshoot boot issues
@@ -344,19 +356,19 @@ EXPORT_DIR="/mnt/migration"
 
 for VMID in $VM_IDS; do
     echo "Exporting VM $VMID..."
-    
+
     # Stop VM
     qm stop $VMID
-    
+
     # Export config
     qm config $VMID > "$EXPORT_DIR/vm-$VMID-config.txt"
-    
+
     # Export disk
     DISK=$(qm config $VMID | grep 'scsi0:' | cut -d: -f2 | cut -d, -f1)
     qemu-img convert -f qcow2 -O qcow2 \
         "/var/lib/vz/images/$VMID/$DISK" \
         "$EXPORT_DIR/vm-$VMID-disk-0.qcow2"
-    
+
     echo "VM $VMID exported successfully"
 done
 ```
@@ -372,13 +384,13 @@ VM_CONFIGS="100:test-vm-100:2:4096 101:web-server:4:8192"
 
 for VM_CONFIG in $VM_CONFIGS; do
     IFS=':' read -r VMID NAME CPU RAM <<< "$VM_CONFIG"
-    
+
     echo "Importing VM $NAME (Proxmox ID: $VMID)..."
-    
+
     # Copy disk
     cp "$EXPORT_DIR/vm-$VMID-disk-0.qcow2" \
         "/var/lib/libvirt/images/$NAME.qcow2"
-    
+
     # Create VM
     virtos-create-vm \
         --name "$NAME" \
@@ -386,7 +398,7 @@ for VM_CONFIG in $VM_CONFIGS; do
         --ram "$RAM" \
         --disk "/var/lib/libvirt/images/$NAME.qcow2" \
         --network vmbr0
-    
+
     echo "VM $NAME imported successfully"
 done
 ```
@@ -465,7 +477,7 @@ sysbench cpu --threads=4 --time=60 run
   - vm-old-kernel: Too old kernel, not compatible
   - vm-special-hardware: Required PCIe passthrough
 
-**Total Downtime**: 
+**Total Downtime**:
 - Test VMs: <5 min per VM
 - Production VMs: <15 min per VM
 
@@ -474,7 +486,7 @@ sysbench cpu --threads=4 --time=60 run
 2. Some VMs required /etc/fstab updates (disk UUIDs)
 3. Firewall rules needed recreation
 
-**Performance**: 
+**Performance**:
 - VirtOS comparable to Proxmox for most workloads
 - Slightly faster boot times
 - Lower host RAM usage
@@ -510,6 +522,7 @@ sysbench cpu --threads=4 --time=60 run
 **Symptoms**: VM starts but doesn't boot OS
 
 **Diagnosis**:
+
 ```bash
 # Check VM logs
 virsh console <vm-name>
@@ -521,6 +534,7 @@ virsh console <vm-name>
 ```
 
 **Solutions**:
+
 ```bash
 # Fix boot order
 virsh edit <vm-name>
@@ -539,6 +553,7 @@ virsh edit <vm-name>
 **Symptoms**: VM has no network connectivity
 
 **Solutions**:
+
 ```bash
 # Check bridge exists
 ip link show vmbr0
@@ -563,6 +578,7 @@ sudo systemctl restart network
 **Symptoms**: VM slower on VirtOS than Proxmox
 
 **Diagnosis**:
+
 ```bash
 # Check virtio drivers
 lsmod | grep virtio
@@ -575,6 +591,7 @@ virsh vcpuinfo <vm-name>
 ```
 
 **Solutions**:
+
 ```bash
 # Enable virtio drivers (if not already)
 virsh edit <vm-name>
@@ -597,11 +614,13 @@ virsh vcpupin <vm-name> 1 1
 ### Hybrid Approach
 
 **Keep Proxmox for:**
+
 - Production critical VMs (until VirtOS v1.0 proven)
 - VMs requiring web UI management
 - VMs with specific Proxmox features (Ceph, SDN)
 
 **Use VirtOS for:**
+
 - New development/test VMs
 - Container workloads (Docker, Podman)
 - Edge computing deployments
@@ -618,16 +637,19 @@ virsh vcpupin <vm-name> 1 1
 ## Getting Help
 
 **VirtOS Community**:
+
 - GitHub Issues: Report migration issues
 - GitHub Discussions: Ask migration questions
 - Discord: Real-time help (if/when created)
 
 **Documentation**:
+
 - [INSTALLATION.md](INSTALLATION.md)
 - [QUICK-START.md](QUICK-START.md)
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 **Professional Services** (Future):
+
 - Migration consulting
 - Custom development
 - Training and support
@@ -636,12 +658,14 @@ virsh vcpupin <vm-name> 1 1
 
 ## Conclusion
 
-**Current Recommendation**: 
+**Current Recommendation**:
+
 - ⚠️ **Wait for VirtOS v1.0** before migrating production systems
 - ✅ **Start testing now** with non-critical VMs
 - ✅ **Contribute feedback** to help reach v1.0 faster
 
 **When VirtOS v1.0 releases** (Q1 2027):
+
 - Re-evaluate this migration guide
 - Check production readiness status
 - Start with test migrations

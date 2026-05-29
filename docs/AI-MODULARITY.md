@@ -7,6 +7,7 @@
 ## Philosophy
 
 VirtOS follows Tiny Core Linux principles:
+
 - **Minimal** - Only include what's necessary
 - **Modular** - Extensions loaded on-demand
 - **Flexible** - Customize for your exact needs
@@ -17,6 +18,7 @@ VirtOS follows Tiny Core Linux principles:
 ## Problem Statement
 
 If AI features are built into core VirtOS, users who don't need AI get:
+
 - ❌ Larger ISO/packages (unnecessary bloat)
 - ❌ Unwanted dependencies (Python, ML libraries)
 - ❌ Complexity they don't use
@@ -367,6 +369,7 @@ virtos-ai-inference.tcz
 All AI features have **fallback behavior** when AI packages aren't installed:
 
 ### virtos-create-vm (without AI)
+
 ```bash
 # Without AI packages
 virtos-create-vm --name web-01 --cpu 2 --ram 4096
@@ -378,6 +381,7 @@ virtos-create-vm --name web-01 --cpu 2 --ram 4096
 ```
 
 ### virtos-create-vm (with AI)
+
 ```bash
 # With virtos-ai-operations.tcz installed
 virtos-create-vm --name web-01 --cpu 2 --ram 4096
@@ -389,6 +393,7 @@ virtos-create-vm --name web-01 --cpu 2 --ram 4096
 ```
 
 ### virtos-ask (without AI inference)
+
 ```bash
 # Without virtos-ai-inference.tcz
 virtos ask "create web server"
@@ -398,6 +403,7 @@ virtos ask "create web server"
 ```
 
 ### virtos-ask (with AI inference)
+
 ```bash
 # With virtos-ai-inference.tcz
 virtos ask "create web server"
@@ -459,6 +465,7 @@ virtos ask "create web server"
 | **Custom** | Varies | User choice | Exactly what you need |
 
 **Model downloads (on-demand)**:
+
 - Phi-3 Mini: 3.8 GB
 - Llama 3 8B: 4.7 GB
 - Mistral 7B: 4.1 GB
@@ -467,18 +474,21 @@ virtos ask "create web server"
 ## Benefits
 
 ### For Minimal Users
+
 ✅ **Small ISO** - No AI bloat (~100 MB)  
 ✅ **Fast boot** - No unnecessary services  
 ✅ **Simple** - Only what's needed  
 ✅ **Stable** - AI changes don't affect core
 
 ### For AI Users
+
 ✅ **Flexible** - Choose exactly what you need  
 ✅ **Upgradable** - Add AI anytime with tce-load  
 ✅ **Complete** - Full AI stack available  
 ✅ **Optional internet** - Local LLM option
 
 ### For VirtOS Project
+
 ✅ **Modular** - Clean separation of concerns  
 ✅ **Maintainable** - AI code in separate packages  
 ✅ **Testable** - Test with/without AI independently  
@@ -520,6 +530,7 @@ virtos-ai-inference.tcz (100MB) # Optional
 ### Minimal Attack Surface
 
 Users who don't install AI packages don't get:
+
 - Python runtime (potential vulnerabilities)
 - ML libraries (supply chain risks)
 - LLM inference server (network exposure)
@@ -530,6 +541,7 @@ Users who don't install AI packages don't get:
 ### AI Package Security
 
 For users who DO install AI:
+
 - GPG-signed TCZ packages
 - Checksum verification for models
 - Sandboxed LLM runtime (Ollama in separate namespace)

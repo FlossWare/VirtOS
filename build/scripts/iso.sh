@@ -68,7 +68,7 @@ cd "$ISO_CONTENTS"
 # Update boot message
 if [ -d "boot/isolinux" ]; then
     echo "Updating boot message..."
-    cat > boot/isolinux/boot.msg << EOF
+    cat >boot/isolinux/boot.msg <<EOF
 
 
   FlossWare VirtOS v${VERSION}
@@ -91,9 +91,9 @@ genisoimage \
     -c boot/isolinux/boot.cat \
     -o "$OUTPUT_DIR/$ISO_NAME" \
     . || {
-        echo "ERROR: ISO creation failed"
-        exit 1
-    }
+    echo "ERROR: ISO creation failed"
+    exit 1
+}
 
 # Make ISO hybrid (bootable from USB)
 echo "Making ISO hybrid (USB-bootable)..."
@@ -104,8 +104,8 @@ isohybrid "$OUTPUT_DIR/$ISO_NAME" || {
 # Calculate checksum
 echo "Calculating checksum..."
 cd "$OUTPUT_DIR"
-md5sum "$ISO_NAME" > "$ISO_NAME.md5"
-sha256sum "$ISO_NAME" > "$ISO_NAME.sha256"
+md5sum "$ISO_NAME" >"$ISO_NAME.md5"
+sha256sum "$ISO_NAME" >"$ISO_NAME.sha256"
 
 # Get size
 SIZE=$(du -h "$ISO_NAME" | cut -f1)

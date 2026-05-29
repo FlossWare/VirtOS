@@ -3,6 +3,7 @@
 ## Format: X.Y (Semantic Versioning)
 
 VirtOS uses **X.Y semantic versioning** where:
+
 - **X** (Major) = Major version, breaking changes
 - **Y** (Minor) = Minor version, features and fixes
 
@@ -29,6 +30,7 @@ All package metadata files sync from this single source.
 ### Automatic Versioning
 
 **CD Workflow** (`ci/rev-version.sh`):
+
 1. Reads current version from `VERSION` file
 2. Parses as X.Y format: `MAJOR.MINOR`
 3. Increments minor version: `MINOR + 1`
@@ -59,6 +61,7 @@ All version references stay synchronized:
 ### Validation
 
 CI workflow validates version sync across all files:
+
 ```bash
 ./ci/verify-version-sync.sh
 ```
@@ -70,6 +73,7 @@ Fails CI if any package metadata doesn't match VERSION file.
 ### Alpha Phase (0.x)
 
 **Current phase**: Pre-1.0 development
+
 - Major version: 0
 - Minor version: Auto-incremented
 - **Stability**: Core features working, runtime testing pending
@@ -78,6 +82,7 @@ Fails CI if any package metadata doesn't match VERSION file.
 ### Approaching 1.0
 
 Version 1.0 will be released when:
+
 - ✅ 100% test coverage achieved *(Done: v0.41)*
 - ✅ CI/CD fully automated *(Done: v0.44)*
 - ⏸️ ISO builds tested on hardware
@@ -89,11 +94,13 @@ Version 1.0 will be released when:
 ### Post-1.0 Strategy
 
 **Major version (X)** increments for:
+
 - Breaking changes to APIs
 - Incompatible configuration changes
 - Major architectural changes
 
 **Minor version (Y)** increments for:
+
 - New features (backwards compatible)
 - Enhancements
 - Bug fixes
@@ -223,4 +230,4 @@ fi
 - **Versioning script**: `ci/rev-version.sh`
 - **Validation script**: `ci/verify-version-sync.sh`
 - **CD workflow**: `.github/workflows/cd.yml`
-- **Semantic Versioning**: https://semver.org/
+- **Semantic Versioning**: <https://semver.org/>

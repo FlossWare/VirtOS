@@ -18,12 +18,14 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 ## Architectural Principles
 
 ### VirtOS (Infrastructure Layer)
+
 **What it is**: Hypervisor OS, VM/container management, resource allocation  
 **Technology**: Shell scripts, Python for ML, Tiny Core Linux, libvirt  
 **Scope**: Infrastructure, hosts, hardware, VMs  
 **AI Focus**: Resource optimization, infrastructure security, self-healing
 
 ### platform-java (Application Layer)
+
 **What it is**: Workload orchestration, application deployment, service management  
 **Technology**: Java, pluggable modules, REST APIs  
 **Scope**: Applications, workloads, services, business logic  
@@ -45,6 +47,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 | **Self-Healing** | Auto-recover failed VMs | VM-level recovery |
 
 **VirtOS Issues**:
+
 - #127 - Advanced AI Capabilities (infrastructure portions)
 - #121 - AI Strategy
 - #122 - AI Modularity
@@ -66,6 +69,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 | **Multi-Modal AI** | Vision, speech models | Application deployment | #304 |
 
 **platform-java Issues**:
+
 - #303 - MLOps Platform
 - #304 - Model Marketplace
 - #305 - RAG Infrastructure
@@ -124,6 +128,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 **User Request**: "Deploy Llama 3.1 70B model"
 
 **Flow**:
+
 1. **platform-java (#304)**:
    - User calls: `platform-java ai marketplace deploy llama-3.1-70b`
    - Checks model requirements: 40GB VRAM, 8 vCPUs
@@ -143,7 +148,8 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
    - Sets up monitoring
    - Returns API endpoint to user
 
-**Result**: 
+**Result**:
+
 - VirtOS: Optimal infrastructure ✓
 - platform-java: Model deployed and serving ✓
 
@@ -154,6 +160,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 **User Request**: "Train fraud detection model"
 
 **Flow**:
+
 1. **platform-java (#303)**:
    - User calls: `platform-java ml train fraud-detection`
    - Creates MLflow experiment
@@ -173,6 +180,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
    - Saves trained model to registry
 
 **Result**:
+
 - VirtOS: Optimal distributed infrastructure ✓
 - platform-java: Training orchestration ✓
 
@@ -183,6 +191,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 **User Request**: "Create internal docs Q&A chatbot"
 
 **Flow**:
+
 1. **platform-java (#305)**:
    - User calls: `platform-java rag project create internal-docs`
    - Requests 3 VMs from VirtOS:
@@ -204,6 +213,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
    - Returns endpoint to user
 
 **Result**:
+
 - VirtOS: Low-latency infrastructure ✓
 - platform-java: RAG application running ✓
 
@@ -214,6 +224,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 ### platform-java → VirtOS
 
 **Request GPU VM**:
+
 ```bash
 POST /api/v1/vms
 {
@@ -227,6 +238,7 @@ POST /api/v1/vms
 ```
 
 **VirtOS Response**:
+
 ```json
 {
   "vm_id": "vm-12345",
@@ -243,18 +255,21 @@ POST /api/v1/vms
 ## Benefits of This Split
 
 ### For VirtOS
+
 - ✅ **Focused scope**: Infrastructure AI only
 - ✅ **Lightweight**: No Java runtime needed for core AI
 - ✅ **Fast**: ML decisions at hypervisor level
 - ✅ **Modular**: AI components optional
 
 ### For platform-java
+
 - ✅ **Rich ecosystem**: Java ML libraries (DL4J, DJL, etc.)
 - ✅ **Pluggable**: Module-based architecture
 - ✅ **Application focus**: Not tied to one hypervisor
 - ✅ **Cloud-ready**: Can run on VirtOS, VMware, AWS, etc.
 
 ### For Users
+
 - ✅ **Clear separation**: Infrastructure vs. application
 - ✅ **Flexible**: Use VirtOS alone or with platform-java
 - ✅ **Best of both**: Optimal infrastructure + rich applications
@@ -267,6 +282,7 @@ POST /api/v1/vms
 ### VirtOS AI (Infrastructure)
 
 **Phase 4** (Month 19-24):
+
 - AI VM placement (ML model)
 - Predictive auto-scaling
 - Infrastructure security (anomaly detection)
@@ -278,6 +294,7 @@ POST /api/v1/vms
 ### platform-java AI (Application)
 
 **Phase 4** (Month 19-24):
+
 1. MLOps Platform basics (#303)
 2. Model Marketplace (#304)
 3. LLM inference serving (#303)
@@ -288,7 +305,8 @@ POST /api/v1/vms
 6. AI governance (#303)
 7. Multi-modal support (#304)
 
-**Effort**: 
+**Effort**:
+
 - Phase 4: 20 weeks (MLOps) + 14 weeks (Marketplace) = 34 weeks
 - Phase 5: 18 weeks (RAG) + ongoing enhancements
 
@@ -297,12 +315,14 @@ POST /api/v1/vms
 ## Issues Summary
 
 ### VirtOS Issues
+
 - #121 - [STRATEGIC] AI Capabilities Discussion
 - #122 - [ARCHITECTURE] AI Modularity
 - #127 - [AI] Advanced AI Capabilities (infrastructure portions)
 - #128 - [ARCHITECTURE] AI Capabilities Split (this document)
 
 ### platform-java Issues
+
 - #303 - [AI] MLOps Platform - ML Workflow Orchestration
 - #304 - [AI] Model Marketplace - Curated AI Model Catalog
 - #305 - [AI] RAG Infrastructure - Retrieval Augmented Generation
@@ -314,10 +334,12 @@ POST /api/v1/vms
 **Original Issue #127** covered all AI capabilities mixed together.
 
 **After Split**:
+
 - **Sections 1-4** (Resource optimization, Security, Cost, Self-healing): Stay in VirtOS
 - **Sections 5-11** (MLOps, RAG, Multi-modal, Governance): Move to platform-java
 
 **Updated**:
+
 - VirtOS #127: Updated with split information
 - platform-java: 3 new issues created (#303-#305)
 - VirtOS #128: Architecture documentation (this file)
@@ -362,6 +384,7 @@ POST /api/v1/vms
 ### Coordination Points
 
 As both layers evolve, they'll need to coordinate on:
+
 1. **Metrics**: Shared telemetry for unified dashboards
 2. **Cost Attribution**: Track costs across both layers
 3. **Security**: Defense in depth policies

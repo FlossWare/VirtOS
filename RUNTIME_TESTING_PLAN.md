@@ -30,11 +30,13 @@ This document provides a comprehensive testing plan for validating VirtOS and pl
 ### Test Environment Options
 
 **Option 1: Physical Hardware** (Best for production validation)
+
 - Real server or desktop with virtualization support
 - Direct hardware access for GPU, USB passthrough tests
 - Realistic performance characteristics
 
 **Option 2: Nested Virtualization** (Best for development)
+
 ```bash
 # On QEMU/KVM host
 qemu-system-x86_64 \
@@ -48,6 +50,7 @@ qemu-system-x86_64 \
 ```
 
 **Option 3: Cloud VM** (Best for CI/CD)
+
 - AWS EC2 metal instances (m5.metal, c5.metal)
 - Azure Dv3/Ev3 with nested virt enabled
 - GCP N1/N2 with nested virt enabled
@@ -59,6 +62,7 @@ qemu-system-x86_64 \
 ### 1.1 Build VirtOS ISO
 
 **Prerequisites**:
+
 ```bash
 # Install build tools (Fedora)
 sudo dnf install genisoimage syslinux
@@ -68,6 +72,7 @@ sudo apt install genisoimage syslinux-utils
 ```
 
 **Build Process**:
+
 ```bash
 cd /path/to/VirtOS/build/scripts
 
@@ -83,6 +88,7 @@ md5sum -c ../output/VirtOS-*.iso.md5
 ```
 
 **Expected Output**:
+
 ```
 build/output/VirtOS-0.1-alpha-20260525.iso
 build/output/VirtOS-0.1-alpha-20260525.iso.md5
@@ -92,6 +98,7 @@ Size: 50-150MB (varies by profile)
 ```
 
 **Success Criteria**:
+
 - [ ] ISO file created
 - [ ] MD5 checksum matches
 - [ ] SHA256 checksum matches
@@ -100,6 +107,7 @@ Size: 50-150MB (varies by profile)
 ### 1.2 Boot VirtOS in QEMU
 
 **Test Command**:
+
 ```bash
 qemu-system-x86_64 \
   -enable-kvm \
@@ -110,6 +118,7 @@ qemu-system-x86_64 \
 ```
 
 **Boot Checklist**:
+
 - [ ] BIOS/bootloader appears (isolinux menu)
 - [ ] Kernel loads without errors
 - [ ] Initramfs unpacks successfully
@@ -121,6 +130,7 @@ qemu-system-x86_64 \
 ### 1.3 Boot VirtOS on Real Hardware
 
 **Write to USB**:
+
 ```bash
 # DANGER: Verify device name! Wrong device = data loss!
 lsblk  # Identify USB device (e.g., /dev/sdb)
@@ -134,12 +144,14 @@ sync
 ```
 
 **Boot Process**:
+
 1. Insert USB into target machine
 2. Boot from USB (F12/F11/Del to access boot menu)
 3. Select USB device
 4. Wait for VirtOS to boot
 
 **Hardware Boot Checklist**:
+
 - [ ] BIOS boot successful
 - [ ] UEFI boot successful (if applicable)
 - [ ] All NICs detected
@@ -153,6 +165,7 @@ sync
 ### 2.1 Install VirtOS Tools Package
 
 **From Tiny Core Desktop**:
+
 ```bash
 # Mount TCZ repository (if not auto-mounted)
 sudo mkdir -p /mnt/tcz
@@ -171,6 +184,7 @@ tce-load -wi virtos-platform-java
 ```
 
 **Manual Installation** (for testing):
+
 ```bash
 # Copy package to /tmp
 cp packages/output/virtos-tools.tcz /tmp/
@@ -186,6 +200,7 @@ virtos-setup --version
 ```
 
 **Installation Checklist**:
+
 - [ ] Package installs without errors
 - [ ] All 53 scripts appear in `/usr/local/bin/`
 - [ ] Scripts are executable (`-rwxr-xr-x`)
@@ -209,6 +224,7 @@ platform-java --version
 ```
 
 **platform-java Checklist**:
+
 - [ ] Package installs without errors
 - [ ] `platform-java` command available
 - [ ] platform-java jar exists (`/opt/platform-java/platform-java.jar`)
@@ -221,6 +237,7 @@ platform-java --version
 ### 3.1 Setup VirtOS Environment
 
 **Run Initial Setup**:
+
 ```bash
 # Interactive setup wizard
 sudo virtos-setup
@@ -233,6 +250,7 @@ sudo virtos-setup \
 ```
 
 **Setup Checklist**:
+
 - [ ] libvirt service starts
 - [ ] KVM kernel module loads (`lsmod | grep kvm`)
 - [ ] Default network created (`virsh net-list`)
@@ -240,6 +258,7 @@ sudo virtos-setup \
 - [ ] Wizard completes without errors
 
 **Validation**:
+
 ```bash
 # Check libvirt
 virsh version
@@ -255,6 +274,7 @@ virsh pool-info default
 ### 3.2 Create First VM
 
 **Test VM Creation**:
+
 ```bash
 # Create minimal test VM
 virtos-create-vm \
@@ -271,6 +291,7 @@ virsh dumpxml test-vm-01
 ```
 
 **VM Creation Checklist**:
+
 - [ ] Disk image created (`/var/lib/virtos/storage/test-vm-01.qcow2`)
 - [ ] VM defined in libvirt (`virsh list --all`)
 - [ ] XML configuration valid (`virsh dumpxml`)
@@ -279,6 +300,7 @@ virsh dumpxml test-vm-01
 ### 3.3 VM Lifecycle Operations
 
 **Start/Stop Test**:
+
 ```bash
 # Start VM
 virsh start test-vm-01
@@ -302,6 +324,7 @@ virsh list --all | grep test-vm-01
 ```
 
 **Lifecycle Checklist**:
+
 - [ ] VM starts successfully
 - [ ] Status shows "running"
 - [ ] Console accessible (even if no OS installed)
@@ -312,6 +335,7 @@ virsh list --all | grep test-vm-01
 ### 3.4 Snapshot Management
 
 **Snapshot Test**:
+
 ```bash
 # Create snapshot
 virtos-snapshot create test-vm-01 snap1 "Initial state"
@@ -327,6 +351,7 @@ virtos-snapshot delete test-vm-01 snap1
 ```
 
 **Snapshot Checklist**:
+
 - [ ] Snapshot creates successfully
 - [ ] Snapshot appears in list
 - [ ] Snapshot metadata correct
@@ -335,6 +360,7 @@ virtos-snapshot delete test-vm-01 snap1
 ### 3.5 Network Management
 
 **Network Test**:
+
 ```bash
 # List networks
 virtos-network list
@@ -357,6 +383,7 @@ virtos-network delete test-bridge
 ```
 
 **Network Checklist**:
+
 - [ ] Default network exists and is active
 - [ ] Custom bridge creates successfully
 - [ ] Bridge interface appears in `ip link`
@@ -366,6 +393,7 @@ virtos-network delete test-bridge
 ### 3.6 Storage Management
 
 **Storage Test**:
+
 ```bash
 # List storage pools
 virtos-storage list-pools
@@ -392,6 +420,7 @@ virtos-storage delete-pool test-pool
 ```
 
 **Storage Checklist**:
+
 - [ ] Default pool exists
 - [ ] Custom pool creates successfully
 - [ ] Volume creates successfully
@@ -401,6 +430,7 @@ virtos-storage delete-pool test-pool
 ### 3.7 Backup and Restore
 
 **Backup Test**:
+
 ```bash
 # Create VM for backup
 virtos-create-vm --name backup-test --cpu 1 --memory 512 --disk 5G
@@ -419,6 +449,7 @@ virsh list --all | grep backup-test
 ```
 
 **Backup Checklist**:
+
 - [ ] Backup creates successfully
 - [ ] Backup file contains XML definition
 - [ ] VM deletion works
@@ -432,6 +463,7 @@ virsh list --all | grep backup-test
 ### 4.1 platform-java Basic Operations
 
 **Install Example Workloads**:
+
 ```bash
 # Verify platform-java responds
 platform-java version
@@ -443,6 +475,7 @@ cd /tmp/platform-java-test
 ```
 
 **Test VM Workload**:
+
 ```yaml
 # test-vm.yaml
 applicationId: test-vm-platform-java
@@ -472,6 +505,7 @@ platform-java undeploy test-vm-platform-java
 ```
 
 **platform-java VM Checklist**:
+
 - [ ] Workload definition valid
 - [ ] Deploy creates VM in libvirt
 - [ ] Start works
@@ -482,6 +516,7 @@ platform-java undeploy test-vm-platform-java
 ### 4.2 Multi-Tier Application
 
 **Deploy Three-Tier Example**:
+
 ```bash
 # Get platform-java examples
 git clone https://github.com/FlossWare/platform-java.git /tmp/platform-java
@@ -510,6 +545,7 @@ platform-java status
 ```
 
 **Multi-Tier Checklist**:
+
 - [ ] Database VM deploys and starts
 - [ ] Application tier starts (waits for DB)
 - [ ] Web tier starts (waits for app)
@@ -517,6 +553,7 @@ platform-java status
 - [ ] All three tiers show as "running"
 
 **Dependency Validation**:
+
 ```bash
 # Stop app tier (should stop web tier too)
 platform-java stop spring-app
@@ -532,6 +569,7 @@ platform-java status | grep Running
 ```
 
 **Cleanup**:
+
 ```bash
 platform-java stop nginx-web
 platform-java stop spring-app
@@ -545,6 +583,7 @@ platform-java undeploy postgres-db
 ### 4.3 Resource Quotas
 
 **Quota Test**:
+
 ```bash
 # Set quota for user
 platform-java quota set test-user \
@@ -575,6 +614,7 @@ platform-java deploy large-vm.yaml --user test-user  # Should fail
 ```
 
 **Quota Checklist**:
+
 - [ ] Quota set successfully
 - [ ] Quota displayed correctly
 - [ ] VM within quota deploys
@@ -589,6 +629,7 @@ platform-java deploy large-vm.yaml --user test-user  # Should fail
 **Prerequisites**: Requires 2 VirtOS hosts with shared storage
 
 **Migration Test** (single-host simulation):
+
 ```bash
 # Create VM on host1
 virtos-create-vm --name migrate-test --cpu 2 --memory 1024 --disk 10G
@@ -606,6 +647,7 @@ ssh host2 "virsh list | grep migrate-test"
 ```
 
 **Migration Checklist**:
+
 - [ ] Shared storage configured
 - [ ] SSH key auth works between hosts
 - [ ] Live migration completes
@@ -615,6 +657,7 @@ ssh host2 "virsh list | grep migrate-test"
 ### 5.2 Clustering
 
 **Cluster Test**:
+
 ```bash
 # Enable Avahi on all hosts
 sudo systemctl enable avahi-daemon
@@ -634,6 +677,7 @@ virtos-cluster status
 ```
 
 **Cluster Checklist**:
+
 - [ ] Avahi service running
 - [ ] Nodes discovered via mDNS
 - [ ] Cluster formation works
@@ -643,6 +687,7 @@ virtos-cluster status
 ### 5.3 Monitoring and Metrics
 
 **Monitor Test**:
+
 ```bash
 # Get VM statistics
 virtos-monitor stats test-vm-01
@@ -655,6 +700,7 @@ virtos-monitor watch test-vm-01 --interval 10
 ```
 
 **Monitoring Checklist**:
+
 - [ ] VM stats display (CPU, memory, disk, network)
 - [ ] System metrics display
 - [ ] Watch mode updates correctly
@@ -663,6 +709,7 @@ virtos-monitor watch test-vm-01 --interval 10
 ### 5.4 virtos-tui Integration
 
 **TUI Test**:
+
 ```bash
 # Launch TUI
 sudo virtos-tui
@@ -675,6 +722,7 @@ sudo virtos-tui
 ```
 
 **TUI Checklist**:
+
 - [ ] TUI launches without errors
 - [ ] All menus accessible
 - [ ] VM operations work from TUI
@@ -688,6 +736,7 @@ sudo virtos-tui
 ### 6.1 Input Validation
 
 **Command Injection Test**:
+
 ```bash
 # These should ALL fail safely (not execute commands)
 virtos-create-vm --name "vm;rm -rf /" --cpu 2 --memory 1024 --disk 10G
@@ -698,6 +747,7 @@ virtos-network create --name "bridge|whoami" --type bridge
 ```
 
 **Security Checklist**:
+
 - [ ] Command injection attempts fail
 - [ ] Path traversal blocked (`../../etc/passwd`)
 - [ ] Invalid characters rejected (`;`, `|`, `&`, `$()`, etc.)
@@ -706,6 +756,7 @@ virtos-network create --name "bridge|whoami" --type bridge
 ### 6.2 Permission Checks
 
 **Privilege Escalation Test**:
+
 ```bash
 # As non-root user (should fail for VM operations)
 virtos-create-vm --name test --cpu 1 --memory 512 --disk 5G
@@ -717,6 +768,7 @@ sudo virtos-create-vm --name test --cpu 1 --memory 512 --disk 5G
 ```
 
 **Permission Checklist**:
+
 - [ ] Non-root users blocked from VM operations
 - [ ] Sudo required for privileged operations
 - [ ] File permissions correct (`/var/lib/virtos` owned by root)
@@ -728,6 +780,7 @@ sudo virtos-create-vm --name test --cpu 1 --memory 512 --disk 5G
 ### 7.1 VM Performance
 
 **CPU Benchmark** (in guest VM):
+
 ```bash
 # Install stress-ng in guest
 apt install stress-ng  # Ubuntu guest
@@ -740,6 +793,7 @@ virtos-monitor stats test-vm-01
 ```
 
 **Performance Metrics**:
+
 - [ ] Guest CPU usage matches allocation
 - [ ] No CPU contention on host
 - [ ] Reasonable performance (> 50% of bare metal)
@@ -747,6 +801,7 @@ virtos-monitor stats test-vm-01
 ### 7.2 Storage Performance
 
 **Disk I/O Test** (in guest):
+
 ```bash
 # Sequential write
 dd if=/dev/zero of=/tmp/test bs=1M count=1024 oflag=direct
@@ -759,6 +814,7 @@ fio --name=randrw --rw=randrw --bs=4k --size=1G --numjobs=4
 ```
 
 **Storage Metrics**:
+
 - [ ] Write speed > 100 MB/s (virtio)
 - [ ] Read speed > 200 MB/s
 - [ ] IOPS reasonable for workload
@@ -766,6 +822,7 @@ fio --name=randrw --rw=randrw --bs=4k --size=1G --numjobs=4
 ### 7.3 Network Performance
 
 **Network Throughput Test**:
+
 ```bash
 # On host
 iperf3 -s
@@ -775,6 +832,7 @@ iperf3 -c <host-ip> -t 30
 ```
 
 **Network Metrics**:
+
 - [ ] Throughput > 1 Gbps (virtio-net)
 - [ ] Latency < 1ms (host to guest)
 - [ ] No packet loss
@@ -786,6 +844,7 @@ iperf3 -c <host-ip> -t 30
 ### 8.1 Multiple VMs
 
 **Create 10 VMs**:
+
 ```bash
 for i in {1..10}; do
   virtos-create-vm \
@@ -807,6 +866,7 @@ htop
 ```
 
 **Stress Checklist**:
+
 - [ ] All 10 VMs create successfully
 - [ ] All start without errors
 - [ ] Host system stable
@@ -815,6 +875,7 @@ htop
 ### 8.2 Rapid Creation/Deletion
 
 **Churn Test**:
+
 ```bash
 for i in {1..50}; do
   echo "Iteration $i/50"
@@ -827,6 +888,7 @@ done
 ```
 
 **Churn Checklist**:
+
 - [ ] All 50 iterations complete
 - [ ] No resource leaks (check `df -h`, `free -h`)
 - [ ] No orphaned processes
@@ -839,6 +901,7 @@ done
 ### 9.1 Graceful Failures
 
 **Network Failure Test**:
+
 ```bash
 # Disconnect network during migration
 virtos-migrate --vm test --dest qemu+ssh://unreachable-host/system
@@ -846,6 +909,7 @@ virtos-migrate --vm test --dest qemu+ssh://unreachable-host/system
 ```
 
 **Disk Full Test**:
+
 ```bash
 # Fill disk to 99%
 dd if=/dev/zero of=/var/lib/virtos/fill bs=1M
@@ -859,6 +923,7 @@ rm /var/lib/virtos/fill
 ```
 
 **Error Handling Checklist**:
+
 - [ ] Network failures handled gracefully
 - [ ] Disk full errors clear and actionable
 - [ ] Missing dependencies reported
@@ -867,6 +932,7 @@ rm /var/lib/virtos/fill
 ### 9.2 Recovery from Crashes
 
 **Process Crash Test**:
+
 ```bash
 # Start VM
 virsh start test-vm-01
@@ -882,6 +948,7 @@ virsh list --all | grep test-vm-01
 ```
 
 **Recovery Checklist**:
+
 - [ ] VMs survive libvirt restart
 - [ ] Running VMs reconnect
 - [ ] No data corruption
@@ -912,6 +979,7 @@ virsh list --all | grep test-vm-01
 ### Minimum Viable Product (MVP)
 
 **Must Work**:
+
 - [ ] ISO builds and boots
 - [ ] Packages install
 - [ ] VirtOS setup completes
@@ -924,6 +992,7 @@ virsh list --all | grep test-vm-01
 ### Production Ready
 
 **Additional Requirements**:
+
 - [ ] Snapshots work
 - [ ] Backups work
 - [ ] Storage pools work
@@ -935,6 +1004,7 @@ virsh list --all | grep test-vm-01
 ### Enterprise Ready
 
 **Additional Requirements**:
+
 - [ ] Live migration works
 - [ ] Clustering works
 - [ ] HA/DR works

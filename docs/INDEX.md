@@ -23,6 +23,7 @@ Complete documentation for FlossWare VirtOS.
 ## Core Documentation
 
 ### System Design
+
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 7-layer system design and components
 - **[AI-ARCHITECTURE.md](AI-ARCHITECTURE.md)** - AI capabilities split (VirtOS vs platform-java)
 - **[AI-MODULARITY.md](AI-MODULARITY.md)** - Modular AI design (optional packages, profiles)
@@ -33,6 +34,7 @@ Complete documentation for FlossWare VirtOS.
 - **[ROADMAP.md](ROADMAP.md)** - Development phases and status
 
 ### Configuration
+
 - **[CONFIGURATION.md](CONFIGURATION.md)** - 30+ configuration options
 - **[BUILD-CONFIGURATOR.md](BUILD-CONFIGURATOR.md)** - Interactive TUI for build configuration
 - **[PROFILES.md](PROFILES.md)** - 7 build profiles comparison
@@ -42,6 +44,7 @@ Complete documentation for FlossWare VirtOS.
 ## Virtualization Technologies
 
 ### VMs and Containers
+
 - **[CLOUD-INIT.md](CLOUD-INIT.md)** - Automated VM configuration on first boot ☁️
 - **[CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md)** - Docker vs Podman vs containerd
 - **[KUBERNETES.md](KUBERNETES.md)** - K3s orchestration (optional)
@@ -86,61 +89,72 @@ Complete documentation for FlossWare VirtOS.
 
 ## Documentation by Use Case
 
-### I want to...
+### I want to
 
 #### Build VirtOS
+
 1. [GETTING-STARTED.md](GETTING-STARTED.md) - Initial setup
 2. [PROFILES.md](PROFILES.md) - Choose a profile
 3. [CONFIGURATION.md](CONFIGURATION.md) - Customize build
 
 #### Run Virtual Machines
+
 1. [GETTING-STARTED.md](GETTING-STARTED.md) - Boot VirtOS
 2. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - KVM/QEMU commands
 3. [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - Use virt-manager
 4. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Backup, templates, snapshots
 
 #### Run Containers
+
 1. [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Choose runtime
 2. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Container commands
 3. [KUBERNETES.md](KUBERNETES.md) - Add orchestration (optional)
 
 #### Set Up Multiple Hosts
+
 1. [CLUSTERING.md](CLUSTERING.md) - Multi-host setup
 2. [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - Remote management
 3. [KUBERNETES.md](KUBERNETES.md) - K3s cluster (optional)
 
 #### Manage Remotely
+
 1. [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - SSH and virt-manager setup
 2. [CLUSTERING.md](CLUSTERING.md) - virtos-cluster commands
 3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - All commands
 
 #### Deploy Microservices
+
 1. [MICROSERVICES.md](MICROSERVICES.md) - Complete microservices guide
 2. [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Choose runtime
 3. [CLUSTERING.md](CLUSTERING.md) - Set up cluster
 4. [KUBERNETES.md](KUBERNETES.md) - Deploy with K3s
 
 #### Use IaaS Automation
+
 1. [CLUSTERING.md](CLUSTERING.md) - Set up multi-host cluster
 2. [IAAS.md](IAAS.md) - Enable automated placement
 3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-create-vm commands
 
 #### Configure VirtOS (First Boot)
+
 1. [TUI.md](TUI.md) - Run virtos-setup wizard
 2. [STORAGE.md](STORAGE.md) - Choose filesystem (if advanced storage)
 3. [CLUSTERING.md](CLUSTERING.md) - Join cluster (if multi-host)
 
 #### Manage VirtOS (Daily)
+
 1. [TUI.md](TUI.md) - Use virtos-tui management console
 2. [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - SSH access
 3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - CLI commands
 
 #### Configure Advanced Storage
+
 1. [STORAGE.md](STORAGE.md) - Choose filesystem (Btrfs/LVM/ZFS)
 2. [PROFILES.md](PROFILES.md) - Use storage profile
 3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Storage commands
 
 #### Backup and Protect VMs
+
 1. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-backup commands
 2. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-snapshot commands
 3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - virtos-template commands
@@ -148,35 +162,42 @@ Complete documentation for FlossWare VirtOS.
 ## Documentation by Profile
 
 ### Minimal Profile
+
 - [PROFILES.md](PROFILES.md#minimal-profile)
 - [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - KVM commands
 - Minimal docs needed - it's simple!
 
 ### Standard Profile (Default)
+
 - [PROFILES.md](PROFILES.md#standard-profile-default)
 - [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - All 3 runtimes
 - [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - libvirt management
 
 ### Full Profile
+
 - [PROFILES.md](PROFILES.md#full-profile)
 - All documentation applies!
 
 ### Containers Profile
+
 - [PROFILES.md](PROFILES.md#containers-profile)
 - [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md)
 - [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Container commands
 
 ### Developer Profile
+
 - [PROFILES.md](PROFILES.md#developer-profile)
 - [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md)
 - [KUBERNETES.md](KUBERNETES.md)
 
 ### Kubernetes Profile
+
 - [PROFILES.md](PROFILES.md#kubernetes-profile)
 - [KUBERNETES.md](KUBERNETES.md) - Complete K3s guide
 - [CLUSTERING.md](CLUSTERING.md) - Multi-node setup
 
 ### Storage Profile
+
 - [PROFILES.md](PROFILES.md#storage-profile)
 - [STORAGE.md](STORAGE.md) - Complete storage guide
 - [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Storage commands
@@ -262,11 +283,12 @@ Complete documentation for FlossWare VirtOS.
 1. Check relevant documentation above
 2. See [QUICK-REFERENCE.md](QUICK-REFERENCE.md) for commands
 3. Review [ROADMAP.md](ROADMAP.md) for feature status
-4. Open issue: https://github.com/FlossWare/VirtOS/issues
+4. Open issue: <https://github.com/FlossWare/VirtOS/issues>
 
 ## Contributing
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
+
 - How to contribute code
 - Documentation improvements
 - Bug reports

@@ -5,6 +5,7 @@ VirtOS supports automatic discovery and coordination between multiple instances.
 ## Overview
 
 Run multiple VirtOS hosts that automatically:
+
 - **Discover** each other on the network
 - **Share** resource information (CPU, RAM, VMs)
 - **Coordinate** VM placement and migration
@@ -27,17 +28,20 @@ Your Network:
 ## Architecture
 
 ### Discovery Layer
+
 - **Avahi/mDNS**: Automatic hostname resolution (virtos-1.local)
 - **Broadcast**: Announce presence on network
 - **Health Checks**: Periodic status updates
 
 ### Information Sharing
+
 - CPU/RAM availability
 - Running VMs count
 - Storage capacity
 - Network configuration
 
 ### Coordination (Optional)
+
 - VM placement recommendations
 - Load balancing
 - Migration support
@@ -48,6 +52,7 @@ Your Network:
 ### 1. Enable Clustering
 
 Edit `build/build.conf`:
+
 ```bash
 # Enable clustering features
 ENABLE_CLUSTERING="yes"
@@ -65,6 +70,7 @@ cd build/scripts
 ### 3. Boot Multiple Hosts
 
 Each VirtOS instance needs:
+
 - Unique hostname (virtos-1, virtos-2, virtos-3)
 - Same cluster name
 - Network connectivity
@@ -72,6 +78,7 @@ Each VirtOS instance needs:
 ### 4. Verify Discovery
 
 On any VirtOS host:
+
 ```bash
 # List all VirtOS instances on network
 virtos-cluster list
@@ -140,11 +147,13 @@ RESERVED_CPU_PERCENT="10"
 **Cons**: Requires multicast support on network
 
 Hosts automatically available as:
+
 - `virtos-1.local`
 - `virtos-2.local`
 - `virtos-3.local`
 
 **Connect from anywhere**:
+
 ```bash
 ssh vmadmin@virtos-2.local
 virt-manager -c qemu+ssh://vmadmin@virtos-1.local/system
@@ -157,6 +166,7 @@ ping virtos-3.local
 **Cons**: May not cross VLANs/subnets
 
 Periodic broadcasts announce:
+
 ```json
 {
   "hostname": "virtos-1",
@@ -175,6 +185,7 @@ Periodic broadcasts announce:
 **Cons**: Manual configuration
 
 Edit `/etc/virtos/cluster-members.conf`:
+
 ```bash
 virtos-1 192.168.1.101
 virtos-2 192.168.1.102
@@ -288,6 +299,7 @@ virtos-cluster recommend --cpu 2 --ram 4096
 ```
 
 Then create VM on recommended host:
+
 ```bash
 virsh -c qemu+ssh://vmadmin@virtos-3.local/system \
   create myvm.xml
@@ -300,6 +312,7 @@ For VM migration and shared access:
 ### NFS Setup
 
 **On storage server (can be one VirtOS node)**:
+
 ```bash
 # Install NFS
 tce-load -i nfs-utils
@@ -315,6 +328,7 @@ EOF
 ```
 
 **On all VirtOS nodes**:
+
 ```bash
 # Mount shared storage
 mkdir -p /mnt/cluster-storage
@@ -372,6 +386,7 @@ virtos-cluster balance execute
 ## Network Considerations
 
 ### Same Subnet (Simple)
+
 All VirtOS hosts on same network - discovery works automatically.
 
 ```
@@ -382,12 +397,16 @@ All VirtOS hosts on same network - discovery works automatically.
 ```
 
 ### VLANs (Requires Routing)
+
 If hosts are on different VLANs, ensure:
+
 - Multicast routing enabled (for mDNS)
 - Or use static discovery method
 
 ### Multiple Sites (Advanced)
+
 For geographically distributed hosts:
+
 - Use static discovery
 - VPN between sites
 - Configure firewall rules
@@ -395,12 +414,15 @@ For geographically distributed hosts:
 ## Security
 
 ### Trusted Network
+
 Clustering assumes trusted network:
+
 - All hosts should be on secure LAN
 - Use firewall to isolate from internet
 - SSH keys for authentication
 
 ### Cluster Authentication
+
 Optional: shared secret for cluster membership:
 
 ```bash
@@ -415,6 +437,7 @@ chmod 600 /etc/virtos/cluster.secret
 ### Firewall Rules
 
 Allow cluster communication:
+
 ```bash
 # Avahi/mDNS
 iptables -A INPUT -p udp --dport 5353 -j ACCEPT
@@ -431,24 +454,28 @@ iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 ### Nodes Not Discovering Each Other
 
 **Check Avahi is running**:
+
 ```bash
 ps aux | grep avahi
 /usr/local/etc/init.d/avahi status
 ```
 
 **Test mDNS resolution**:
+
 ```bash
 ping virtos-1.local
 avahi-browse -a
 ```
 
 **Check multicast**:
+
 ```bash
 # Ensure multicast not blocked
 ip maddr show
 ```
 
 **Verify cluster name matches**:
+
 ```bash
 # On each host
 cat /etc/virtos/cluster.conf | grep CLUSTER_NAME
@@ -458,17 +485,20 @@ cat /etc/virtos/cluster.conf | grep CLUSTER_NAME
 ### Node Shows as Down
 
 **Check network connectivity**:
+
 ```bash
 ping virtos-2
 ssh vmadmin@virtos-2 echo "test"
 ```
 
 **Check node is actually up**:
+
 ```bash
 ssh vmadmin@virtos-2 uptime
 ```
 
 **Check cluster daemon**:
+
 ```bash
 ssh vmadmin@virtos-2 ps aux | grep virtos-cluster
 ```
@@ -476,11 +506,13 @@ ssh vmadmin@virtos-2 ps aux | grep virtos-cluster
 ### VM Placement Incorrect
 
 **Update cluster cache**:
+
 ```bash
 virtos-cluster refresh
 ```
 
 **Check resource reporting**:
+
 ```bash
 virtos-cluster info virtos-1 --verbose
 ```
@@ -488,18 +520,21 @@ virtos-cluster info virtos-1 --verbose
 ## Use Cases
 
 ### Home Lab - 3 Nodes
+
 - Small cluster for development
 - Each node different specs
 - Automatic discovery with Avahi
 - Manual VM placement based on resource needs
 
 ### Production - 5+ Nodes
+
 - Shared storage (NFS or Ceph)
 - Load balancing
 - HA for critical VMs
 - Centralized monitoring
 
 ### Edge Computing
+
 - Distributed VirtOS nodes
 - Static discovery
 - Local storage
@@ -508,18 +543,21 @@ virtos-cluster info virtos-1 --verbose
 ## Migration Path
 
 ### Phase 1: Discovery (Current)
+
 - Avahi/mDNS for hostname resolution
 - Basic status sharing
 - Manual VM placement
 - **Available now**
 
 ### Phase 2: Coordination
+
 - Resource tracking
 - Placement recommendations
 - Health monitoring
 - **Coming soon**
 
 ### Phase 3: Automation
+
 - Live migration
 - Load balancing
 - High availability

@@ -59,7 +59,7 @@ fi
 
 # Enable IP forwarding for NAT
 echo "Enabling IP forwarding..."
-echo 1 > /proc/sys/net/ipv4/ip_forward
+echo 1 >/proc/sys/net/ipv4/ip_forward
 
 # Set up iptables for NAT
 echo "Configuring NAT for VMs/containers..."

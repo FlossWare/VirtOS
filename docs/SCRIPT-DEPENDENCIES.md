@@ -68,11 +68,13 @@ graph TD
 ## Initialization Order
 
 ### Phase 1: System Setup
+
 ```bash
 virtos-setup  # First script to run, initializes everything
 ```
 
 ### Phase 2: Infrastructure
+
 ```bash
 # Network and storage (order doesn't matter)
 virtos-network create-nat default 192.168.122.0/24
@@ -80,6 +82,7 @@ virtos-storage create-pool default dir /var/lib/libvirt/images
 ```
 
 ### Phase 3: VM Operations
+
 ```bash
 virtos-create-vm --name web-01
 virtos-snapshot create web-01 initial

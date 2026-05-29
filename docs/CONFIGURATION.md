@@ -16,6 +16,7 @@ All options are in: `build/build.conf`
 ## Quick Configuration Methods
 
 ### Method 1: Use a Profile
+
 Fastest way to get started:
 
 ```bash
@@ -29,6 +30,7 @@ PROFILE="standard"    # or minimal, full, containers, developer
 Profiles are in `config/profiles/` - copy and modify to create your own!
 
 ### Method 2: Individual Options
+
 Complete control:
 
 ```bash
@@ -43,6 +45,7 @@ INCLUDE_PODMAN="no"
 ```
 
 ### Method 3: Profile + Overrides
+
 Start with profile, tweak specifics:
 
 ```bash
@@ -177,6 +180,7 @@ CLEAN_AFTER_BUILD="no"      # Keep workspace for debugging
 | Minimal system | **containerd only** |
 
 At runtime, load what you need:
+
 ```bash
 tce-load -i docker       # If you included it
 tce-load -i podman       # If you included it
@@ -188,6 +192,7 @@ See [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) for detailed comparison.
 ## Example Configurations
 
 ### Home Lab (Balanced)
+
 ```bash
 PROFILE="standard"  # Or manually:
 INCLUDE_KVM="yes"
@@ -200,6 +205,7 @@ INCLUDE_BASH="yes"
 ```
 
 ### Minimal Production
+
 ```bash
 PROFILE="minimal"  # Or manually:
 INCLUDE_KVM="yes"
@@ -212,6 +218,7 @@ INCLUDE_BASH="no"  # Use ash
 ```
 
 ### Container Host
+
 ```bash
 PROFILE="containers"  # Or manually:
 INCLUDE_KVM="yes"  # Minimal
@@ -224,6 +231,7 @@ INCLUDE_PORTAINER="yes"
 ```
 
 ### Learning/Development
+
 ```bash
 PROFILE="developer"  # Or manually:
 INCLUDE_KVM="yes"
@@ -277,6 +285,7 @@ config/custom-scripts/
 ## Validation
 
 The build script will:
+
 - Validate configuration
 - Warn about conflicts
 - Show what will be included
@@ -285,6 +294,7 @@ The build script will:
 ## Default Configuration
 
 If you don't edit `build.conf`, you get the **standard** profile:
+
 - KVM + LXC
 - All three container runtimes (Docker, Podman, containerd)
 - libvirt
@@ -294,6 +304,7 @@ If you don't edit `build.conf`, you get the **standard** profile:
 ## Advanced: Creating Custom Profiles
 
 1. Create new profile:
+
 ```bash
 cp config/profiles/standard.conf config/profiles/myprofile.conf
 ```
@@ -301,12 +312,14 @@ cp config/profiles/standard.conf config/profiles/myprofile.conf
 2. Edit to your needs
 
 3. Use it:
+
 ```bash
 # Edit build/build.conf
 PROFILE="myprofile"
 ```
 
 4. Or specify at build time:
+
 ```bash
 PROFILE="myprofile" ./build/scripts/build-all.sh
 ```
@@ -338,12 +351,14 @@ K3S_DISABLE_SERVICELB="no"  # Disable built-in LB
 ```
 
 **When to enable**:
+
 - Multi-host container orchestration
 - Need auto-scaling and self-healing
 - Microservices deployment
 - Learning Kubernetes
 
 **When to skip**:
+
 - Single host (use docker-compose instead)
 - Only running VMs
 - Limited resources (<4GB RAM)

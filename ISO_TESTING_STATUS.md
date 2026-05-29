@@ -90,6 +90,7 @@ Test each build profile:
 - [ ] **storage** profile works (advanced storage backends)
 
 **How to Test**:
+
 ```bash
 # Edit build/build.conf, set PROFILE=minimal
 cd build/scripts && ./build-all.sh
@@ -122,6 +123,7 @@ No testing has been performed yet. When tests are run, results will be documente
 ### Test Environment
 
 Document test hardware/environment when testing begins:
+
 - **CPU**: (to be filled)
 - **RAM**: (to be filled)
 - **Virtualization**: (to be filled)

@@ -18,6 +18,7 @@ This document describes how to test VirtOS at various stages of development.
 **Legend**: ✅ Complete | ⏸️ Pending | ❌ Not Started
 
 **Key Achievements**:
+
 - 450+ unit tests across 54 test files (100% script coverage)
 - 54 integration tests across 5 comprehensive suites
 - Security library fully tested (virtos-common.sh with 46 tests)
@@ -77,6 +78,7 @@ done
 Verify the ISO boots and basic functionality works.
 
 #### Boot Test
+
 ```bash
 # Boot ISO in QEMU (no KVM for compatibility)
 qemu-system-x86_64 -m 2048 -cdrom output/FlossWare-Virt-*.iso -boot d
@@ -88,6 +90,7 @@ qemu-system-x86_64 -m 2048 -cdrom output/FlossWare-Virt-*.iso -boot d
 ```
 
 #### Basic Commands Test
+
 ```bash
 # After booting, test basic commands exist
 command -v virtos-setup && echo "✓ virtos-setup present" || echo "✗ Missing"
@@ -106,6 +109,7 @@ test -e /dev/kvm && echo "✓ /dev/kvm exists" || echo "✗ KVM device missing"
 Test actual virtualization functionality.
 
 #### KVM/QEMU Test
+
 ```bash
 # Test QEMU installation
 qemu-system-x86_64 --version && echo "✓ QEMU installed" || echo "✗ QEMU missing"
@@ -124,6 +128,7 @@ virsh list --all && echo "✓ libvirt functional" || echo "✗ libvirt not worki
 ```
 
 #### LXC Test
+
 ```bash
 # Check LXC installation
 lxc-info --version && echo "✓ LXC installed" || echo "✗ LXC missing"
@@ -139,6 +144,7 @@ ip link show lxcbr0 && echo "✓ LXC bridge exists" || echo "✗ LXC bridge miss
 ```
 
 #### Container Runtime Test
+
 ```bash
 # Test Docker (if included)
 if command -v docker >/dev/null 2>&1; then
@@ -164,6 +170,7 @@ fi
 Test complete workflows end-to-end.
 
 #### Setup Wizard Test
+
 ```bash
 # Run setup wizard in test mode
 # sudo virtos-setup
@@ -176,6 +183,7 @@ Test complete workflows end-to-end.
 ```
 
 #### Management TUI Test
+
 ```bash
 # Launch management TUI
 # virtos-tui
@@ -191,6 +199,7 @@ Test complete workflows end-to-end.
 ```
 
 #### Clustering Test
+
 ```bash
 # On first host
 virtos-cluster init
@@ -202,6 +211,7 @@ virtos-cluster status
 ```
 
 #### Backup/Restore Test
+
 ```bash
 # Create a test VM first
 # virsh define test-vm.xml
@@ -299,11 +309,13 @@ bats virtos-api.bats          # REST API server (placeholder)
 **CI Integration**: Runs on every commit via `.github/workflows/ci.yml`
 
 **Coverage by Category**:
+
 - ✅ **Core & Production** (29 scripts): VM lifecycle, networking, storage, cluster, HA/DR
 - ✅ **Infrastructure** (9 scripts): Auth, database, directory, secrets, update, backup orchestration
 - ✅ **Experimental** (14 scripts): AI/ML, quantum, blockchain, federation, multicloud, edge
 
 **Coverage by Status**:
+
 - ✅ **Active tests** (10 files): Common library, version, core VM management
 - 🔄 **Placeholder tests** (44 files): Advanced/infrastructure features awaiting VirtOS runtime
 
@@ -328,6 +340,7 @@ bats 05-cluster.bats           # Multi-host operations
 ```
 
 **Test Suites**:
+
 - **01-vm-lifecycle.bats** (7 tests): VM creation, start/stop, snapshots, backup/restore, migration
 - **02-platform-java.bats** (8 tests): platform-java workload deployment, dependencies
 - **03-networking.bats** (11 tests): Network bridges, VLANs, NAT, port forwarding
@@ -335,11 +348,13 @@ bats 05-cluster.bats           # Multi-host operations
 - **05-cluster.bats** (15 tests): Multi-host clustering, migration, HA
 
 **Test Fixtures**:
+
 - `fixtures/test-vm.yaml` - Basic VM workload
 - `fixtures/test-container.yaml` - NGINX container
 - `fixtures/multi-tier-*.yaml` - 3-tier application (DB + App + Web)
 
 **Current State**: Tests use `skip` statements and require:
+
 - VirtOS runtime environment
 - libvirt/QEMU installed
 - virtos-* scripts functional
@@ -351,6 +366,7 @@ bats 05-cluster.bats           # Multi-host operations
 ### CI/CD Tests ✅
 
 **Workflows**:
+
 - **ci.yml** - Build validation, syntax checking, unit tests
 - **cd.yml** - Auto-versioning, package deployment
 - **integration-tests.yml** - Integration test validation
@@ -360,18 +376,21 @@ All workflows run on every commit. See `.github/workflows/` for details.
 ## Test Environments
 
 ### Minimal Test Environment
+
 - **Purpose**: Quick validation
 - **Resources**: 2GB RAM, 10GB disk
 - **Profile**: minimal
 - **Tests**: Levels 0-2
 
 ### Standard Test Environment
+
 - **Purpose**: Full feature testing
 - **Resources**: 4GB RAM, 50GB disk
 - **Profile**: standard
 - **Tests**: Levels 0-4
 
 ### Cluster Test Environment
+
 - **Purpose**: Multi-host testing
 - **Resources**: 3 hosts × 4GB RAM
 - **Profile**: kubernetes
@@ -426,10 +445,12 @@ Before each release:
 ## Contributing Tests
 
 **Completed** ✅:
+
 - ~~Creating BATS unit tests~~ → 250+ tests in tests/virtos-common.bats
 - ~~Writing integration tests~~ → 54 tests across 5 suites in tests/integration/
 
 **Still Needed**:
+
 1. **Execute integration tests in VirtOS runtime environment**
    - Remove `skip` statements as scripts become testable
    - Validate tests actually work in VirtOS
@@ -460,6 +481,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## Test Reporting
 
 When reporting test results, include:
+
 - VirtOS version/commit hash
 - Test environment (resources, profile)
 - Test level attempted
@@ -467,4 +489,4 @@ When reporting test results, include:
 - Error messages and logs
 - Steps to reproduce
 
-File issues at: https://github.com/FlossWare/VirtOS/issues
+File issues at: <https://github.com/FlossWare/VirtOS/issues>

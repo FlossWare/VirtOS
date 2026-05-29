@@ -5,6 +5,7 @@ End-to-end integration tests for VirtOS workflows.
 ## Overview
 
 These tests validate complete workflows across VirtOS components:
+
 - VM lifecycle (create, start, stop, delete, snapshot, backup)
 - platform-java workload deployment
 - Network configuration
@@ -56,12 +57,14 @@ sudo usermod -aG kvm $USER
 ### VirtOS Installation
 
 Option 1: From source (development):
+
 ```bash
 # virtos-* scripts must be in PATH
 export PATH="$PWD/config/custom-scripts:$PATH"
 ```
 
 Option 2: From packages (runtime):
+
 ```bash
 # On Tiny Core Linux / VirtOS
 tce-load -wi virtos-tools
@@ -133,12 +136,13 @@ Each integration test:
 4. **skip**: Tests skip if dependencies unavailable
 
 Example:
+
 ```bash
 @test "VM creation workflow" {
     # Create VM
     run virtos-create-vm test-vm --memory 512 --disk 5G
     [ "$status" -eq 0 ]
-    
+
     # Verify exists
     virsh list --all | grep -q test-vm
 }
@@ -227,6 +231,7 @@ To convert a placeholder test to a real test:
 4. **Test locally before committing**
 
 Example:
+
 ```bash
 # Before (placeholder):
 @test "VM creation" {
@@ -258,17 +263,17 @@ on:
 jobs:
   integration:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libvirt-daemon-system qemu-kvm bats
           sudo systemctl start libvirtd
           sudo usermod -aG libvirt $USER
-      
+
       - name: Run integration tests
         run: |
           cd tests/integration

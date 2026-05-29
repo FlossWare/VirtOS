@@ -281,7 +281,7 @@ confirm() {
     fi
 
     case "$response" in
-        [Yy]|[Yy][Ee][Ss]) return 0 ;;
+        [Yy] | [Yy][Ee][Ss]) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -348,7 +348,7 @@ log_message() {
 
     # Only log if log directory exists
     if [ -d "/var/log/virtos" ]; then
-        echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
+        echo "[$timestamp] [$level] $message" >>"$LOG_FILE"
     fi
 }
 
@@ -379,7 +379,7 @@ host_reachable() {
 validate_network_mode() {
     local mode="$1"
     case "$mode" in
-        bridged|bridge|nat|isolated|none) return 0 ;;
+        bridged | bridge | nat | isolated | none) return 0 ;;
         *) return 1 ;;
     esac
 }

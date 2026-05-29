@@ -7,6 +7,7 @@ This directory contains sample workload definitions for testing platform-java in
 ### Single Workloads
 
 #### `test-vm.yaml`
+
 Basic virtual machine workload for testing VM lifecycle operations.
 
 ```bash
@@ -18,12 +19,14 @@ platform-java delete test-vm
 ```
 
 **Spec**:
+
 - Memory: 512MB
 - CPU: 1 core
 - Disk: 5GB
 - Network: NAT
 
 #### `test-container.yaml`
+
 NGINX container workload for testing container operations.
 
 ```bash
@@ -35,6 +38,7 @@ platform-java delete nginx-test
 ```
 
 **Spec**:
+
 - Image: nginx:latest
 - Ports: 80 → 8080
 - Memory: 256MB limit, 128MB request
@@ -45,27 +49,33 @@ platform-java delete nginx-test
 A 3-tier web application demonstrating dependency resolution and mixed workload types (VMs + containers).
 
 #### `multi-tier-db.yaml`
+
 PostgreSQL database tier (Virtual Machine).
 
 **Spec**:
+
 - Memory: 1024MB
 - CPU: 2 cores
 - Disk: 20GB
 - Role: Database backend
 
 #### `multi-tier-app.yaml`
+
 Java application tier (Container) - depends on database tier.
 
 **Spec**:
+
 - Image: openjdk:17-slim
 - Ports: 8080
 - Memory: 512MB limit
 - Depends on: `database-tier`
 
 #### `multi-tier-web.yaml`
+
 NGINX web tier (Container) - depends on application tier.
 
 **Spec**:
+
 - Image: nginx:latest
 - Ports: 80, 443
 - Memory: 256MB limit

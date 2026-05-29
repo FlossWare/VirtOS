@@ -5,6 +5,7 @@ VirtOS provides a complete platform for deploying microservice architectures. Th
 ## Overview
 
 VirtOS supports microservices through:
+
 - **Container Runtimes** - Docker, Podman, containerd (all optional)
 - **docker-compose** - Simple multi-service orchestration
 - **K3s (Kubernetes)** - Production-grade orchestration (optional)
@@ -35,7 +36,7 @@ services:
       - db-data:/var/lib/postgresql/data
     networks:
       - backend
-  
+
   api:
     image: myorg/api:v1
     environment:
@@ -47,7 +48,7 @@ services:
       - frontend
     ports:
       - "8080:8080"
-  
+
   worker:
     image: myorg/worker:v1
     environment:
@@ -214,17 +215,20 @@ sudo k3s kubectl logs -n myapp -l app=api -f
 **Best for:** Development, testing, small deployments
 
 **Setup:**
+
 - VirtOS with Docker or Podman
 - docker-compose for orchestration
 - Local storage
 - Single network bridge
 
 **Pros:**
+
 - Simple setup
 - Fast iteration
 - Low resource usage
 
 **Cons:**
+
 - No high availability
 - Limited scaling
 - Single point of failure
@@ -234,12 +238,14 @@ sudo k3s kubectl logs -n myapp -l app=api -f
 **Best for:** Small production, staging environments
 
 **Setup:**
+
 - Multiple VirtOS hosts with Docker
 - docker-compose on each host
 - Manual load balancing (nginx, HAProxy)
 - Shared storage (NFS, optional)
 
 **Example:**
+
 ```bash
 # Host 1: API servers
 docker-compose -f api-compose.yml up -d
@@ -256,6 +262,7 @@ docker-compose -f db-compose.yml up -d
 **Best for:** Production, auto-scaling, high availability
 
 **Setup:**
+
 - Multiple VirtOS hosts with K3s
 - Automatic orchestration
 - Built-in load balancing
@@ -263,6 +270,7 @@ docker-compose -f db-compose.yml up -d
 - Self-healing
 
 **Example:**
+
 ```bash
 # Deploy once, K3s handles placement
 kubectl apply -f app.yaml
@@ -292,12 +300,12 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - frontend
-  
+
   users-api:
     image: myorg/users-api:v1
     networks:
       - frontend
-  
+
   orders-api:
     image: myorg/orders-api:v1
     networks:
@@ -308,23 +316,24 @@ networks:
 ```
 
 **nginx.conf:**
+
 ```nginx
 http {
     upstream users {
         server users-api:8080;
     }
-    
+
     upstream orders {
         server orders-api:8080;
     }
-    
+
     server {
         listen 80;
-        
+
         location /api/users {
             proxy_pass http://users;
         }
-        
+
         location /api/orders {
             proxy_pass http://orders;
         }
@@ -346,14 +355,14 @@ services:
       - "4222:4222"
     networks:
       - backend
-  
+
   publisher:
     image: myorg/publisher:v1
     environment:
       NATS_URL: nats://nats:4222
     networks:
       - backend
-  
+
   subscriber-1:
     image: myorg/subscriber:v1
     environment:
@@ -511,6 +520,7 @@ helm install nats nats/nats --namespace messaging --create-namespace
 ```
 
 **Why NATS:**
+
 - Lightweight (~10MB)
 - Cloud-native
 - High performance
@@ -767,16 +777,19 @@ spec:
 ## Migration Path
 
 ### Phase 1: Development (Single Host)
+
 - VirtOS with Docker
 - docker-compose
 - Local testing
 
 ### Phase 2: Staging (Multi-Host)
+
 - Multiple VirtOS instances
 - virtos-cluster for coordination
 - Still using docker-compose
 
 ### Phase 3: Production (K3s)
+
 - K3s cluster across VirtOS hosts
 - Automated orchestration
 - Monitoring and logging
@@ -785,9 +798,10 @@ spec:
 ## Example Templates
 
 For ready-to-deploy examples, see:
-**https://github.com/FlossWare/VirtOS-Examples**
+**<https://github.com/FlossWare/VirtOS-Examples>**
 
 Available templates:
+
 - `microservices-basic/` - Simple API + DB + Worker
 - `microservices-k8s/` - K3s multi-tier app
 - `api-gateway/` - nginx API gateway pattern
@@ -820,12 +834,14 @@ Available templates:
 ## Summary
 
 **VirtOS provides the platform:**
+
 - Container runtimes (Docker, Podman, containerd)
 - Orchestration (K3s optional)
 - Networking (bridge, NAT, service discovery)
 - Clustering (multi-host coordination)
 
 **You deploy the applications:**
+
 - Your microservices
 - Message brokers
 - Databases
@@ -833,6 +849,7 @@ Available templates:
 - Service mesh
 
 **Start simple, scale as needed:**
+
 1. docker-compose for development
 2. Multi-host for staging
 3. K3s for production

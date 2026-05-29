@@ -5,7 +5,7 @@
 - **Full Name**: FlossWare VirtOS
 - **Short Name**: VirtOS
 - **Organization**: FlossWare
-- **Repository**: https://github.com/FlossWare/VirtOS
+- **Repository**: <https://github.com/FlossWare/VirtOS>
 
 ## Usage
 

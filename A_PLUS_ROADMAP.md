@@ -39,9 +39,11 @@ This roadmap outlines the path to achieve A+ (97-100) across all 8 evaluation ca
 These two items are **interdependent and blocking** - must be completed before other improvements.
 
 #### 1. Testing & QA (#113) - 10 weeks
+
 **Gap**: 17-20 points (2nd largest gap)
 
 **Critical Items**:
+
 - [ ] Build VirtOS ISO (#86)
 - [ ] Create 50+ functional tests (#103)
 - [ ] Run 52 integration tests (#85)
@@ -52,9 +54,11 @@ These two items are **interdependent and blocking** - must be completed before o
 **Why Critical**: All 581 tests pass but validate structure only, not functionality. Cannot verify VirtOS works until functional tests exist.
 
 #### 2. Production Readiness (#118) - 28 weeks
+
 **Gap**: 32-35 points (LARGEST gap)
 
 **Critical Items**:
+
 - [ ] Runtime validation (ISO boot on hardware) (#86, #1)
 - [ ] Infrastructure backends (9 scripts) (#87)
 - [ ] External security audit (#90)
@@ -75,6 +79,7 @@ These two items are **interdependent and blocking** - must be completed before o
 **Gap**: 10-13 points
 
 **Critical Items**:
+
 - [ ] External security audit ($5k-$15k) (#90)
 - [ ] Fix unvalidated input (#96)
 - [ ] Implement audit logging (#108)
@@ -90,23 +95,27 @@ These two items are **interdependent and blocking** - must be completed before o
 ### 🟡 Priority 2: Quality & Infrastructure
 
 #### Code Quality (#112) - 5 weeks
+
 - [ ] Refactor virtos-tui (6,941 → <1500 lines) (#104)
 - [ ] Enable shellcheck warnings
 - [ ] Reduce code duplication
 - [ ] Standardize error handling
 
 #### Architecture (#111) - 3 weeks
+
 - [ ] Implement API versioning (#105)
 - [ ] Create dependency graphs
 - [ ] Separate experimental scripts (#109)
 - [ ] Document plugin API
 
 #### CI/CD (#115) - 3 weeks
+
 - [ ] Add deployment rollback (#106)
 - [ ] Staging → production pipeline
 - [ ] Post-deployment validation
 
 #### Maintainability (#117) - 5 weeks
+
 - [ ] Dependency automation (Dependabot)
 - [ ] Deprecation policy
 - [ ] Code metrics dashboard
@@ -118,6 +127,7 @@ These two items are **interdependent and blocking** - must be completed before o
 ### 🟢 Priority 3: Polish
 
 #### Documentation (#114) - 1.5 weeks
+
 - [ ] Version consistency (#98)
 - [ ] HTTP → HTTPS links (#84)
 - [ ] Troubleshooting guide (#107)
@@ -127,13 +137,16 @@ These two items are **interdependent and blocking** - must be completed before o
 ## Timeline & Milestones
 
 ### Quarter 1 (Weeks 1-13) - Foundation
+
 **Parallel Track 1**: Testing & Production
+
 - Weeks 1-2: Build ISO, boot testing
 - Weeks 3-6: Functional tests
 - Weeks 7-10: Infrastructure backends
 - Weeks 11-13: Integration tests
 
 **Parallel Track 2**: Security
+
 - Weeks 1-4: Input validation audit
 - Weeks 5-8: Audit logging
 - Weeks 9-13: Secrets & RBAC
@@ -141,12 +154,15 @@ These two items are **interdependent and blocking** - must be completed before o
 **Milestone: Beta** - Grade: B+ → B+ (90/100)
 
 ### Quarter 2 (Weeks 14-26) - Validation
+
 **Parallel Track 1**: Production Testing
+
 - Weeks 14-17: External security audit
 - Weeks 18-21: Performance benchmarking
 - Weeks 22-26: HA/DR testing
 
 **Parallel Track 2**: Code Quality
+
 - Weeks 14-18: Refactor virtos-tui
 - Weeks 19-21: Linting improvements
 - Weeks 22-26: Code quality fixes
@@ -154,9 +170,11 @@ These two items are **interdependent and blocking** - must be completed before o
 **Milestone: RC1** - Grade: B+ → A- (92/100)
 
 ### Quarter 3 (Weeks 27-39) - Stability
+
 **Main Focus**: 90-day stability testing (background)
 
 **Parallel Work**:
+
 - Weeks 27-29: Architecture improvements
 - Weeks 30-32: CI/CD improvements
 - Weeks 33-37: Maintainability
@@ -165,6 +183,7 @@ These two items are **interdependent and blocking** - must be completed before o
 **Milestone: RC2** - Grade: A- → A (94/100)
 
 ### Quarter 4 (Weeks 40-52) - Production Ready
+
 - Weeks 40-43: Load testing
 - Weeks 44-47: Production monitoring
 - Weeks 48-50: Final validation
@@ -200,6 +219,7 @@ These two items are **interdependent and blocking** - must be completed before o
 ### Category Targets (12 months)
 
 All categories reach A+ (97+):
+
 - ✅ Architecture & Design: A+ (97+)
 - ✅ Code Quality: A+ (97+)
 - ✅ Testing & QA: A+ (97+)
@@ -294,16 +314,19 @@ Want to help VirtOS reach A+ across all categories?
 ## Risk Management
 
 ### High Risk
+
 - **90-day stability testing**: Cannot be rushed (requires full 90 days)
 - **External security audit**: Depends on scheduling security firm
 - **Hardware availability**: Physical machines needed for testing
 
 ### Medium Risk
+
 - **Community availability**: If relying on volunteers
 - **Scope creep**: Adding features instead of focusing on quality
 - **Regressions**: New issues from improvements
 
 ### Mitigation Strategies
+
 - Start stability testing early (Month 7)
 - Book security firm in advance (Month 3)
 - Acquire hardware immediately (Week 1)
@@ -315,16 +338,19 @@ Want to help VirtOS reach A+ across all categories?
 ## Tracking
 
 ### Weekly Status
+
 - Progress on each category
 - Blockers and risks
 - Next week's priorities
 
 ### Monthly Review
+
 - Grade progression
 - Milestone achievement
 - Budget tracking
 
 ### Quarterly Retrospective
+
 - What went well
 - What needs improvement
 - Timeline adjustments
@@ -346,6 +372,7 @@ VirtOS has **excellent fundamentals** (B+ grade) with **world-class documentatio
 ---
 
 **See Also**:
+
 - [PROJECT_REVIEW.md](PROJECT_REVIEW.md) - Detailed current state analysis
 - [REVIEW_SUMMARY.md](REVIEW_SUMMARY.md) - Executive summary
 - [Issue #119](https://github.com/FlossWare/VirtOS/issues/119) - Master roadmap tracking

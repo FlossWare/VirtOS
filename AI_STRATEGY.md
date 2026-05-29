@@ -9,11 +9,13 @@
 ## TL;DR
 
 **Should VirtOS include AI?** YES, but:
+
 - ✅ **Completely modular** (separate packages)
 - ✅ **100% optional** (user choice)
 - ✅ **Phased approach** (core first, AI later)
 
 **Timeline**:
+
 - **Phase 1** (Month 0-6): NO AI - Focus on core production readiness
 - **Phase 2** (Month 7-12): AI Workload Support (GPU, templates, monitoring)
 - **Phase 3** (Month 13-24): AI-Assisted Operations (experimental)
@@ -42,9 +44,11 @@ Should VirtOS include AI capabilities?
 ## Three-Phase Strategy
 
 ### Phase 1 (Month 0-6): Core Production Readiness
+
 **NO AI WORK**
 
 **Focus**: Complete A+ Roadmap (#119)
+
 - Runtime testing (#86, #1)
 - Functional tests (#103, #113)
 - Production readiness (#118)
@@ -59,11 +63,13 @@ Should VirtOS include AI capabilities?
 ---
 
 ### Phase 2 (Month 7-12): AI Workload Support ⭐
+
 **MAKE VIRTOS GREAT FOR RUNNING AI WORKLOADS**
 
 #### What This Means
 
 Make VirtOS the **best platform for AI infrastructure**:
+
 - LLM inference servers (Ollama, vLLM, TGI)
 - ML training environments (PyTorch, TensorFlow)
 - Vector databases (Qdrant, Weaviate, Milvus)
@@ -72,12 +78,14 @@ Make VirtOS the **best platform for AI infrastructure**:
 #### Features
 
 **Enhanced GPU Management**:
+
 - vGPU sharing (NVIDIA GRID, AMD MxGPU)
 - Multi-GPU support (NVLink)
 - GPU topology optimization
 - VRAM management
 
 **AI VM Templates**:
+
 ```bash
 # One-command LLM server
 virtos-create-vm --template ai-llm-inference \
@@ -93,6 +101,7 @@ virtos-create-vm --template ai-vector-db \
 ```
 
 **Auto-scaling AI Clusters**:
+
 ```bash
 # Auto-scaling inference cluster
 virtos-ai-cluster create \
@@ -101,6 +110,7 @@ virtos-ai-cluster create \
 ```
 
 **AI Workload Monitoring**:
+
 - GPU utilization tracking
 - Inference latency metrics
 - VRAM usage
@@ -110,18 +120,21 @@ virtos-ai-cluster create \
 #### Architecture: Completely Modular
 
 **virtos-ai-base.tcz** (Optional Package):
+
 - virtos-gpu (enhanced)
 - virtos-ai-template
 - virtos-ai-monitor
 - Size: ~30MB
 
 **virtos-ai-models.tcz** (Optional Package):
+
 - Pre-configured templates
 - LLM inference configs
 - ML training setups
 - Size: ~20MB
 
 **User Choice**:
+
 ```bash
 # Minimal VirtOS (no AI)
 ./build-all.sh --profile minimal
@@ -140,6 +153,7 @@ tce-load -wi virtos-ai-base.tcz
 **Cost**: $2k-$5k (GPU hardware for testing)
 
 **Milestones**:
+
 - Week 1-6: Enhanced GPU management (vGPU, multi-GPU)
 - Week 7-12: AI VM templates (LLM, ML, vector DB)
 - Week 13-16: Auto-scaling and monitoring
@@ -156,6 +170,7 @@ tce-load -wi virtos-ai-base.tcz
 ---
 
 ### Phase 3 (Month 13-24): AI-Assisted Operations
+
 **USE AI TO HELP MANAGE VIRTOS ITSELF** (Experimental)
 
 #### What This Means
@@ -163,6 +178,7 @@ tce-load -wi virtos-ai-base.tcz
 AI helps you operate VirtOS:
 
 **Natural Language Operations**:
+
 ```bash
 $ virtos ask "Create a high-availability web cluster"
 🤖 Creating HA web cluster...
@@ -174,6 +190,7 @@ Cluster ready at http://web-cluster.local
 ```
 
 **Intelligent Troubleshooting**:
+
 ```bash
 $ virtos diagnose "VM slow to start"
 🤖 Analyzing issue...
@@ -187,6 +204,7 @@ Apply fix #1? [y/N]
 ```
 
 **Predictive Optimization**:
+
 ```bash
 $ virtos optimize --analyze
 🤖 Analyzing cluster (30 days data)...
@@ -200,17 +218,20 @@ Apply optimizations? [y/N]
 #### Architecture: Still Modular
 
 **virtos-ai-operations.tcz** (Optional Package):
+
 - virtos-ask (NL interface)
 - virtos-diagnose (troubleshooting)
 - virtos-optimize (recommendations)
 - Size: ~5MB + LLM backend
 
 **LLM Backend Options** (User Choice):
+
 - **Local**: Ollama (~500MB) - No API costs, slower
 - **Cloud**: OpenAI/Anthropic API (~0MB) - Fast, API costs
 - **None**: Disable AI operations
 
 **Safety Controls**:
+
 ```bash
 # Configuration
 AI_AUTO_APPROVE="no"      # Require human approval
@@ -229,12 +250,14 @@ virtos-ai disable                  # Turn off completely
 **Cost**: $20k-$50k (LLM API costs + dev)
 
 **Approach**: Start small, iterate
+
 - Month 13-15: Simple NL commands ("create VM")
 - Month 16-18: Troubleshooting assistant
 - Month 19-21: Predictive optimization
 - Month 22-24: Auto-remediation (with approval)
 
 **Safety First**:
+
 - Always require human approval for destructive actions
 - Dry-run mode by default
 - Comprehensive audit logging
@@ -259,10 +282,12 @@ virtos-ai disable                  # Turn off completely
 ```
 
 **Includes**:
+
 - Core VM management
 - Basic networking/storage
 
 **Excludes**:
+
 - All AI packages
 - GPU support
 - AI templates
@@ -279,11 +304,13 @@ virtos-ai disable                  # Turn off completely
 ```
 
 **Includes**:
+
 - Core VM management
 - Containers (Docker, Podman, LXC)
 - Clustering
 
 **Excludes**:
+
 - All AI packages
 
 **Size**: ~200MB  
@@ -298,11 +325,13 @@ virtos-ai disable                  # Turn off completely
 ```
 
 **Includes**:
+
 - Core + containers
 - virtos-ai-base.tcz (GPU, templates, monitoring)
 - virtos-ai-models.tcz (model configs)
 
 **Excludes**:
+
 - virtos-ai-operations.tcz (no AI for VirtOS itself)
 
 **Size**: ~250MB  
@@ -317,6 +346,7 @@ virtos-ai disable                  # Turn off completely
 ```
 
 **Includes**:
+
 - Everything from ai-workloads
 - virtos-ai-operations.tcz
 - Ollama (local LLM)
@@ -376,6 +406,7 @@ virtos-ai-operations.tcz      # ~5MB + LLM (optional)
 ```
 
 **Dependencies**:
+
 - virtos-ai-operations requires virtos-ai-base
 - virtos-ai-base is standalone
 - All AI packages optional
@@ -450,6 +481,7 @@ $ tce-remove virtos-ai-base.tcz
 **Tagline**: "Built for AI Workloads, From the Ground Up"
 
 **Key Messages**:
+
 1. **GPU-First**: Optimized for GPU workloads, not bolted on
 2. **AI-Aware**: Templates, monitoring, tools built for AI
 3. **Modular**: Want AI? Add it. Don't want it? Don't.
@@ -457,6 +489,7 @@ $ tce-remove virtos-ai-base.tcz
 5. **Open Source**: No vendor lock-in, community-driven
 
 **Competitive Differentiation**:
+
 - Proxmox: Generic GPU support
 - ESXi: Enterprise-only, expensive
 - Kubernetes: Complex for simple AI workloads
@@ -475,12 +508,14 @@ $ tce-remove virtos-ai-base.tcz
 ### Target Users
 
 **Phase 2** (AI Workload Support):
+
 - AI startups (LLM serving, fine-tuning)
 - ML engineers (training infrastructure)
 - Edge AI deployments
 - AI service providers
 
 **Phase 3** (AI Operations):
+
 - DevOps teams (reduce operational burden)
 - Small teams (no dedicated ops staff)
 - Experimental users (try AI-assisted management)
@@ -530,18 +565,22 @@ $ tce-remove virtos-ai-base.tcz
 ## Implementation Roadmap
 
 ### Quarter 1-2 (Month 0-6): Core First
+
 **NO AI WORK**
 
 Focus: Production Readiness (#118, #119)
+
 - [ ] Complete A+ roadmap
 - [ ] Runtime testing
 - [ ] Security audit
 - [ ] Grade: 88 → 92
 
 ### Quarter 3-4 (Month 7-12): AI Workload Support
+
 **PHASE 2**
 
 Focus: virtos-ai-base.tcz
+
 - [ ] Enhanced GPU management (vGPU, multi-GPU)
 - [ ] AI VM templates (LLM, ML, vector DB)
 - [ ] Monitoring dashboard
@@ -549,9 +588,11 @@ Focus: virtos-ai-base.tcz
 - [ ] Documentation and examples
 
 ### Year 2 (Month 13-24): AI Operations (Experimental)
+
 **PHASE 3**
 
 Focus: virtos-ai-operations.tcz
+
 - [ ] Natural language interface
 - [ ] Intelligent troubleshooting
 - [ ] Predictive optimization
@@ -576,6 +617,7 @@ Focus: virtos-ai-operations.tcz
 ### Decision 1: Pursue AI? (Now)
 
 **Options**:
+
 - ✅ YES - AI workload support (Phase 2) + AI operations (Phase 3)
 - ❌ NO - Focus on core, no AI work
 
@@ -588,6 +630,7 @@ Focus: virtos-ai-operations.tcz
 ### Decision 2: Modularity? (Now)
 
 **Options**:
+
 - ✅ YES - AI in separate optional packages
 - ❌ NO - AI integrated into core
 
@@ -600,6 +643,7 @@ Focus: virtos-ai-operations.tcz
 ### Decision 3: Timeline? (After Beta)
 
 **Options**:
+
 - Start Phase 2 at Month 7 (recommended)
 - Defer Phase 2 to Month 12
 - Skip Phase 2, jump to Phase 3
@@ -650,9 +694,10 @@ If still approved:
 
 ## Conclusion
 
-**Should VirtOS include AI?** 
+**Should VirtOS include AI?**
 
 **YES** - with clear conditions:
+
 1. ✅ **Core first** (Month 0-6)
 2. ✅ **Modular** (separate packages)
 3. ✅ **Phased** (workloads → operations)

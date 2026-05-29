@@ -41,10 +41,12 @@ Or customize individual options (see Configuration section below).
 ## Profile Details
 
 ### Minimal Profile
+
 **Size**: ~100MB  
 **Use Case**: Embedded systems, minimal footprint, production hosts
 
 **Includes**:
+
 - KVM/QEMU for VMs
 - containerd (smallest container runtime)
 - Basic networking
@@ -52,21 +54,25 @@ Or customize individual options (see Configuration section below).
 - Busybox utilities only
 
 **Best for**:
+
 - Edge computing
 - Minimal attack surface
 - Learning virtualization basics
 - Resource-constrained environments
 
-**Command**: 
+**Command**:
+
 ```bash
 PROFILE="minimal" ./build/scripts/build-all.sh
 ```
 
 ### Standard Profile (Default)
+
 **Size**: ~200MB  
 **Use Case**: Home lab, general virtualization, balanced features
 
 **Includes**:
+
 - KVM/QEMU for VMs
 - LXC for system containers
 - **All three container runtimes** (Docker, Podman, containerd)
@@ -75,12 +81,14 @@ PROFILE="minimal" ./build/scripts/build-all.sh
 - Networking tools
 
 **Best for**:
+
 - Home labs
 - Learning all virtualization types
 - Experimenting with different container runtimes
 - General development
 
-**Command**: 
+**Command**:
+
 ```bash
 PROFILE="standard" ./build/scripts/build-all.sh
 # or just:
@@ -88,10 +96,12 @@ PROFILE="standard" ./build/scripts/build-all.sh
 ```
 
 ### Full Profile
+
 **Size**: ~400MB  
 **Use Case**: Feature-complete system, all options
 
 **Includes**:
+
 - Everything in Standard
 - Web management UIs (Cockpit, Portainer)
 - Advanced networking (OVS, WireGuard)
@@ -99,21 +109,25 @@ PROFILE="standard" ./build/scripts/build-all.sh
 - All utilities
 
 **Best for**:
+
 - Full-featured lab environment
 - Testing all features
 - Learning advanced topics
 - When size doesn't matter
 
-**Command**: 
+**Command**:
+
 ```bash
 PROFILE="full" ./build/scripts/build-all.sh
 ```
 
 ### Containers Profile
+
 **Size**: ~150MB  
 **Use Case**: Container-focused workloads
 
 **Includes**:
+
 - **All container runtimes** (Docker, Podman, containerd)
 - LXC system containers
 - Minimal KVM (for testing)
@@ -121,26 +135,31 @@ PROFILE="full" ./build/scripts/build-all.sh
 - Advanced networking (OVS)
 
 **Excludes**:
+
 - libvirt (not needed for containers)
 - Advanced storage
 - Extra utilities
 
 **Best for**:
+
 - Microservices deployment
 - Container development
 - Kubernetes nodes
 - Docker/Podman hosting
 
-**Command**: 
+**Command**:
+
 ```bash
 PROFILE="containers" ./build/scripts/build-all.sh
 ```
 
 ### Developer Profile
+
 **Size**: ~250MB  
 **Use Case**: Development and learning
 
 **Includes**:
+
 - **All container runtimes** (Docker, Podman, containerd)
 - KVM + LXC
 - libvirt + virsh
@@ -150,21 +169,25 @@ PROFILE="containers" ./build/scripts/build-all.sh
 - Development tools
 
 **Best for**:
+
 - Learning all virtualization types
 - Comparing container runtimes
 - Development workstation
 - Educational purposes
 
-**Command**: 
+**Command**:
+
 ```bash
 PROFILE="developer" ./build/scripts/build-all.sh
 ```
 
 ### Kubernetes Profile
+
 **Size**: ~250MB  
 **Use Case**: K3s orchestration across VirtOS cluster
 
 **Includes**:
+
 - **K3s** (lightweight Kubernetes)
 - **All container runtimes** (Docker, Podman, containerd)
 - LXC system containers
@@ -173,18 +196,21 @@ PROFILE="developer" ./build/scripts/build-all.sh
 - WireGuard for K3s secure networking
 
 **Excludes**:
+
 - libvirt (not needed for K3s)
 - Web UIs (use kubectl/Lens/k9s)
 - Advanced storage
 
 **Best for**:
+
 - Kubernetes learning and development
 - Microservices orchestration across VirtOS cluster
 - Cloud-native application deployment
 - Auto-scaling container workloads
 - GitOps workflows
 
-**Command**: 
+**Command**:
+
 ```bash
 PROFILE="kubernetes" ./build/scripts/build-all.sh
 ```
@@ -192,11 +218,13 @@ PROFILE="kubernetes" ./build/scripts/build-all.sh
 **See**: [KUBERNETES.md](KUBERNETES.md) for K3s setup and usage
 
 ### Storage Profile
+
 **Size**: ~350MB  
 **RAM**: 4GB+ recommended (for ZFS)  
 **Use Case**: Advanced storage features and management
 
 **Includes**:
+
 - **Btrfs** - Snapshots, compression, subvolumes
 - **LVM** - Logical volume management, flexible resizing
 - **ZFS** - Enterprise storage with data integrity
@@ -208,12 +236,14 @@ PROFILE="kubernetes" ./build/scripts/build-all.sh
 - All storage tools (qemu-img, etc.)
 
 **Excludes**:
+
 - LXC (storage focus, not containers)
 - Docker/Podman (use containerd if needed)
 - K3s (storage focus)
 - Web UIs
 
 **Best for**:
+
 - VM snapshots and cloning
 - Enterprise storage requirements
 - Data integrity (ZFS checksums)
@@ -223,6 +253,7 @@ PROFILE="kubernetes" ./build/scripts/build-all.sh
 - Storage administrators
 
 **Features**:
+
 ```bash
 # Btrfs snapshots
 btrfs subvolume snapshot /var/lib/vms /var/lib/vms-backup
@@ -240,7 +271,8 @@ exportfs -av  # Server
 mount -t nfs virtos-1.local:/export/vms /var/lib/vms  # Client
 ```
 
-**Command**: 
+**Command**:
+
 ```bash
 PROFILE="storage" ./build/scripts/build-all.sh
 ```
@@ -321,6 +353,7 @@ tce-load -i qemu
 ## Creating Custom Profiles
 
 1. Copy existing profile:
+
 ```bash
 cp config/profiles/standard.conf config/profiles/myprofile.conf
 ```
@@ -328,6 +361,7 @@ cp config/profiles/standard.conf config/profiles/myprofile.conf
 2. Edit to your needs
 
 3. Use it:
+
 ```bash
 PROFILE="myprofile" ./build/scripts/build-all.sh
 ```
@@ -335,6 +369,7 @@ PROFILE="myprofile" ./build/scripts/build-all.sh
 ## Profile Files Location
 
 Profiles are stored in `config/profiles/`:
+
 - `minimal.conf`
 - `standard.conf`
 - `full.conf`
@@ -346,12 +381,14 @@ Profiles are stored in `config/profiles/`:
 ## Size Estimates
 
 Sizes are approximate and include:
+
 - Base Tiny Core (~20MB)
 - Kernel modules (~10MB)
 - Selected packages
 - Custom configurations
 
 Actual size depends on:
+
 - Tiny Core version
 - Package versions
 - Compression settings

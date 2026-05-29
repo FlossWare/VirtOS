@@ -160,7 +160,7 @@ TCZ_DIR="$WORKSPACE_DIR/tcz"
 mkdir -p "$TCZ_DIR"
 
 # List of packages we want (we'll download them later if available)
-cat > "$TCZ_DIR/package-list.txt" << 'EOF'
+cat >"$TCZ_DIR/package-list.txt" <<'EOF'
 # Core packages
 bash.tcz
 openssh.tcz
@@ -192,8 +192,8 @@ echo "  Some will need to be compiled from source"
 # Create marker file
 echo ""
 echo "Creating build markers..."
-date > "$WORKSPACE_DIR/.prepared"
-echo "$TC_VERSION" > "$WORKSPACE_DIR/.tc-version"
+date >"$WORKSPACE_DIR/.prepared"
+echo "$TC_VERSION" >"$WORKSPACE_DIR/.tc-version"
 
 echo ""
 echo "=== Preparation Complete ==="

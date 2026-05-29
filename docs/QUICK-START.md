@@ -64,7 +64,7 @@ virtos-create-vm \
 # Creating disk image...
 # Defining VM...
 # VM created successfully
-# 
+#
 # Next steps:
 # - Start VM: virsh start ubuntu-server-01
 # - Console: virsh console ubuntu-server-01 (or VNC)
@@ -81,8 +81,10 @@ sudo virtos-tui
 ```
 
 Navigate to:
+
 1. **VM Management** → **Create New VM**
 2. Fill in the form:
+
    ```
    VM Name: ubuntu-server-01
    CPUs: 2
@@ -91,6 +93,7 @@ Navigate to:
    OS Type: linux
    ISO Path: /home/admin/iso/ubuntu-22.04-live-server-amd64.iso
    ```
+
 3. Select **Create** → **Confirm**
 
 ## Step 4: Start the VM
@@ -311,6 +314,7 @@ virtos-network bridge-attach web-server-03 web-tier
 ## Common Tasks Cheat Sheet
 
 ### VM Management
+
 ```bash
 virsh list --all                        # List all VMs
 virsh start <vm>                        # Start VM
@@ -321,6 +325,7 @@ virsh dominfo <vm>                      # Show VM details
 ```
 
 ### Networking
+
 ```bash
 virtos-network list                     # List networks
 virtos-network create-nat <name> <cidr> # Create NAT network
@@ -329,6 +334,7 @@ virsh domifaddr <vm>                    # Get VM IP address
 ```
 
 ### Storage
+
 ```bash
 virtos-storage list-pools               # List storage pools
 virtos-storage create-pool <name> dir <path>  # Create pool
@@ -336,6 +342,7 @@ virtos-storage list-volumes <pool>      # List volumes
 ```
 
 ### Snapshots & Backups
+
 ```bash
 virtos-snapshot create <vm> <name>      # Create snapshot
 virtos-snapshot list <vm>               # List snapshots
@@ -344,6 +351,7 @@ virtos-backup create-backup <vm> <tag>  # Create backup
 ```
 
 ### Monitoring
+
 ```bash
 virtos-monitor status <vm>              # VM metrics
 virtos-monitor resources                # Host resources

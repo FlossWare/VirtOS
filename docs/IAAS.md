@@ -86,6 +86,7 @@ virtos-create-vm \
 ## Scheduling Policies
 
 ### 1. Balanced (Default)
+
 Distributes VMs evenly across cluster for best overall utilization.
 
 ```bash
@@ -95,11 +96,13 @@ IAAS_SCHEDULER="balanced"
 **Use when**: General purpose, mixed workloads
 
 **Algorithm**:
+
 - Calculate utilization percentage per node
 - Prefer nodes with lowest utilization
 - Ensures even distribution
 
 **Example**:
+
 ```
 Before:
   virtos-1: 80% CPU, 75% RAM (4 VMs)
@@ -111,6 +114,7 @@ Placement: virtos-3 (lowest utilization)
 ```
 
 ### 2. Packed (Bin Packing)
+
 Fills up nodes before using new ones - minimizes number of active hosts.
 
 ```bash
@@ -120,11 +124,13 @@ IAAS_SCHEDULER="packed"
 **Use when**: Power saving, cost optimization, consolidation
 
 **Algorithm**:
+
 - Try to fit VM on existing highly-utilized nodes first
 - Only use new nodes when necessary
 - Enables powering off unused nodes
 
 **Example**:
+
 ```
 Before:
   virtos-1: 80% CPU, 75% RAM (4 VMs)
@@ -136,6 +142,7 @@ Placement: virtos-1 (pack more VMs, could power off virtos-3)
 ```
 
 ### 3. Spread (Anti-Affinity)
+
 Spreads VMs across as many hosts as possible for fault tolerance.
 
 ```bash
@@ -145,11 +152,13 @@ IAAS_SCHEDULER="spread"
 **Use when**: High availability, fault tolerance, redundancy
 
 **Algorithm**:
+
 - Prefer nodes with fewest VMs
 - Maximizes survival of cluster node failures
 - Reduces blast radius
 
 **Example**:
+
 ```
 Before:
   virtos-1: 50% CPU, 50% RAM (5 VMs)
@@ -161,6 +170,7 @@ Placement: virtos-3 (fewest VMs for redundancy)
 ```
 
 ### 4. Custom (User-Defined)
+
 Define custom placement rules.
 
 ```bash
@@ -173,6 +183,7 @@ IAAS_CUSTOM_SCRIPT="/etc/virtos/custom-scheduler.sh"
 VirtOS tracks resources across the cluster in real-time:
 
 ### Tracked Metrics
+
 - **CPU**: Total cores, used cores, free cores
 - **RAM**: Total memory, used memory, free memory
 - **Storage**: Total disk, used disk, free disk
@@ -180,6 +191,7 @@ VirtOS tracks resources across the cluster in real-time:
 - **Network**: Bandwidth usage (optional)
 
 ### Resource Database
+
 ```bash
 # Cached in /var/run/virtos/cluster-resources.db
 # Updated every 30 seconds (configurable)
@@ -264,6 +276,7 @@ Optional:
 ## Placement Constraints
 
 ### Soft Constraints (Preferences)
+
 System tries to honor these but may ignore if impossible:
 
 ```bash
@@ -277,6 +290,7 @@ virtos-create-vm --name web-2 --cpu 2 --ram 4096 --disk 20G \
 ```
 
 ### Hard Constraints (Requirements)
+
 System must honor these or fail:
 
 ```bash
@@ -326,6 +340,7 @@ virtos-create-vm --name db-replica --cpu 4 --ram 8192 --disk 100G \
 ### Scoring Formula
 
 **Balanced Policy**:
+
 ```
 score = 100 - (cpu_utilization + ram_utilization) / 2
       + preference_bonus
@@ -333,6 +348,7 @@ score = 100 - (cpu_utilization + ram_utilization) / 2
 ```
 
 **Packed Policy**:
+
 ```
 score = (cpu_utilization + ram_utilization) / 2
       + preference_bonus
@@ -340,6 +356,7 @@ score = (cpu_utilization + ram_utilization) / 2
 ```
 
 **Spread Policy**:
+
 ```
 score = 100 - vm_count * 10
       + preference_bonus
@@ -497,17 +514,17 @@ virtos-reserve \
 # virtos.tf
 resource "virtos_vm" "web_servers" {
   count = 3
-  
+
   name = "web-${count.index}"
   cpu  = 2
   ram  = 4096
   disk = 20
-  
+
   os_template = "ubuntu-22.04"
-  
+
   # Let VirtOS scheduler decide placement
   placement_policy = "spread"
-  
+
   # Anti-affinity with other web servers
   anti_affinity = [
     for i in range(count.index) : "web-${i}"
@@ -535,7 +552,7 @@ resource "virtos_vm" "web_servers" {
         - web-1
         - web-2
         - web-3
-    
+
     - name: Create database VM
       virtos_vm:
         name: db-1
@@ -753,11 +770,13 @@ virtos-rebalance --policy balanced
 ## Future Enhancements
 
 ### Phase 1 (Current)
+
 - ✅ Basic resource tracking
 - ✅ Simple scheduling policies
 - ✅ Manual VM creation with placement
 
 ### Phase 2 (Near-term)
+
 - [ ] Auto-rebalancing
 - [ ] VM templates
 - [ ] Resource quotas
@@ -765,6 +784,7 @@ virtos-rebalance --policy balanced
 - [ ] REST API
 
 ### Phase 3 (Future)
+
 - [ ] Live migration
 - [ ] Auto-scaling
 - [ ] Reservation system

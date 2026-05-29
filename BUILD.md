@@ -7,6 +7,7 @@ Complete guide to building VirtOS from source.
 ### ✅ What Works (Tested & Functional)
 
 **Package Building:**
+
 - ✅ **virtos-tools.tcz** - All 52 management scripts packaged successfully (332KB)
 - ✅ Package build system (TCZ creation with squashfs)
 - ✅ Automated build-all.sh for batch packaging
@@ -14,6 +15,7 @@ Complete guide to building VirtOS from source.
 - ✅ Package metadata and dependency tracking
 
 **Build Infrastructure:**
+
 - ✅ Build validation script (checks prerequisites)
 - ✅ Quick test script (rapid validation)
 - ✅ Syntax checking for all scripts
@@ -21,6 +23,7 @@ Complete guide to building VirtOS from source.
 - ✅ Automated integration of virtos-* scripts
 
 **Scripts & Configuration:**
+
 - ✅ All 52 virtos-* management scripts (syntax validated)
 - ✅ Custom bootlocal.sh for initialization
 - ✅ Kernel parameters (sysctl.conf)
@@ -29,6 +32,7 @@ Complete guide to building VirtOS from source.
 ### 🟡 Partially Implemented (Framework Ready)
 
 **ISO Building:**
+
 - 🟡 **prepare.sh** - Downloads Tiny Core, extracts ISO (untested)
 - 🟡 **customize.sh** - Adds VirtOS customizations (untested)
 - 🟡 **iso.sh** - Creates bootable ISO (untested)
@@ -39,6 +43,7 @@ Complete guide to building VirtOS from source.
 ### ❌ Not Yet Implemented
 
 **TCZ Packages:**
+
 - ❌ qemu-kvm.tcz - QEMU with KVM support
 - ❌ libvirt.tcz - Virtualization API
 - ❌ docker.tcz - Docker container runtime
@@ -49,6 +54,7 @@ Complete guide to building VirtOS from source.
 **Reason**: These require compiling from source or downloading from Tiny Core repos. Weeks of work.
 
 **Kernel:**
+
 - ❌ Custom kernel with KVM modules
 - ❌ Kernel configuration testing
 - ❌ Kernel packaging as TCZ
@@ -60,6 +66,7 @@ Complete guide to building VirtOS from source.
 ### Prerequisites
 
 **Required:**
+
 - Linux system (Fedora, Ubuntu, Debian, etc.)
 - 20GB+ free disk space
 - 4GB+ RAM
@@ -86,6 +93,7 @@ cd build/scripts
 ```
 
 This checks:
+
 - Disk space, RAM, architecture
 - Required tools installed
 - Project structure intact
@@ -112,6 +120,7 @@ cd packages
 ```
 
 **Output:**
+
 - `packages/output/virtos-tools.tcz` (332KB)
 - Package metadata and checksums
 
@@ -127,12 +136,14 @@ cd build/scripts
 ```
 
 **What it does:**
+
 1. Downloads Tiny Core Linux (~500MB)
 2. Extracts and customizes initrd
 3. Adds virtos-tools package
 4. Creates bootable ISO
 
 **Output:**
+
 - `build/output/VirtOS-0.1-alpha-YYYYMMDD.iso`
 - Checksums (MD5, SHA256)
 
@@ -167,18 +178,21 @@ cd build/scripts
 ### Detailed Steps
 
 **1. Validation**
+
 ```bash
 cd build/scripts
 ./validate-build.sh
 ```
 
 **2. Package Build**
+
 ```bash
 cd ../../packages
 ./build-all.sh
 ```
 
 **3. ISO Preparation**
+
 ```bash
 cd ../build/scripts
 ./prepare.sh
@@ -187,11 +201,13 @@ cd ../build/scripts
 Downloads Tiny Core Linux and extracts it.
 
 **4. Customization**
+
 ```bash
 ./customize.sh
 ```
 
 Adds:
+
 - VirtOS bootlocal.sh
 - sysctl.conf
 - Helper scripts
@@ -199,6 +215,7 @@ Adds:
 - Documentation
 
 **5. ISO Creation**
+
 ```bash
 ./iso.sh
 ```
@@ -332,9 +349,10 @@ sudo dnf install mkisofs  # Fedora
 **2. "Cannot reach tinycorelinux.net"**
 
 Network/firewall blocking downloads. Options:
+
 - Check firewall settings
 - Use VPN if needed
-- Download manually from https://tinycorelinux.net
+- Download manually from <https://tinycorelinux.net>
 
 **3. "mksquashfs not found"**
 
@@ -387,6 +405,7 @@ To add new packages:
 4. Build: `cd packages && ./build-all.sh`
 
 Example package structure:
+
 ```
 packages/qemu-kvm/
 ├── build.sh            # Build script
@@ -448,6 +467,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to help.
 ## Build Checklist
 
 Before building:
+
 - [ ] Validated environment (`./validate-build.sh`)
 - [ ] Quick test passed (`./quick-test.sh`)
 - [ ] Selected profile in `build.conf`
@@ -455,6 +475,7 @@ Before building:
 - [ ] Network connectivity for downloads
 
 After building:
+
 - [ ] Verify checksums
 - [ ] Test in QEMU/KVM
 - [ ] Check package contents
@@ -473,7 +494,7 @@ After building:
 Issues with building?
 
 1. Check [TESTING.md](TESTING.md) for validation procedures
-2. Search existing issues: https://github.com/FlossWare/VirtOS/issues
+2. Search existing issues: <https://github.com/FlossWare/VirtOS/issues>
 3. Create new issue with:
    - Output of `./validate-build.sh`
    - Build command used

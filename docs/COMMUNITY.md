@@ -17,7 +17,8 @@ This document outlines VirtOS's community infrastructure and how to participate 
 **Primary platform for community interaction and support**
 
 **Setup Instructions** (For Repository Admins):
-1. Go to https://github.com/FlossWare/VirtOS/settings
+
+1. Go to <https://github.com/FlossWare/VirtOS/settings>
 2. Scroll to "Features" section
 3. Check "Discussions"
 4. Click "Set up Discussions"
@@ -38,42 +39,49 @@ This document outlines VirtOS's community infrastructure and how to participate 
 #### Category Configuration
 
 **Announcements**:
+
 - **Emoji**: 📢
 - **Description**: "Official announcements from VirtOS maintainers"
 - **Format**: Announcement (maintainers only)
 - **Initial Posts**: Pin release notes, roadmap updates
 
 **General**:
+
 - **Emoji**: 💬
 - **Description**: "General discussion about VirtOS"
 - **Format**: Open-ended discussion
 - **Initial Posts**: Welcome post, community guidelines
 
 **Ideas**:
+
 - **Emoji**: 💡
 - **Description**: "Propose new features and enhancements"
 - **Format**: Open-ended discussion
 - **Initial Posts**: How to submit ideas, feature request template
 
 **Q&A**:
+
 - **Emoji**: ❓
 - **Description**: "Ask questions and get help from the community"
 - **Format**: Question / Answer
 - **Initial Posts**: Common questions, where to find documentation
 
 **Show and Tell**:
+
 - **Emoji**: 🙌
 - **Description**: "Share your VirtOS deployments and use cases"
 - **Format**: Open-ended discussion
 - **Initial Posts**: Example setups, deployment stories
 
 **Development**:
+
 - **Emoji**: 🛠️
 - **Description**: "Developer discussions and contribution topics"
 - **Format**: Open-ended discussion
 - **Initial Posts**: How to contribute, development setup guide
 
 **Troubleshooting**:
+
 - **Emoji**: 🐛
 - **Description**: "Get help debugging issues and solving problems"
 - **Format**: Question / Answer
@@ -88,6 +96,7 @@ This document outlines VirtOS's community infrastructure and how to participate 
 - **Security Issues**: Report privately to maintainers (see SECURITY.md)
 
 **When to use Issues vs Discussions**:
+
 - **Use Issues**: Confirmed bugs, tracked features, assigned work
 - **Use Discussions**: Questions, ideas, general help, community chat
 
@@ -104,6 +113,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for detailed guidelines.
 VirtOS follows the [Contributor Covenant Code of Conduct](../CODE_OF_CONDUCT.md).
 
 **In summary**:
+
 - ✅ Be respectful and inclusive
 - ✅ Welcome newcomers
 - ✅ Provide constructive feedback
@@ -114,17 +124,20 @@ VirtOS follows the [Contributor Covenant Code of Conduct](../CODE_OF_CONDUCT.md)
 ### Asking Questions
 
 **Before asking**:
+
 1. Search existing discussions and issues
 2. Check the [documentation](../docs/)
 3. Review [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 **When asking**:
+
 - Provide context (VirtOS version, OS, hardware)
 - Include error messages and logs
 - Describe what you've already tried
 - Use code blocks for terminal output
 
 **Example good question**:
+
 ```markdown
 ## VM fails to start with "permission denied" error
 
@@ -139,7 +152,9 @@ VirtOS follows the [Contributor Covenant Code of Conduct](../CODE_OF_CONDUCT.md)
 
 **Error**:
 ```
+
 ERROR: permission denied accessing /var/lib/libvirt/images/test-vm.qcow2
+
 ```
 
 **What I've tried**:
@@ -153,6 +168,7 @@ Any ideas what's wrong?
 ### Contributing
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
+
 - Development setup
 - Coding standards
 - Pull request process
@@ -172,6 +188,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
 *Not yet available - under consideration*
 
 Potential offerings:
+
 - Priority support
 - Custom feature development
 - Training and consultation
@@ -185,6 +202,7 @@ Potential offerings:
 ### Contributors
 
 All contributors are recognized in:
+
 - Repository [contributors page](https://github.com/FlossWare/VirtOS/graphs/contributors)
 - Release notes (for significant contributions)
 - Git commit history (Co-Authored-By tags)
@@ -192,9 +210,11 @@ All contributors are recognized in:
 ### Hall of Fame
 
 **Top Contributors** (by impact):
+
 - *To be added as community grows*
 
 **Special Thanks**:
+
 - Tiny Core Linux project
 - platform-java contributors
 - All beta testers and early adopters
@@ -206,6 +226,7 @@ All contributors are recognized in:
 *Not yet scheduled - depends on community growth*
 
 Potential format:
+
 - Monthly video calls
 - Agenda posted in Discussions
 - Recorded and published
@@ -214,6 +235,7 @@ Potential format:
 ### Conferences and Meetups
 
 **VirtOS Presence**:
+
 - *To be announced as project matures*
 
 **Want to present about VirtOS?** Let us know in Discussions!
@@ -222,17 +244,17 @@ Potential format:
 
 ### Official Resources
 
-- **Repository**: https://github.com/FlossWare/VirtOS
-- **Documentation**: https://github.com/FlossWare/VirtOS/tree/main/docs
-- **Issue Tracker**: https://github.com/FlossWare/VirtOS/issues
-- **Package Registry**: https://packagecloud.io/flossware/virtos
+- **Repository**: <https://github.com/FlossWare/VirtOS>
+- **Documentation**: <https://github.com/FlossWare/VirtOS/tree/main/docs>
+- **Issue Tracker**: <https://github.com/FlossWare/VirtOS/issues>
+- **Package Registry**: <https://packagecloud.io/flossware/virtos>
 
 ### External Resources
 
-- **Tiny Core Linux**: https://tinycorelinux.net/
-- **platform-java**: https://github.com/FlossWare/platform-java
-- **Libvirt Documentation**: https://libvirt.org/docs.html
-- **QEMU Documentation**: https://www.qemu.org/documentation/
+- **Tiny Core Linux**: <https://tinycorelinux.net/>
+- **platform-java**: <https://github.com/FlossWare/platform-java>
+- **Libvirt Documentation**: <https://libvirt.org/docs.html>
+- **QEMU Documentation**: <https://www.qemu.org/documentation/>
 
 ## FAQ
 
@@ -274,9 +296,11 @@ A: Start a discussion in the **Ideas** category first. This helps gauge interest
 ### Project Maintainers
 
 **Current Maintainers**:
+
 - See [GitHub org members](https://github.com/orgs/FlossWare/people)
 
 **Maintainer Responsibilities**:
+
 - Review and merge pull requests
 - Triage issues
 - Make architecture decisions
@@ -286,9 +310,11 @@ A: Start a discussion in the **Ideas** category first. This helps gauge interest
 ### Decision Making
 
 **Minor Decisions** (bug fixes, small features):
+
 - Maintainer approval via PR review
 
 **Major Decisions** (architecture changes, breaking changes):
+
 - Proposal in Discussions
 - Community feedback period (1-2 weeks)
 - Maintainer consensus
@@ -299,6 +325,7 @@ A: Start a discussion in the **Ideas** category first. This helps gauge interest
 *Process to be formalized as project grows*
 
 Potential criteria:
+
 - Consistent high-quality contributions
 - Understanding of project architecture
 - Community engagement
@@ -332,18 +359,21 @@ See [ROADMAP.md](ROADMAP.md) for current development priorities.
 ## Next Steps for Community Infrastructure
 
 **Immediate** (Requires admin access):
+
 - [ ] Enable GitHub Discussions
 - [ ] Create discussion categories
 - [ ] Pin welcome post
 - [ ] Migrate relevant issues to discussions
 
 **Short-term** (1-2 months):
+
 - [ ] Create community guidelines post
 - [ ] Set up automated moderation
 - [ ] Create discussion templates
 - [ ] Seed categories with content
 
 **Long-term** (3-6 months):
+
 - [ ] Evaluate need for Discord/Slack
 - [ ] Consider mailing list
 - [ ] Plan community calls

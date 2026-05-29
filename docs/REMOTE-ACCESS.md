@@ -14,11 +14,13 @@ All connections use SSH for security - no extra ports needed!
 ## Prerequisites
 
 ### On VirtOS Host
+
 ✅ SSH server running (enabled by default)  
 ✅ libvirtd running (enabled by default)  
 ✅ Network accessible from your desktop
 
 ### On Your Desktop
+
 - SSH client (Linux/Mac: built-in, Windows: PuTTY or OpenSSH)
 - virt-manager (for GUI management)
 - virsh (command-line, part of libvirt-client)
@@ -28,17 +30,20 @@ All connections use SSH for security - no extra ports needed!
 ### Step 1: Boot VirtOS
 
 VirtOS automatically starts:
+
 - SSH server (port 22)
 - libvirtd (for VM management)
 - Networking with DHCP
 
 Find the IP address:
+
 ```bash
 # On VirtOS console
 ip addr show eth0
 ```
 
 Or if you have DHCP server with hostname support:
+
 ```bash
 # Default hostname
 ping virtos
@@ -61,6 +66,7 @@ sudo adduser vmadmin sudo
 ```
 
 **Or use root** (less secure but simpler for home lab):
+
 ```bash
 # Set root password
 sudo passwd root
@@ -87,6 +93,7 @@ Now you can SSH without password!
 ## 1. SSH Shell Access
 
 ### Basic Connection
+
 ```bash
 # As user
 ssh vmadmin@<virtos-ip>
@@ -99,6 +106,7 @@ ssh -p 2222 vmadmin@<virtos-ip>
 ```
 
 ### Example Session
+
 ```bash
 ssh root@192.168.1.100
 
@@ -114,21 +122,25 @@ htop                       # Monitor resources
 ### Install virt-manager on Desktop
 
 **Debian/Ubuntu:**
+
 ```bash
 sudo apt install virt-manager
 ```
 
 **Fedora/RHEL:**
+
 ```bash
 sudo dnf install virt-manager
 ```
 
 **Arch:**
+
 ```bash
 sudo pacman -S virt-manager
 ```
 
 **macOS:**
+
 ```bash
 brew install virt-manager
 ```
@@ -136,6 +148,7 @@ brew install virt-manager
 ### Connect to VirtOS
 
 #### Method A: GUI
+
 1. Open virt-manager
 2. **File** → **Add Connection**
 3. Select **QEMU/KVM**
@@ -145,6 +158,7 @@ brew install virt-manager
 7. Click **Connect**
 
 #### Method B: Command Line
+
 ```bash
 # User connection
 virt-manager -c qemu+ssh://vmadmin@virtos/system
@@ -159,6 +173,7 @@ virt-manager -c qemu+ssh://vmadmin@192.168.1.100/system
 ### What You Can Do
 
 Once connected in virt-manager:
+
 - ✅ Create/delete VMs
 - ✅ Start/stop/pause VMs
 - ✅ Access VM console
@@ -211,6 +226,7 @@ alias virt-vos='virt-manager -c qemu+ssh://vmadmin@virtos/system &'
 ```
 
 Then simply:
+
 ```bash
 virsh-vos list --all
 virt-vos
@@ -230,6 +246,7 @@ https://<virtos-ip>:9090
 ```
 
 Features:
+
 - Web-based VM management
 - System monitoring
 - Container management
@@ -239,11 +256,13 @@ Features:
 ## Connection URI Reference
 
 ### Connection URI Format
+
 ```
 qemu+ssh://[username@]hostname[:port]/system
 ```
 
 ### Examples
+
 ```bash
 # Standard user connection
 qemu+ssh://vmadmin@virtos/system
@@ -266,6 +285,7 @@ qemu+ssh://vmadmin@virtos/session
 ### Cannot Connect
 
 **Check SSH is running on VirtOS:**
+
 ```bash
 # On VirtOS console
 /usr/local/etc/init.d/openssh status
@@ -274,6 +294,7 @@ ps aux | grep sshd
 ```
 
 **Check libvirtd is running:**
+
 ```bash
 # On VirtOS console
 /usr/local/etc/init.d/libvirtd status
@@ -282,6 +303,7 @@ ps aux | grep libvirtd
 ```
 
 **Check network connectivity:**
+
 ```bash
 # From desktop
 ping <virtos-ip>
@@ -291,6 +313,7 @@ ssh vmadmin@<virtos-ip> echo "SSH works"
 ### Permission Denied
 
 **Ensure user is in libvirt group:**
+
 ```bash
 # On VirtOS
 groups vmadmin
@@ -301,6 +324,7 @@ sudo adduser vmadmin libvirt
 ```
 
 **Check SSH key setup:**
+
 ```bash
 # From desktop
 ssh -v vmadmin@<virtos-ip>
@@ -310,6 +334,7 @@ ssh -v vmadmin@<virtos-ip>
 ### Connection Refused
 
 **Firewall blocking SSH:**
+
 ```bash
 # On VirtOS, check iptables
 iptables -L -n | grep 22
@@ -319,6 +344,7 @@ iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 ```
 
 **SSH not listening:**
+
 ```bash
 # Check SSH config
 cat /etc/ssh/sshd_config | grep Port
@@ -338,6 +364,7 @@ ls -l /var/run/libvirt/libvirt-sock
 ## Security Best Practices
 
 ### 1. Use SSH Keys, Not Passwords
+
 ```bash
 # Disable password authentication (after setting up keys!)
 # Edit /etc/ssh/sshd_config:
@@ -345,6 +372,7 @@ PasswordAuthentication no
 ```
 
 ### 2. Change Default SSH Port (Optional)
+
 ```bash
 # Edit /etc/ssh/sshd_config:
 Port 2222
@@ -354,6 +382,7 @@ ssh -p 2222 vmadmin@virtos
 ```
 
 ### 3. Restrict SSH Access
+
 ```bash
 # Allow only specific users
 # Edit /etc/ssh/sshd_config:
@@ -366,11 +395,13 @@ iptables -A INPUT -p tcp --dport 22 -j DROP
 ```
 
 ### 4. Use Non-Root User
+
 - Create dedicated user for VM management
 - Add to libvirt group
 - Avoid using root for day-to-day access
 
 ### 5. Keep SSH Keys Secure
+
 ```bash
 # Proper permissions
 chmod 700 ~/.ssh
@@ -383,6 +414,7 @@ chmod 644 ~/.ssh/id_ed25519.pub
 Managing multiple VirtOS servers:
 
 ### SSH Config (~/.ssh/config)
+
 ```
 Host virtos1
     HostName 192.168.1.100
@@ -401,6 +433,7 @@ Host virtos3
 ```
 
 Then connect simply:
+
 ```bash
 ssh virtos1
 virt-manager -c qemu+ssh://virtos1/system
@@ -410,6 +443,7 @@ virsh -c qemu+ssh://virtos2/system list --all
 ### virt-manager Multiple Connections
 
 In virt-manager GUI:
+
 1. Keep all connections visible
 2. File → Add Connection for each host
 3. Switch between hosts in left panel
@@ -417,18 +451,21 @@ In virt-manager GUI:
 ## Network Scenarios
 
 ### Same LAN (Easiest)
+
 ```
 Desktop (192.168.1.50) ←→ VirtOS (192.168.1.100)
 Direct connection, no special setup needed
 ```
 
 ### Different Networks (VPN/Port Forwarding)
+
 ```
 Desktop (anywhere) ←VPN→ Home Network ←→ VirtOS
 Or use SSH port forwarding
 ```
 
 ### Port Forwarding Example
+
 ```bash
 # Forward local port 2222 to VirtOS SSH
 ssh -L 2222:virtos:22 jumphost
@@ -458,6 +495,7 @@ virt-manager -c qemu+ssh://vmadmin@localhost:2222/system
 ## Support
 
 For issues with remote access:
+
 - Check VirtOS is on network: `ping virtos`
 - Verify SSH works: `ssh vmadmin@virtos echo "test"`
 - Test libvirt locally first: `virsh -c qemu:///system list`

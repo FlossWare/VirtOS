@@ -4,6 +4,7 @@
 **Security Level**: Production Deployment
 
 **Recent Updates**:
+
 - ✅ **2026-05-29**: Comprehensive input validation audit completed (Issue #96)
   - All management scripts validated (virtos-network, virtos-storage, virtos-backup)
   - Command injection prevention implemented
@@ -697,7 +698,7 @@ mail -s "VirtOS Security Audit" security@example.com < /tmp/audit.log
 
 ## Getting Help
 
-- **Security issues**: security@flossware.org (private)
+- **Security issues**: <security@flossware.org> (private)
 - **Security advisories**: [github.com/FlossWare/VirtOS/security/advisories](https://github.com/FlossWare/VirtOS/security/advisories)
 - **CVE tracking**: Subscribe to virtos-security mailing list
 

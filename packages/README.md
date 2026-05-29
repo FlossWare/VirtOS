@@ -9,6 +9,7 @@ VirtOS extends Tiny Core Linux with additional packages for virtualization and m
 ## Core Packages
 
 ### Virtualization
+
 - **qemu-kvm.tcz** - QEMU with KVM support
 - **libvirt.tcz** - Virtualization API and tools
 - **lxc.tcz** - Linux Containers
@@ -17,24 +18,28 @@ VirtOS extends Tiny Core Linux with additional packages for virtualization and m
 - **containerd.tcz** - containerd runtime (optional)
 
 ### Management
+
 - **virtos-tools.tcz** - VirtOS management scripts
 - **virtos-tui.tcz** - Text-based user interface
 - **dialog.tcz** - TUI dependency
 - **ncurses.tcz** - Terminal UI library
 
 ### Networking
+
 - **bridge-utils.tcz** - Network bridge utilities
 - **iptables.tcz** - Firewall management
 - **avahi.tcz** - mDNS for cluster discovery
 - **openvswitch.tcz** - Software-defined networking (optional)
 
 ### Storage
+
 - **lvm2.tcz** - Logical Volume Manager
 - **btrfs-progs.tcz** - Btrfs utilities
 - **zfs.tcz** - ZFS filesystem (optional)
 - **nfs-utils.tcz** - NFS client/server (optional)
 
 ### Monitoring
+
 - **prometheus.tcz** - Metrics collection (optional)
 - **node-exporter.tcz** - System metrics (optional)
 
@@ -56,6 +61,7 @@ package-name/
 ### Prerequisites
 
 Install Tiny Core Linux compilation tools:
+
 ```bash
 tce-load -wi compiletc squashfs-tools
 ```
@@ -68,6 +74,7 @@ cd packages/virtos-tools
 ```
 
 This creates:
+
 - `virtos-tools.tcz` - The package archive
 - `virtos-tools.tcz.md5.txt` - Checksum
 - `virtos-tools.tcz.info` - Package info
@@ -88,6 +95,7 @@ Packages are output to `packages/output/`.
 Different VirtOS profiles require different package sets:
 
 ### Minimal Profile (~100MB)
+
 ```
 qemu-kvm.tcz
 libvirt.tcz
@@ -97,6 +105,7 @@ bridge-utils.tcz
 ```
 
 ### Standard Profile (~200MB)
+
 ```
 <minimal packages>
 + lxc.tcz
@@ -107,6 +116,7 @@ bridge-utils.tcz
 ```
 
 ### Full Profile (~400MB)
+
 ```
 <standard packages>
 + lvm2.tcz
@@ -121,9 +131,11 @@ See `../config/profiles/` for complete profile definitions.
 ## Installing Packages
 
 ### During Build
+
 Packages are automatically included in the ISO based on the selected profile.
 
 ### On Running System
+
 ```bash
 # Load package from ISO
 tce-load -i virtos-tools.tcz
@@ -139,6 +151,7 @@ echo "virtos-tools.tcz" >> /etc/sysconfig/tcedir/onboot.lst
 ## Package Dependencies
 
 ### virtos-tools.tcz
+
 ```
 bash.tcz
 coreutils.tcz
@@ -147,6 +160,7 @@ sed.tcz
 ```
 
 ### qemu-kvm.tcz
+
 ```
 glib2.tcz
 pixman.tcz
@@ -155,6 +169,7 @@ libslirp.tcz
 ```
 
 ### libvirt.tcz
+
 ```
 qemu-kvm.tcz
 libxml2.tcz
@@ -163,6 +178,7 @@ yajl.tcz
 ```
 
 ### docker.tcz
+
 ```
 containerd.tcz
 runc.tcz
@@ -176,17 +192,20 @@ See individual `.tcz.dep` files for complete dependency trees.
 ### Example: Creating virtos-tools.tcz
 
 1. **Create package directory:**
+
 ```bash
 mkdir -p packages/virtos-tools/src/usr/local/bin
 mkdir -p packages/virtos-tools/src/usr/local/tce.installed
 ```
 
 2. **Copy files:**
+
 ```bash
 cp ../config/custom-scripts/virtos-* packages/virtos-tools/src/usr/local/bin/
 ```
 
 3. **Create install script:**
+
 ```bash
 cat > packages/virtos-tools/src/usr/local/tce.installed/virtos-tools << 'EOF'
 #!/bin/sh
@@ -197,6 +216,7 @@ chmod +x packages/virtos-tools/src/usr/local/tce.installed/virtos-tools
 ```
 
 4. **Create metadata:**
+
 ```bash
 cat > packages/virtos-tools/virtos-tools.tcz.info << EOF
 Title:          virtos-tools
@@ -215,6 +235,7 @@ EOF
 ```
 
 5. **Create dependency file:**
+
 ```bash
 cat > packages/virtos-tools/virtos-tools.tcz.dep << EOF
 bash.tcz
@@ -223,6 +244,7 @@ EOF
 ```
 
 6. **Create build script:**
+
 ```bash
 cat > packages/virtos-tools/build.sh << 'EOF'
 #!/bin/bash
@@ -251,6 +273,7 @@ chmod +x packages/virtos-tools/build.sh
 ```
 
 7. **Build the package:**
+
 ```bash
 cd packages/virtos-tools
 ./build.sh
@@ -261,6 +284,7 @@ cd packages/virtos-tools
 Built packages can be hosted in a repository for easy installation:
 
 ### Local Repository
+
 ```bash
 # Create repository structure
 mkdir -p /opt/tcz-repo
@@ -274,7 +298,9 @@ python3 -m http.server 8080
 ```
 
 ### Remote Repository
+
 Upload packages to a web server and configure Tiny Core to use it:
+
 ```bash
 echo "http://yourserver.com/tcz-repo" > /opt/tcedir/mirrors.lst
 ```
@@ -282,6 +308,7 @@ echo "http://yourserver.com/tcz-repo" > /opt/tcedir/mirrors.lst
 ## Testing Packages
 
 ### Basic Tests
+
 ```bash
 # Extract and inspect
 unsquashfs virtos-tools.tcz
@@ -296,6 +323,7 @@ virtos-tui --help
 ```
 
 ### Automated Tests
+
 ```bash
 # Run package test suite
 ./test-package.sh virtos-tools.tcz
@@ -304,6 +332,7 @@ virtos-tui --help
 ## Package Updates
 
 To update a package:
+
 1. Modify source files
 2. Update version in `.tcz.info`
 3. Add entry to `Change-log` in `.tcz.info`
@@ -313,6 +342,7 @@ To update a package:
 ## Package Size Optimization
 
 Tips for keeping packages small:
+
 - Strip binaries: `strip --strip-unneeded binary`
 - Remove debug symbols: `strip --strip-debug library.so`
 - Compress with UPX: `upx --best binary` (carefully, may break some binaries)
@@ -323,16 +353,17 @@ Tips for keeping packages small:
 
 Where to get sources for common packages:
 
-- **QEMU**: https://www.qemu.org/download/
-- **libvirt**: https://libvirt.org/downloads.html
-- **LXC**: https://linuxcontainers.org/lxc/downloads/
-- **Docker**: https://github.com/moby/moby
-- **Podman**: https://github.com/containers/podman
-- **containerd**: https://github.com/containerd/containerd
+- **QEMU**: <https://www.qemu.org/download/>
+- **libvirt**: <https://libvirt.org/downloads.html>
+- **LXC**: <https://linuxcontainers.org/lxc/downloads/>
+- **Docker**: <https://github.com/moby/moby>
+- **Podman**: <https://github.com/containers/podman>
+- **containerd**: <https://github.com/containerd/containerd>
 
 ## Contributing Packages
 
 To contribute a new package:
+
 1. Create package directory structure
 2. Write build script
 3. Test on clean Tiny Core system
@@ -359,6 +390,7 @@ gpg --verify virtos-tools.tcz.asc virtos-tools.tcz
 ## Troubleshooting
 
 ### Package won't load
+
 ```bash
 # Check dependencies
 cat package.tcz.dep
@@ -371,6 +403,7 @@ ldd /usr/local/bin/program
 ```
 
 ### Build fails
+
 ```bash
 # Ensure build tools installed
 tce-load -wi compiletc
@@ -383,6 +416,7 @@ bash -x build.sh
 ```
 
 ### Package too large
+
 ```bash
 # Check what's inside
 unsquashfs -l package.tcz
@@ -403,6 +437,7 @@ unsquashfs -l package.tcz
 **Current State**: Package definitions to be added
 
 **Next Steps**:
+
 1. Create build scripts for core packages
 2. Set up build environment
 3. Build and test packages

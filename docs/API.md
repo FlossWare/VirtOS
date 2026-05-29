@@ -67,6 +67,7 @@ Returns a list of all virtual machines.
 **Request**: None
 
 **Response** (200 OK):
+
 ```json
 {
   "vms": [
@@ -89,6 +90,7 @@ Returns a list of all virtual machines.
 ```
 
 **Fields**:
+
 - `name` (string): VM name
 - `state` (string): VM state (running, shut off, paused, etc.)
 - `id` (integer): VM ID
@@ -96,9 +98,11 @@ Returns a list of all virtual machines.
 - `memory` (integer): RAM in KB
 
 **Errors**:
+
 - `500 Internal Server Error`: virsh command failed
 
 **Example**:
+
 ```bash
 curl http://localhost:8080/api/v1/vms
 ```
@@ -112,9 +116,11 @@ curl http://localhost:8080/api/v1/vms
 Get detailed information for a specific VM.
 
 **Parameters**:
+
 - `name` (string, path, required): VM name
 
 **Response** (200 OK):
+
 ```json
 {
   "name": "web-01",
@@ -127,10 +133,12 @@ Get detailed information for a specific VM.
 ```
 
 **Errors**:
+
 - `404 Not Found`: VM does not exist
 - `500 Internal Server Error`: virsh command failed
 
 **Example**:
+
 ```bash
 curl http://localhost:8080/api/v1/vms/web-01
 ```
@@ -144,11 +152,13 @@ curl http://localhost:8080/api/v1/vms/web-01
 Start a stopped or paused VM.
 
 **Parameters**:
+
 - `name` (string, path, required): VM name
 
 **Request Body**: None
 
 **Response** (200 OK):
+
 ```json
 {
   "status": "started",
@@ -157,10 +167,12 @@ Start a stopped or paused VM.
 ```
 
 **Errors**:
+
 - `404 Not Found`: VM does not exist
 - `500 Internal Server Error`: Failed to start VM (already running, etc.)
 
 **Example**:
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/vms/web-01/start
 ```
@@ -174,11 +186,13 @@ curl -X POST http://localhost:8080/api/v1/vms/web-01/start
 Gracefully shutdown a running VM.
 
 **Parameters**:
+
 - `name` (string, path, required): VM name
 
 **Request Body**: None
 
 **Response** (200 OK):
+
 ```json
 {
   "status": "stopping",
@@ -187,14 +201,17 @@ Gracefully shutdown a running VM.
 ```
 
 **Fields**:
+
 - `status`: "stopping" (shutdown initiated, not immediate)
 - `vm`: VM name
 
 **Errors**:
+
 - `404 Not Found`: VM does not exist
 - `500 Internal Server Error`: Failed to stop VM
 
 **Example**:
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/vms/web-01/stop
 ```
@@ -214,6 +231,7 @@ Returns status of all cluster nodes.
 **Request**: None
 
 **Response** (200 OK):
+
 ```json
 {
   "nodes": [
@@ -232,14 +250,17 @@ Returns status of all cluster nodes.
 ```
 
 **Fields**:
+
 - `hostname` (string): Node hostname
 - `ip` (string): Node IP address
 - `status` (string): Node status (online, offline)
 
 **Errors**:
+
 - `500 Internal Server Error`: Failed to query cluster
 
 **Example**:
+
 ```bash
 curl http://localhost:8080/api/v1/cluster
 ```
@@ -257,6 +278,7 @@ Health check endpoint for monitoring.
 **Request**: None
 
 **Response** (200 OK):
+
 ```json
 {
   "status": "healthy",
@@ -266,11 +288,13 @@ Health check endpoint for monitoring.
 ```
 
 **Fields**:
+
 - `status` (string): "healthy" or "degraded"
 - `api_version` (string): API version
 - `uptime` (integer): API server uptime in seconds
 
 **Example**:
+
 ```bash
 curl http://localhost:8080/api/v1/health
 ```
@@ -288,6 +312,7 @@ Returns API version information.
 **Request**: None
 
 **Response** (200 OK):
+
 ```json
 {
   "api_version": "v1",
@@ -297,11 +322,13 @@ Returns API version information.
 ```
 
 **Fields**:
+
 - `api_version` (string): API version
 - `virtos_version` (string): VirtOS version
 - `server` (string): Server identifier
 
 **Example**:
+
 ```bash
 curl http://localhost:8080/api/v1/version
 ```
@@ -400,11 +427,11 @@ import requests
 class VirtOSClient:
     def __init__(self, base_url="http://localhost:8080/api/v1"):
         self.base_url = base_url
-    
+
     def list_vms(self):
         r = requests.get(f"{self.base_url}/vms")
         return r.json()["vms"]
-    
+
     def start_vm(self, name):
         r = requests.post(f"{self.base_url}/vms/{name}/start")
         return r.json()
@@ -456,19 +483,21 @@ virtos_api_stop() {
 ### Production Recommendations
 
 1. **Enable Authentication**:
+
    ```bash
    virtos-auth setup
    virtos-api --require-auth
    ```
 
 2. **Use Reverse Proxy** (NGINX/Apache):
+
    ```nginx
    # NGINX config
    server {
        listen 443 ssl;
        ssl_certificate /path/to/cert.pem;
        ssl_certificate_key /path/to/key.pem;
-       
+
        location /api/ {
            proxy_pass http://localhost:8080/api/;
        }
@@ -476,6 +505,7 @@ virtos_api_stop() {
    ```
 
 3. **Firewall Rules**:
+
    ```bash
    # Only allow from specific network
    iptables -A INPUT -p tcp --dport 8080 -s 192.168.1.0/24 -j ACCEPT
@@ -539,6 +569,7 @@ curl http://localhost:8080/api/v1/health
 ## Future Enhancements
 
 Planned features (see roadmap):
+
 - [ ] VM creation/deletion via API
 - [ ] WebSocket support for real-time updates
 - [ ] Filtering and pagination
@@ -563,6 +594,7 @@ Planned features (see roadmap):
 ---
 
 **Quick Reference**:
+
 - `GET /api/v1/vms` - List VMs
 - `GET /api/v1/vms/{name}` - VM details
 - `POST /api/v1/vms/{name}/start` - Start VM
