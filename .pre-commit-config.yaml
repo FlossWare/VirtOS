@@ -1,0 +1,133 @@
+# Pre-commit hooks for VirtOS project
+# Enforces code quality standards before commits
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# See: https://pre-commit.com
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Prevent large files from being committed
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+
+      # Check for files that would conflict in case-insensitive filesystems
+      - id: check-case-conflict
+
+      # Check for merge conflicts
+      - id: check-merge-conflict
+
+      # Check executables have shebangs
+      - id: check-executables-have-shebangs
+
+      # Check shell scripts are valid
+      - id: check-shebang-scripts-are-executable
+
+      # Check JSON files are valid
+      - id: check-json
+
+      # Check YAML files are valid
+      - id: check-yaml
+        args: ['--allow-multiple-documents']
+
+      # Detect private keys
+      - id: detect-private-key
+
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+        exclude: '^LICENSE'
+
+      # Fix trailing whitespace
+      - id: trailing-whitespace
+        args: ['--markdown-linebreak-ext=md']
+
+      # Fix mixed line endings
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Shell script linting with shellcheck
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        name: ShellCheck (all severity levels)
+        args: ['-x', '-S', 'warning']  # Enable source following, warnings
+        files: \.(sh|bash)$|^virtos-
+        exclude: '^tests/'
+        types: [shell]
+
+  # Shell script formatting with shfmt
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.7.0-1
+    hooks:
+      - id: shfmt
+        name: Shell Script Formatting
+        args: ['-i', '4', '-ci', '-bn', '-w']  # 4 spaces, indent switch cases, binary ops on new line, write
+        files: \.(sh|bash)$|^virtos-
+        exclude: '^tests/'
+
+  # Check for bashisms in sh scripts
+  - repo: https://github.com/openstack/bashate
+    rev: 2.1.1
+    hooks:
+      - id: bashate
+        name: Bashate (shell style checker)
+        args: ['--ignore=E006']  # Ignore line length for now
+        files: \.(sh|bash)$|^virtos-
+        exclude: '^tests/'
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        name: Markdown Linting
+        args: ['--fix']
+        exclude: '^CHANGELOG.md$'
+
+  # YAML linting
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: YAML Linting
+        args: ['-d', '{extends: default, rules: {line-length: {max: 120}, comments: {min-spaces-from-content: 1}}}']
+
+  # Security: detect secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        name: Detect Secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: '^tests/'
+
+  # Git commit message linting (conventional commits)
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.1.0
+    hooks:
+      - id: conventional-pre-commit
+        name: Conventional Commits
+        stages: [commit-msg]
+
+# Configuration for specific hooks
+exclude: |
+  (?x)^(
+    \.git/.*|
+    packages/output/.*|
+    .*\.tcz$|
+    .*\.tcz\.info$|
+    .*\.tcz\.md5\.txt$|
+    .*\.tcz\.list$
+  )$
+
+# Ensure hooks run on all files by default
+default_stages: [commit]
+
+# Fail fast - stop after first failure
+fail_fast: false
+
+# Minimum version
+minimum_pre_commit_version: '2.20.0'

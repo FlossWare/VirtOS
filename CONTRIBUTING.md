@@ -86,7 +86,9 @@ If you're adding a new TCZ extension:
 - Bash 4.0+
 - Git
 - Text editor (vim, nano, VS Code, etc.)
+- Python 3.8+ (for pre-commit hooks)
 - shellcheck (for linting)
+- pre-commit (recommended - see below)
 
 **For building VirtOS ISO:**
 - Tiny Core Linux build environment
@@ -101,6 +103,11 @@ If you're adding a new TCZ extension:
 git clone https://github.com/FlossWare/VirtOS.git
 cd VirtOS
 
+# Install pre-commit hooks (RECOMMENDED)
+pip install pre-commit
+pre-commit install
+pre-commit install --hook-type commit-msg
+
 # Check out a development branch
 git checkout -b feature/my-feature
 
@@ -110,12 +117,40 @@ git checkout -b feature/my-feature
 # Make your changes
 # ...
 
+# Pre-commit hooks run automatically on commit
+# Or run manually:
+pre-commit run --all-files
+
 # Test script syntax
 bash -n config/custom-scripts/virtos-yourscript
 
 # Run shellcheck
 shellcheck config/custom-scripts/virtos-yourscript
 ```
+
+**Pre-commit Hooks** (Recommended):
+VirtOS uses automated code quality checks via pre-commit hooks. These catch issues before you commit:
+
+```bash
+# One-time setup
+pip install pre-commit
+pre-commit install
+pre-commit install --hook-type commit-msg
+
+# Hooks run automatically on 'git commit'
+# Or run manually on all files:
+pre-commit run --all-files
+```
+
+Hooks enforce:
+- ✅ ShellCheck (shell script linting)
+- ✅ shfmt (shell script formatting)
+- ✅ YAML/JSON validation
+- ✅ Secret detection
+- ✅ Conventional commit messages
+- ✅ Trailing whitespace removal
+
+See [docs/PRE_COMMIT_HOOKS.md](docs/PRE_COMMIT_HOOKS.md) for complete guide.
 
 ### Development Workflow
 

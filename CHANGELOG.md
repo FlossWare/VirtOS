@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error messages for better user experience
 
 ### Added
+- Code quality infrastructure (Issue #112) - 2026-05-29
+  - Created .editorconfig - Consistent coding style across editors
+  - Created .pre-commit-config.yaml - Automated quality checks
+  - Created .secrets.baseline - Detect-secrets configuration
+  - Created docs/PRE_COMMIT_HOOKS.md - Complete pre-commit guide
+  - Updated CONTRIBUTING.md - Pre-commit setup instructions
+  - Hooks enforce: ShellCheck, shfmt, YAML/JSON validation, secret detection
+  - Conventional commit message validation
+  - 15+ automated quality checks before each commit
+
 - Security badge and license badge in README.md - 2026-05-29
   - Added Security Scanning workflow badge
   - Added Security Score badge (90/100)
