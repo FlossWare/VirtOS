@@ -572,7 +572,7 @@ runcmd:
 ## See Also
 
 - [VM Creation Guide](../README.md#creating-vms)
-- [Networking Guide](NETWORKING.md)
+- [Networking Guide](QUICK-REFERENCE.md)
 - [Template Management](../README.md#templates)
 - [Cluster Management](../README.md#clustering)
 

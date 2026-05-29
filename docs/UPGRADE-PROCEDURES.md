@@ -583,10 +583,10 @@ Rollback Plan: Restore from backup (30 min)
 
 - **Upgrade issues**: File GitHub issue with "upgrade" label
 - **Security patches**: <security@flossware.org>
-- **Emergency support**: Check [SUPPORT.md](SUPPORT.md)
+- **Emergency support**: Check [COMMUNITY.md](COMMUNITY.md)
 
 ---
 
 **Upgrade Procedures Version**: 1.0 (2026-05-26)  
 **Applies to**: VirtOS 0.80+  
-**Related**: [ADMIN-GUIDE.md](ADMIN-GUIDE.md), [DR-PROCEDURES.md](DR-PROCEDURES.md)
+**Related**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md), [DR-PROCEDURES.md](DR-PROCEDURES.md)

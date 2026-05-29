@@ -692,10 +692,10 @@ curl http://localhost:9093/api/v1/alerts \
 
 - **Prometheus**: <https://prometheus.io/docs/>
 - **Grafana**: <https://grafana.com/docs/>
-- **VirtOS Monitoring**: [ADMIN-GUIDE.md](ADMIN-GUIDE.md)
+- **VirtOS Monitoring**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md)
 
 ---
 
 **Monitoring Setup Guide Version**: 1.0 (2026-05-26)  
 **Applies to**: VirtOS 0.80+  
-**Related**: [ADMIN-GUIDE.md](ADMIN-GUIDE.md), [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+**Related**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md), [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

@@ -525,9 +525,9 @@ ping -c 3 8.8.8.8
 ## Next Steps
 
 - **Quick Start**: [QUICK-START.md](QUICK-START.md) - Create your first VM in 15 minutes
-- **Administrator Guide**: [ADMIN-GUIDE.md](ADMIN-GUIDE.md) - Complete administration reference
+- **Administrator Guide**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Complete administration reference
 - **Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common problems and solutions
-- **Best Practices**: [BEST-PRACTICES.md](BEST-PRACTICES.md) - Production deployment guidance
+- **Best Practices**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Production deployment guidance
 
 ## Getting Help
 
