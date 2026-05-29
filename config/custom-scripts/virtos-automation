@@ -76,6 +76,22 @@ workflow_create() {
         return 1
     fi
 
+    # SECURITY: Validate workflow name to prevent path traversal and command injection
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log "ERROR: Invalid workflow name '$name' (only alphanumeric, underscore, hyphen allowed)"
+        echo "ERROR: Invalid workflow name format" >&2
+        return 1
+    fi
+
+    # SECURITY: Prevent path traversal attacks
+    case "$name" in
+        *..* | */* | *.*)
+            log "SECURITY: Path traversal attempt in workflow name: $name"
+            echo "ERROR: Invalid workflow name (no path components allowed)" >&2
+            return 1
+            ;;
+    esac
+
     log "Creating workflow: $name..."
 
     local workflow_file="$WORKFLOW_DIR/$name.yaml"
@@ -160,6 +176,22 @@ workflow_run() {
         log "ERROR: Workflow name required"
         return 1
     fi
+
+    # SECURITY: Validate workflow name (same validation as create)
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log "SECURITY: Invalid workflow name in run request: $name"
+        echo "ERROR: Invalid workflow name format" >&2
+        return 1
+    fi
+
+    # SECURITY: Prevent path traversal
+    case "$name" in
+        *..* | */* | *.*)
+            log "SECURITY: Path traversal attempt in workflow run: $name"
+            echo "ERROR: Invalid workflow name" >&2
+            return 1
+            ;;
+    esac
 
     local workflow_file="$WORKFLOW_DIR/$name.yaml"
 
@@ -269,6 +301,22 @@ workflow_delete() {
         return 1
     fi
 
+    # SECURITY: Validate workflow name
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log "SECURITY: Invalid workflow name in delete request: $name"
+        echo "ERROR: Invalid workflow name format" >&2
+        return 1
+    fi
+
+    # SECURITY: Prevent path traversal to delete arbitrary files
+    case "$name" in
+        *..* | */* | *.*)
+            log "SECURITY: Path traversal attempt in workflow delete: $name"
+            echo "ERROR: Invalid workflow name" >&2
+            return 1
+            ;;
+    esac
+
     local workflow_file="$WORKFLOW_DIR/$name.yaml"
 
     if [ ! -f "$workflow_file" ]; then
@@ -294,6 +342,39 @@ schedule_create() {
         log "ERROR: Name, command, and schedule required"
         return 1
     fi
+
+    # SECURITY: Validate task name
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log "SECURITY: Invalid task name: $name"
+        echo "ERROR: Invalid task name format (alphanumeric, underscore, hyphen only)" >&2
+        return 1
+    fi
+
+    # SECURITY: Validate cron schedule format (basic check)
+    # Format: minute hour day month weekday (or special strings like @daily)
+    if ! echo "$schedule" | grep -qE '^(@(annually|yearly|monthly|weekly|daily|hourly|reboot)|([0-9*,/-]+ ){4}[0-9*,/-]+)$'; then
+        log "SECURITY: Invalid cron schedule format: $schedule"
+        echo "ERROR: Invalid schedule format" >&2
+        echo "Valid formats: @daily, @hourly, or '0 2 * * *' (cron syntax)" >&2
+        return 1
+    fi
+
+    # SECURITY: Validate command starts with known safe commands
+    # Only allow virtos-* commands for safety
+    case "$command" in
+        virtos-*)
+            # Valid VirtOS command
+            ;;
+        /usr/local/bin/virtos-*)
+            # Valid full path VirtOS command
+            ;;
+        *)
+            log "SECURITY: Unsafe command in schedule: $command"
+            echo "ERROR: Only virtos-* commands are allowed in scheduled tasks" >&2
+            echo "Command must start with 'virtos-' or '/usr/local/bin/virtos-'" >&2
+            return 1
+            ;;
+    esac
 
     log "Creating scheduled task: $name..."
 
@@ -325,6 +406,13 @@ schedule_delete() {
 
     if [ -z "$name" ]; then
         log "ERROR: Task name required"
+        return 1
+    fi
+
+    # SECURITY: Validate task name
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log "SECURITY: Invalid task name in delete: $name"
+        echo "ERROR: Invalid task name format" >&2
         return 1
     fi
 

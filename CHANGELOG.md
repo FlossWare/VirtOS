@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- Enhanced input validation in virtos-automation (Issue #116) - 2026-05-29
+  - Workflow name validation (create, run, delete)
+  - Path traversal prevention (no ../, ./, .)
+  - Scheduled task name validation
+  - Cron schedule format validation
+  - Command whitelist (only virtos-* commands in cron)
+  - Security logging for invalid requests
+  - Prevents arbitrary file deletion via workflow names
+  - Prevents arbitrary command execution via cron
+
 - Enhanced input validation in virtos-api (Issue #116) - 2026-05-29
   - VM name validation from API URLs (prevents command injection)
   - Port number validation (1-65535, privilege check for <1024)
@@ -15,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Action validation (only allow: start, stop, restart, reboot)
   - Security logging for invalid requests
   - Prevents arbitrary command execution via API parameters
-  
+
 - Enhanced input validation in virtos-create-vm (Issue #116) - 2026-05-29
   - Added comprehensive parameter validation (VM name, CPU, RAM, disk)
   - Validates network mode (bridged, nat, isolated)
