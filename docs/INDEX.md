@@ -8,11 +8,24 @@ Complete documentation for FlossWare VirtOS.
 - **[GETTING-STARTED.md](GETTING-STARTED.md)** - Build your first VirtOS ISO
 - **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** - Command cheat sheet
 
+## Business & Planning
+
+- **[EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.md)** - One-page overview for decision makers
+- **[BUSINESS_CASE.md](BUSINESS_CASE.md)** - Complete ROI analysis and cost savings
+  - Cost scenarios (10/50/200 hosts)
+  - 5-year TCO comparison vs VMware/Proxmox/Hyper-V
+  - Time savings analysis (308-358 hours/year)
+  - Elevator pitches (30s/60s/90s)
+  - Target markets and use cases
+  - Risk mitigation strategies
+  - Implementation roadmap
+
 ## Core Documentation
 
 ### System Design
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 7-layer system design and components
 - **[PACKAGES.md](PACKAGES.md)** - Required packages and size estimates
+- **[TCZ_PACKAGES.md](TCZ_PACKAGES.md)** - Complete TCZ package strategy and profile breakdown
 - **[ROADMAP.md](ROADMAP.md)** - Development phases and status
 
 ### Configuration
@@ -211,9 +224,10 @@ Complete documentation for FlossWare VirtOS.
 
 ## Total Documentation
 
-- **19 Documentation Files**
-- **20,000+ Lines**
+- **44 Documentation Files** (including business case, technical guides, and operations)
+- **30,000+ Lines** of comprehensive documentation
 - **Complete and Honest Coverage** - including what's missing
+- **Business Value Analysis** - ROI, cost savings, competitive comparison
 - **Phase 16 Complete** - SRE, multi-cloud, networking, APM (May 2026)
 
 ## Getting Help

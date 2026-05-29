@@ -804,6 +804,12 @@ Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** fo
 
 ### Documentation
 
+#### Business & Planning
+- **[Executive Summary](docs/EXECUTIVE_SUMMARY.md)** - One-page overview for decision makers
+- **[Business Case](docs/BUSINESS_CASE.md)** - ROI analysis, cost savings, competitive comparison
+- **[TCZ Packages](docs/TCZ_PACKAGES.md)** - Package strategy across build profiles
+
+#### Technical Guides
 - **[Architecture](docs/ARCHITECTURE.md)** - System design and components
 - **[Build Guide](docs/BUILD.md)** - Complete build instructions
 - **[Cloud-init Guide](docs/CLOUD-INIT.md)** - Automated VM configuration
