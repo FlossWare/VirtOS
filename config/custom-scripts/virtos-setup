@@ -60,7 +60,14 @@ elif command -v whiptail >/dev/null 2>&1; then
     DIALOG="whiptail"
     DIALOG_OPTS="--title \"VirtOS Setup v${VERSION}\""
 else
-    echo "Error: dialog or whiptail required"
+    echo "Error: Setup wizard requires 'dialog' or 'whiptail' for the interactive interface" >&2
+    echo "" >&2
+    echo "Install with one of:" >&2
+    echo "  tce-load -wi dialog" >&2
+    echo "  tce-load -wi whiptail" >&2
+    echo "" >&2
+    echo "Alternatively, configure manually by editing:" >&2
+    echo "  /etc/virtos/setup.conf" >&2
     exit 1
 fi
 
@@ -386,7 +393,7 @@ setup_storage() {
 
 setup_clustering() {
     if ! command -v virtos-cluster >/dev/null 2>&1; then
-        $DIALOG $DIALOG_OPTS --msgbox "Clustering not available in this build.\n\nRecompile with ENABLE_CLUSTERING=yes" 8 50
+        $DIALOG $DIALOG_OPTS --msgbox "Clustering feature not available\n\nReason: virtos-cluster command not found\n\nTo enable clustering:\n  1. Install virtos-cluster package:\n     tce-load -wi virtos-cluster\n\n  2. Or rebuild VirtOS with clustering:\n     ENABLE_CLUSTERING=yes ./build.sh\n\nClustering will be disabled for this setup." 16 60
         SETUP_CLUSTERING="no"
         return
     fi
@@ -543,7 +550,7 @@ completion_screen() {
 main() {
     # Check if running as root
     if [ "$(id -u)" -ne 0 ]; then
-        $DIALOG $DIALOG_OPTS --msgbox "Setup must be run as root.\n\nRun: sudo virtos-setup" 8 50
+        $DIALOG $DIALOG_OPTS --msgbox "Error: Setup wizard requires root privileges\n\nReason: System configuration requires root access to:\n  • Configure hostname and networking\n  • Format and mount storage devices\n  • Configure system services\n  • Create user accounts\n\nRe-run with root privileges:\n  sudo virtos-setup" 16 60
         exit 1
     fi
 
