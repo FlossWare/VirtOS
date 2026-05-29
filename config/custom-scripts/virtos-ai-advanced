@@ -908,6 +908,14 @@ Examples:
   # Status
   $SCRIPT_NAME ai-advanced-status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    AI framework not initialized
+    4    Training failed
+    5    Model not found
+
 EOF
 }
 

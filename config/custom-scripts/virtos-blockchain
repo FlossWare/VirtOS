@@ -662,6 +662,14 @@ Examples:
   # Check status
   $SCRIPT_NAME blockchain-status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Blockchain not initialized
+    4    Transaction failed
+    5    Verification failed
+
 EOF
 }
 

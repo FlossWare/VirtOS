@@ -5,10 +5,21 @@
       "cron": "*/10 * * * *",
       "prompt": "Run automated code review for VirtOS: Execute /home/sfloess/Development/github/FlossWare/VirtOS/.claude/automated-review.sh and create GitHub issues for any findings. If issues are found, attempt to fix them automatically where safe, commit with co-authored signature, and push to GitHub.",
       "createdAt": 1780061620930,
+      "lastFiredAt": 1780098133146,
       "recurring": true,
       "createdBySessionId": "6539f596-60bb-4465-9ff2-e2120d1ddfd4",
-      "createdByPid": 58973,
-      "createdByProcStart": "162882"
+      "createdByPid": 1119381,
+      "createdByProcStart": "3819842"
+    },
+    {
+      "id": "9d1bbba3",
+      "cron": "*/10 * * * *",
+      "prompt": "Run continuous code review for VirtOS: Execute /home/sfloess/Development/github/FlossWare/VirtOS/.claude/continuous-review.sh and create GitHub issues for any findings. Auto-fix safe issues, commit with co-authored signature, and push to GitHub. Continue until no new issues are found.",
+      "createdAt": 1780098357710,
+      "recurring": true,
+      "createdBySessionId": "6539f596-60bb-4465-9ff2-e2120d1ddfd4",
+      "createdByPid": 1119381,
+      "createdByProcStart": "3819842"
     }
   ]
 }

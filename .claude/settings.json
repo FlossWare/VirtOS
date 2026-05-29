@@ -1,21 +1,20 @@
 {
-  "allowedCommands": {
-    "Bash": [
-      {
-        "prompt": ".*",
-        "allow": "all"
-      }
-    ]
-  },
-  "allowedPaths": {
-    "Read": [
-      "**/*"
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Write(**/*)",
+      "Edit(**/*)",
+      "Read(**/*)",
+      "TaskCreate",
+      "TaskUpdate",
+      "TaskList",
+      "TaskGet",
+      "Workflow",
+      "Agent",
+      "CronCreate",
+      "CronDelete",
+      "CronList"
     ],
-    "Write": [
-      "**/*"
-    ],
-    "Edit": [
-      "**/*"
-    ]
+    "defaultMode": "dontAsk"
   }
 }

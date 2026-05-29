@@ -631,6 +631,14 @@ Examples:
   # Status
   $SCRIPT_NAME blockchain-adv-status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Token/NFT not found
+    4    Insufficient balance
+    5    Transaction failed
+
 EOF
 }
 

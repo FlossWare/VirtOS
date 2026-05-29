@@ -586,6 +586,13 @@ Examples:
   $SCRIPT_NAME custom-report hourly
   $SCRIPT_NAME custom-report daily
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Data collection not initialized
+    4    Insufficient data for analysis
+
 EOF
 }
 

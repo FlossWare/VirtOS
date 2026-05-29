@@ -89,6 +89,14 @@ Examples:
   # List all users
   virtos-auth user-list
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    User/role not found
+    4    Permission denied
+    5    User/role already exists
+
 EOF
 }
 

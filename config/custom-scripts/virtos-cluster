@@ -67,6 +67,13 @@ Configuration: $CLUSTER_CONF
 Cluster: $CLUSTER_NAME
 Discovery: $DISCOVERY_METHOD
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Node not found
+    4    Discovery failed
+
 EOF
 }
 
