@@ -1,0 +1,21 @@
+{
+  "allowedCommands": {
+    "Bash": [
+      {
+        "prompt": ".*",
+        "allow": "all"
+      }
+    ]
+  },
+  "allowedPaths": {
+    "Read": [
+      "**/*"
+    ],
+    "Write": [
+      "**/*"
+    ],
+    "Edit": [
+      "**/*"
+    ]
+  }
+}

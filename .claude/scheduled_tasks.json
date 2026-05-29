@@ -1,0 +1,14 @@
+{
+  "tasks": [
+    {
+      "id": "71605b8c",
+      "cron": "*/10 * * * *",
+      "prompt": "Run automated code review for VirtOS: Execute /home/sfloess/Development/github/FlossWare/VirtOS/.claude/automated-review.sh and create GitHub issues for any findings. If issues are found, attempt to fix them automatically where safe, commit with co-authored signature, and push to GitHub.",
+      "createdAt": 1780061620930,
+      "recurring": true,
+      "createdBySessionId": "6539f596-60bb-4465-9ff2-e2120d1ddfd4",
+      "createdByPid": 58973,
+      "createdByProcStart": "162882"
+    }
+  ]
+}
