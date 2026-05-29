@@ -104,6 +104,18 @@ repos:
         args: ['--baseline', '.secrets.baseline']
         exclude: '^tests/'
 
+  # Local hook for additional secret patterns
+  - repo: local
+    hooks:
+      - id: detect-hardcoded-secrets
+        name: Detect Hardcoded Secrets (Enhanced)
+        entry: >
+          bash -c 'grep -nHE "(password|secret|api_key|token|private_key)="
+          "$@" | grep -v "^[[:space:]]*#" && exit 1 || exit 0' --
+        language: system
+        files: \.(sh|bash)$|^virtos-
+        exclude: '^(tests/|.*\.bats$)'
+
   # Git commit message linting (conventional commits)
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v3.1.0
