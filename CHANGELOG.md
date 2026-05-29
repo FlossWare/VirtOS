@@ -45,6 +45,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error messages for better user experience
 
 ### Added
+- API Reference documentation (Issue #133) - 2026-05-29
+  - Created comprehensive docs/API_REFERENCE.md
+  - All REST API endpoints documented
+  - Request/response formats with examples
+  - Error codes and handling
+  - Security considerations and input validation
+  - Client examples (Python, JavaScript, Bash)
+  - Authentication and HTTPS guidance
+  - Troubleshooting guide
+
 - Code quality infrastructure (Issue #112) - 2026-05-29
   - Created .editorconfig - Consistent coding style across editors
   - Created .pre-commit-config.yaml - Automated quality checks
@@ -127,6 +137,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated ISO_TESTING_STATUS.md with 47 validation checks
 
 ### Changed
+- Updated security score badge to 92/100 (Issue #116) - 2026-05-29
+  - README.md badge reflects input validation milestone completion
+  - Security score increased from 90/100 to 92/100
+
 - Documentation renaming: jplatform → platform-java (Issue #133) - 2026-05-29
   - Updated all references across 9 files
   - Renamed package from virtos-jplatform.tcz to virtos-platform-java.tcz

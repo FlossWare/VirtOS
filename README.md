@@ -4,7 +4,7 @@
 [![CD](https://github.com/FlossWare/VirtOS/workflows/CD/badge.svg)](https://github.com/FlossWare/VirtOS/actions/workflows/cd.yml)
 [![Security](https://github.com/FlossWare/VirtOS/workflows/Security%20Scanning/badge.svg)](https://github.com/FlossWare/VirtOS/actions/workflows/security.yml)
 [![Test Coverage](https://img.shields.io/badge/test%20coverage-100%25-success)](https://github.com/FlossWare/VirtOS/tree/main/tests)
-[![Security Score](https://img.shields.io/badge/security%20score-90%2F100-green)](https://github.com/FlossWare/VirtOS/blob/main/docs/SECURITY_HARDENING.md)
+[![Security Score](https://img.shields.io/badge/security%20score-92%2F100-green)](https://github.com/FlossWare/VirtOS/blob/main/docs/SECURITY_HARDENING.md)
 [![Version](https://img.shields.io/github/v/release/FlossWare/VirtOS)](https://github.com/FlossWare/VirtOS/releases/latest)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://github.com/FlossWare/VirtOS/blob/main/LICENSE)
 [![Status](https://img.shields.io/badge/status-alpha--functional-yellow)](https://github.com/FlossWare/VirtOS#project-status)
@@ -73,7 +73,7 @@ Built on Tiny Core Linux principles:
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │         Management Layer                │
 │  (libvirt, CLI tools, optional web UI)  │
@@ -93,7 +93,7 @@ Built on Tiny Core Linux principles:
 
 ## Project Structure
 
-```
+```text
 virtualization/
 ├── build/              # Build scripts and tools
 ├── packages/           # Custom TCZ extensions
@@ -555,7 +555,7 @@ VirtOS now has a **fully functional package build system** that creates real art
 
 **Test Results:**
 
-```
+```text
 ✓ Package built successfully (332KB)
 ✓ All 53 virtos scripts syntax validated
 ✓ Build configuration valid (7 profiles)
@@ -575,7 +575,7 @@ See [BUILD.md](BUILD.md) for complete build guide and status.
 
 **Last Updated**: 2026-05-28 | **Version: 0.89 | **Status**: Alpha - Functional Core
 
-> **⚠️ IMPORTANT**: VirtOS is in **alpha** status. Core VM management functionality works, but the system has **never been tested on real hardware**. ISO boot testing and runtime validation are incomplete. See [limitations](#current-limitations) below.
+> **⚠️ IMPORTANT**: VirtOS is in **alpha** status. Core VM management functionality works, but the system has **never been tested on real hardware**. ISO boot testing and runtime validation are incomplete. See [Current Limitations](#%EF%B8%8F-current-limitations) below.
 
 ### 📊 Implementation Status
 
