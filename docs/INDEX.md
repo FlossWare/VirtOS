@@ -25,6 +25,7 @@ Complete documentation for FlossWare VirtOS.
 ### System Design
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 7-layer system design and components
 - **[AI-ARCHITECTURE.md](AI-ARCHITECTURE.md)** - AI capabilities split (VirtOS vs platform-java)
+- **[AI-MODULARITY.md](AI-MODULARITY.md)** - Modular AI design (optional packages, profiles)
 - **[PACKAGES.md](PACKAGES.md)** - Required packages and size estimates
 - **[TCZ_PACKAGES.md](TCZ_PACKAGES.md)** - Complete TCZ package strategy and profile breakdown
 - **[ROADMAP.md](ROADMAP.md)** - Development phases and status
