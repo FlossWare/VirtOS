@@ -51,6 +51,7 @@ Complete documentation for FlossWare VirtOS.
 ## User Interface
 
 - **[TUI.md](TUI.md)** - Text user interface (ncurses setup wizard and management console)
+- **[TUI_TECHNOLOGY.md](TUI_TECHNOLOGY.md)** - Why VirtOS uses dialog vs platform-java using Lanterna
 
 ## Reference
 
