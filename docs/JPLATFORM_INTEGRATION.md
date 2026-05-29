@@ -161,7 +161,7 @@ virtos-tui → Container Management → Docker → Start Container
 │  └──────────────────────────────────────┘ │
 │                                            │
 │  ┌──────────────────────────────────────┐ │
-│  │  Container: jplatform-runtime        │ │
+│  │  Container: platform-java-runtime        │ │
 │  │  - Docker container running platform-java│ │
 │  │  - Managed by VirtOS                 │ │
 │  └──────────────────────────────────────┘ │
@@ -178,17 +178,17 @@ virtos-tui → Container Management → Docker → Start Container
 ```bash
 # VirtOS creates VM with platform-java installed
 virtos-create-vm \
-  --name jplatform-node-1 \
+  --name platform-java-node-1 \
   --cpu 8 \
   --ram 16384 \
   --disk 100G \
   --os ubuntu-22.04 \
-  --install jplatform
+  --install platform-java
 
 # Or as container
-virtos-federation vm-deploy jplatform-app on-prem \
+virtos-federation vm-deploy platform-java-app on-prem \
   --container docker \
-  --image jplatform/runtime:latest
+  --image platform-java/runtime:latest
 ```
 
 **Use Case:**
@@ -202,7 +202,7 @@ virtos-federation vm-deploy jplatform-app on-prem \
 
 **Shared Library:**
 ```
-virtos-jplatform-common/
+virtos-platform-java-common/
 ├── container-runtime.sh     # Bash abstraction
 ├── container-runtime.jar    # Java abstraction
 ├── docker-wrapper
@@ -225,7 +225,7 @@ Container container = runtime.create("nginx:latest")
 **VirtOS Usage:**
 ```bash
 # Use shared container runtime library
-source /usr/local/lib/virtos-jplatform-common/container-runtime.sh
+source /usr/local/lib/virtos-platform-java-common/container-runtime.sh
 
 # Automatic runtime detection
 create_container "nginx:latest" \
@@ -257,7 +257,7 @@ create_container "nginx:latest" \
 
 **VirtOS Enhancement:**
 ```bash
-# New virtos-jplatform script
+# New virtos-platform-java script
 virtos-platform-java deploy \
   --app myapp.jar \
   --main com.example.MyApp \
@@ -344,13 +344,13 @@ OtelExporter.configure("http://otel-collector:4317");
 virtos-federation federation-init my-company
 
 # Deploy platform-java to multiple clouds
-virtos-federation vm-deploy jplatform-aws aws t3.large --install jplatform
-virtos-federation vm-deploy jplatform-azure azure Standard_D4s_v3 --install jplatform
-virtos-create-vm --name jplatform-onprem --cpu 8 --ram 16G --install jplatform
+virtos-federation vm-deploy platform-java-aws aws t3.large --install platform-java
+virtos-federation vm-deploy platform-java-azure azure Standard_D4s_v3 --install platform-java
+virtos-create-vm --name platform-java-onprem --cpu 8 --ram 16G --install platform-java
 
 # Configure platform-java clustering (Consul/Hazelcast)
-virtos-jplatform cluster-init \
-  --nodes jplatform-aws,jplatform-azure,jplatform-onprem \
+virtos-platform-java cluster-init \
+  --nodes platform-java-aws,platform-java-azure,platform-java-onprem \
   --backend consul
 
 # Deploy Java apps to cluster
@@ -515,7 +515,7 @@ spec:
 
 **Deliverables:**
 1. Extract container management code from both projects
-2. Create `virtos-jplatform-container-runtime` library
+2. Create `virtos-platform-java-container-runtime` library
 3. Bash version for VirtOS
 4. Java version for platform-java
 5. Tests for docker, podman, lxc
@@ -546,7 +546,7 @@ spec:
 **Timeline:** 8-12 weeks
 
 **Deliverables:**
-1. `virtos-jplatform` management script
+1. `virtos-platform-java` management script
 2. TUI integration (Java Application Management menu)
 3. VM template with platform-java pre-installed
 4. Container image for platform-java
@@ -598,12 +598,12 @@ virtos-create-vm --name redis-cache --cpu 4 --ram 16G --disk 100G
 virtos-federation vm-deploy nginx-lb aws t3.large
 
 # 3. Install platform-java on app nodes
-virtos-create-vm --name jplatform-onprem --cpu 16 --ram 64G --install jplatform
-virtos-federation vm-deploy jplatform-aws aws c5.4xlarge --install jplatform
+virtos-create-vm --name platform-java-onprem --cpu 16 --ram 64G --install platform-java
+virtos-federation vm-deploy platform-java-aws aws c5.4xlarge --install platform-java
 
 # 4. Configure platform-java cluster
-virtos-jplatform cluster-init \
-  --nodes jplatform-onprem,jplatform-aws \
+virtos-platform-java cluster-init \
+  --nodes platform-java-onprem,platform-java-aws \
   --backend consul
 
 # 5. Deploy Java microservices to platform-java
@@ -613,7 +613,7 @@ virtos-platform-java deploy payment-service.jar --replicas 2 --placement on-prem
 
 # 6. Setup monitoring
 virtos-monitor export-prometheus --endpoint http://prometheus:9090
-virtos-jplatform monitor export-prometheus --endpoint http://prometheus:9090
+virtos-platform-java monitor export-prometheus --endpoint http://prometheus:9090
 
 # 7. View everything in TUI
 virtos-tui

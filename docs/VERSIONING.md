@@ -52,7 +52,7 @@ All version references stay synchronized:
 |------|-------------------|
 | `VERSION` | 0.87 |
 | `packages/virtos-tools/virtos-tools.tcz.info` | Version: 0.87 |
-| `packages/virtos-jplatform/virtos-jplatform.tcz.info` | Version: 0.87 |
+| `packages/virtos-platform-java/virtos-platform-java.tcz.info` | Version: 0.87 |
 | Git tag | v0.87 |
 | GitHub Release | VirtOS v0.87 |
 
@@ -130,7 +130,7 @@ echo "virtos-script version $VERSION"
 Build scripts read directly from VERSION file:
 
 ```bash
-# From packages/virtos-jplatform/build.sh
+# From packages/virtos-platform-java/build.sh
 if [ -f "$SCRIPT_DIR/../../VERSION" ]; then
     PACKAGE_VERSION=$(cat "$SCRIPT_DIR/../../VERSION")
 else

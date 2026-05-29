@@ -121,7 +121,7 @@ Minimal validation for demonstration features:
 | Suite | Tests | Focus Area |
 |-------|-------|------------|
 | 01-vm-lifecycle.bats | 7 | VM create, start, stop, snapshot, backup |
-| 02-jplatform.bats | 8 | platform-java deployment, workload lifecycle |
+| 02-platform-java.bats | 8 | platform-java deployment, workload lifecycle |
 | 03-networking.bats | 11 | Bridges, NAT, VLANs, connectivity |
 | 04-storage.bats | 13 | Pools, volumes, snapshots, quotas |
 | 05-cluster.bats | 15 | Discovery, migration, HA, fencing |

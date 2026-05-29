@@ -14,7 +14,7 @@ platform-java deploy test-vm.yaml
 platform-java start test-vm
 platform-java status test-vm
 platform-java stop test-vm
-jplatform delete test-vm
+platform-java delete test-vm
 ```
 
 **Spec**:
@@ -31,7 +31,7 @@ platform-java deploy test-container.yaml
 platform-java start nginx-test
 curl http://localhost:8080
 platform-java stop nginx-test
-jplatform delete nginx-test
+platform-java delete nginx-test
 ```
 
 **Spec**:
@@ -92,16 +92,16 @@ platform-java status web-tier
 curl http://localhost
 
 # Cleanup
-jplatform delete web-tier
-jplatform delete application-tier
-jplatform delete database-tier
+platform-java delete web-tier
+platform-java delete application-tier
+platform-java delete database-tier
 ```
 
 ## Usage in Tests
 
 These fixtures are referenced in integration tests:
 
-- `tests/integration/02-jplatform.bats`: platform-java integration tests
+- `tests/integration/02-platform-java.bats`: platform-java integration tests
 - Test functions use these fixtures to validate workload deployment, lifecycle management, and dependency resolution
 
 ## Customization
@@ -119,7 +119,7 @@ You can modify these fixtures for different test scenarios:
 To use these fixtures, you need:
 
 - VirtOS runtime environment
-- platform-java installed (`virtos-jplatform.tcz`)
+- platform-java installed (`virtos-platform-java.tcz`)
 - libvirt/QEMU for VM workloads
 - Docker or Podman for container workloads
 

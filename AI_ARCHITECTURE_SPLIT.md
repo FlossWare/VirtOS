@@ -125,7 +125,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 
 **Flow**:
 1. **platform-java (#304)**:
-   - User calls: `jplatform ai marketplace deploy llama-3.1-70b`
+   - User calls: `platform-java ai marketplace deploy llama-3.1-70b`
    - Checks model requirements: 40GB VRAM, 8 vCPUs
    - Requests 2x GPU VMs from VirtOS via REST API
 
@@ -155,7 +155,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 
 **Flow**:
 1. **platform-java (#303)**:
-   - User calls: `jplatform ml train fraud-detection`
+   - User calls: `platform-java ml train fraud-detection`
    - Creates MLflow experiment
    - Prepares training code
    - Requests 4x GPU VMs from VirtOS
@@ -184,7 +184,7 @@ AI capabilities have been **architecturally separated** between VirtOS (infrastr
 
 **Flow**:
 1. **platform-java (#305)**:
-   - User calls: `jplatform rag project create internal-docs`
+   - User calls: `platform-java rag project create internal-docs`
    - Requests 3 VMs from VirtOS:
      - Vector DB (Qdrant)
      - Embedding service

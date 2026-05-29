@@ -17,12 +17,12 @@ This report documents the validation and testing performed on the VirtOS-platfor
 - **All modules**: SUCCESSFUL
 
 Key modules verified:
-- jplatform-api: Core API and descriptors
-- jplatform-vm-management: VM management via libvirt
-- jplatform-core: Orchestration engine
-- jplatform-monitoring: Resource monitoring
-- jplatform-rest-api: REST endpoints
-- jplatform-launcher: CLI launcher
+- platform-java-api: Core API and descriptors
+- platform-java-vm-management: VM management via libvirt
+- platform-java-core: Orchestration engine
+- platform-java-monitoring: Resource monitoring
+- platform-java-rest-api: REST endpoints
+- platform-java-launcher: CLI launcher
 
 ### VirtOS Package Build
 - **Status**: ✓ SUCCESS
@@ -33,7 +33,7 @@ Key modules verified:
 - **Version**: 0.1
 - **Includes**: virtos-tui with platform-java menu integration
 
-#### virtos-jplatform.tcz
+#### virtos-platform-java.tcz
 - **Size**: 4.0K
 - **Files**: 6 (wrapper scripts, install scripts, documentation)
 - **Version**: 0.1-alpha
@@ -41,12 +41,12 @@ Key modules verified:
 
 Package contents verified:
 ```
-usr/local/bin/jplatform                    - platform-java CLI wrapper
-usr/local/bin/virtos-jplatform-install     - Installation script
-usr/local/bin/virtos-jplatform-uninstall   - Uninstallation script
-usr/local/bin/virtos-jplatform-info        - Package info utility
-usr/local/tce.installed/virtos-jplatform   - Post-install hook
-usr/local/share/doc/jplatform/README.md    - Documentation
+usr/local/bin/platform-java                    - platform-java CLI wrapper
+usr/local/bin/virtos-platform-java-install     - Installation script
+usr/local/bin/virtos-platform-java-uninstall   - Uninstallation script
+usr/local/bin/virtos-platform-java-info        - Package info utility
+usr/local/tce.installed/virtos-platform-java   - Post-install hook
+usr/local/share/doc/platform-java/README.md    - Documentation
 ```
 
 ## Feature Verification ✓
@@ -110,12 +110,12 @@ All features implemented with:
 - ✓ QUICK_REFERENCE.md - Command and syntax reference
 
 **Module Documentation**:
-- ✓ jplatform-vm-management/README.md - VM management guide
+- ✓ platform-java-vm-management/README.md - VM management guide
 - ✓ examples/multi-tier/README.md - Multi-tier examples overview
 - ✓ examples/multi-tier/three-tier-webapp/README.md - Three-tier example
 
 **VirtOS Integration**:
-- ✓ VirtOS/packages/virtos-jplatform/README.md - Integration guide
+- ✓ VirtOS/packages/virtos-platform-java/README.md - Integration guide
 - ✓ VirtOS integration in virtos-tui menu system
 
 ### CI/CD Pipelines ✓
@@ -149,7 +149,7 @@ All features implemented with:
 - ✓ Workload deployment, management, monitoring options
 
 ### 2. Package Dependencies
-- ✓ virtos-jplatform depends on: compiletc, openjdk-21-jre, libvirt
+- ✓ virtos-platform-java depends on: compiletc, openjdk-21-jre, libvirt
 - ✓ Dependency chain properly defined in .dep files
 
 ### 3. Cross-Workload Orchestration
@@ -168,7 +168,7 @@ All features implemented with:
 - [x] platform-java builds without errors
 - [x] All 40 Maven modules compile
 - [x] VirtOS packages create successfully
-- [x] Package sizes reasonable (virtos-tools: 336K, virtos-jplatform: 4K)
+- [x] Package sizes reasonable (virtos-tools: 336K, virtos-platform-java: 4K)
 - [x] MD5 checksums generated
 - [x] File lists complete
 
@@ -197,7 +197,7 @@ The following tests require actual VirtOS deployment and cannot be validated in 
 
 ### Installation Testing
 - [ ] Install virtos-tools.tcz on VirtOS
-- [ ] Install virtos-jplatform.tcz on VirtOS
+- [ ] Install virtos-platform-java.tcz on VirtOS
 - [ ] Verify post-install scripts execute correctly
 - [ ] Confirm platform-java CLI available in PATH
 

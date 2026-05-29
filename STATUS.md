@@ -83,7 +83,7 @@
 
 **5 Test Suites** (54 tests, 1067 lines):
 - ✅ 01-vm-lifecycle.bats (7 tests)
-- ✅ 02-jplatform.bats (8 tests)
+- ✅ 02-platform-java.bats (8 tests)
 - ✅ 03-networking.bats (11 tests)
 - ✅ 04-storage.bats (13 tests)
 - ✅ 05-cluster.bats (15 tests)

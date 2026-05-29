@@ -65,7 +65,7 @@ Option 2: From packages (runtime):
 ```bash
 # On Tiny Core Linux / VirtOS
 tce-load -wi virtos-tools
-tce-load -wi virtos-jplatform
+tce-load -wi virtos-platform-java
 ```
 
 ## Running Tests
@@ -84,7 +84,7 @@ bats *.bats
 bats tests/integration/01-vm-lifecycle.bats
 
 # platform-java tests only
-bats tests/integration/02-jplatform.bats
+bats tests/integration/02-platform-java.bats
 ```
 
 ### Run With Sudo (if needed)
@@ -110,7 +110,7 @@ bats --formatter tap tests/integration/*.bats
 tests/integration/
 ├── README.md              # This file
 ├── 01-vm-lifecycle.bats   # VM creation, start, stop, snapshot, backup (7 tests)
-├── 02-jplatform.bats      # platform-java workload deployment (8 tests)
+├── 02-platform-java.bats      # platform-java workload deployment (8 tests)
 ├── 03-networking.bats     # Network bridges, VLANs, NAT (11 tests)
 ├── 04-storage.bats        # Storage pools and volumes (13 tests)
 ├── 05-cluster.bats        # Multi-host operations (15 tests)
@@ -156,12 +156,12 @@ Example:
 - ⏸️ VM backup/restore workflow (placeholder)
 - ⏸️ VM migration workflow (placeholder)
 
-### 02-jplatform.bats (8 tests)
+### 02-platform-java.bats (8 tests)
 
 - ✅ platform-java CLI availability
-- ✅ jplatform --version check
-- ✅ jplatform --help output
-- ⏸️ jplatform list workloads (placeholder)
+- ✅ platform-java --version check
+- ✅ platform-java --help output
+- ⏸️ platform-java list workloads (placeholder)
 - ⏸️ Deploy VM workload (placeholder)
 - ⏸️ Deploy container workload (placeholder)
 - ⏸️ Multi-tier deployment (placeholder)

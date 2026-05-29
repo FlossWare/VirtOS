@@ -190,23 +190,23 @@ virtos-setup --version
 ### 2.2 Install platform-java Package
 
 ```bash
-# Install virtos-jplatform package
-tce-load -i /path/to/virtos-jplatform.tcz
+# Install virtos-platform-java package
+tce-load -i /path/to/virtos-platform-java.tcz
 
 # Or manual installation
 cd /tmp
-unsquashfs -d virtos-jplatform virtos-jplatform.tcz
-sudo cp -r virtos-jplatform/usr /usr/
+unsquashfs -d virtos-platform-java virtos-platform-java.tcz
+sudo cp -r virtos-platform-java/usr /usr/
 
 # Verify platform-java installation
-which jplatform
-jplatform --version
+which platform-java
+platform-java --version
 ```
 
 **platform-java Checklist**:
 - [ ] Package installs without errors
-- [ ] `jplatform` command available
-- [ ] platform-java jar exists (`/opt/jplatform/jplatform.jar`)
+- [ ] `platform-java` command available
+- [ ] platform-java jar exists (`/opt/platform-java/platform-java.jar`)
 - [ ] Dependencies present (Java runtime)
 
 ---
@@ -429,24 +429,24 @@ virsh list --all | grep backup-test
 **Install Example Workloads**:
 ```bash
 # Verify platform-java responds
-jplatform version
-jplatform list
+platform-java version
+platform-java list
 
 # Create simple workload definitions
-mkdir -p /tmp/jplatform-test
-cd /tmp/jplatform-test
+mkdir -p /tmp/platform-java-test
+cd /tmp/platform-java-test
 ```
 
 **Test VM Workload**:
 ```yaml
 # test-vm.yaml
-applicationId: test-vm-jplatform
+applicationId: test-vm-platform-java
 name: Test VM via platform-java
 type: vm
 properties:
   vm.vcpu: "2"
   vm.memory: "1024"
-  vm.disk: /var/lib/jplatform/vms/test-vm.qcow2
+  vm.disk: /var/lib/platform-java/vms/test-vm.qcow2
   vm.network: default
 dependencies: []
 ```
@@ -456,14 +456,14 @@ dependencies: []
 platform-java deploy test-vm.yaml
 
 # Start VM
-platform-java start test-vm-jplatform
+platform-java start test-vm-platform-java
 
 # Check status
-platform-java status test-vm-jplatform
+platform-java status test-vm-platform-java
 
 # Stop and undeploy
-platform-java stop test-vm-jplatform
-jplatform undeploy test-vm-jplatform
+platform-java stop test-vm-platform-java
+platform-java undeploy test-vm-platform-java
 ```
 
 **platform-java VM Checklist**:
@@ -479,8 +479,8 @@ jplatform undeploy test-vm-jplatform
 **Deploy Three-Tier Example**:
 ```bash
 # Get platform-java examples
-git clone https://github.com/FlossWare/jplatform.git /tmp/jplatform
-cd /tmp/jplatform/examples/multi-tier/three-tier-webapp
+git clone https://github.com/FlossWare/platform-java.git /tmp/platform-java
+cd /tmp/platform-java/examples/multi-tier/three-tier-webapp
 
 # Deploy database tier (VM)
 platform-java deploy 1-database-tier.yaml
@@ -532,9 +532,9 @@ platform-java stop nginx-web
 platform-java stop spring-app
 platform-java stop postgres-db
 
-jplatform undeploy nginx-web
-jplatform undeploy spring-app
-jplatform undeploy postgres-db
+platform-java undeploy nginx-web
+platform-java undeploy spring-app
+platform-java undeploy postgres-db
 ```
 
 ### 4.3 Resource Quotas
@@ -542,17 +542,17 @@ jplatform undeploy postgres-db
 **Quota Test**:
 ```bash
 # Set quota for user
-jplatform quota set test-user \
+platform-java quota set test-user \
   --cpu 4 \
   --memory 4096 \
   --disk 50G
 
 # Verify quota
-jplatform quota show test-user
+platform-java quota show test-user
 
 # Deploy VM within quota (should succeed)
 platform-java deploy test-vm.yaml --user test-user
-platform-java start test-vm-jplatform
+platform-java start test-vm-platform-java
 
 # Try to exceed quota (should fail)
 cat > large-vm.yaml <<EOF
@@ -562,7 +562,7 @@ type: vm
 properties:
   vm.vcpu: "8"
   vm.memory: "8192"
-  vm.disk: /var/lib/jplatform/vms/large.qcow2
+  vm.disk: /var/lib/platform-java/vms/large.qcow2
 dependencies: []
 EOF
 
@@ -960,7 +960,7 @@ virsh list --all | grep test-vm-01
 
 ## Phase 2: Package Installation
 - [x] virtos-tools installs
-- [x] virtos-jplatform installs
+- [x] virtos-platform-java installs
 - [x] All scripts executable
 
 **Notes**: Package installation smooth
@@ -1135,9 +1135,9 @@ log "✓ VM deleted"
 
 # Phase 4: platform-java
 log "Phase 4: platform-java test"
-if command -v jplatform >/dev/null 2>&1; then
+if command -v platform-java >/dev/null 2>&1; then
     log "✓ platform-java installed"
-    jplatform version
+    platform-java version
 else
     log "✗ platform-java not installed"
     exit 1

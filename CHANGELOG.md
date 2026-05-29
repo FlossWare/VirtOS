@@ -202,7 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - CD workflow version synchronization bug
-  - virtos-jplatform build script now reads version from VERSION file
+  - virtos-platform-java build script now reads version from VERSION file
   - Prevents version reversion to "0.1-alpha" during builds
 - Build profiles validation CI job now passes
 - Added `packages/output/*.info` to .gitignore
@@ -213,7 +213,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - virtos-setup and virtos-tui now parse arguments before checking for dialog/whiptail
   - Allows --help and --version flags to work without dialog/whiptail installed
   - Fixes CI test failures in environments without TUI dependencies
-- virtos-jplatform package version synchronized with VERSION file
+- virtos-platform-java package version synchronized with VERSION file
 
 ## [0.42] - 2026-05-26
 
@@ -318,7 +318,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Integration test framework with 5 comprehensive test suites
   - 01-vm-lifecycle.bats (7 tests)
-  - 02-jplatform.bats (8 tests)
+  - 02-platform-java.bats (8 tests)
   - 03-networking.bats (11 tests)
   - 04-storage.bats (13 tests)
   - 05-cluster.bats (15 tests)
