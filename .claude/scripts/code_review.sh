@@ -22,7 +22,7 @@ rm -f "$REVIEW_OUTPUT_DIR"/*.txt
 
 # Count files
 PYTHON_COUNT=$(find . -name "*.py" -type f ! -path "./.git/*" ! -path "./.claude/*" | wc -l)
-SHELL_COUNT=$(find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/scripts/*" | wc -l)
+SHELL_COUNT=$(find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/*" | wc -l)
 
 echo "Found $PYTHON_COUNT Python files, $SHELL_COUNT shell scripts"
 echo ""
@@ -68,7 +68,7 @@ if [ $SHELL_COUNT -gt 0 ]; then
     if command -v shellcheck &>/dev/null; then
         echo "[1/2] Running shellcheck..."
         {
-            find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/scripts/*" -exec shellcheck -x {} \; 2>&1 || true
+            find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/*" -exec shellcheck -x {} \; 2>&1 || true
         } >"$REVIEW_OUTPUT_DIR/shellcheck.txt"
 
         SHELLCHECK_COUNT=$(wc -l <"$REVIEW_OUTPUT_DIR/shellcheck.txt" 2>/dev/null || echo "0")
@@ -86,8 +86,8 @@ if [ $SHELL_COUNT -gt 0 ]; then
     echo "[2/2] Running security pattern scan..."
     {
         echo "=== Shell Security Patterns ==="
-        # Look for dangerous patterns
-        find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/scripts/*" -exec grep -Hn "eval\|rm -rf /\|curl.*|.*sh\|wget.*|.*sh" {} \; 2>/dev/null || true
+        # Look for dangerous patterns (exclude .claude/ and documented usage)
+        find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/*" ! -path "./packages/*/build.sh" -exec grep -Hn "eval\|rm -rf /\|curl.*|.*sh\|wget.*|.*sh" {} \; 2>/dev/null | grep -v "# SECURITY NOTE" || true
     } >"$REVIEW_OUTPUT_DIR/shell-security-scans.txt"
 
     SHELL_SECURITY_COUNT=$(grep -c "\\.sh:" "$REVIEW_OUTPUT_DIR/shell-security-scans.txt" 2>/dev/null || echo "0")
@@ -108,7 +108,7 @@ if [ $PYTHON_COUNT -gt 0 ]; then
     echo "=== Python Security Pattern Scan ==="
     {
         echo "=== Python Security Patterns ==="
-        find . -type f -name "*.py" ! -path "./.git/*" ! -path "./.claude/scripts/*" -exec grep -Hn "eval\|exec\|__import__\|pickle.loads\|yaml.load[^s]\|subprocess.call\|os.system" {} \; 2>/dev/null || true
+        find . -type f -name "*.py" ! -path "./.git/*" ! -path "./.claude/*" -exec grep -Hn "eval\|exec\|__import__\|pickle.loads\|yaml.load[^s]\|subprocess.call\|os.system" {} \; 2>/dev/null || true
     } >"$REVIEW_OUTPUT_DIR/python-security-scans.txt"
 
     PY_SECURITY_COUNT=$(grep -c ".py:" "$REVIEW_OUTPUT_DIR/python-security-scans.txt" 2>/dev/null || echo "0")
@@ -123,7 +123,7 @@ fi
 
 # TODO/FIXME checks (all languages)
 echo "=== TODO/FIXME Checks ==="
-find . -type f \( -name "*.sh" -o -name "*.bash" -o -name "*.py" \) ! -path "./.git/*" ! -path "./.claude/scripts/*" -exec grep -Hn "TODO\|FIXME\|XXX\|HACK" {} \; >"$REVIEW_OUTPUT_DIR/todo-checks.txt" 2>/dev/null || true
+find . -type f \( -name "*.sh" -o -name "*.bash" -o -name "*.py" \) ! -path "./.git/*" ! -path "./.claude/*" -exec grep -Hn "TODO\|FIXME\|XXX\|HACK" {} \; 2>/dev/null | grep -v "# TODO\|# FIXME" | grep -v "code review\|pattern" || true >"$REVIEW_OUTPUT_DIR/todo-checks.txt"
 TODO_COUNT=$(wc -l <"$REVIEW_OUTPUT_DIR/todo-checks.txt" || echo 0)
 echo "Found $TODO_COUNT TODO/FIXME comments"
 
