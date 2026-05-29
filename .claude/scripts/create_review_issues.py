@@ -5,12 +5,12 @@ Handles both Python (mypy, flake8, bandit) and Java (security, TODOs) findings.
 Uses GitHub CLI (gh) to create issues.
 """
 
-import sys
 import json
 import subprocess
+import sys
 import tempfile
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 REVIEW_OUTPUT_DIR = Path(__file__).parent.parent / "review-output"
 REPO = "FlossWare/platform-java"
