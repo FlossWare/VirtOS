@@ -74,6 +74,7 @@ Complete documentation for FlossWare VirtOS.
 - **[EXAMPLES-INTEGRATION.md](EXAMPLES-INTEGRATION.md)** - VirtOS-Examples repository integration plan
 - **[COMMUNITY.md](COMMUNITY.md)** - ⭐ NEW: Community resources, discussions, support channels
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
+- **[CODING_STANDARDS.md](CODING_STANDARDS.md)** - ⭐ NEW: Official coding standards (shell, security, testing, git)
 - **[DEPRECATION_POLICY.md](DEPRECATION_POLICY.md)** - ⭐ NEW: Official deprecation policy (6-month timeline, semver)
 - **[PLUGIN_API.md](PLUGIN_API.md)** - ⭐ NEW: Plugin development guide (templates, security, packaging)
 
@@ -273,11 +274,12 @@ Complete documentation for FlossWare VirtOS.
 
 ## Total Documentation
 
-- **61+ Documentation Files** (including business case, technical guides, operations, security)
-- **35,000+ Lines** of comprehensive documentation
+- **62+ Documentation Files** (including business case, technical guides, operations, security)
+- **36,000+ Lines** of comprehensive documentation
 - **Complete and Honest Coverage** - including what's missing
 - **Business Value Analysis** - ROI, cost savings, competitive comparison
 - **Recent Additions** (May 2026):
+  - ⭐ Coding Standards (791 lines) - Official shell scripting standards
   - ⭐ API Reference (554 lines) - Complete REST API v1 documentation
   - ⭐ Plugin API Guide (742 lines) - Third-party extension development
   - ⭐ Deprecation Policy (381 lines) - Official feature lifecycle policy
