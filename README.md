@@ -723,6 +723,32 @@ Includes:
 
 All examples are tested and production-ready starting points.
 
+## Getting Help
+
+### Troubleshooting
+
+Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** for solutions to common problems:
+
+- 🔴 **Boot Issues** - ISO won't boot, kernel panic, no GUI
+- 🔨 **Build Issues** - Missing dependencies, network errors, disk space
+- 🖥️ **VM Problems** - Won't start, migration fails, performance issues
+- 🌐 **Network Issues** - Bridge not found, VMs can't access network
+- 💾 **Storage Issues** - Disk creation fails, pool errors
+- ⚡ **Performance** - Slow VMs, high CPU, disk I/O bottlenecks
+- 🔧 **Installation** - Package loading, permissions
+
+### Community Support
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/FlossWare/VirtOS/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/FlossWare/VirtOS/discussions)
+
+### Documentation
+
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and components
+- **[Build Guide](docs/BUILD.md)** - Complete build instructions
+- **[Cloud-init Guide](docs/CLOUD-INIT.md)** - Automated VM configuration
+- **[Documentation Index](docs/INDEX.md)** - All documentation
+
 ## License
 
 GNU General Public License v3.0 - see [LICENSE](LICENSE) file for details.

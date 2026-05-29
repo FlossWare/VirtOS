@@ -1,16 +1,258 @@
 # VirtOS Troubleshooting Guide
 
+**Last Updated**: 2026-05-29  
+**Version**: 0.87
+
 Complete guide for diagnosing and fixing common VirtOS issues.
+
+## Quick Diagnosis
+
+**Problem Type** → **Jump to Section**
+
+- 🔴 **ISO won't boot** → [Boot Issues](#boot-issues)
+- 🔨 **Build failed** → [Build Issues](#build-issues)  
+- 🖥️ **VM problems** → [VM Management Issues](#vm-management-issues)
+- 🌐 **Network problems** → [Network Issues](#network-issues)
+- 💾 **Storage problems** → [Storage Issues](#storage-issues)
+- ⚡ **Performance issues** → [Performance Issues](#performance-issues)
+- 🔧 **Installation problems** → [Package/Installation Issues](#packageinstallation-issues)
+- 🔌 **KVM/virtualization** → [libvirt/KVM Issues](#libvirtkvm-issues)
+- 🔗 **Cluster problems** → [Cluster Issues](#cluster-issues)
 
 ## Table of Contents
 
+- [Quick Diagnosis](#quick-diagnosis)
+- [Boot Issues](#boot-issues)
+- [Build Issues](#build-issues)
 - [General Issues](#general-issues)
 - [libvirt/KVM Issues](#libvirtkvm-issues)
 - [VM Management Issues](#vm-management-issues)
 - [Network Issues](#network-issues)
 - [Storage Issues](#storage-issues)
+- [Performance Issues](#performance-issues)
 - [Cluster Issues](#cluster-issues)
 - [Package/Installation Issues](#packageinstallation-issues)
+- [Diagnostic Commands](#diagnostic-commands)
+- [Getting Help](#getting-help)
+
+---
+
+## Boot Issues
+
+### ISO Won't Boot - Black Screen
+
+**Symptoms**:
+- Black screen after USB/CD boot
+- No boot menu appears
+- System hangs at BIOS/UEFI
+
+**Causes**:
+- BIOS/UEFI boot mode mismatch
+- Corrupted ISO image
+- Incorrect USB writing method
+- Secure Boot enabled
+
+**Diagnosis**:
+```bash
+# Verify ISO checksum on build machine
+md5sum build/output/VirtOS-*.iso
+# Compare with build/output/VirtOS-*.iso.md5.txt
+
+# Check ISO contents
+file build/output/VirtOS-*.iso
+# Should show: "DOS/MBR boot sector"
+```
+
+**Solutions**:
+
+1. **Disable Secure Boot** (most common fix):
+   - Reboot to BIOS/UEFI settings
+   - Find Security → Secure Boot
+   - Set to "Disabled"
+   - Save and exit
+
+2. **Try different boot mode**:
+   - UEFI → Legacy BIOS (or vice versa)
+   - Change in BIOS settings
+
+3. **Re-write USB with different tool**:
+   ```bash
+   # Linux - Use dd (most reliable)
+   sudo dd if=VirtOS-*.iso of=/dev/sdX bs=4M status=progress
+   sudo sync
+   
+   # Or use Ventoy (works for both BIOS and UEFI)
+   # https://www.ventoy.net/
+   ```
+
+4. **Verify ISO integrity**:
+   ```bash
+   # Rebuild if checksum fails
+   cd build/scripts
+   ./build-all.sh
+   ```
+
+### ISO Boots but Kernel Panic
+
+**Symptoms**:
+```
+Kernel panic - not syncing: VFS: Unable to mount root fs
+```
+
+**Cause**: Missing initrd or kernel modules
+
+**Solution**:
+```bash
+# Rebuild with correct kernel modules
+cd build
+# Edit build.conf - ensure KERNEL_MODULES includes required drivers
+./scripts/build-all.sh
+```
+
+### ISO Boots to Console but No GUI/TUI
+
+**Symptoms**:
+- Boots to text console
+- `virtos-tui` command not found
+- Network works but no scripts
+
+**Cause**: Package not loaded
+
+**Solution**:
+```bash
+# Check if packages loaded
+tce-load -l | grep virtos
+
+# Manually load
+tce-load -i virtos-tools
+
+# Or add to boot list
+echo virtos-tools.tcz >> /mnt/sda1/tce/onboot.lst
+```
+
+---
+
+## Build Issues
+
+### Build Failed - Missing Dependencies
+
+**Symptoms**:
+```
+genisoimage: command not found
+```
+or
+```
+mksquashfs: not found
+```
+
+**Solution**:
+```bash
+# Fedora/RHEL
+make install-deps-fedora
+
+# Ubuntu/Debian
+make install-deps-ubuntu
+
+# Arch Linux
+make install-deps-arch
+
+# Or manual install
+sudo dnf install genisoimage syslinux squashfs-tools  # Fedora
+sudo apt install genisoimage syslinux-utils squashfs-tools  # Ubuntu
+```
+
+### Build Failed - Network Download Error
+
+**Symptoms**:
+```
+wget: unable to resolve host address 'tinycorelinux.net'
+```
+or
+```
+Connection timed out
+```
+
+**Diagnosis**:
+```bash
+# Test network
+ping -c 3 tinycorelinux.net
+ping -c 3 8.8.8.8
+
+# Test DNS
+nslookup tinycorelinux.net
+```
+
+**Solutions**:
+
+1. **Check internet connection**:
+   ```bash
+   # Test external connectivity
+   curl -I https://google.com
+   ```
+
+2. **Try different DNS**:
+   ```bash
+   # Temporarily use Google DNS
+   echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+   ```
+
+3. **Use proxy if behind firewall**:
+   ```bash
+   export http_proxy=http://proxy.example.com:8080
+   export https_proxy=http://proxy.example.com:8080
+   ```
+
+### Build Failed - Disk Space
+
+**Symptoms**:
+```
+No space left on device
+```
+
+**Diagnosis**:
+```bash
+df -h .
+du -sh build/
+```
+
+**Solution**:
+```bash
+# Clean old builds
+make clean
+
+# Or manually
+rm -rf build/output/*
+rm -rf build/download/cache/*
+
+# Check required space (need ~2GB free)
+df -h /
+```
+
+### Build Succeeds but ISO is Too Small
+
+**Symptoms**:
+- ISO only 50-100MB (should be 200MB+)
+- Missing expected packages
+
+**Diagnosis**:
+```bash
+# Check ISO contents
+unsquashfs -ll build/output/VirtOS-*.iso
+
+# Verify build profile
+grep PROFILE= build/build.conf
+```
+
+**Solution**:
+```bash
+# Edit build profile
+vim build/build.conf
+# Change PROFILE=minimal to PROFILE=standard
+
+# Rebuild
+cd build/scripts
+./build-all.sh
+```
 
 ---
 
@@ -598,6 +840,173 @@ virsh vol-list default
 # Disk usage
 df -h /var/lib/virtos/vms
 du -sh /var/lib/virtos/vms/*
+```
+
+---
+
+## Performance Issues
+
+### VM is Slow / Poor Performance
+
+**Symptoms**:
+- VM responds slowly
+- High CPU usage on host
+- Disk I/O very slow
+
+**Diagnosis**:
+```bash
+# Check VM resource usage
+virsh domstats vm-name
+
+# Check host resources
+top
+iostat -x 1 5
+
+# Check if using KVM acceleration
+virsh dumpxml vm-name | grep kvm
+# Should show: <domain type='kvm'>
+```
+
+**Solutions**:
+
+1. **Enable KVM acceleration**:
+   ```bash
+   # Verify KVM available
+   lsmod | grep kvm
+   
+   # Check CPU virtualization
+   grep -E 'vmx|svm' /proc/cpuinfo
+   
+   # If missing, enable in BIOS
+   # Look for "Intel VT-x" or "AMD-V"
+   ```
+
+2. **Allocate more resources**:
+   ```bash
+   # Increase CPU
+   virsh setvcpus vm-name 4 --config --maximum
+   virsh setvcpus vm-name 4 --config
+   
+   # Increase RAM  
+   virsh setmem vm-name 8G --config
+   ```
+
+3. **Use virtio drivers**:
+   ```bash
+   # Edit VM XML
+   virsh edit vm-name
+   
+   # Change disk to:
+   <driver name='qemu' type='qcow2' cache='none' io='native'/>
+   <target dev='vda' bus='virtio'/>
+   
+   # Change network to:
+   <model type='virtio'/>
+   ```
+
+4. **Optimize disk**:
+   ```bash
+   # Convert to qcow2 with compression
+   qemu-img convert -O qcow2 -c old.img new.qcow2
+   
+   # Use SSD for VM storage
+   # Move /var/lib/virtos/vms to SSD mount
+   ```
+
+### High CPU Usage on Host
+
+**Symptoms**:
+- Host CPU at 100%
+- Multiple VMs running slowly
+- System unresponsive
+
+**Diagnosis**:
+```bash
+# Find CPU hogs
+top -o %CPU
+
+# Check VM CPU allocation
+for vm in $(virsh list --name); do
+    echo "$vm: $(virsh vcpucount $vm)"
+done
+
+# Total allocated CPUs vs physical
+virsh nodeinfo
+```
+
+**Solution**:
+```bash
+# Don't oversubscribe CPUs
+# Rule: Total VM vCPUs < Host CPUs * 2
+
+# Set CPU pinning for important VMs
+virsh vcpupin vm-name 0 0
+virsh vcpupin vm-name 1 1
+
+# Limit CPU usage
+virsh schedinfo vm-name --set vcpu_quota=50000
+```
+
+### Network Performance is Slow
+
+**Symptoms**:
+- VM network throughput < 100 Mbps
+- High latency between VMs
+
+**Diagnosis**:
+```bash
+# Test network speed
+# Inside VM
+iperf3 -c host-ip
+
+# Check network model
+virsh dumpxml vm-name | grep "model type"
+```
+
+**Solution**:
+```bash
+# Use virtio network
+virsh edit vm-name
+# Change to: <model type='virtio'/>
+
+# Use bridge network (faster than NAT)
+virtos-network create mybr --type bridged
+
+# Enable multiqueue
+virsh edit vm-name
+# Add: <driver name='vhost' queues='4'/>
+```
+
+### Disk I/O is Slow
+
+**Symptoms**:
+- VM disk operations very slow
+- High iowait on host
+
+**Diagnosis**:
+```bash
+# Check I/O
+iostat -x 1 5
+
+# Check disk cache mode
+virsh dumpxml vm-name | grep cache
+```
+
+**Solution**:
+```bash
+# Use optimal cache mode
+virsh edit vm-name
+# Change to: cache='none' io='native'
+
+# Use raw images on SSD
+qemu-img convert -O raw vm.qcow2 vm.raw
+
+# Enable discard/TRIM
+# Add to disk: <driver discard='unmap'/>
+
+# Check host filesystem
+# ext4: mount with noatime,discard
+# btrfs: autodefrag,compress=zstd
 ```
 
 ---
