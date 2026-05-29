@@ -1,7 +1,7 @@
 # VirtOS-platform-java Integration Test Report
 
-**Date**: 2026-05-25  
-**Version**: VirtOS 0.1 + platform-java 1.1  
+**Date**: 2026-05-29  
+**Version**: VirtOS 0.87 + platform-java 1.1  
 **Status**: Build Verification Complete
 
 ## Executive Summary
@@ -30,13 +30,13 @@ Key modules verified:
 #### virtos-tools.tcz
 - **Size**: 336K
 - **Scripts**: 52 management utilities
-- **Version**: 0.1
+- **Version**: 0.87
 - **Includes**: virtos-tui with platform-java menu integration
 
 #### virtos-platform-java.tcz
 - **Size**: 4.0K
 - **Files**: 6 (wrapper scripts, install scripts, documentation)
-- **Version**: 0.1-alpha
+- **Version**: 0.87-alpha
 - **Dependencies**: compiletc, openjdk-21-jre, libvirt (defined in .dep file)
 
 Package contents verified:
@@ -136,7 +136,7 @@ All features implemented with:
 ### Version Management ✓
 
 **X.Y Versioning**:
-- ✓ VirtOS: VERSION file (0.1)
+- ✓ VirtOS: VERSION file (0.87)
 - ✓ platform-java: Maven versions (1.1)
 - ✓ Auto-rev scripts implemented
 - ✓ Version synchronization across package metadata
