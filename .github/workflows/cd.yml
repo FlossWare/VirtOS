@@ -242,3 +242,58 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          VERSION=${{ steps.new_version.outputs.version }}
+          echo "# Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Version: v${VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ✅ Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Packages Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Version | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|------|" >> $GITHUB_STEP_SUMMARY
+          for pkg in packages/output/*.tcz; do
+            if [ -f "$pkg" ]; then
+              PKG_NAME=$(basename "$pkg")
+              PKG_SIZE=$(du -h "$pkg" | cut -f1)
+              echo "| ${PKG_NAME} | ${VERSION} | ${PKG_SIZE} |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Targets" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **packagecloud.io**: [flossware/virtos]" \
+            "(https://packagecloud.io/flossware/virtos)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **GitHub Release**: [v${VERSION}]" \
+            "(https://github.com/FlossWare/VirtOS/releases/tag/v${VERSION})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "# On Tiny Core Linux / VirtOS" >> $GITHUB_STEP_SUMMARY
+          echo "tce-load -wi virtos-tools" >> $GITHUB_STEP_SUMMARY
+          echo "tce-load -wi virtos-jplatform" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify package availability on packagecloud.io" >> $GITHUB_STEP_SUMMARY
+          echo "2. Test installation on VirtOS" >> $GITHUB_STEP_SUMMARY
+          echo "3. Monitor for deployment issues" >> $GITHUB_STEP_SUMMARY
+          echo "4. Update documentation if needed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Deployment Notification
+        if: failure()
+        run: |
+          echo "# ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: v${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Action Required**: Review and fix the deployment pipeline." >> $GITHUB_STEP_SUMMARY
