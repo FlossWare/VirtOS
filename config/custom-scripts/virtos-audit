@@ -1,0 +1,259 @@
+#!/bin/sh
+# virtos-audit - View and query VirtOS audit logs
+#
+# Usage: virtos-audit [command] [options]
+
+set -e
+
+# Source common library
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+if [ -f "$SCRIPT_DIR/../lib/virtos-common.sh" ]; then
+    # shellcheck source=../lib/virtos-common.sh
+    . "$SCRIPT_DIR/../lib/virtos-common.sh"
+elif [ -f "/usr/local/lib/virtos-common.sh" ]; then
+    # shellcheck source=/dev/null
+    . "/usr/local/lib/virtos-common.sh"
+fi
+
+# Source audit library
+if [ -f "$SCRIPT_DIR/../lib/virtos-audit.sh" ]; then
+    # shellcheck source=../lib/virtos-audit.sh
+    . "$SCRIPT_DIR/../lib/virtos-audit.sh"
+elif [ -f "/usr/local/lib/virtos-audit.sh" ]; then
+    # shellcheck source=/dev/null
+    . "/usr/local/lib/virtos-audit.sh"
+else
+    echo "Error: virtos-audit.sh library not found" >&2
+    exit 1
+fi
+
+# Help text
+show_help() {
+    cat <<EOF
+Usage: virtos-audit [COMMAND] [OPTIONS]
+
+View and query VirtOS audit logs
+
+COMMANDS:
+    recent [N]              Show last N audit events (default: 10)
+    stats                   Show audit log statistics
+    query <type> <value>    Query audit log
+        Types: user, action, resource, result, date
+    watch                   Continuously monitor audit log (tail -f)
+    export [file]           Export audit log (default: stdout)
+    rotate                  Rotate audit log (requires root)
+
+EXAMPLES:
+    virtos-audit recent 50
+        Show last 50 audit events
+
+    virtos-audit query user admin
+        Show all events by user 'admin'
+
+    virtos-audit query action vm.delete
+        Show all VM deletion events
+
+    virtos-audit query result failed
+        Show all failed operations
+
+    virtos-audit query date "2026-05-29"
+        Show all events on specific date
+
+    virtos-audit stats
+        Show audit log statistics
+
+    virtos-audit watch
+        Watch audit log in real-time
+
+    virtos-audit export /tmp/audit-export.log
+        Export audit log to file
+
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version
+
+AUDIT LOG LOCATION:
+    $AUDIT_LOG_FILE
+
+LOG FORMAT:
+    [TIMESTAMP] version=X.Y host=HOSTNAME pid=PID user=USER source=IP \\
+                action=ACTION resource="RESOURCE" result=RESULT [error="ERROR"]
+
+RESULT CODES:
+    success - Operation completed successfully
+    failed  - Operation failed (see error field)
+    denied  - Operation denied (permission/policy)
+    skipped - Operation skipped (already exists, etc.)
+
+COMMON ACTIONS:
+    vm.create, vm.delete, vm.start, vm.stop, vm.migrate
+    snapshot.create, snapshot.delete, snapshot.restore
+    storage.create, storage.delete, storage.attach
+    network.create, network.delete, network.attach
+    backup.create, backup.delete, backup.restore
+    user.create, user.delete, user.modify
+    security.policy.change, security.permission.change
+
+NOTES:
+    - Audit log is append-only for integrity
+    - Requires read access to $AUDIT_LOG_FILE
+    - Rotation requires root privileges
+    - Logs are structured for machine parsing
+
+SEE ALSO:
+    virtos-security, virtos-security-advanced
+    /usr/share/doc/virtos/AUDIT_LOGGING.md
+EOF
+}
+
+# Show version
+show_version() {
+    echo "virtos-audit version $(get_version)"
+}
+
+# Watch audit log in real-time
+audit_watch() {
+    if [ ! -f "$AUDIT_LOG_FILE" ]; then
+        echo "Audit log not found: $AUDIT_LOG_FILE" >&2
+        return 1
+    fi
+
+    if [ ! -r "$AUDIT_LOG_FILE" ]; then
+        echo "Audit log not readable: $AUDIT_LOG_FILE" >&2
+        return 1
+    fi
+
+    echo "Watching audit log: $AUDIT_LOG_FILE"
+    echo "Press Ctrl-C to stop"
+    echo ""
+
+    tail -f "$AUDIT_LOG_FILE"
+}
+
+# Export audit log
+audit_export() {
+    local output_file="${1:-}"
+
+    if [ ! -f "$AUDIT_LOG_FILE" ]; then
+        echo "Audit log not found: $AUDIT_LOG_FILE" >&2
+        return 1
+    fi
+
+    if [ ! -r "$AUDIT_LOG_FILE" ]; then
+        echo "Audit log not readable: $AUDIT_LOG_FILE" >&2
+        return 1
+    fi
+
+    if [ -z "$output_file" ]; then
+        # Export to stdout
+        cat "$AUDIT_LOG_FILE"
+    else
+        # Export to file
+        if cp "$AUDIT_LOG_FILE" "$output_file"; then
+            echo "Audit log exported to: $output_file"
+            echo "Entries: $(wc -l < "$output_file")"
+        else
+            echo "Error: Failed to export audit log" >&2
+            return 1
+        fi
+    fi
+}
+
+# Rotate audit log
+audit_rotate() {
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "Error: Audit log rotation requires root privileges" >&2
+        return 1
+    fi
+
+    if [ ! -f "$AUDIT_LOG_FILE" ]; then
+        echo "Audit log not found: $AUDIT_LOG_FILE" >&2
+        return 1
+    fi
+
+    local timestamp
+    timestamp="$(date '+%Y%m%d-%H%M%S')"
+    local rotated_log="${AUDIT_LOG_FILE}.${timestamp}"
+
+    echo "Rotating audit log..."
+    echo "  Current: $AUDIT_LOG_FILE"
+    echo "  Rotated: $rotated_log"
+
+    # Move current log to rotated file
+    if mv "$AUDIT_LOG_FILE" "$rotated_log"; then
+        echo "  Entries: $(wc -l < "$rotated_log")"
+
+        # Create new empty log
+        touch "$AUDIT_LOG_FILE"
+        chmod 640 "$AUDIT_LOG_FILE"
+
+        # Maintain ownership
+        if [ -n "$(stat -c '%U' "$rotated_log" 2>/dev/null)" ]; then
+            chown "$(stat -c '%U:%G' "$rotated_log")" "$AUDIT_LOG_FILE" 2>/dev/null || true
+        fi
+
+        # Compress rotated log
+        if command -v gzip >/dev/null 2>&1; then
+            echo "Compressing rotated log..."
+            gzip "$rotated_log"
+            echo "  Compressed: ${rotated_log}.gz"
+        fi
+
+        echo "Audit log rotated successfully"
+    else
+        echo "Error: Failed to rotate audit log" >&2
+        return 1
+    fi
+}
+
+# Main command dispatcher
+main() {
+    local command="${1:-recent}"
+    shift || true
+
+    case "$command" in
+        recent)
+            audit_recent "$@"
+            ;;
+        stats)
+            audit_stats
+            ;;
+        query)
+            if [ $# -lt 2 ]; then
+                echo "Error: query requires type and value arguments" >&2
+                echo "Usage: virtos-audit query <type> <value>" >&2
+                echo "Types: user, action, resource, result, date" >&2
+                return 1
+            fi
+            audit_query "$1" "$2"
+            ;;
+        watch)
+            audit_watch
+            ;;
+        export)
+            audit_export "$@"
+            ;;
+        rotate)
+            audit_rotate
+            ;;
+        -h|--help|help)
+            show_help
+            ;;
+        -v|--version|version)
+            show_version
+            ;;
+        *)
+            echo "Error: Unknown command: $command" >&2
+            echo "Try 'virtos-audit --help' for more information" >&2
+            return 1
+            ;;
+    esac
+}
+
+# Parse arguments and run
+if [ $# -eq 0 ]; then
+    # No arguments - show recent events
+    main recent
+else
+    main "$@"
+fi

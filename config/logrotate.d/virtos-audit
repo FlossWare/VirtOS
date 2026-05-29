@@ -1,0 +1,53 @@
+# VirtOS Audit Log Rotation Configuration
+#
+# This file should be installed to /etc/logrotate.d/virtos-audit
+#
+# Rotation policy:
+# - Daily rotation
+# - Keep 90 days (adjust for compliance requirements)
+# - Compress old logs (saves disk space)
+# - Maintain proper permissions
+#
+# For compliance requirements:
+# - PCI-DSS: Change "rotate 90" to "rotate 365" (1 year)
+# - HIPAA: Change to "rotate 2190" (6 years)
+# - SOX: Change to "rotate 2555" (7 years)
+
+/var/log/virtos-audit.log {
+    # Rotate daily
+    daily
+
+    # Keep 90 days of logs (adjust for compliance)
+    rotate 90
+
+    # Compress old logs with gzip
+    compress
+
+    # Delay compression until next rotation
+    # (allows log analysis tools to work on most recent rotated log)
+    delaycompress
+
+    # Don't error if log file is missing
+    missingok
+
+    # Don't rotate if log is empty
+    notifempty
+
+    # Create new log file with specific permissions
+    # Owner: root, Group: virtos, Mode: 0640 (rw-r-----)
+    create 0640 root virtos
+
+    # Use date extension instead of number (.log.20260529 instead of .log.1)
+    dateext
+    dateformat -%Y%m%d
+
+    # Run commands after rotation
+    postrotate
+        # Signal virtos services to reopen log files (if needed)
+        # /usr/bin/killall -HUP virtos-daemon 2>/dev/null || true
+    endscript
+
+    # Additional options for security
+    # Prevent rotation if chattr +a is set (append-only)
+    # ifempty
+}
