@@ -137,7 +137,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 - Test ISO on real hardware
 - Report hardware compatibility
 - Validate VM lifecycle
-- See [TESTING_ROADMAP.md](docs/TESTING_ROADMAP.md)
+- See [TESTING_ROADMAP.md](TESTING_ROADMAP.md)
 
 **Backend Implementation**:
 
@@ -201,44 +201,19 @@ All community members must follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 **Good Issue**:
 
-```markdown
-Title: virtos-create-vm fails with "domain already exists" error
-
-**Environment**:
-- VirtOS version: 0.67
-- Host OS: Fedora 38
-- libvirt version: 9.0.0
-
-**Steps to Reproduce**:
-1. Run `virtos-create-vm test-vm`
-2. VM created successfully
-3. Run `virtos-create-vm test-vm` again
-4. Error: "domain already exists"
-
-**Expected**: Friendly error message suggesting to use a different name
-
-**Actual**: Cryptic virsh error message
-
-**Logs**:
-```
-
-ERROR: virsh error: domain 'test-vm' already exists
-
-```
-
-**What I've Tried**:
-- Checked virtos-create-vm source code
-- Looked for validation logic
-- Found TODO comment for better error handling
-```
+- Title: virtos-create-vm fails with "domain already exists" error
+- Environment: VirtOS version, Host OS, libvirt version
+- Steps to Reproduce: Clear numbered steps
+- Expected behavior: Friendly error message
+- Actual behavior: Cryptic virsh error message
+- Logs: Relevant error messages
+- What I've Tried: List of troubleshooting steps
 
 **Bad Issue**:
 
-```markdown
-Title: doesn't work
-
-it doesn't work help
-```
+- Title: doesn't work
+- Body: it doesn't work help
+- Missing: Everything! (no environment, no steps, no logs, no context)
 
 ## Governance
 
@@ -321,7 +296,7 @@ Outstanding contributors recognized with:
 
 - **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Build System**: [BUILD.md](BUILD.md)
-- **Testing**: [TESTING_ROADMAP.md](docs/TESTING_ROADMAP.md)
+- **Testing**: [TESTING_ROADMAP.md](TESTING_ROADMAP.md)
 - **AI Development Guide**: [CLAUDE.md](CLAUDE.md)
 
 ### Project Management
@@ -405,7 +380,7 @@ A: No. GPLv3 requires derivative works to also be GPLv3.
 
 ### Testers
 
-1. See [TESTING_ROADMAP.md](docs/TESTING_ROADMAP.md)
+1. See [TESTING_ROADMAP.md](TESTING_ROADMAP.md)
 2. Try ISO on real hardware (critical need!)
 3. Report results in Issue #1 or #52
 4. Help validate integration tests (Issue #103)

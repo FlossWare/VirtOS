@@ -559,8 +559,8 @@ multicloud_wizard() {
         --msgbox "Multi-cloud analysis complete!" 8 40
 }
 
-# Show usage
-usage() {
+# Show show_help
+show_help() {
     cat <<EOF
 VirtOS Multi-Cloud Management - Cost optimization and workload placement
 
@@ -585,7 +585,11 @@ Status Commands:
   status                                       Show multi-cloud status
   wizard                                       Interactive wizard
 
-Examples:
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
+
+EXAMPLES:
   virtos-multicloud analyze-costs 30d
   virtos-multicloud place-workload myapp "cpu:4,memory:8" "cost"
   virtos-multicloud optimize-resources rightsizing
@@ -594,7 +598,12 @@ Examples:
   virtos-multicloud finops-dashboard
   virtos-multicloud wizard
 
-Version: $VERSION
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -631,6 +640,6 @@ case "$1" in
         echo "virtos-multicloud version $VERSION"
         ;;
     *)
-        usage
+        show_help
         ;;
 esac
