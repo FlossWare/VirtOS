@@ -19,7 +19,15 @@
 #   validate_network_mode()  - Validates network modes (nat, bridge, isolated)
 #   sanitize_input()         - Removes dangerous characters from input
 #
-# See: https://github.com/FlossWare/VirtOS/issues/82
+# Available Output Functions (standardized messages with logging):
+#   die "message" [code]     - Display error to stderr, log, and exit (default: 1)
+#   warn "message"           - Display warning to stderr (yellow) and log
+#   info "message"           - Display info to stdout (blue) and log
+#   success "message"        - Display success to stdout (green checkmark) and log
+#
+# Note: All output functions now integrate with logging (log to file if enabled)
+#
+# See: https://github.com/FlossWare/VirtOS/issues/82, #112
 
 VERSION="1.0"
 
@@ -138,23 +146,41 @@ sanitize_input() {
 #==============================================================================
 
 # Print error message and exit
+# Usage: die "error message" [exit_code]
+# Outputs to stderr and logs, then exits with code (default: 1)
 die() {
     local msg="$1"
     local exit_code="${2:-1}"
     echo "${RED}Error: ${msg}${NC}" >&2
+    log_error "$msg"
     exit "$exit_code"
 }
 
 # Print warning message (non-fatal)
+# Usage: warn "warning message"
+# Outputs to stderr and logs
 warn() {
     local msg="$1"
     echo "${YELLOW}Warning: ${msg}${NC}" >&2
+    log_warn "$msg"
 }
 
 # Print info message
+# Usage: info "info message"
+# Outputs to stdout and logs
 info() {
     local msg="$1"
     echo "${BLUE}${msg}${NC}"
+    log_info "$msg"
+}
+
+# Print success message
+# Usage: success "success message"
+# Outputs to stdout (green checkmark) and logs
+success() {
+    local msg="$1"
+    echo "${GREEN}✓${NC} $msg"
+    log_info "SUCCESS: $msg"
 }
 
 # Print success message

@@ -262,3 +262,22 @@ setup() {
     run log_error "test error"
     [ "$status" -eq 0 ]
 }
+
+# Output Function Tests
+@test "success: displays success message" {
+    run success "operation completed"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "operation completed" ]]
+}
+
+@test "warn: outputs to stderr" {
+    run warn "test warning"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "Warning" ]]
+}
+
+@test "info: displays info message" {
+    run info "test info"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "test info" ]]
+}
