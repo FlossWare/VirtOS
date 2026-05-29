@@ -37,6 +37,8 @@ Complete documentation for FlossWare VirtOS.
 
 - **[CONFIGURATION.md](CONFIGURATION.md)** - 30+ configuration options
 - **[BUILD-CONFIGURATOR.md](BUILD-CONFIGURATOR.md)** - Interactive TUI for build configuration
+- **[BUILD.md](BUILD.md)** - Build system documentation and procedures
+- **[BUILD_DEPENDENCIES.md](BUILD_DEPENDENCIES.md)** - Build-time dependency tracking
 - **[PROFILES.md](PROFILES.md)** - 7 build profiles comparison
 - **[BRANDING.md](BRANDING.md)** - VirtOS naming and branding
 - **[STORAGE.md](STORAGE.md)** - Storage options and filesystems
@@ -57,32 +59,47 @@ Complete documentation for FlossWare VirtOS.
 - **[REMOTE-ACCESS.md](REMOTE-ACCESS.md)** - virt-manager and SSH setup
 - **[API.md](API.md)** - REST API reference (virtos-api endpoints)
 - **[API_REFERENCE.md](API_REFERENCE.md)** - ⭐ NEW: Complete REST API v1 documentation (all endpoints, examples, security)
+- **[API_VERSIONING.md](API_VERSIONING.md)** - API versioning strategy and backward compatibility
+- **[FEDERATION.md](FEDERATION.md)** - Multi-cloud federation and cross-cluster management
 - **[COCKPIT-MODULE.md](COCKPIT-MODULE.md)** - Cockpit web UI module design
 
 ## User Interface
 
 - **[TUI.md](TUI.md)** - Text user interface (ncurses setup wizard and management console)
 - **[TUI_TECHNOLOGY.md](TUI_TECHNOLOGY.md)** - Why VirtOS uses dialog vs platform-java using Lanterna
+- **[WEB-UI.md](WEB-UI.md)** - Web-based management interface (Cockpit integration)
 
 ## Reference
 
 - **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** - All commands in one place
+- **[QUICK-START.md](QUICK-START.md)** - Fast-track getting started guide
 - **[COMPARISON.md](COMPARISON.md)** - VirtOS vs similar projects (Proxmox, ESXi, etc.)
 - **[MISSING-FEATURES.md](MISSING-FEATURES.md)** - What VirtOS lacks (honest assessment)
 - **[EXPERIMENTAL_FEATURES.md](EXPERIMENTAL_FEATURES.md)** - ⭐ NEW: Experimental vs functional scripts (comprehensive guide)
 - **[EXPERIMENTAL.md](EXPERIMENTAL.md)** - Research prototypes explained (AI, quantum, blockchain, etc.)
 - **[EXAMPLES-INTEGRATION.md](EXAMPLES-INTEGRATION.md)** - VirtOS-Examples repository integration plan
+- **[EXAMPLES.md](EXAMPLES.md)** - Example configurations and use cases
+- **[PLATFORM-JAVA_INTEGRATION.md](PLATFORM-JAVA_INTEGRATION.md)** - platform-java integration and workload orchestration
+- **[MIGRATION-FROM-PROXMOX.md](MIGRATION-FROM-PROXMOX.md)** - Migration guide from Proxmox VE
 - **[COMMUNITY.md](COMMUNITY.md)** - ⭐ NEW: Community resources, discussions, support channels
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
 - **[CODING_STANDARDS.md](CODING_STANDARDS.md)** - ⭐ NEW: Official coding standards (shell, security, testing, git)
 - **[DEPRECATION_POLICY.md](DEPRECATION_POLICY.md)** - ⭐ NEW: Official deprecation policy (6-month timeline, semver)
 - **[PLUGIN_API.md](PLUGIN_API.md)** - ⭐ NEW: Plugin development guide (templates, security, packaging)
+- **[VERSIONING.md](VERSIONING.md)** - Version numbering and release strategy
 
 ## Operations & Security
 
 - **[AUDIT_LOGGING.md](AUDIT_LOGGING.md)** - ⭐ NEW: Audit logging guide (compliance, security, troubleshooting)
 - **[SECURITY-HARDENING.md](SECURITY-HARDENING.md)** - Security best practices
+- **[SECURITY_HARDENING.md](SECURITY_HARDENING.md)** - Security hardening procedures (duplicate reference)
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - ⭐ ENHANCED: Complete troubleshooting (CLI, TUI, Web UI, API)
+- **[MONITORING-SETUP.md](MONITORING-SETUP.md)** - System monitoring configuration and setup
+- **[DR-PROCEDURES.md](DR-PROCEDURES.md)** - Disaster recovery procedures and planning
+- **[UPGRADE-PROCEDURES.md](UPGRADE-PROCEDURES.md)** - System upgrade and update procedures
+- **[INSTALLATION.md](INSTALLATION.md)** - Installation guide and requirements
+- **[ROLLBACK.md](ROLLBACK.md)** - Rollback procedures for failed deployments
+- **[PRE_COMMIT_HOOKS.md](PRE_COMMIT_HOOKS.md)** - Pre-commit hook setup and configuration
 
 ## Testing & Quality
 
@@ -91,6 +108,12 @@ Complete documentation for FlossWare VirtOS.
 - **[RUNTIME_TESTING_PLAN.md](../RUNTIME_TESTING_PLAN.md)** - Runtime testing procedures
 - **[TESTING.md](TESTING.md)** - Testing guide
 - **[TESTING_METRICS.md](TESTING_METRICS.md)** - Test metrics
+
+## Roadmap & Planning
+
+- **[ROADMAP.md](ROADMAP.md)** - Development phases and status (already listed above in System Design)
+- **[ROADMAP-v1.0.md](ROADMAP-v1.0.md)** - Detailed v1.0 release planning
+- **[V1_0_ROADMAP.md](V1_0_ROADMAP.md)** - Alternative v1.0 roadmap document
 
 ## Documentation by Use Case
 
@@ -274,8 +297,8 @@ Complete documentation for FlossWare VirtOS.
 
 ## Total Documentation
 
-- **62+ Documentation Files** (including business case, technical guides, operations, security)
-- **36,000+ Lines** of comprehensive documentation
+- **80+ Documentation Files** (including business case, technical guides, operations, security, development)
+- **40,000+ Lines** of comprehensive documentation
 - **Complete and Honest Coverage** - including what's missing
 - **Business Value Analysis** - ROI, cost savings, competitive comparison
 - **Recent Additions** (May 2026):
@@ -284,6 +307,9 @@ Complete documentation for FlossWare VirtOS.
   - ⭐ Plugin API Guide (742 lines) - Third-party extension development
   - ⭐ Deprecation Policy (381 lines) - Official feature lifecycle policy
   - ⭐ Troubleshooting enhancements (~450 lines) - Web UI & API sections
+  - ⭐ Pre-commit Hooks Guide - Development workflow automation
+  - ⭐ API Versioning - Backward compatibility strategy
+  - ⭐ Rollback Procedures - Deployment safety
   - Experimental features guide (600+ lines)
   - Audit logging guide (800+ lines)
   - Testing roadmap (1,100+ lines)
