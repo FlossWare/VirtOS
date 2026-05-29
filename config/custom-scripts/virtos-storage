@@ -131,8 +131,20 @@ ceph_init() {
     echo ""
 
     if ! command -v ceph >/dev/null 2>&1; then
-        echo "Error: Ceph not installed"
-        echo "Install with: tce-load -i ceph"
+        echo "Error: Ceph storage system is not installed" >&2
+        echo "" >&2
+        echo "Ceph provides distributed storage for VirtOS:" >&2
+        echo "  • Block storage (RBD) for VM disks" >&2
+        echo "  • Replication and redundancy" >&2
+        echo "  • Scale-out storage architecture" >&2
+        echo "" >&2
+        echo "To install Ceph:" >&2
+        echo "  tce-load -wi ceph" >&2
+        echo "" >&2
+        echo "Alternatives for simpler deployments:" >&2
+        echo "  • Local storage:      virtos-storage pool-create local-vms dir" >&2
+        echo "  • NFS shared storage: virtos-storage nfs-cluster-init" >&2
+        echo "  • GlusterFS:          virtos-storage gluster-init" >&2
         return 1
     fi
 
@@ -250,8 +262,19 @@ gluster_init() {
     echo ""
 
     if ! command -v gluster >/dev/null 2>&1; then
-        echo "Error: GlusterFS not installed"
-        echo "Install with: tce-load -i glusterfs"
+        echo "Error: GlusterFS is not installed" >&2
+        echo "" >&2
+        echo "GlusterFS provides distributed filesystem storage for VirtOS:" >&2
+        echo "  • Network filesystem with replication" >&2
+        echo "  • Simple scaling across multiple hosts" >&2
+        echo "  • POSIX-compliant shared storage" >&2
+        echo "" >&2
+        echo "To install GlusterFS:" >&2
+        echo "  tce-load -wi glusterfs" >&2
+        echo "" >&2
+        echo "Alternatives:" >&2
+        echo "  • For simpler setups: virtos-storage nfs-cluster-init" >&2
+        echo "  • For enterprise:     virtos-storage ceph-init" >&2
         return 1
     fi
 
@@ -467,14 +490,35 @@ nfs_export_add() {
     local clients="${3:-*}"
 
     if [ -z "$export_path" ]; then
-        echo "Error: Export path required"
+        echo "Error: Export path is required" >&2
+        echo "" >&2
+        echo "Usage:" >&2
+        echo "  virtos-storage nfs-export-add <path> [options] [clients]" >&2
+        echo "" >&2
+        echo "Arguments:" >&2
+        echo "  path      Directory to export (required)" >&2
+        echo "  options   NFS options (default: rw,sync,no_root_squash,no_subtree_check)" >&2
+        echo "  clients   Client pattern (default: * for all)" >&2
+        echo "" >&2
+        echo "Examples:" >&2
+        echo "  virtos-storage nfs-export-add /var/lib/virt/images" >&2
+        echo "  virtos-storage nfs-export-add /export/vms 'rw,sync' '192.168.1.0/24'" >&2
         return 1
     fi
 
     log_message "Adding NFS export: $export_path"
 
     if [ ! -d "$export_path" ]; then
-        echo "Error: Path does not exist: $export_path"
+        echo "Error: Export path does not exist: $export_path" >&2
+        echo "" >&2
+        echo "The directory must exist before it can be exported via NFS." >&2
+        echo "" >&2
+        echo "To create the directory:" >&2
+        echo "  sudo mkdir -p $export_path" >&2
+        echo "  sudo chown -R qemu:qemu $export_path  # For VM storage" >&2
+        echo "" >&2
+        echo "Then retry the export:" >&2
+        echo "  virtos-storage nfs-export-add $export_path" >&2
         return 1
     fi
 
@@ -562,8 +606,25 @@ pool_create() {
     local pool_type="$2"
 
     if [ -z "$pool_name" ] || [ -z "$pool_type" ]; then
-        echo "Error: Pool name and type required"
-        echo "Types: ceph, gluster, nfs, dir"
+        echo "Error: Pool name and type are required" >&2
+        echo "" >&2
+        echo "Usage:" >&2
+        echo "  virtos-storage pool-create <name> <type>" >&2
+        echo "" >&2
+        echo "Arguments:" >&2
+        echo "  name    Storage pool name" >&2
+        echo "  type    Storage backend type" >&2
+        echo "" >&2
+        echo "Supported types:" >&2
+        echo "  dir       Local directory (simple, no replication)" >&2
+        echo "  nfs       Network filesystem (shared storage)" >&2
+        echo "  ceph      Distributed storage (enterprise, replicated)" >&2
+        echo "  gluster   Distributed filesystem (replicated)" >&2
+        echo "" >&2
+        echo "Examples:" >&2
+        echo "  virtos-storage pool-create local-vms dir" >&2
+        echo "  virtos-storage pool-create shared-storage nfs" >&2
+        echo "  virtos-storage pool-create vm-pool ceph" >&2
         return 1
     fi
 
