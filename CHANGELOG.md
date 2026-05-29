@@ -67,6 +67,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improves contributor onboarding and PR quality
 
 ### Documentation
+- Updated Documentation Index (docs/INDEX.md) - 2026-05-29
+  - Added API_REFERENCE.md to Multi-Host Features section
+  - Added DEPRECATION_POLICY.md to Reference section
+  - Added PLUGIN_API.md to Reference section
+  - Enhanced TROUBLESHOOTING.md entry
+  - Updated documentation statistics (61+ files, 35,000+ lines)
+  - Added recent additions section (API Reference, Plugin API, Deprecation Policy)
+
 - Created Deprecation Policy (Issue #117) - 2026-05-29
   - Comprehensive docs/DEPRECATION_POLICY.md
   - 6-month standard deprecation timeline

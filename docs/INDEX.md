@@ -56,6 +56,7 @@ Complete documentation for FlossWare VirtOS.
 - **[IAAS.md](IAAS.md)** - Automated VM placement and scheduling
 - **[REMOTE-ACCESS.md](REMOTE-ACCESS.md)** - virt-manager and SSH setup
 - **[API.md](API.md)** - REST API reference (virtos-api endpoints)
+- **[API_REFERENCE.md](API_REFERENCE.md)** - ⭐ NEW: Complete REST API v1 documentation (all endpoints, examples, security)
 - **[COCKPIT-MODULE.md](COCKPIT-MODULE.md)** - Cockpit web UI module design
 
 ## User Interface
@@ -73,11 +74,14 @@ Complete documentation for FlossWare VirtOS.
 - **[EXAMPLES-INTEGRATION.md](EXAMPLES-INTEGRATION.md)** - VirtOS-Examples repository integration plan
 - **[COMMUNITY.md](COMMUNITY.md)** - ⭐ NEW: Community resources, discussions, support channels
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
+- **[DEPRECATION_POLICY.md](DEPRECATION_POLICY.md)** - ⭐ NEW: Official deprecation policy (6-month timeline, semver)
+- **[PLUGIN_API.md](PLUGIN_API.md)** - ⭐ NEW: Plugin development guide (templates, security, packaging)
 
 ## Operations & Security
 
 - **[AUDIT_LOGGING.md](AUDIT_LOGGING.md)** - ⭐ NEW: Audit logging guide (compliance, security, troubleshooting)
 - **[SECURITY-HARDENING.md](SECURITY-HARDENING.md)** - Security best practices
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - ⭐ ENHANCED: Complete troubleshooting (CLI, TUI, Web UI, API)
 
 ## Testing & Quality
 
@@ -269,11 +273,15 @@ Complete documentation for FlossWare VirtOS.
 
 ## Total Documentation
 
-- **54+ Documentation Files** (including business case, technical guides, operations, security)
-- **32,500+ Lines** of comprehensive documentation
+- **61+ Documentation Files** (including business case, technical guides, operations, security)
+- **35,000+ Lines** of comprehensive documentation
 - **Complete and Honest Coverage** - including what's missing
 - **Business Value Analysis** - ROI, cost savings, competitive comparison
 - **Recent Additions** (May 2026):
+  - ⭐ API Reference (554 lines) - Complete REST API v1 documentation
+  - ⭐ Plugin API Guide (742 lines) - Third-party extension development
+  - ⭐ Deprecation Policy (381 lines) - Official feature lifecycle policy
+  - ⭐ Troubleshooting enhancements (~450 lines) - Web UI & API sections
   - Experimental features guide (600+ lines)
   - Audit logging guide (800+ lines)
   - Testing roadmap (1,100+ lines)
