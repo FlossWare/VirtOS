@@ -72,7 +72,7 @@ EOF
                 systemctl restart mysql
 
                 # Configure replica
-                mysql -e "CHANGE MASTER TO MASTER_HOST='$primary_host', MASTER_USER='repl', MASTER_PASSWORD='repl_password', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=0;"
+                mysql -e "CHANGE MASTER TO MASTER_HOST='$primary_host', MASTER_USER='repl', MASTER_PASSWORD='repl_password', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=0;" # pragma: allowlist secret
                 mysql -e "START SLAVE;"
             fi
             ;;
