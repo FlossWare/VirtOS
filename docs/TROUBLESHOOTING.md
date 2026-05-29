@@ -19,6 +19,8 @@ Complete guide for diagnosing and fixing common VirtOS issues.
 - 🔧 **Installation problems** → [Package/Installation Issues](#packageinstallation-issues)
 - 🔌 **KVM/virtualization** → [libvirt/KVM Issues](#libvirtkvm-issues)
 - 🔗 **Cluster problems** → [Cluster Issues](#cluster-issues)
+- 🌐 **Web UI problems** → [Web UI Issues](#web-ui-issues)
+- 🔌 **API problems** → [API Issues](#api-issues)
 
 ## Table of Contents
 
@@ -33,6 +35,8 @@ Complete guide for diagnosing and fixing common VirtOS issues.
 - [Performance Issues](#performance-issues)
 - [Cluster Issues](#cluster-issues)
 - [Package/Installation Issues](#packageinstallation-issues)
+- [Web UI Issues](#web-ui-issues)
+- [API Issues](#api-issues)
 - [Diagnostic Commands](#diagnostic-commands)
 - [Getting Help](#getting-help)
 
@@ -65,7 +69,7 @@ md5sum build/output/VirtOS-*.iso
 # Check ISO contents
 file build/output/VirtOS-*.iso
 # Should show: "DOS/MBR boot sector"
-```
+```bash
 
 **Solutions**:
 
@@ -102,9 +106,9 @@ file build/output/VirtOS-*.iso
 
 **Symptoms**:
 
-```
+```bash
 Kernel panic - not syncing: VFS: Unable to mount root fs
-```
+```bash
 
 **Cause**: Missing initrd or kernel modules
 
@@ -115,7 +119,7 @@ Kernel panic - not syncing: VFS: Unable to mount root fs
 cd build
 # Edit build.conf - ensure KERNEL_MODULES includes required drivers
 ./scripts/build-all.sh
-```
+```bash
 
 ### ISO Boots to Console but No GUI/TUI
 
@@ -138,7 +142,7 @@ tce-load -i virtos-tools
 
 # Or add to boot list
 echo virtos-tools.tcz >> /mnt/sda1/tce/onboot.lst
-```
+```bash
 
 ---
 
@@ -148,15 +152,15 @@ echo virtos-tools.tcz >> /mnt/sda1/tce/onboot.lst
 
 **Symptoms**:
 
-```
+```bash
 genisoimage: command not found
-```
+```bash
 
 or
 
-```
+```bash
 mksquashfs: not found
-```
+```bash
 
 **Solution**:
 
@@ -173,21 +177,21 @@ make install-deps-arch
 # Or manual install
 sudo dnf install genisoimage syslinux squashfs-tools  # Fedora
 sudo apt install genisoimage syslinux-utils squashfs-tools  # Ubuntu
-```
+```bash
 
 ### Build Failed - Network Download Error
 
 **Symptoms**:
 
-```
+```bash
 wget: unable to resolve host address 'tinycorelinux.net'
-```
+```bash
 
 or
 
-```
+```bash
 Connection timed out
-```
+```bash
 
 **Diagnosis**:
 
@@ -198,7 +202,7 @@ ping -c 3 8.8.8.8
 
 # Test DNS
 nslookup tinycorelinux.net
-```
+```bash
 
 **Solutions**:
 
@@ -227,16 +231,16 @@ nslookup tinycorelinux.net
 
 **Symptoms**:
 
-```
+```bash
 No space left on device
-```
+```bash
 
 **Diagnosis**:
 
 ```bash
 df -h .
 du -sh build/
-```
+```bash
 
 **Solution**:
 
@@ -250,7 +254,7 @@ rm -rf build/download/cache/*
 
 # Check required space (need ~2GB free)
 df -h /
-```
+```bash
 
 ### Build Succeeds but ISO is Too Small
 
@@ -267,7 +271,7 @@ unsquashfs -ll build/output/VirtOS-*.iso
 
 # Verify build profile
 grep PROFILE= build/build.conf
-```
+```bash
 
 **Solution**:
 
@@ -279,7 +283,7 @@ vim build/build.conf
 # Rebuild
 cd build/scripts
 ./build-all.sh
-```
+```bash
 
 ---
 
@@ -291,7 +295,7 @@ cd build/scripts
 
 ```bash
 bash: virtos-setup: command not found
-```
+```bash
 
 **Solution**:
 
@@ -306,15 +310,15 @@ ls -l /usr/local/bin/virtos-*
 sudo cp /path/to/virtos-tools.tcz /mnt/sda1/tce/optional/
 echo virtos-tools.tcz >> /mnt/sda1/tce/onboot.lst
 tce-load -i virtos-tools
-```
+```bash
 
 ### Permission denied errors
 
 **Symptom**:
 
-```
+```bash
 Error: Permission denied
-```
+```bash
 
 **Solution**:
 
@@ -326,7 +330,7 @@ sudo virtos-create-vm --name test ...
 # Add user to libvirt group
 sudo usermod -aG libvirt $USER
 # Log out and back in for group changes to take effect
-```
+```bash
 
 ---
 
@@ -336,10 +340,10 @@ sudo usermod -aG libvirt $USER
 
 **Symptom**:
 
-```
+```bash
 Error: Failed to connect to libvirt
 error: failed to connect to the hypervisor
-```
+```bash
 
 **Diagnosis**:
 
@@ -349,7 +353,7 @@ ps aux | grep libvirtd
 
 # Check systemd status
 systemctl status libvirtd
-```
+```bash
 
 **Solution**:
 
@@ -362,16 +366,16 @@ sudo systemctl enable libvirtd
 
 # If systemd not available (Tiny Core)
 sudo /usr/local/etc/init.d/libvirtd start
-```
+```bash
 
 ### KVM module not loaded
 
 **Symptom**:
 
-```
+```bash
 Error: KVM not available
 Could not access KVM kernel module
-```
+```bash
 
 **Diagnosis**:
 
@@ -382,7 +386,7 @@ lsmod | grep kvm
 # Check CPU virtualization support
 egrep -c '(vmx|svm)' /proc/cpuinfo
 # Should return > 0
-```
+```bash
 
 **Solution**:
 
@@ -399,15 +403,15 @@ echo "kvm_intel" | sudo tee -a /etc/modules
 # If CPU doesn't support virtualization:
 # - Enable VT-x/AMD-V in BIOS
 # - Or use containers instead of VMs
-```
+```bash
 
 ### Cannot access /dev/kvm
 
 **Symptom**:
 
-```
+```bash
 Error: Could not access KVM kernel module: Permission denied
-```
+```bash
 
 **Solution**:
 
@@ -421,7 +425,7 @@ sudo usermod -aG kvm $USER
 
 # Log out and back in for group membership to take effect
 # Or use: newgrp kvm
-```
+```bash
 
 **Verify**:
 
@@ -432,7 +436,7 @@ groups
 # Test KVM access
 kvm-ok
 # Or: qemu-system-x86_64 -enable-kvm -version
-```
+```bash
 
 **⚠️ Security Note**: NEVER use `chmod 666 /dev/kvm` - this allows any user/process to access the hypervisor, which is a severe security risk. Always use group-based access control (`chmod 660` with `kvm` group).
 
@@ -444,9 +448,9 @@ kvm-ok
 
 **Symptom**:
 
-```
+```bash
 Error: Failed to create VM
-```
+```bash
 
 **Common Causes**:
 
@@ -469,7 +473,7 @@ df -h
 # Check cluster configuration
 virtos-cluster list
 cat /etc/virtos/cluster.conf
-```
+```bash
 
 **Solution**:
 
@@ -485,15 +489,15 @@ virtos-cluster refresh
 
 # Use local host explicitly
 virtos-create-vm --name test --cpu 1 --ram 1024 --disk 10G --require localhost
-```
+```bash
 
 ### VM won't start
 
 **Symptom**:
 
-```
+```bash
 Error: Failed to start domain 'test-vm'
-```
+```bash
 
 **Diagnosis**:
 
@@ -510,7 +514,7 @@ virsh start test-vm
 
 # Check system logs
 sudo journalctl -u libvirtd -n 50
-```
+```bash
 
 **Common Issues & Solutions**:
 
@@ -525,7 +529,7 @@ ls -lh /var/lib/virtos/vms/test-vm/test-vm.qcow2
 
 # Create if missing
 qemu-img create -f qcow2 /var/lib/virtos/vms/test-vm/test-vm.qcow2 20G
-```
+```bash
 
 **Network bridge missing**:
 
@@ -535,7 +539,7 @@ ip link show br0
 
 # Create bridge
 virtos-network create-bridge --name br0 --interface eth0
-```
+```bash
 
 **Insufficient memory**:
 
@@ -550,15 +554,15 @@ virsh edit test-vm
 # Or stop other VMs
 virsh list
 virsh shutdown other-vm
-```
+```bash
 
 ### VM migration fails
 
 **Symptom**:
 
-```
+```bash
 Error: Migration failed
-```
+```bash
 
 **Diagnosis**:
 
@@ -574,7 +578,7 @@ ssh root@dest-host.local "systemctl status libvirtd"
 
 # Check shared storage (if required)
 ssh root@dest-host.local "ls -l /var/lib/virtos/vms/"
-```
+```bash
 
 **Solution**:
 
@@ -587,7 +591,7 @@ scp /var/lib/virtos/vms/test-vm/test-vm.qcow2 root@dest-host:/var/lib/virtos/vms
 
 # Try migration with verbose output
 virtos-migrate --name test-vm --destination dest-host.local --verbose
-```
+```bash
 
 ---
 
@@ -597,9 +601,9 @@ virtos-migrate --name test-vm --destination dest-host.local --verbose
 
 **Symptom**:
 
-```
+```bash
 Error: Network bridge 'br0' not found
-```
+```bash
 
 **Diagnosis**:
 
@@ -610,7 +614,7 @@ brctl show
 
 # List libvirt networks
 virsh net-list --all
-```
+```bash
 
 **Solution**:
 
@@ -622,7 +626,7 @@ sudo virtos-network create-bridge --name br0 --interface eth0
 sudo ip link add br0 type bridge
 sudo ip link set br0 up
 sudo ip link set eth0 master br0
-```
+```bash
 
 ### VMs can't access network
 
@@ -642,7 +646,7 @@ virsh dumpxml vm-name | grep -A5 interface
 
 # Check host bridge
 ip addr show br0
-```
+```bash
 
 **Solution**:
 
@@ -659,7 +663,7 @@ sudo iptables -L -n -v
 # Allow forwarding
 sudo iptables -A FORWARD -i br0 -j ACCEPT
 sudo iptables -A FORWARD -o br0 -j ACCEPT
-```
+```bash
 
 ---
 
@@ -669,9 +673,9 @@ sudo iptables -A FORWARD -o br0 -j ACCEPT
 
 **Symptom**:
 
-```
+```bash
 Error: Failed to create disk image
-```
+```bash
 
 **Diagnosis**:
 
@@ -681,7 +685,7 @@ df -h /var/lib/virtos/vms
 
 # Check permissions
 ls -ld /var/lib/virtos/vms
-```
+```bash
 
 **Solution**:
 
@@ -695,15 +699,15 @@ sudo chmod 755 /var/lib/virtos/vms
 
 # Create disk manually
 sudo qemu-img create -f qcow2 /var/lib/virtos/vms/test.qcow2 20G
-```
+```bash
 
 ### Storage pool errors
 
 **Symptom**:
 
-```
+```bash
 Error: Storage pool 'default' not active
-```
+```bash
 
 **Diagnosis**:
 
@@ -713,7 +717,7 @@ virsh pool-list --all
 
 # Check pool state
 virsh pool-info default
-```
+```bash
 
 **Solution**:
 
@@ -726,7 +730,7 @@ virsh pool-autostart default
 
 # Create pool if missing
 virtos-storage create-pool --name default --path /var/lib/virtos/vms --type dir
-```
+```bash
 
 ---
 
@@ -736,9 +740,9 @@ virtos-storage create-pool --name default --path /var/lib/virtos/vms --type dir
 
 **Symptom**:
 
-```
+```bash
 No cluster members found
-```
+```bash
 
 **Diagnosis**:
 
@@ -752,7 +756,7 @@ systemctl status avahi-daemon
 
 # Check network connectivity
 ping other-host.local
-```
+```bash
 
 **Solution**:
 
@@ -776,15 +780,15 @@ sudo vi /etc/virtos/cluster-members.conf
 # Add:
 # virtos-1 192.168.1.101
 # virtos-2 192.168.1.102
-```
+```bash
 
 ### Cannot SSH to cluster members
 
 **Symptom**:
 
-```
+```bash
 Permission denied (publickey)
-```
+```bash
 
 **Solution**:
 
@@ -798,7 +802,7 @@ ssh-copy-id root@virtos-3.local
 
 # Test SSH access
 ssh root@virtos-2.local "echo test"
-```
+```bash
 
 ---
 
@@ -808,9 +812,9 @@ ssh root@virtos-2.local "echo test"
 
 **Symptom**:
 
-```
+```bash
 Error loading extension virtos-tools.tcz
-```
+```bash
 
 **Diagnosis**:
 
@@ -824,7 +828,7 @@ cat /mnt/sda1/tce/optional/virtos-tools.tcz.dep
 # Check MD5 sum
 cd /mnt/sda1/tce/optional
 md5sum -c virtos-tools.tcz.md5.txt
-```
+```bash
 
 **Solution**:
 
@@ -841,7 +845,7 @@ tce-load -i virtos-tools
 
 # Check for errors
 dmesg | tail
-```
+```bash
 
 ---
 
@@ -866,7 +870,7 @@ virsh version
 free -h
 nproc
 df -h
-```
+```bash
 
 ### VM Information
 
@@ -885,7 +889,7 @@ virsh console vm-name
 
 # VM logs
 sudo journalctl -u libvirtd | grep vm-name
-```
+```bash
 
 ### Network Information
 
@@ -900,7 +904,7 @@ virsh net-info default
 
 # Firewall rules
 sudo iptables -L -n -v
-```
+```bash
 
 ### Storage Information
 
@@ -915,7 +919,7 @@ virsh vol-list default
 # Disk usage
 df -h /var/lib/virtos/vms
 du -sh /var/lib/virtos/vms/*
-```
+```bash
 
 ---
 
@@ -942,7 +946,7 @@ iostat -x 1 5
 # Check if using KVM acceleration
 virsh dumpxml vm-name | grep kvm
 # Should show: <domain type='kvm'>
-```
+```bash
 
 **Solutions**:
 
@@ -1015,7 +1019,7 @@ done
 
 # Total allocated CPUs vs physical
 virsh nodeinfo
-```
+```bash
 
 **Solution**:
 
@@ -1029,7 +1033,7 @@ virsh vcpupin vm-name 1 1
 
 # Limit CPU usage
 virsh schedinfo vm-name --set vcpu_quota=50000
-```
+```bash
 
 ### Network Performance is Slow
 
@@ -1047,7 +1051,7 @@ iperf3 -c host-ip
 
 # Check network model
 virsh dumpxml vm-name | grep "model type"
-```
+```bash
 
 **Solution**:
 
@@ -1062,7 +1066,7 @@ virtos-network create mybr --type bridged
 # Enable multiqueue
 virsh edit vm-name
 # Add: <driver name='vhost' queues='4'/>
-```
+```bash
 
 ### Disk I/O is Slow
 
@@ -1079,7 +1083,7 @@ iostat -x 1 5
 
 # Check disk cache mode
 virsh dumpxml vm-name | grep cache
-```
+```bash
 
 **Solution**:
 
@@ -1097,7 +1101,439 @@ qemu-img convert -O raw vm.qcow2 vm.raw
 # Check host filesystem
 # ext4: mount with noatime,discard
 # btrfs: autodefrag,compress=zstd
-```
+```bash
+
+---
+
+## Web UI Issues
+
+### Cockpit Won't Start
+
+**Symptoms**:
+
+- Cannot access web UI at `https://localhost:9090`
+- Connection refused error
+- Cockpit service not running
+
+**Diagnosis**:
+
+```bash
+# Check Cockpit status
+sudo systemctl status cockpit
+
+# Check if port is open
+sudo netstat -tlnp | grep 9090
+
+# Check firewall
+sudo firewall-cmd --list-ports
+```bash
+
+**Solution**:
+
+```bash
+# Start Cockpit
+sudo systemctl start cockpit
+sudo systemctl enable cockpit
+
+# Open firewall port
+sudo firewall-cmd --add-service=cockpit --permanent
+sudo firewall-cmd --reload
+
+# For development (HTTP):
+sudo systemctl start cockpit.socket
+```bash
+
+### VirtOS Module Not Showing
+
+**Symptoms**:
+
+- Cockpit works but VirtOS module missing
+- No "VirtOS" menu item
+- Module shows as disabled
+
+**Diagnosis**:
+
+```bash
+# List installed modules
+ls -la /usr/share/cockpit/
+
+# Check VirtOS module
+ls -la /usr/share/cockpit/virtos/
+
+# Check module manifest
+cat /usr/share/cockpit/virtos/manifest.json
+```bash
+
+**Solution**:
+
+```bash
+# Install VirtOS Cockpit module
+sudo tce-load -wi virtos-cockpit-module.tcz
+
+# Restart Cockpit
+sudo systemctl restart cockpit
+
+# Check browser cache (Ctrl+Shift+R to reload)
+
+# Verify module permissions
+sudo chmod -R 755 /usr/share/cockpit/virtos/
+```bash
+
+### Dashboard Shows No Data
+
+**Symptoms**:
+
+- Dashboard loads but shows "No VMs"
+- Metrics not updating
+- Cluster tab empty
+
+**Diagnosis**:
+
+```bash
+# Check libvirt connection
+virsh list --all
+
+# Check if libvirt socket accessible
+ls -la /var/run/libvirt/libvirt-sock
+
+# Check user permissions
+groups
+# Should include: libvirt, kvm
+
+# Check browser console (F12) for JavaScript errors
+```bash
+
+**Solution**:
+
+```bash
+# Add user to libvirt group
+sudo usermod -aG libvirt $USER
+# Log out and log back in
+
+# Restart libvirtd
+sudo systemctl restart libvirtd
+
+# Check libvirt connection in browser console
+# Should see: "Connected to libvirt"
+
+# Reload Cockpit page (Ctrl+Shift+R)
+```bash
+
+### Certificate/HTTPS Errors
+
+**Symptoms**:
+
+- Browser shows "Your connection is not private"
+- Certificate warning
+- NET::ERR_CERT_AUTHORITY_INVALID
+
+**Diagnosis**:
+
+```bash
+# Check Cockpit certificate
+sudo ls -la /etc/cockpit/ws-certs.d/
+
+# Check certificate validity
+sudo openssl x509 -in /etc/cockpit/ws-certs.d/0-self-signed.cert -text -noout
+```bash
+
+**Solution**:
+
+**Option 1** - Accept self-signed (development):
+
+- Click "Advanced" in browser
+- Click "Proceed to localhost (unsafe)"
+- Certificate is self-signed, safe for local use
+
+**Option 2** - Use Let's Encrypt (production):
+
+```bash
+# Install certbot
+sudo tce-load -wi certbot.tcz
+
+# Get certificate (requires public domain)
+sudo certbot certonly --standalone -d virtos.example.com
+
+# Link to Cockpit
+sudo ln -sf /etc/letsencrypt/live/virtos.example.com/fullchain.pem \
+    /etc/cockpit/ws-certs.d/1-letsencrypt.cert
+sudo ln -sf /etc/letsencrypt/live/virtos.example.com/privkey.pem \
+    /etc/cockpit/ws-certs.d/1-letsencrypt.key
+
+# Restart Cockpit
+sudo systemctl restart cockpit
+```bash
+
+**Option 3** - Disable HTTPS (development only):
+
+```bash
+# ONLY for development/testing - NOT for production
+sudo systemctl edit cockpit.socket
+
+# Add:
+# [Socket]
+# ListenStream=
+# ListenStream=9090
+# (not recommended - use self-signed instead)
+```bash
+
+---
+
+## API Issues
+
+### API Server Won't Start
+
+**Symptoms**:
+
+- `virtos-api start` fails
+- Port already in use
+- Permission denied for port
+
+**Diagnosis**:
+
+```bash
+# Check what's using port 8080
+sudo netstat -tlnp | grep 8080
+
+# Try starting API
+virtos-api start
+
+# Check for permission errors
+virtos-api start --port 80
+# Ports < 1024 require root
+```bash
+
+**Solution**:
+
+```bash
+# Use different port
+virtos-api start --port 9080
+
+# Or stop conflicting service
+sudo systemctl stop jenkins  # Example
+virtos-api start
+
+# For privileged port (< 1024), use sudo
+sudo virtos-api start --port 80
+```bash
+
+### Connection Refused
+
+**Symptoms**:
+
+- `curl http://localhost:8080/api/v1/health` fails
+- Connection refused
+- Cannot reach API
+
+**Diagnosis**:
+
+```bash
+# Check if API is running
+ps aux | grep virtos-api
+
+# Check port binding
+sudo netstat -tlnp | grep virtos-api
+
+# Check firewall
+sudo firewall-cmd --list-ports
+```bash
+
+**Solution**:
+
+```bash
+# Start API server
+virtos-api start
+
+# Open firewall port
+sudo firewall-cmd --add-port=8080/tcp --permanent
+sudo firewall-cmd --reload
+
+# For remote access, bind to specific IP
+virtos-api start --host 192.168.1.10 --port 8080
+```bash
+
+### 503 Service Unavailable
+
+**Symptoms**:
+
+- API returns `{"error":"libvirt not available"}`
+- 503 status code
+- Cannot list VMs
+
+**Diagnosis**:
+
+```bash
+# Check libvirt status
+sudo systemctl status libvirtd
+
+# Try virsh directly
+virsh list --all
+
+# Check libvirt socket
+ls -la /var/run/libvirt/libvirt-sock
+```bash
+
+**Solution**:
+
+```bash
+# Start libvirtd
+sudo systemctl start libvirtd
+sudo systemctl enable libvirtd
+
+# Verify libvirt works
+virsh list --all
+
+# Restart API
+virtos-api stop
+virtos-api start
+
+# Test API
+curl http://localhost:8080/api/v1/health
+# Should return: {"status":"ok","version":"0.89"}
+```bash
+
+### 400 Bad Request - Invalid VM Name
+
+**Symptoms**:
+
+- API returns `{"error":"Invalid VM name format"}`
+- 400 status code
+- VM operations fail
+
+**Diagnosis**:
+
+```bash
+# Test API with VM name
+curl http://localhost:8080/api/v1/vms/test-vm
+# Valid: alphanumeric, hyphens, underscores
+
+curl http://localhost:8080/api/v1/vms/test%20vm
+# Invalid: contains space
+
+curl http://localhost:8080/api/v1/vms/../etc/passwd
+# Invalid: path traversal attempt
+```bash
+
+**Solution**:
+
+VM names must match pattern: `^[a-zA-Z0-9_-]+$`
+
+**Valid names**:
+
+- `web-1`
+- `db_server`
+- `test-vm-01`
+
+**Invalid names**:
+
+- `test vm` (space)
+- `vm@host` (@ symbol)
+- `../etc/passwd` (path traversal)
+
+```bash
+# Fix VM name in request
+curl http://localhost:8080/api/v1/vms/web-server-1  # Valid
+
+# List all VMs to see valid names
+curl http://localhost:8080/api/v1/vms
+```bash
+
+### API Returns HTML Instead of JSON
+
+**Symptoms**:
+
+- Expected JSON response
+- Got HTML error page
+- Content-Type is text/html
+
+**Diagnosis**:
+
+```bash
+# Check response headers
+curl -i http://localhost:8080/api/v1/vms
+
+# Should see:
+# Content-Type: application/json
+
+# If you see text/html, wrong endpoint
+```bash
+
+**Solution**:
+
+Ensure you're using the correct API path:
+
+**Correct** (API endpoints):
+
+- `http://localhost:8080/api/v1/health`
+- `http://localhost:8080/api/v1/vms`
+- `http://localhost:8080/api/v1/vms/web-1`
+
+**Incorrect** (will return HTML):
+
+- `http://localhost:8080/` (root - no web UI here)
+- `http://localhost:8080/vms` (missing /api/v1 prefix)
+- `http://localhost:9090/` (that's Cockpit, not the API)
+
+### Rate Limiting / Too Many Requests
+
+**Symptoms**:
+
+- API starts failing after many requests
+- Connection timeouts
+- Server becomes unresponsive
+
+**Diagnosis**:
+
+```bash
+# Check API process resource usage
+ps aux | grep virtos-api
+
+# Check system load
+uptime
+
+# Check connection count
+sudo netstat -an | grep 8080 | wc -l
+```bash
+
+**Solution**:
+
+**Short-term** - Reduce request frequency:
+
+```bash
+# Add delays between requests
+for vm in $(curl -s http://localhost:8080/api/v1/vms | jq -r '.vms[].name'); do
+  curl http://localhost:8080/api/v1/vms/$vm
+  sleep 1  # Wait 1 second between requests
+done
+```bash
+
+**Long-term** - Implement rate limiting with NGINX:
+
+```nginx
+# /etc/nginx/conf.d/virtos-api.conf
+limit_req_zone $binary_remote_addr zone=virtos_api:10m rate=10r/s;
+
+server {
+    listen 80;
+    server_name virtos.example.com;
+
+    location /api/ {
+        limit_req zone=virtos_api burst=20;
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```bash
+
+```bash
+# Restart NGINX
+sudo systemctl restart nginx
+
+# Access API through NGINX
+curl http://virtos.example.com/api/v1/health
+```bash
 
 ---
 
@@ -1123,5 +1559,5 @@ If issues persist:
 
 ---
 
-**Last Updated**: 2026-05-25  
-**Version**: 1.0
+**Last Updated**: 2026-05-29  
+**Version**: 0.89

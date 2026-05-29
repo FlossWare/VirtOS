@@ -44,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses virtos-common.sh validation functions with fallbacks
   - Improved error messages for better user experience
 
+### Documentation
+- Enhanced TROUBLESHOOTING.md with Web UI and API sections (Issue #133) - 2026-05-29
+  - Added Web UI troubleshooting: Cockpit startup, module issues, dashboard, certificates
+  - Added API troubleshooting: Server startup, connection issues, 503 errors, validation errors
+  - Added rate limiting guidance with NGINX example
+  - Comprehensive diagnostics and solutions for common issues
+  - Updated Quick Diagnosis and Table of Contents
+  - Version updated to 0.89
+
 ### Added
 - API Reference documentation (Issue #133) - 2026-05-29
   - Created comprehensive docs/API_REFERENCE.md
