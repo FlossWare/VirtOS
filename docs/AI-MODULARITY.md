@@ -577,7 +577,7 @@ For users who DO install AI:
 
 - Issue #122 - Make AI Capabilities Completely Modular and Optional
 - Issue #128 - AI Capabilities Split
-- [Tiny Core Linux Extensions](http://tinycorelinux.net/concepts.html)
+- [Tiny Core Linux Extensions](https://tinycorelinux.net/concepts.html)
 
 ---
 

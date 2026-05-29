@@ -342,7 +342,7 @@ A: Check CONTRIBUTING.md "Areas Needing Help" section or GitHub issues.
 - **Build Guide**: [BUILD.md](BUILD.md)
 - **Testing Guide**: [TESTING.md](TESTING.md)
 - **Contribution Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Tiny Core Linux**: http://tinycorelinux.net
+- **Tiny Core Linux**: https://tinycorelinux.net
 
 ## Support the Project
 

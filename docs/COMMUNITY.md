@@ -229,7 +229,7 @@ Potential format:
 
 ### External Resources
 
-- **Tiny Core Linux**: http://tinycorelinux.net/
+- **Tiny Core Linux**: https://tinycorelinux.net/
 - **platform-java**: https://github.com/FlossWare/platform-java
 - **Libvirt Documentation**: https://libvirt.org/docs.html
 - **QEMU Documentation**: https://www.qemu.org/documentation/

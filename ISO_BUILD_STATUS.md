@@ -337,7 +337,7 @@ No changes needed - version syncing works correctly.
 
 2. **Verify TC network access**
    ```bash
-   wget -q --spider http://tinycorelinux.net/15.x/x86_64/release/distribution_files/core.gz
+   wget -q --spider https://tinycorelinux.net/15.x/x86_64/release/distribution_files/core.gz
    echo $?  # Should be 0
    ```
 

@@ -57,8 +57,8 @@ mkdir -p ~/virtos-build/build
 cd ~/virtos-build/build
 
 # Download Tiny Core (64-bit)
-# Version 14.x (check http://tinycorelinux.net for latest)
-wget http://tinycorelinux.net/14.x/x86_64/release/CorePure64-current.iso
+# Version 14.x (check https://tinycorelinux.net for latest)
+wget https://tinycorelinux.net/14.x/x86_64/release/CorePure64-current.iso
 
 # Extract the ISO
 mkdir iso-extract

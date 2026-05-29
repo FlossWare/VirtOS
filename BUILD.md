@@ -334,7 +334,7 @@ sudo dnf install mkisofs  # Fedora
 Network/firewall blocking downloads. Options:
 - Check firewall settings
 - Use VPN if needed
-- Download manually from http://tinycorelinux.net
+- Download manually from https://tinycorelinux.net
 
 **3. "mksquashfs not found"**
 

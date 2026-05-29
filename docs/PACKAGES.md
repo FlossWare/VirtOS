@@ -201,6 +201,6 @@ Use `tce-load -wi package` to automatically resolve dependencies.
 
 ## Repository Sources
 
-1. **Official Tiny Core repo**: http://tinycorelinux.net/14.x/x86_64/tcz/
+1. **Official Tiny Core repo**: https://tinycorelinux.net/14.x/x86_64/tcz/
 2. **Custom builds**: Compile and host locally
 3. **Community repos**: Third-party TCZ collections (verify trust)

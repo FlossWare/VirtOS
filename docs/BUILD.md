@@ -290,7 +290,7 @@ ping tinycorelinux.net
 
 # 2. Manual download
 cd build/downloads
-wget http://tinycorelinux.net/15.x/x86_64/release/CorePure64-15.0.iso
+wget https://tinycorelinux.net/15.x/x86_64/release/CorePure64-15.0.iso
 
 # 3. Use mirror (if main site is down)
 # Edit build/build.conf and change TC_MIRROR_URL
@@ -421,7 +421,7 @@ For air-gapped environments:
 
 1. Download Tiny Core Linux on internet-connected system:
    ```bash
-   wget http://tinycorelinux.net/15.x/x86_64/release/CorePure64-15.0.iso
+   wget https://tinycorelinux.net/15.x/x86_64/release/CorePure64-15.0.iso
    ```
 
 2. Transfer to offline system → `build/downloads/`

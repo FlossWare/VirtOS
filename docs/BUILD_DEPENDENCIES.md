@@ -193,7 +193,7 @@ WARNING: Cannot reach tinycorelinux.net (required for downloads)
 ping tinycorelinux.net
 
 # Test HTTP access
-wget -q --spider http://tinycorelinux.net/15.x/x86_64/release/distribution_files/core.gz
+wget -q --spider https://tinycorelinux.net/15.x/x86_64/release/distribution_files/core.gz
 echo $?  # Should return 0 for success
 ```
 
@@ -291,9 +291,9 @@ TC_ARCH="x86_64"
 cd build/downloads
 
 # Core files
-wget http://tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/release/distribution_files/vmlinuz64
-wget http://tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/release/distribution_files/core.gz
-wget http://tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/release/distribution_files/core.gz.md5.txt
+wget https://tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/release/distribution_files/vmlinuz64
+wget https://tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/release/distribution_files/core.gz
+wget https://tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/release/distribution_files/core.gz.md5.txt
 
 # Verify checksums
 md5sum -c core.gz.md5.txt
@@ -311,8 +311,8 @@ avahi.tcz
 "
 
 for pkg in $PACKAGES; do
-  wget http://repo.tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/tcz/${pkg}
-  wget http://repo.tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/tcz/${pkg}.md5.txt
+  wget https://repo.tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/tcz/${pkg}
+  wget https://repo.tinycorelinux.net/${TC_VERSION}/${TC_ARCH}/tcz/${pkg}.md5.txt
 done
 
 # 5. Package everything for transfer
