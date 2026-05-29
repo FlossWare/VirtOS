@@ -2,8 +2,11 @@
 
 [![CI](https://github.com/FlossWare/VirtOS/workflows/CI/badge.svg)](https://github.com/FlossWare/VirtOS/actions/workflows/ci.yml)
 [![CD](https://github.com/FlossWare/VirtOS/workflows/CD/badge.svg)](https://github.com/FlossWare/VirtOS/actions/workflows/cd.yml)
+[![Security](https://github.com/FlossWare/VirtOS/workflows/Security%20Scanning/badge.svg)](https://github.com/FlossWare/VirtOS/actions/workflows/security.yml)
 [![Test Coverage](https://img.shields.io/badge/test%20coverage-100%25-success)](https://github.com/FlossWare/VirtOS/tree/main/tests)
+[![Security Score](https://img.shields.io/badge/security%20score-90%2F100-green)](https://github.com/FlossWare/VirtOS/blob/main/docs/SECURITY_HARDENING.md)
 [![Version](https://img.shields.io/github/v/release/FlossWare/VirtOS)](https://github.com/FlossWare/VirtOS/releases/latest)
+[![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://github.com/FlossWare/VirtOS/blob/main/LICENSE)
 [![Status](https://img.shields.io/badge/status-alpha--functional-yellow)](https://github.com/FlossWare/VirtOS#project-status)
 
 **Status**: Alpha - Functional Core | **Use Case**: Development & Testing | **Production**: Not Recommended

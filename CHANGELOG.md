@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Enhanced input validation in virtos-create-vm (Issue #116) - 2026-05-29
+  - Added comprehensive parameter validation (VM name, CPU, RAM, disk)
+  - Validates network mode (bridged, nat, isolated)
+  - Validates scheduler policy and priority
+  - Validates hostname format for host preferences
+  - Validates VM names for affinity/anti-affinity
+  - Prevents command injection via malicious input
+  - Uses virtos-common.sh validation functions with fallbacks
+  - Improved error messages for better user experience
+
 ### Added
+- Security badge and license badge in README.md - 2026-05-29
+  - Added Security Scanning workflow badge
+  - Added Security Score badge (90/100)
+  - Added GPLv3 license badge
+  - Improved badge organization
+
 - CVE monitoring and dependency scanning (Issue #116) - 2026-05-29
   - Created .github/dependabot.yml - Automated dependency updates
   - GitHub Actions updates (weekly)

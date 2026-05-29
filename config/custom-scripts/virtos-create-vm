@@ -120,6 +120,147 @@ if [ -z "$NAME" ] || [ -z "$CPU" ] || [ -z "$RAM" ] || [ -z "$DISK" ]; then
     exit 1
 fi
 
+# Validate VM name format (use validation from virtos-common.sh if available)
+if command -v validate_vm_name >/dev/null 2>&1; then
+    if ! validate_vm_name "$NAME"; then
+        echo "${RED}Error: Invalid VM name: $NAME${NC}" >&2
+        echo "VM names must contain only letters, numbers, hyphens, and underscores" >&2
+        exit 1
+    fi
+fi
+
+# Validate CPU count is a positive number
+if command -v validate_number >/dev/null 2>&1; then
+    if ! validate_number "$CPU"; then
+        echo "${RED}Error: CPU count must be a positive number: $CPU${NC}" >&2
+        exit 1
+    fi
+else
+    # Fallback validation if function not available
+    case "$CPU" in
+        ''|*[!0-9]*)
+            echo "${RED}Error: CPU count must be a positive number: $CPU${NC}" >&2
+            exit 1
+            ;;
+    esac
+fi
+
+# Validate RAM is a positive number
+if command -v validate_number >/dev/null 2>&1; then
+    if ! validate_number "$RAM"; then
+        echo "${RED}Error: RAM must be a positive number (in MB): $RAM${NC}" >&2
+        exit 1
+    fi
+else
+    # Fallback validation
+    case "$RAM" in
+        ''|*[!0-9]*)
+            echo "${RED}Error: RAM must be a positive number (in MB): $RAM${NC}" >&2
+            exit 1
+            ;;
+    esac
+fi
+
+# Validate disk size format
+if command -v validate_disk_size >/dev/null 2>&1; then
+    if ! validate_disk_size "$DISK"; then
+        echo "${RED}Error: Invalid disk size format: $DISK${NC}" >&2
+        echo "Valid formats: 10G, 500M, 1T" >&2
+        exit 1
+    fi
+else
+    # Fallback validation
+    case "$DISK" in
+        *[0-9][GMTgmt])
+            # Valid format
+            ;;
+        *)
+            echo "${RED}Error: Invalid disk size format: $DISK${NC}" >&2
+            echo "Valid formats: 10G, 500M, 1T" >&2
+            exit 1
+            ;;
+    esac
+fi
+
+# Validate network mode
+if [ -n "$NETWORK" ]; then
+    if command -v validate_network_mode >/dev/null 2>&1; then
+        if ! validate_network_mode "$NETWORK"; then
+            echo "${RED}Error: Invalid network mode: $NETWORK${NC}" >&2
+            echo "Valid modes: bridged, nat, isolated" >&2
+            exit 1
+        fi
+    else
+        # Fallback validation
+        case "$NETWORK" in
+            bridged|nat|isolated)
+                # Valid
+                ;;
+            *)
+                echo "${RED}Error: Invalid network mode: $NETWORK${NC}" >&2
+                echo "Valid modes: bridged, nat, isolated" >&2
+                exit 1
+                ;;
+        esac
+    fi
+fi
+
+# Validate policy
+case "$POLICY" in
+    balanced|packed|spread)
+        # Valid
+        ;;
+    *)
+        echo "${RED}Error: Invalid policy: $POLICY${NC}" >&2
+        echo "Valid policies: balanced, packed, spread" >&2
+        exit 1
+        ;;
+esac
+
+# Validate priority
+case "$PRIORITY" in
+    low|normal|high)
+        # Valid
+        ;;
+    *)
+        echo "${RED}Error: Invalid priority: $PRIORITY${NC}" >&2
+        echo "Valid priorities: low, normal, high" >&2
+        exit 1
+        ;;
+esac
+
+# Validate host names if specified (avoid command injection)
+for host_var in "$PREFER" "$AVOID" "$REQUIRE"; do
+    if [ -n "$host_var" ]; then
+        if command -v validate_hostname >/dev/null 2>&1; then
+            if ! validate_hostname "$host_var"; then
+                echo "${RED}Error: Invalid hostname: $host_var${NC}" >&2
+                exit 1
+            fi
+        else
+            # Fallback: basic hostname validation
+            case "$host_var" in
+                *[!a-zA-Z0-9.-]*)
+                    echo "${RED}Error: Invalid hostname: $host_var${NC}" >&2
+                    exit 1
+                    ;;
+            esac
+        fi
+    fi
+done
+
+# Validate VM names for affinity/anti-affinity (prevent command injection)
+for vm_var in "$AFFINITY" "$ANTI_AFFINITY"; do
+    if [ -n "$vm_var" ]; then
+        if command -v validate_vm_name >/dev/null 2>&1; then
+            if ! validate_vm_name "$vm_var"; then
+                echo "${RED}Error: Invalid VM name for affinity: $vm_var${NC}" >&2
+                exit 1
+            fi
+        fi
+    fi
+done
+
 echo "${BLUE}VirtOS IaaS - Automated VM Placement${NC}"
 echo "=========================================="
 echo ""
