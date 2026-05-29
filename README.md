@@ -17,15 +17,23 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 **TL;DR**: VirtOS has **working code** for core VM management, but has **never been tested on real hardware**. Great for learning and development, **not ready for production**.
 
 **What Works** ✅:
-- 29/54 management scripts with functional backends (54%)
+- **29/54 scripts** with functional backends (Core VM management)
 - Core VM lifecycle: create, start, stop, migrate, snapshot, backup
 - Storage and network management
 - Build system and packaging
+- Cloud-init support
+
+**Partial Implementation** 🟡:
+- **9/54 scripts** need backend integration (auth, database, secrets, etc.)
+
+**Research Prototypes** 🔬:
+- **14/54 scripts** are experimental demos (AI, quantum, blockchain, etc.)
+- These show *potential* future features but are NOT functional
+- Included as design examples and conversation starters
 
 **What's Missing** ❌:
 - ISO boot testing: 0/47 checks completed
 - Runtime validation: Never tested in actual VirtOS environment
-- Infrastructure backends: 9 scripts need implementation
 - Security audit: External penetration testing needed
 
 **Use VirtOS for**: Learning, development, testing, home labs  
@@ -198,9 +206,20 @@ sudo virtos-setup
 
 **Takes 5-10 minutes.** See [docs/TUI.md](docs/TUI.md) for details.
 
-### Management Console
+### Management Interfaces
 
-**Text-based management interface (ncurses TUI):**
+VirtOS provides **three ways** to manage your infrastructure:
+
+#### 1. Command Line Interface (CLI)
+**Direct virtos-* commands for scripting and automation:**
+```bash
+virtos-create-vm --name web-01 --cpu 4 --ram 8192
+virtos-start web-01
+virtos-status web-01
+```
+
+#### 2. Text User Interface (TUI)
+**Text-based management console (ncurses/dialog):**
 ```bash
 virtos-tui
 ```
@@ -215,6 +234,47 @@ virtos-tui
 - System logs
 
 **Perfect for remote SSH management.** See [docs/TUI.md](docs/TUI.md) for full guide.
+
+#### 3. Web User Interface (Web UI)
+**Browser-based management via Cockpit integration:**
+```bash
+# Install Cockpit web console
+virtos-web install cockpit
+
+# Start web UI
+virtos-web start
+
+# Access at: https://your-virtos-host:9090
+```
+
+**Cockpit Features:**
+- 🖥️ **Dashboard** - System metrics, CPU, RAM, disk, network graphs
+- 🔧 **VM Management** - Create, start, stop, delete VMs via web interface
+- 📊 **Performance Monitoring** - Real-time charts and historical data
+- 📝 **Log Viewer** - System logs with filtering and search
+- 🔌 **Terminal Access** - Web-based SSH console
+- ⚙️ **Service Management** - Start/stop systemd services
+
+**REST API** for automation and custom integrations:
+```bash
+# Start API server
+virtos-api start
+
+# Query from any client
+curl http://localhost:8080/api/v1/vms
+curl http://localhost:8080/api/v1/cluster
+curl -X POST http://localhost:8080/api/v1/vms/web-01/start
+```
+
+**API Endpoints:**
+- `GET /api/v1/vms` - List all VMs
+- `GET /api/v1/vms/<name>` - Get VM details
+- `POST /api/v1/vms/<name>/start` - Start VM
+- `POST /api/v1/vms/<name>/stop` - Stop VM
+- `GET /api/v1/cluster` - Cluster status
+- `GET /api/v1/health` - Health check
+
+**See [docs/WEB-UI.md](docs/WEB-UI.md) for complete web interface guide.**
 
 ### Profiles
 
