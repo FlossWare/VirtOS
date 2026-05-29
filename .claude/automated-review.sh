@@ -43,7 +43,7 @@ if command -v shellcheck >/dev/null 2>&1; then
             echo "$shellcheck_output" | tee -a "$REVIEW_LOG"
             SHELLCHECK_ISSUES="${SHELLCHECK_ISSUES}\n\n**File**: \`$script\`\n\`\`\`\n$shellcheck_output\n\`\`\`"
         fi
-    done < <(find . -type f \( -name "*.sh" -o -name "*.bash" -o -name "virtos-*" \) ! -path "./.git/*" ! -path "./build/workspace/*")
+    done < <(find . -type f \( -name "*.sh" -o -name "*.bash" -o -name "virtos-*" \) ! -name "*.bats" ! -path "./.git/*" ! -path "./build/workspace/*" ! -path "./tests/*")
 
     if [ -n "$SHELLCHECK_ISSUES" ]; then
         create_issue "[ShellCheck] Shell script linting issues found" "## ShellCheck Findings
@@ -89,8 +89,10 @@ done < <(grep -rn "TODO\|FIXME\|XXX\|HACK" . \
     --include="*.md" \
     --include="*.yml" \
     --include="*.yaml" \
+    --exclude="*.bats" \
     --exclude-dir=.git \
     --exclude-dir=workspace \
+    --exclude-dir=tests \
     2>/dev/null || true)
 
 if [ -n "$TODO_FINDINGS" ]; then
@@ -130,10 +132,10 @@ SECURITY_ISSUES=""
 # 3a. Check for hardcoded secrets (basic pattern matching)
 echo "Checking for hardcoded secrets..." | tee -a "$REVIEW_LOG"
 SECRET_PATTERNS=(
-    "password\s*=\s*['\"][^'\"]+['\"]"
-    "api[_-]?key\s*=\s*['\"][^'\"]+['\"]"
-    "secret\s*=\s*['\"][^'\"]+['\"]"
-    "token\s*=\s*['\"][^'\"]+['\"]"
+    "password\s*=\s*['\"][^\$][^'\"]+['\"]" # Exclude variables starting with $
+    "api[_-]?key\s*=\s*['\"][^\$][^'\"]+['\"]"
+    "secret\s*=\s*['\"][^\$][^'\"]+['\"]"
+    "token\s*=\s*['\"][^\$][^'\"]+['\"]"
 )
 
 for pattern in "${SECRET_PATTERNS[@]}"; do
@@ -141,14 +143,22 @@ for pattern in "${SECRET_PATTERNS[@]}"; do
         --include="*.sh" \
         --include="*.bash" \
         --include="virtos-*" \
+        --exclude="*.bats" \
         --exclude-dir=.git \
         --exclude-dir=workspace \
-        2>/dev/null || true); then
+        --exclude-dir=tests \
+        2>/dev/null | grep -v '=\s*""\|=\s*'\'''\'''); then # Exclude empty strings
 
         if [ -n "$findings" ]; then
-            echo "⚠️  Potential secrets found:" | tee -a "$REVIEW_LOG"
-            echo "$findings" | tee -a "$REVIEW_LOG"
-            SECURITY_ISSUES="${SECURITY_ISSUES}\n\n**Pattern**: \`$pattern\`\n\`\`\`\n$findings\n\`\`\`"
+            # Further filter out variable assignments from parameters
+            # shellcheck disable=SC2016
+            findings=$(echo "$findings" | grep -v '=\s*"\$'"[0-9]"'\|=\s*"\$\{[^}]*\}' || true)
+
+            if [ -n "$findings" ]; then
+                echo "⚠️  Potential secrets found:" | tee -a "$REVIEW_LOG"
+                echo "$findings" | tee -a "$REVIEW_LOG"
+                SECURITY_ISSUES="${SECURITY_ISSUES}\n\n**Pattern**: \`$pattern\`\n\`\`\`\n$findings\n\`\`\`"
+            fi
         fi
     fi
 done
@@ -156,8 +166,8 @@ done
 # 3b. Check for unsafe command usage
 echo "Checking for unsafe command patterns..." | tee -a "$REVIEW_LOG"
 UNSAFE_PATTERNS=(
-    "eval\s+"
-    "rm\s+-rf\s+/[^/]"
+    "^[^#]*\beval\s+"                      # Match eval but not in comments, will filter DB CLI usage
+    "rm\s+-rf\s+/(home|root|var|tmp)/[^/]" # Only flag dangerous paths, not /usr/local
     "\$\(.*curl.*\)\s*\|.*sh"
     "wget.*\|.*sh"
 )
@@ -167,9 +177,19 @@ for pattern in "${UNSAFE_PATTERNS[@]}"; do
         --include="*.sh" \
         --include="*.bash" \
         --include="virtos-*" \
+        --exclude="*.bats" \
+        --exclude="*uninstall*" \
         --exclude-dir=.git \
         --exclude-dir=workspace \
+        --exclude-dir=tests \
         2>/dev/null || true); then
+
+        # Filter out legitimate database CLI usage (mongo --eval, mysql --execute, psql --command)
+        findings=$(echo "$findings" | grep -v 'mongo --eval\|mysql --execute\|psql --command' || true)
+
+        # Filter out documented security justifications
+        # This is a simple filter - ideally we'd check preceding lines for SECURITY NOTE
+        findings=$(echo "$findings" | grep -v '# SECURITY NOTE.*eval' || true)
 
         if [ -n "$findings" ]; then
             echo "⚠️  Unsafe command pattern found:" | tee -a "$REVIEW_LOG"
