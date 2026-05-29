@@ -73,7 +73,12 @@ check_requirements() {
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
-        echo "Error: VM '$vm_name' not found"
+        echo "Error: VM '$vm_name' not found on source host" >&2
+        echo "" >&2
+        echo "Available VMs on this host:" >&2
+        virsh list --all --name 2>/dev/null | grep -v '^$' | sed 's/^/  • /' >&2 || echo "  (none)" >&2
+        echo "" >&2
+        echo "To migrate a VM, it must exist on the source host." >&2
         return 1
     fi
 
@@ -81,29 +86,78 @@ check_requirements() {
     if [ "$MIGRATION_TYPE" = "live" ] || [ "$MIGRATION_TYPE" = "block" ]; then
         local state=$(virsh domstate "$vm_name")
         if [ "$state" != "running" ]; then
-            echo "Error: VM must be running for live migration"
-            echo "Current state: $state"
-            echo "Use --offline for offline migration"
+            echo "Error: VM must be running for live migration" >&2
+            echo "" >&2
+            echo "VM '$vm_name' state: $state" >&2
+            echo "Migration type: $MIGRATION_TYPE" >&2
+            echo "" >&2
+            echo "Options:" >&2
+            echo "  1. Start the VM first:" >&2
+            echo "     virsh start $vm_name" >&2
+            echo "     virtos-migrate --live $vm_name $dest_host" >&2
+            echo "" >&2
+            echo "  2. Use offline migration (shutdown → copy → start):" >&2
+            echo "     virtos-migrate --offline $vm_name $dest_host" >&2
             return 1
         fi
     fi
 
     # Check destination host reachability
     if ! ping -c 1 -W 2 "$dest_host" >/dev/null 2>&1; then
-        echo "Error: Destination host '$dest_host' unreachable"
+        echo "Error: Destination host '$dest_host' is unreachable" >&2
+        echo "" >&2
+        echo "Network connectivity check failed." >&2
+        echo "" >&2
+        echo "Troubleshooting steps:" >&2
+        echo "  1. Verify hostname/IP is correct:" >&2
+        echo "     ping $dest_host" >&2
+        echo "" >&2
+        echo "  2. Check network connectivity:" >&2
+        echo "     ip route get $dest_host" >&2
+        echo "" >&2
+        echo "  3. Verify DNS resolution (if using hostname):" >&2
+        echo "     nslookup $dest_host" >&2
+        echo "     # Or try IP directly instead of hostname" >&2
         return 1
     fi
 
     # Check SSH connectivity
     if ! ssh -o ConnectTimeout=5 "root@$dest_host" "echo test" >/dev/null 2>&1; then
-        echo "Error: SSH connection to root@$dest_host failed"
-        echo "Ensure SSH key-based authentication is configured"
+        echo "Error: SSH connection to root@$dest_host failed" >&2
+        echo "" >&2
+        echo "Migration requires passwordless SSH access to destination." >&2
+        echo "" >&2
+        echo "Setup SSH key authentication:" >&2
+        echo "  1. Generate SSH key (if not exists):" >&2
+        echo "     ssh-keygen -t rsa -b 4096" >&2
+        echo "" >&2
+        echo "  2. Copy key to destination:" >&2
+        echo "     ssh-copy-id root@$dest_host" >&2
+        echo "" >&2
+        echo "  3. Test SSH connection:" >&2
+        echo "     ssh root@$dest_host \"echo test\"" >&2
+        echo "" >&2
+        echo "Alternative: Check SSH service on destination:" >&2
+        echo "  ssh root@$dest_host  # Manual login to verify" >&2
         return 1
     fi
 
     # Check destination has libvirt
     if ! ssh "root@$dest_host" "command -v virsh" >/dev/null 2>&1; then
-        echo "Error: libvirt not available on destination host"
+        echo "Error: libvirt not available on destination host '$dest_host'" >&2
+        echo "" >&2
+        echo "The destination host must have libvirt installed to receive VMs." >&2
+        echo "" >&2
+        echo "Install libvirt on destination:" >&2
+        echo "  ssh root@$dest_host \"tce-load -wi libvirt qemu\"" >&2
+        echo "" >&2
+        echo "Or manually:" >&2
+        echo "  1. SSH to destination:" >&2
+        echo "     ssh root@$dest_host" >&2
+        echo "  2. Install libvirt:" >&2
+        echo "     tce-load -wi libvirt qemu" >&2
+        echo "  3. Start libvirt service:" >&2
+        echo "     /usr/local/etc/init.d/libvirtd start" >&2
         return 1
     fi
 
