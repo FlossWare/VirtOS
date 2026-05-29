@@ -94,7 +94,20 @@ discover_members() {
                 sort -u "$CLUSTER_CACHE.new" > "$CLUSTER_CACHE"
                 rm -f "$CLUSTER_CACHE.new"
             else
-                echo "${YELLOW}Warning: avahi-browse not found${NC}" >&2
+                echo "${RED}Error: Avahi service discovery is not available${NC}" >&2
+                echo "" >&2
+                echo "Avahi is required for automatic cluster member discovery." >&2
+                echo "" >&2
+                echo "To install Avahi:" >&2
+                echo "  tce-load -wi avahi" >&2
+                echo "  /usr/local/etc/init.d/avahi-daemon start" >&2
+                echo "" >&2
+                echo "Alternative: Use static cluster configuration:" >&2
+                echo "  1. Edit /etc/virtos/cluster.conf" >&2
+                echo "  2. Set DISCOVERY_METHOD=static" >&2
+                echo "  3. Add nodes to /etc/virtos/cluster-members.conf:" >&2
+                echo "     echo \"virtos-1 192.168.1.10\" >> /etc/virtos/cluster-members.conf" >&2
+                echo "     echo \"virtos-2 192.168.1.11\" >> /etc/virtos/cluster-members.conf" >&2
                 return 1
             fi
             ;;
@@ -280,8 +293,13 @@ list_members() {
 show_info() {
     node="$1"
     if [ -z "$node" ]; then
-        echo "Error: Node name required"
-        echo "Usage: virtos-cluster info <node>"
+        echo "Error: Node name is required" >&2
+        echo "" >&2
+        echo "Usage:" >&2
+        echo "  virtos-cluster info <node>" >&2
+        echo "" >&2
+        echo "To see available nodes:" >&2
+        echo "  virtos-cluster list" >&2
         return 1
     fi
 
@@ -293,7 +311,17 @@ show_info() {
     ip=$(grep "^$node " "$CLUSTER_CACHE" | awk '{print $2}')
 
     if [ -z "$ip" ]; then
-        echo "${RED}Error: Node '$node' not found in cluster${NC}"
+        echo "${RED}Error: Node '$node' not found in cluster${NC}" >&2
+        echo "" >&2
+        echo "Available cluster nodes:" >&2
+        if [ -f "$CLUSTER_CACHE" ] && [ -s "$CLUSTER_CACHE" ]; then
+            awk '{print "  • " $1 " (" $2 ")"}' "$CLUSTER_CACHE" >&2
+        else
+            echo "  (none - cluster cache is empty)" >&2
+        fi
+        echo "" >&2
+        echo "To refresh cluster discovery:" >&2
+        echo "  virtos-cluster refresh" >&2
         return 1
     fi
 
