@@ -281,6 +281,24 @@ virsh list --all
 
 ## Post-Installation Configuration
 
+### Configure Package Repository (Optional)
+
+If you want to install additional VirtOS packages from the online repository:
+
+```bash
+# Add VirtOS packagecloud.io repository to Tiny Core mirror list
+echo "https://packagecloud.io/flossware/virtos/packages/tiny_core_linux/15/x86_64/" | sudo tee -a /opt/tcemirror
+
+# Now you can install packages with tce-load
+tce-load -wi virtos-platform-java    # Platform-java integration
+tce-load -wi virtos-experimental      # Experimental features (if available)
+
+# Verify package availability
+tce-ab -l | grep virtos
+```
+
+**Note**: VirtOS packages are also available directly from [GitHub Releases](https://github.com/FlossWare/VirtOS/releases).
+
 ### Set Static IP (Optional but Recommended)
 
 ```bash

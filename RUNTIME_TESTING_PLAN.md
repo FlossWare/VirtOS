@@ -161,8 +161,13 @@ sudo mount -o loop /path/to/virtos-tools.tcz /mnt/tcz
 # Or install from local file
 tce-load -i /path/to/virtos-tools.tcz
 
-# Or from packagecloud.io (once deployed)
-# TODO: Add TCZ repository to tce-load config
+# Or from packagecloud.io repository
+# First, add VirtOS repository to Tiny Core mirror list
+echo "https://packagecloud.io/flossware/virtos/packages/tiny_core_linux/15/x86_64/" >> /opt/tcemirror
+
+# Then install with tce-load
+tce-load -wi virtos-tools
+tce-load -wi virtos-platform-java
 ```
 
 **Manual Installation** (for testing):
