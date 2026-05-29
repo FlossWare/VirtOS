@@ -49,13 +49,25 @@ setup_image_scanner() {
             wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
             echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
             apt-get update && apt-get install -y trivy || {
-                # Fallback to binary install
-                log_message "WARNING: Installing Trivy from binary without checksum verification"
-                log_message "In production, verify checksums from https://github.com/aquasecurity/trivy/releases"
-                wget -q https://github.com/aquasecurity/trivy/releases/download/v0.40.0/trivy_0.40.0_Linux-64bit.tar.gz
-                # TODO: Add checksum verification - see https://github.com/aquasecurity/trivy/releases for SHA256SUMS
-                tar -xzf trivy_0.40.0_Linux-64bit.tar.gz -C /usr/local/bin/
-                rm -f trivy_0.40.0_Linux-64bit.tar.gz
+                # Fallback to binary install with checksum verification
+                log_message "Installing Trivy from binary with checksum verification"
+                local TRIVY_VERSION="0.40.0"
+                local TRIVY_TAR="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+                local TRIVY_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
+
+                wget -q "${TRIVY_URL}/${TRIVY_TAR}"
+                wget -q "${TRIVY_URL}/trivy_${TRIVY_VERSION}_checksums.txt"
+
+                # Verify checksum
+                sha256sum -c trivy_${TRIVY_VERSION}_checksums.txt --ignore-missing || {
+                    log_message "ERROR: Checksum verification failed for Trivy"
+                    rm -f "${TRIVY_TAR}" trivy_${TRIVY_VERSION}_checksums.txt
+                    return 1
+                }
+
+                log_message "Trivy checksum verified successfully"
+                tar -xzf "${TRIVY_TAR}" -C /usr/local/bin/
+                rm -f "${TRIVY_TAR}" trivy_${TRIVY_VERSION}_checksums.txt
             }
 
             cat > "$SECURITY_CONFIG_DIR/trivy-config.yaml" <<EOF
@@ -108,11 +120,25 @@ EOF
             # Install Snyk CLI
             # NOTE: npm install includes package signature verification
             npm install -g snyk || {
-                log_message "WARNING: Installing Snyk from binary without checksum verification"
-                log_message "In production, verify checksums from https://github.com/snyk/cli/releases"
-                wget -q https://static.snyk.io/cli/latest/snyk-linux -O /usr/local/bin/snyk
-                # TODO: Add checksum verification - see https://github.com/snyk/cli/releases for checksums
+                log_message "Installing Snyk from binary with checksum verification"
+                # Note: Snyk doesn't provide checksums for the 'latest' link
+                # Using versioned release for checksum verification
+                local SNYK_VERSION="v1.1064.0"
+                local SNYK_URL="https://github.com/snyk/cli/releases/download/${SNYK_VERSION}"
+
+                wget -q "${SNYK_URL}/snyk-linux" -O /usr/local/bin/snyk
+                wget -q "${SNYK_URL}/snyk-linux.sha256" -O snyk.sha256
+
+                # Verify checksum
+                echo "$(cat snyk.sha256)  /usr/local/bin/snyk" | sha256sum -c - || {
+                    log_message "ERROR: Checksum verification failed for Snyk"
+                    rm -f /usr/local/bin/snyk snyk.sha256
+                    return 1
+                }
+
+                log_message "Snyk checksum verified successfully"
                 chmod +x /usr/local/bin/snyk
+                rm -f snyk.sha256
             }
 
             log_message "Snyk CLI installed. Run 'snyk auth' to authenticate"
@@ -168,12 +194,24 @@ setup_runtime_security() {
             curl -s https://falco.org/repo/falcosecurity-3672BA8F.asc | apt-key add -
             echo "deb https://download.falco.org/packages/deb stable main" | tee -a /etc/apt/sources.list.d/falcosecurity.list
             apt-get update && apt-get install -y linux-headers-$(uname -r) falco || {
-                log_message "WARNING: Installing Falco from binary without checksum verification"
-                log_message "In production, verify checksums from https://github.com/falcosecurity/falco/releases"
-                wget -q https://download.falco.org/packages/bin/x86_64/falco-0.34.0-x86_64.tar.gz
-                # TODO: Add checksum verification - see Falco releases for SHA256SUMS
-                tar -xzf falco-0.34.0-x86_64.tar.gz -C /usr/local
-                rm -f falco-0.34.0-x86_64.tar.gz
+                log_message "Installing Falco from binary with checksum verification"
+                local FALCO_VERSION="0.34.0"
+                local FALCO_TAR="falco-${FALCO_VERSION}-x86_64.tar.gz"
+                local FALCO_URL="https://download.falco.org/packages/bin/x86_64"
+
+                wget -q "${FALCO_URL}/${FALCO_TAR}"
+                wget -q "${FALCO_URL}/${FALCO_TAR}.sha256"
+
+                # Verify checksum
+                sha256sum -c "${FALCO_TAR}.sha256" || {
+                    log_message "ERROR: Checksum verification failed for Falco"
+                    rm -f "${FALCO_TAR}" "${FALCO_TAR}.sha256"
+                    return 1
+                }
+
+                log_message "Falco checksum verified successfully"
+                tar -xzf "${FALCO_TAR}" -C /usr/local
+                rm -f "${FALCO_TAR}" "${FALCO_TAR}.sha256"
             }
 
             # Configure Falco rules
