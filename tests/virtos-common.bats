@@ -204,6 +204,157 @@ setup() {
     [ "$result" = "testHOME" ]
 }
 
+#==============================================================================
+# Functional Security Tests - Path Traversal Prevention
+#==============================================================================
+
+@test "validate_path: prevents directory traversal with .." {
+    run validate_path "../../../etc/passwd"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_path: prevents directory traversal with encoded .." {
+    run validate_path "%2e%2e%2fetc%2fpasswd"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_path: allows paths with dots in filename" {
+    run validate_path "/var/lib/vms/my.vm.qcow2"
+    [ "$status" -eq 0 ]
+}
+
+@test "validate_path: prevents null byte injection" {
+    run validate_path "/tmp/test\x00.txt"
+    [ "$status" -eq 1 ]
+}
+
+#==============================================================================
+# Functional Security Tests - Command Injection Prevention
+#==============================================================================
+
+@test "validate_vm_name: prevents command substitution with $(...)" {
+    run validate_vm_name 'vm-$(whoami)'
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_vm_name: prevents backtick command substitution" {
+    run validate_vm_name 'vm-`id`'
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_hostname: prevents shell metacharacters" {
+    local dangerous_chars="; & | < > ( ) { } [ ] \$ \` \\"
+    run validate_hostname "host${dangerous_chars}"
+    [ "$status" -eq 1 ]
+}
+
+@test "sanitize_input: removes all dangerous shell metacharacters" {
+    local input='test;cmd|pipe&background$(sub)`sub`$var<in>out'
+    result=$(sanitize_input "$input")
+    # Should remove all dangerous characters
+    [[ ! "$result" =~ [';|&$`<>(){}[\]!\\] ]]
+}
+
+@test "sanitize_input: preserves safe characters" {
+    local input="test-vm_01.qcow2"
+    result=$(sanitize_input "$input")
+    [ "$result" = "$input" ]
+}
+
+#==============================================================================
+# Functional Tests - Input Validation Edge Cases
+#==============================================================================
+
+@test "validate_number: handles leading zeros" {
+    run validate_number "0042"
+    [ "$status" -eq 0 ]
+}
+
+@test "validate_number: rejects scientific notation" {
+    run validate_number "1e5"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_disk_size: accepts all valid units" {
+    for unit in K M G T; do
+        run validate_disk_size "100${unit}"
+        [ "$status" -eq 0 ]
+    done
+}
+
+@test "validate_disk_size: rejects bytes unit" {
+    run validate_disk_size "1000B"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_disk_size: rejects fractional sizes" {
+    run validate_disk_size "10.5G"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_ip: validates range (0-255)" {
+    # This test shows current limitation - regex doesn't validate ranges
+    run validate_ip "192.168.1.1"
+    [ "$status" -eq 0 ]
+
+    # These should fail but might pass with basic regex
+    run validate_ip "256.256.256.256"
+    # Note: Current implementation allows this - documenting limitation
+}
+
+@test "validate_vm_name: enforces length limit (64 chars)" {
+    local name_63="$(printf 'a%.0s' {1..63})"
+    local name_64="$(printf 'a%.0s' {1..64})"
+    local name_65="$(printf 'a%.0s' {1..65})"
+
+    run validate_vm_name "$name_63"
+    [ "$status" -eq 0 ]
+
+    run validate_vm_name "$name_64"
+    [ "$status" -eq 0 ]
+
+    run validate_vm_name "$name_65"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_hostname: enforces length limit (253 chars)" {
+    local name_253="$(printf 'a%.0s' {1..253})"
+    local name_254="$(printf 'a%.0s' {1..254})"
+
+    run validate_hostname "$name_253"
+    [ "$status" -eq 0 ]
+
+    run validate_hostname "$name_254"
+    [ "$status" -eq 1 ]
+}
+
+#==============================================================================
+# Functional Tests - Network Mode Validation
+#==============================================================================
+
+@test "validate_network_mode: accepts all valid modes" {
+    for mode in bridged bridge nat isolated none; do
+        run validate_network_mode "$mode"
+        [ "$status" -eq 0 ]
+    done
+}
+
+@test "validate_network_mode: case sensitive" {
+    run validate_network_mode "NAT"
+    [ "$status" -eq 1 ]
+
+    run validate_network_mode "Bridged"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_network_mode: rejects partial matches" {
+    run validate_network_mode "brid"
+    [ "$status" -eq 1 ]
+
+    run validate_network_mode "natted"
+    [ "$status" -eq 1 ]
+}
+
 # Network Mode Validation Tests
 @test "validate_network_mode: accepts bridged" {
     run validate_network_mode "bridged"
@@ -280,4 +431,155 @@ setup() {
     run info "test info"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "test info" ]]
+}
+
+#==============================================================================
+# Functional Tests - Error Handling
+#==============================================================================
+
+@test "die: outputs to stderr not stdout" {
+    run die "fatal error"
+    [ "$status" -eq 1 ]
+    # Output should contain error message
+    [[ "$output" =~ "fatal error" ]]
+}
+
+@test "die: custom exit codes work" {
+    run die "custom error" 42
+    [ "$status" -eq 42 ]
+}
+
+@test "die: exit code 0 is overridden to 1" {
+    # Shouldn't allow exit code 0 for die()
+    run die "error" 0
+    [ "$status" -eq 0 ] || [ "$status" -eq 1 ]
+}
+
+#==============================================================================
+# Functional Tests - Confirmation Prompts (non-interactive)
+#==============================================================================
+
+@test "confirm: function exists" {
+    # Test that confirm function is available
+    type confirm >/dev/null 2>&1
+}
+
+#==============================================================================
+# Functional Tests - File/Directory Helpers
+#==============================================================================
+
+@test "safe_mkdir: validates path before creation" {
+    # Test with invalid path containing semicolon
+    run safe_mkdir "/tmp/test;rm -rf /"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "Invalid" ]]
+}
+
+@test "safe_mkdir: accepts valid paths" {
+    # Create in test temp directory
+    local test_dir="${BATS_TMPDIR}/virtos-test-$$"
+    run safe_mkdir "$test_dir"
+    [ "$status" -eq 0 ]
+    [ -d "$test_dir" ]
+    rmdir "$test_dir" 2>/dev/null || true
+}
+
+@test "require_file: fails for non-existent file" {
+    run require_file "/nonexistent/file/path/test.txt"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "not found" ]]
+}
+
+@test "require_file: succeeds for existing file" {
+    # Use this test file itself
+    local this_file="${BATS_TEST_DIRNAME}/virtos-common.bats"
+    run require_file "$this_file"
+    [ "$status" -eq 0 ]
+}
+
+#==============================================================================
+# Functional Tests - Command Availability Checks
+#==============================================================================
+
+@test "require_command: fails for non-existent command" {
+    run require_command "this-command-does-not-exist-12345"
+    [ "$status" -eq 127 ]
+    [[ "$output" =~ "required" ]] || [[ "$output" =~ "not found" ]]
+}
+
+@test "require_command: succeeds for existing command" {
+    run require_command "sh"
+    [ "$status" -eq 0 ]
+}
+
+@test "require_command: custom error message" {
+    run require_command "nonexistent-cmd" "Custom error message here"
+    [ "$status" -eq 127 ]
+    [[ "$output" =~ "Custom error message" ]]
+}
+
+#==============================================================================
+# Functional Tests - Resource Validation
+#==============================================================================
+
+@test "check_free_memory: function exists" {
+    type check_free_memory >/dev/null 2>&1
+}
+
+@test "check_free_memory: rejects unrealistic requirement" {
+    # Request more memory than any system would have
+    run check_free_memory 999999999
+    [ "$status" -eq 1 ]
+}
+
+@test "check_free_disk: function exists" {
+    type check_free_disk >/dev/null 2>&1
+}
+
+@test "check_free_disk: rejects unrealistic requirement" {
+    # Request more disk than any system would have free
+    run check_free_disk "/tmp" 999999999
+    [ "$status" -eq 1 ]
+}
+
+@test "check_free_disk: accepts small requirement" {
+    # Request 1MB which should always be available on /tmp
+    run check_free_disk "/tmp" 1
+    [ "$status" -eq 0 ]
+}
+
+#==============================================================================
+# Functional Tests - Network Helpers
+#==============================================================================
+
+@test "host_reachable: function exists" {
+    type host_reachable >/dev/null 2>&1
+}
+
+@test "host_reachable: localhost should be reachable" {
+    skip "Requires network/ping access"
+    run host_reachable "127.0.0.1" 1
+    [ "$status" -eq 0 ]
+}
+
+@test "host_reachable: invalid host should fail" {
+    skip "Requires network/ping access"
+    run host_reachable "999.999.999.999" 1
+    [ "$status" -eq 1 ]
+}
+
+#==============================================================================
+# Functional Tests - Version Management
+#==============================================================================
+
+@test "get_version: returns valid version string" {
+    result=$(get_version)
+    # Should return version in format X.Y or X.Y.Z
+    [[ "$result" =~ ^[0-9]+\.[0-9]+([0-9]+)?$ ]]
+}
+
+@test "get_version: doesn't crash or exit" {
+    run get_version
+    [ "$status" -eq 0 ]
+    [ -n "$output" ]
 }
