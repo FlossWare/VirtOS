@@ -894,6 +894,13 @@ Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** fo
 - **[Cloud-init Guide](docs/CLOUD-INIT.md)** - Automated VM configuration
 - **[Documentation Index](docs/INDEX.md)** - All documentation
 
+#### Developer Resources
+
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to VirtOS
+- **[Coding Standards](docs/CODING_STANDARDS.md)** - Shell scripting best practices
+- **[Pre-commit Hooks](docs/PRE_COMMIT_HOOKS.md)** - Automated code quality checks
+- **[Security Hardening](docs/SECURITY-HARDENING.md)** - Security guidelines
+
 ## License
 
 GNU General Public License v3.0 - see [LICENSE](LICENSE) file for details.
