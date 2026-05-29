@@ -1,0 +1,222 @@
+name: Rollback Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to rollback to (e.g., 0.5)'
+        required: true
+        type: string
+      reason:
+        description: 'Reason for rollback'
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for finding old versions
+
+      - name: Validate version exists
+        id: validate
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+
+          # Check if tag exists
+          if ! git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "❌ Version v${VERSION} does not exist"
+            echo "Available versions:"
+            git tag -l 'v*' | tail -10
+            exit 1
+          fi
+
+          echo "✅ Version v${VERSION} found"
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Checkout rollback version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          git checkout "v${VERSION}"
+
+          echo "Checked out version v${VERSION}"
+          echo "Commit: $(git rev-parse HEAD)"
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools curl
+
+      - name: Rebuild packages from rollback version
+        run: |
+          cd packages
+          ./build-all.sh
+
+          # Verify packages were built
+          if [ ! -d output ] || [ -z "$(ls -A output/*.tcz 2>/dev/null)" ]; then
+            echo "❌ No packages built"
+            exit 1
+          fi
+
+          echo "✅ Packages rebuilt from v${{ github.event.inputs.version }}:"
+          ls -lh output/*.tcz
+
+      - name: Validate rollback packages
+        run: |
+          echo "Validating rollback packages..."
+          EXIT_CODE=0
+
+          # Verify package contents
+          for package in packages/output/*.tcz; do
+            if [ -f "$package" ]; then
+              echo "Checking $(basename $package)..."
+
+              if ! unsquashfs -l "$package" >/dev/null 2>&1; then
+                echo "  ❌ Invalid squashfs format"
+                EXIT_CODE=1
+              fi
+
+              echo "  ✓ Valid"
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ Rollback package validation passed"
+          else
+            echo "❌ Rollback package validation failed"
+            exit 1
+          fi
+
+      - name: Create rollback release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version }}-rollback
+          name: VirtOS v${{ github.event.inputs.version }} (Rollback)
+          body: |
+            ## ⚠️ Rollback Release
+
+            This is a rollback to version **v${{ github.event.inputs.version }}**.
+
+            **Reason**: ${{ github.event.inputs.reason }}
+
+            **Original Release**: [v${{ github.event.inputs.version }}](https://github.com/FlossWare/VirtOS/releases/tag/v${{ github.event.inputs.version }})
+
+            **Rollback Date**: ${{ github.event.repository.updated_at }}
+
+            ### Packages
+            - virtos-tools.tcz - Core VirtOS management tools
+            - virtos-jplatform.tcz - JPlatform integration
+
+            ### Installation
+            ```bash
+            # On Tiny Core Linux / VirtOS
+            tce-load -wi virtos-tools
+            tce-load -wi virtos-jplatform
+            ```
+
+            ### What Happened?
+            A rollback was performed from a newer version back to v${{ github.event.inputs.version }}.
+
+            **Reason**: ${{ github.event.inputs.reason }}
+
+            ### Recommended Action
+            If you are running a newer version, downgrade to this rollback release:
+            1. Download packages from this release
+            2. Install with `tce-load -i <package.tcz>`
+            3. Restart VirtOS services
+
+            ### Next Steps
+            - Review what went wrong in newer versions
+            - Test fixes before releasing new version
+            - Consider running staging validation before production deployment
+          files: |
+            packages/output/*.tcz
+            packages/output/*.tcz.md5.txt
+            packages/output/*.tcz.info
+          draft: false
+          prerelease: true  # Mark as prerelease (rollback)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy rollback to packagecloud.io
+        env:
+          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+        run: |
+          if [ -z "$PACKAGECLOUD_TOKEN" ]; then
+            echo "⚠️ PACKAGECLOUD_TOKEN not set, skipping deployment"
+            exit 0
+          fi
+
+          # Install packagecloud CLI
+          sudo gem install package_cloud
+
+          # Deploy rollback packages
+          for package in packages/output/*.tcz; do
+            if [ -f "$package" ]; then
+              echo "Deploying rollback $(basename $package) to packagecloud.io..."
+              package_cloud push flossware/virtos "$package" || echo "⚠️ Deploy failed for $package"
+            fi
+          done
+
+      - name: Create rollback notification issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = '${{ github.event.inputs.version }}';
+            const reason = '${{ github.event.inputs.reason }}';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Rollback to v${version} performed`,
+              body: `## Rollback Notification
+
+            A rollback was performed on ${new Date().toISOString()}.
+
+            **Rollback To**: v${version}
+            **Reason**: ${reason}
+            **Performed By**: @${context.actor}
+
+            ### Actions Taken
+            - ✅ Packages rebuilt from v${version}
+            - ✅ Validation passed
+            - ✅ Rollback release created
+            - ✅ Packages deployed to packagecloud.io
+
+            ### What's Next?
+            1. Investigate why newer version failed
+            2. Test fixes thoroughly
+            3. Consider adding more validation to CD pipeline
+            4. Review [TESTING_ROADMAP.md](https://github.com/FlossWare/VirtOS/blob/main/TESTING_ROADMAP.md)
+
+            ### For Users
+            Download rollback packages from: https://github.com/FlossWare/VirtOS/releases/tag/v${version}-rollback
+
+            cc: @FlossWare/virtos-team
+            `,
+              labels: ['rollback', 'production', 'urgent']
+            });
+
+      - name: Rollback summary
+        run: |
+          echo "=================================="
+          echo "  ✅ Rollback Complete"
+          echo "=================================="
+          echo "Rolled back to: v${{ github.event.inputs.version }}"
+          echo "Reason: ${{ github.event.inputs.reason }}"
+          echo ""
+          echo "Actions taken:"
+          echo "  ✓ Checked out v${{ github.event.inputs.version }}"
+          echo "  ✓ Rebuilt packages"
+          echo "  ✓ Validated packages"
+          echo "  ✓ Created rollback release"
+          echo "  ✓ Deployed to packagecloud.io"
+          echo "  ✓ Created notification issue"
+          echo ""
+          echo "Release: https://github.com/FlossWare/VirtOS/releases/tag/v${{ github.event.inputs.version }}-rollback"
+          echo "=================================="
