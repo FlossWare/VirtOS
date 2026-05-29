@@ -104,6 +104,31 @@ set_vm_quota() {
     local resource="$2"
     local limit="$3"
 
+    # SECURITY: Validate VM name to prevent path traversal and command injection
+    if ! echo "$vm_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid VM name '$vm_name' (only alphanumeric, underscore, hyphen allowed)" >&2
+        log_message "SECURITY: Invalid VM name in quota set: $vm_name"
+        return 1
+    fi
+
+    # SECURITY: Validate resource name
+    case "$resource" in
+        cpu|memory|disk)
+            # Valid resource types
+            ;;
+        *)
+            echo "Error: Invalid resource type '$resource'" >&2
+            echo "Valid types: cpu, memory, disk" >&2
+            return 1
+            ;;
+    esac
+
+    # SECURITY: Validate limit is a positive number
+    if ! echo "$limit" | grep -qE '^[0-9]+$'; then
+        echo "Error: Limit must be a positive number: $limit" >&2
+        return 1
+    fi
+
     if ! virsh list --all | grep -q " $vm_name "; then
         echo "Error: VM '$vm_name' not found"
         return 1
@@ -147,6 +172,13 @@ EOF
 
 get_vm_quota() {
     local vm_name="$1"
+
+    # SECURITY: Validate VM name
+    if ! echo "$vm_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid VM name format" >&2
+        return 1
+    fi
+
     local quota_file="$CONFIG_DIR/vms/${vm_name}.quota"
 
     if [ ! -f "$quota_file" ]; then
@@ -196,6 +228,12 @@ list_quotas() {
 
 check_vm_quota() {
     local vm_name="$1"
+
+    # SECURITY: Validate VM name
+    if ! echo "$vm_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid VM name format" >&2
+        return 1
+    fi
     local quota_file="$CONFIG_DIR/vms/${vm_name}.quota"
 
     if [ ! -f "$quota_file" ]; then

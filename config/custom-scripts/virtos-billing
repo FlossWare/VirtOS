@@ -150,6 +150,13 @@ track_usage() {
         return 1
     fi
 
+    # SECURITY: Validate VM name to prevent SQL injection and command injection
+    if ! echo "$vm_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log "SECURITY: Invalid VM name in track usage: $vm_name"
+        echo "Error: Invalid VM name format (alphanumeric, underscore, hyphen only)" >&2
+        return 1
+    fi
+
     log "Tracking usage for VM: $vm_name..."
 
     # Get VM info
@@ -262,8 +269,25 @@ generate_invoice() {
     local period_start="${2:-}"
     local period_end="${3:-}"
 
+    # SECURITY: Validate customer name to prevent SQL injection
+    if ! echo "$customer" | grep -qE '^[a-zA-Z0-9_@. -]+$'; then
+        log "SECURITY: Invalid customer name: $customer"
+        echo "Error: Invalid customer name format (alphanumeric, @, ., space, hyphen, underscore only)" >&2
+        return 1
+    fi
+
     if [ -z "$period_start" ] || [ -z "$period_end" ]; then
         log "ERROR: Period start and end dates required"
+        return 1
+    fi
+
+    # SECURITY: Validate date format to prevent SQL injection
+    if ! date -d "$period_start" +%s >/dev/null 2>&1; then
+        echo "Error: Invalid period_start date format: $period_start" >&2
+        return 1
+    fi
+    if ! date -d "$period_end" +%s >/dev/null 2>&1; then
+        echo "Error: Invalid period_end date format: $period_end" >&2
         return 1
     fi
 

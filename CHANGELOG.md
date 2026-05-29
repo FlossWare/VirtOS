@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- Enhanced input validation in virtos-quota and virtos-billing (Issue #116) - 2026-05-29
+  - virtos-quota: VM name, resource type, and limit validation
+  - virtos-billing: VM name, customer name, and date validation
+  - SQL injection prevention in database queries
+  - Command injection prevention in all parameters
+  - Path traversal prevention in quota file operations
+  - Completed input validation milestone (5 critical scripts)
+
 - Enhanced input validation in virtos-automation (Issue #116) - 2026-05-29
   - Workflow name validation (create, run, delete)
   - Path traversal prevention (no ../, ./, .)
