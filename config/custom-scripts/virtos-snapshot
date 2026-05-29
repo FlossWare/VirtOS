@@ -72,7 +72,13 @@ create_snapshot() {
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
-        echo "Error: VM '$vm_name' not found"
+        echo "Error: VM '$vm_name' not found" >&2
+        echo "" >&2
+        echo "Available VMs:" >&2
+        virsh list --all --name 2>/dev/null | grep -v '^$' | sed 's/^/  • /' >&2 || echo "  (none)" >&2
+        echo "" >&2
+        echo "Create a snapshot for an existing VM:" >&2
+        echo "  virtos-snapshot create <vm-name> \"Description\"" >&2
         return 1
     fi
 
@@ -92,7 +98,22 @@ create_snapshot() {
         echo "Snapshot created: $snapshot_name"
         return 0
     else
-        echo "Error: Failed to create snapshot"
+        echo "Error: Failed to create snapshot" >&2
+        echo "" >&2
+        echo "Possible causes:" >&2
+        echo "  • Insufficient disk space for snapshot" >&2
+        echo "  • VM disk format doesn't support snapshots (must be qcow2)" >&2
+        echo "  • Disk is on read-only storage" >&2
+        if [ "$snapshot_type" = "memory" ]; then
+            echo "  • VM is not running (memory snapshots require running VM)" >&2
+        fi
+        echo "" >&2
+        echo "Check VM disk format:" >&2
+        echo "  virsh domblklist $vm_name --details" >&2
+        echo "  qemu-img info /path/to/disk.img" >&2
+        echo "" >&2
+        echo "Check available disk space:" >&2
+        echo "  df -h /var/lib/libvirt/images/" >&2
         return 1
     fi
 }
@@ -153,7 +174,18 @@ revert_snapshot() {
 
     # Check if snapshot exists
     if ! virsh snapshot-list "$vm_name" --name | grep -q "^$snapshot_name$"; then
-        echo "Error: Snapshot '$snapshot_name' not found"
+        echo "Error: Snapshot '$snapshot_name' not found for VM '$vm_name'" >&2
+        echo "" >&2
+        echo "Available snapshots for $vm_name:" >&2
+        local snapshots=$(virsh snapshot-list "$vm_name" --name 2>/dev/null | grep -v '^$')
+        if [ -n "$snapshots" ]; then
+            echo "$snapshots" | sed 's/^/  • /' >&2
+        else
+            echo "  (none)" >&2
+        fi
+        echo "" >&2
+        echo "To see snapshot details:" >&2
+        echo "  virtos-snapshot list $vm_name" >&2
         return 1
     fi
 
