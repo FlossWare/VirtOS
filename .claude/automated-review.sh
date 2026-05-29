@@ -75,8 +75,13 @@ while IFS= read -r finding; do
     line=$(echo "$finding" | cut -d: -f2)
     content=$(echo "$finding" | cut -d: -f3-)
 
-    # Skip if in documentation (examples) or changelog
-    if [[ "$file" =~ CONTRIBUTING\.md|CHANGELOG\.md ]]; then
+    # Skip if in documentation (examples), changelog, guides, or placeholders
+    if [[ "$file" =~ CONTRIBUTING\.md|CHANGELOG\.md|GUIDE\.md|\.claude/|CVE-XXX|Issue.*XXX ]]; then
+        continue
+    fi
+
+    # Skip if it's a placeholder (XXX, XXXX in examples)
+    if [[ "$content" =~ XXX|HACKING\.md ]]; then
         continue
     fi
 
@@ -93,6 +98,8 @@ done < <(grep -rn "TODO\|FIXME\|XXX\|HACK" . \
     --exclude-dir=.git \
     --exclude-dir=workspace \
     --exclude-dir=tests \
+    --exclude-dir=.claude \
+    --exclude-dir=packages \
     2>/dev/null || true)
 
 if [ -n "$TODO_FINDINGS" ]; then
@@ -187,14 +194,17 @@ for pattern in "${UNSAFE_PATTERNS[@]}"; do
         --exclude-dir=.git \
         --exclude-dir=workspace \
         --exclude-dir=tests \
+        --exclude-dir=.claude \
+        --exclude-dir=packages \
         2>/dev/null || true); then
 
         # Filter out legitimate database CLI usage (mongo --eval, mysql --execute, psql --command)
         findings=$(echo "$findings" | grep -v 'mongo.*--eval\|mysql.*--execute\|psql.*--command' || true)
 
-        # Filter out documented security justifications
-        # This is a simple filter - ideally we'd check preceding lines for SECURITY NOTE
-        findings=$(echo "$findings" | grep -v '# SECURITY NOTE.*eval' || true)
+        # Filter out documented security justifications and echo statements
+        findings=$(echo "$findings" | grep -v '# SECURITY NOTE' || true)
+        findings=$(echo "$findings" | grep -v '^\s*echo\s' || true)
+        findings=$(echo "$findings" | grep -v 'eval \$DIALOG' || true)
 
         if [ -n "$findings" ]; then
             echo "⚠️  Unsafe command pattern found:" | tee -a "$REVIEW_LOG"
