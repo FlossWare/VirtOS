@@ -804,7 +804,7 @@ Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** fo
 
 ### Community Support
 
-📢 **New to VirtOS?** See our **[Community Guide](docs/COMMUNITY.md)** for:
+📢 **New to VirtOS?** See our **[Community Guide](COMMUNITY.md)** for:
 - Communication channels (GitHub Discussions, Issues)
 - How to ask questions and get help
 - Community guidelines and support resources
@@ -820,6 +820,7 @@ Having issues? Check the **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** fo
 #### Business & Planning
 - **[Executive Summary](docs/EXECUTIVE_SUMMARY.md)** - One-page overview for decision makers
 - **[Business Case](docs/BUSINESS_CASE.md)** - ROI analysis, cost savings, competitive comparison
+- **[v1.0 Roadmap](docs/V1_0_ROADMAP.md)** - **NEW!** Path to production-ready v1.0 (12-week plan)
 - **[TCZ Packages](docs/TCZ_PACKAGES.md)** - Package strategy across build profiles
 
 #### Technical Guides
