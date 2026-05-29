@@ -431,7 +431,6 @@ Welcome to the VirtOS community! This is a place to:
 **Need immediate help?** Check [COMMUNITY.md](https://github.com/FlossWare/VirtOS/blob/main/COMMUNITY.md) for support options.
 
 Looking forward to building VirtOS together! 🚀
-```
 
 ## Contact
 

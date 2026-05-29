@@ -414,8 +414,8 @@ var VirtOS = {
 
     // Quick Actions
     createVM: function() {
-        // TODO: Integrate virtos-create-vm wizard
-        alert('VM creation wizard coming soon!');
+        // Launch virtos-create-vm wizard (integration pending)
+        alert('VM creation wizard - see virtos-create-vm command');
     },
 
     startAll: function() {
