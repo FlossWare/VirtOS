@@ -48,6 +48,7 @@ Complete documentation for FlossWare VirtOS.
 - **[IAAS.md](IAAS.md)** - Automated VM placement and scheduling
 - **[REMOTE-ACCESS.md](REMOTE-ACCESS.md)** - virt-manager and SSH setup
 - **[API.md](API.md)** - REST API reference (virtos-api endpoints)
+- **[COCKPIT-MODULE.md](COCKPIT-MODULE.md)** - Cockpit web UI module design
 
 ## User Interface
 
