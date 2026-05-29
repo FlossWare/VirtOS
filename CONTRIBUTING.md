@@ -48,7 +48,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
    ```
 
 3. **Make your changes**
-   - Follow existing code style
+   - Follow our [Coding Standards](docs/CODING_STANDARDS.md)
    - Test thoroughly
    - Update documentation
 
@@ -164,7 +164,7 @@ See [docs/PRE_COMMIT_HOOKS.md](docs/PRE_COMMIT_HOOKS.md) for complete guide.
 1. **Create an issue** (for features/bugs)
 2. **Fork and clone** the repository
 3. **Create a branch** from `main`
-4. **Make changes** following our coding standards
+4. **Make changes** following our [Coding Standards](docs/CODING_STANDARDS.md)
 5. **Test thoroughly** (see Testing section)
 6. **Commit** with descriptive messages
 7. **Push** to your fork
@@ -302,116 +302,117 @@ Current priorities (see ROADMAP.md):
 
 ## Code Style
 
-### Shell Script Standards
+All VirtOS code must follow our **[Official Coding Standards](docs/CODING_STANDARDS.md)**.
 
-**General Guidelines:**
+### Quick Reference
 
-- Use `#!/bin/bash` shebang (not `/bin/sh`)
+**Shell Scripts:**
+
+- Use `#!/bin/sh` shebang for POSIX compliance (Tiny Core Linux uses BusyBox ash)
 - Use 4 spaces for indentation (no tabs)
-- Maximum line length: 120 characters
-- Use `set -e` for scripts that should fail fast
+- Line length: 80 characters target, 120 maximum
+- Always enable `set -e` for error handling
 - Always quote variables: `"$variable"` not `$variable`
-- Use `[[` instead of `[` for conditionals
-- Prefer `$(command)` over backticks
+- Use `[` for conditionals (POSIX), not `[[` (bash-specific)
+- Use `$(command)` for command substitution (not backticks)
 
-**Naming Conventions:**
+**Naming:**
 
-- Variables: `UPPERCASE_WITH_UNDERSCORES`
-- Functions: `lowercase_with_underscores`
-- Scripts: `virtos-lowercase-with-hyphens`
-- Temporary files: Use `mktemp`
+- Constants: `UPPER_CASE` (readonly)
+- Global variables: `UPPER_CASE`
+- Local variables: `snake_case`
+- Functions: `snake_case`
+- Scripts: `virtos-kebab-case`
 
-**Comments:**
+**Security:**
 
-- Add file header with description, version, author
-- Document complex logic and why (not what)
-- Use TODO/FIXME for incomplete items
-- Keep comments up-to-date with code
+- Validate all user input
+- Prevent command injection (quote variables)
+- Prevent path traversal (no `../`)
+- Use `mktemp` for temporary files
 
-**Error Handling:**
+See **[docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md)** for complete guidelines including:
 
-```bash
-# Always check exit codes
-if ! command; then
-    echo "Error: command failed" >&2
-    exit 1
-fi
+- Error handling patterns
+- Security best practices
+- Testing requirements
+- Git workflow
+- Complete examples
 
-# Or use set -e
-set -e
-command  # Script exits if this fails
-
-# Trap cleanup
-cleanup() {
-    rm -f "$TEMP_FILE"
-}
-trap cleanup EXIT
-```
-
-**Example Script Structure:**
+**Example Script (POSIX-compliant):**
 
 ```bash
-#!/bin/bash
-# VirtOS Example Script
-# Brief description of what this does
+#!/bin/sh
+# virtos-example - Brief description of what this does
+#
+# Usage: virtos-example [command] [options]
+
+set -e  # Exit on error
 
 VERSION="1.0"
-set -e
 
-# Configuration
-CONFIG_DIR="/etc/virtos"
-LOG_FILE="/var/log/virtos-example.log"
+# Load common libraries
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
 
-# Functions
-log_message() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
-}
-
-show_usage() {
+show_help() {
     cat <<EOF
-Usage: $(basename "$0") [command] [options]
+Usage: virtos-example [OPTIONS] <command>
 
 Commands:
-  start   - Start the service
-  stop    - Stop the service
-  status  - Show status
+    start   Start the service
+    stop    Stop the service
+    status  Show status
 
 Options:
-  -h, --help     Show this help
-  -v, --version  Show version
+    -h, --help      Show this help
+    -v, --version   Show version
 
 Examples:
-  $(basename "$0") start
-  $(basename "$0") status
+    virtos-example start
+    virtos-example status
 EOF
 }
 
-# Main logic
 main() {
-    case "$1" in
+    local command="$1"
+
+    case "$command" in
         start)
-            log_message "Starting..."
+            echo "Starting..."
             ;;
         stop)
-            log_message "Stopping..."
+            echo "Stopping..."
             ;;
         status)
-            log_message "Checking status..."
-            ;;
-        --help|-h)
-            show_usage
-            exit 0
+            echo "Checking status..."
             ;;
         *)
-            show_usage
+            echo "Error: Unknown command '$command'" >&2
+            show_help
             exit 1
             ;;
     esac
 }
 
-# Execute
+# Argument parsing
+case "${1:-}" in
+    -h|--help)
+        show_help
+        exit 0
+        ;;
+    -v|--version)
+        echo "virtos-example version $VERSION"
+        exit 0
+        ;;
+esac
+
+# Execute main
 main "$@"
 ```
+
+For complete examples and best practices, see **[docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md)**.
 
 ### Linting
 
