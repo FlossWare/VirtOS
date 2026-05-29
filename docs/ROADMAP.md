@@ -410,7 +410,7 @@
 - Phase 8: Cloud-init, API, DR (virtos-cloud-init, virtos-api, virtos-dr) ✅
 - Phase 9: Storage, networking, GPU/USB (virtos-storage, virtos-network, virtos-gpu, virtos-usb) ✅
 - Phase 10-11: Telemetry, security, billing, analytics, automation (partial) ✅
-- Bonus: Kubernetes (K3s), clustering (virtos-cluster), JPlatform integration ✅
+- Bonus: Kubernetes (K3s), clustering (virtos-cluster), platform-java integration ✅
 
 🟡 **Partial Implementation** (9/54 scripts):
 - Infrastructure scripts need backend integration (auth, database, directory, secrets, update)
@@ -425,7 +425,7 @@
 ⏸️ **Pending Validation**:
 - ISO builds on real hardware (see ISO_TESTING_STATUS.md)
 - Runtime integration testing (see RUNTIME_TESTING_PLAN.md)
-- JPlatform workload orchestration
+- platform-java workload orchestration
 - Multi-host clustering
 
 ## Quick Start Path (Recommended)
@@ -480,6 +480,6 @@ For rapid initial development:
 - ✅ Hardware passthrough (virtos-gpu, virtos-usb)
 - ✅ Live migration (virtos-migrate)
 - ✅ High availability (virtos-ha)
-- ✅ JPlatform workload orchestration
+- ✅ platform-java workload orchestration
 - 🟡 Web UI (virtos-web partial - needs backend testing)
 - 🟡 Advanced networking (virtos-networking-advanced partial)

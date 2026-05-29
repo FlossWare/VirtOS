@@ -1,6 +1,6 @@
 # Integration Test Fixtures
 
-This directory contains sample workload definitions for testing JPlatform integration with VirtOS.
+This directory contains sample workload definitions for testing platform-java integration with VirtOS.
 
 ## Available Fixtures
 
@@ -10,10 +10,10 @@ This directory contains sample workload definitions for testing JPlatform integr
 Basic virtual machine workload for testing VM lifecycle operations.
 
 ```bash
-jplatform deploy test-vm.yaml
-jplatform start test-vm
-jplatform status test-vm
-jplatform stop test-vm
+platform-java deploy test-vm.yaml
+platform-java start test-vm
+platform-java status test-vm
+platform-java stop test-vm
 jplatform delete test-vm
 ```
 
@@ -27,10 +27,10 @@ jplatform delete test-vm
 NGINX container workload for testing container operations.
 
 ```bash
-jplatform deploy test-container.yaml
-jplatform start nginx-test
+platform-java deploy test-container.yaml
+platform-java start nginx-test
 curl http://localhost:8080
-jplatform stop nginx-test
+platform-java stop nginx-test
 jplatform delete nginx-test
 ```
 
@@ -76,17 +76,17 @@ NGINX web tier (Container) - depends on application tier.
 
 ```bash
 # Deploy all tiers
-jplatform deploy multi-tier-db.yaml
-jplatform deploy multi-tier-app.yaml
-jplatform deploy multi-tier-web.yaml
+platform-java deploy multi-tier-db.yaml
+platform-java deploy multi-tier-app.yaml
+platform-java deploy multi-tier-web.yaml
 
 # Start web tier (should auto-start dependencies)
-jplatform start web-tier
+platform-java start web-tier
 
 # Verify all tiers are running
-jplatform status database-tier
-jplatform status application-tier
-jplatform status web-tier
+platform-java status database-tier
+platform-java status application-tier
+platform-java status web-tier
 
 # Access the application
 curl http://localhost
@@ -101,7 +101,7 @@ jplatform delete database-tier
 
 These fixtures are referenced in integration tests:
 
-- `tests/integration/02-jplatform.bats`: JPlatform integration tests
+- `tests/integration/02-jplatform.bats`: platform-java integration tests
 - Test functions use these fixtures to validate workload deployment, lifecycle management, and dependency resolution
 
 ## Customization
@@ -119,7 +119,7 @@ You can modify these fixtures for different test scenarios:
 To use these fixtures, you need:
 
 - VirtOS runtime environment
-- JPlatform installed (`virtos-jplatform.tcz`)
+- platform-java installed (`virtos-jplatform.tcz`)
 - libvirt/QEMU for VM workloads
 - Docker or Podman for container workloads
 
@@ -132,7 +132,7 @@ Validate fixture syntax:
 yamllint fixtures/*.yaml
 
 # Dry-run deployment (doesn't create resources)
-jplatform deploy --dry-run test-vm.yaml
+platform-java deploy --dry-run test-vm.yaml
 ```
 
 ## Adding New Fixtures

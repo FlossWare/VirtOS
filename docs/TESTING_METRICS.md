@@ -121,7 +121,7 @@ Minimal validation for demonstration features:
 | Suite | Tests | Focus Area |
 |-------|-------|------------|
 | 01-vm-lifecycle.bats | 7 | VM create, start, stop, snapshot, backup |
-| 02-jplatform.bats | 8 | JPlatform deployment, workload lifecycle |
+| 02-jplatform.bats | 8 | platform-java deployment, workload lifecycle |
 | 03-networking.bats | 11 | Bridges, NAT, VLANs, connectivity |
 | 04-storage.bats | 13 | Pools, volumes, snapshots, quotas |
 | 05-cluster.bats | 15 | Discovery, migration, HA, fencing |
@@ -281,7 +281,7 @@ v0.44-0.59: CI fixes and enhancements
 ### Current Gaps
 - Integration tests not executed (awaiting VirtOS runtime)
 - ISO build not tested on real hardware
-- JPlatform integration not validated end-to-end
+- platform-java integration not validated end-to-end
 - Multi-host clustering not tested
 - Performance benchmarks not established
 

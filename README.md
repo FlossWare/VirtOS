@@ -451,7 +451,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 | **Infrastructure (9)** | ✅ | 🟡 | ✅ | **PARTIAL** |
 | **Experimental (14)** | ✅ | 🔬 | ✅ | **DEMO** |
 | Package building | ✅ | ✅ | ✅ | **WORKING** |
-| JPlatform integration | ✅ | ✅ | ✅ | **WORKING** |
+| platform-java integration | ✅ | ✅ | ✅ | **WORKING** |
 | ISO building | ✅ | ⚠️ | ❌ | **UNTESTED** |
 
 **Status Icon Legend**:
@@ -657,7 +657,7 @@ See [Production Readiness Master Checklist](https://github.com/FlossWare/VirtOS/
 2. Add unit tests for management scripts
 3. Perform security review and add input validation
 4. Test ISO building end-to-end
-5. Test JPlatform integration in real environment
+5. Test platform-java integration in real environment
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md) for detailed guidance.
 

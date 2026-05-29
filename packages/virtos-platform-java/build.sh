@@ -1,11 +1,11 @@
 #!/bin/bash
-# Build virtos-jplatform TCZ package
-# Integrates JPlatform with VirtOS for unified VM/container/app orchestration
+# Build virtos-platform-java TCZ package
+# Integrates platform-java with VirtOS for unified VM/container/app orchestration
 
 set -e
 set -u  # Fail on unset variables
 
-PACKAGE="virtos-jplatform"
+PACKAGE="virtos-platform-java"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
@@ -21,9 +21,9 @@ if [ -z "$PROJECT_ROOT" ] || [ ! -d "$PROJECT_ROOT" ]; then
 fi
 
 # Validate we're in expected location
-if [[ ! "$SCRIPT_DIR" =~ packages/virtos-jplatform$ ]]; then
+if [[ ! "$SCRIPT_DIR" =~ packages/virtos-platform-java$ ]]; then
     echo "ERROR: SCRIPT_DIR doesn't match expected pattern: $SCRIPT_DIR" >&2
-    echo "Expected: */packages/virtos-jplatform" >&2
+    echo "Expected: */packages/virtos-platform-java" >&2
     exit 1
 fi
 
@@ -54,23 +54,23 @@ fi
 # Create directory structure
 echo "Creating package structure..."
 mkdir -p "$SCRIPT_DIR/src/usr/local/bin"
-mkdir -p "$SCRIPT_DIR/src/usr/local/lib/jplatform"
+mkdir -p "$SCRIPT_DIR/src/usr/local/lib/platform-java"
 mkdir -p "$SCRIPT_DIR/src/usr/local/tce.installed"
-mkdir -p "$SCRIPT_DIR/src/usr/local/share/doc/jplatform"
-mkdir -p "$SCRIPT_DIR/src/etc/jplatform"
-mkdir -p "$SCRIPT_DIR/src/var/lib/jplatform/apps"
-mkdir -p "$SCRIPT_DIR/src/var/lib/jplatform/vms"
-mkdir -p "$SCRIPT_DIR/src/var/lib/jplatform/volumes"
+mkdir -p "$SCRIPT_DIR/src/usr/local/share/doc/platform-java"
+mkdir -p "$SCRIPT_DIR/src/etc/platform-java"
+mkdir -p "$SCRIPT_DIR/src/var/lib/platform-java/apps"
+mkdir -p "$SCRIPT_DIR/src/var/lib/platform-java/vms"
+mkdir -p "$SCRIPT_DIR/src/var/lib/platform-java/volumes"
 
-# Create JPlatform wrapper script
-echo "Creating JPlatform wrapper scripts..."
-cat > "$SCRIPT_DIR/src/usr/local/bin/jplatform" << 'EOF'
+# Create platform-java wrapper script
+echo "Creating platform-java wrapper scripts..."
+cat > "$SCRIPT_DIR/src/usr/local/bin/platform-java" << 'EOF'
 #!/bin/sh
-# JPlatform command-line interface for VirtOS
+# platform-java command-line interface for VirtOS
 # Manages VMs, containers, Java apps, and native binaries
 
-JPLATFORM_HOME="${JPLATFORM_HOME:-/usr/local/lib/jplatform}"
-JPLATFORM_DATA="${JPLATFORM_DATA:-/var/lib/jplatform}"
+JPLATFORM_HOME="${JPLATFORM_HOME:-/usr/local/lib/platform-java}"
+JPLATFORM_DATA="${JPLATFORM_DATA:-/var/lib/platform-java}"
 JAVA_HOME="${JAVA_HOME:-/usr/local/java}"
 
 # Check if Java is installed
@@ -80,35 +80,35 @@ if [ ! -d "$JAVA_HOME" ]; then
     exit 1
 fi
 
-# Check if JPlatform is installed
-if [ ! -f "$JPLATFORM_HOME/jplatform-launcher.jar" ]; then
-    echo "ERROR: JPlatform not installed. Run: virtos-jplatform-install"
+# Check if platform-java is installed
+if [ ! -f "$JPLATFORM_HOME/platform-java-launcher.jar" ]; then
+    echo "ERROR: platform-java not installed. Run: virtos-platform-java-install"
     exit 1
 fi
 
-# Execute JPlatform
+# Execute platform-java
 exec "$JAVA_HOME/bin/java" \
-    -Djplatform.home="$JPLATFORM_HOME" \
-    -Djplatform.data="$JPLATFORM_DATA" \
-    -jar "$JPLATFORM_HOME/jplatform-launcher.jar" \
+    -Dplatform-java.home="$JPLATFORM_HOME" \
+    -Dplatform-java.data="$JPLATFORM_DATA" \
+    -jar "$JPLATFORM_HOME/platform-java-launcher.jar" \
     "$@"
 EOF
-chmod +x "$SCRIPT_DIR/src/usr/local/bin/jplatform"
+chmod +x "$SCRIPT_DIR/src/usr/local/bin/platform-java"
 
 # Create installation script
-cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-jplatform-install" << 'EOF'
+cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-install" << 'EOF'
 #!/bin/sh
-# Installs JPlatform on VirtOS
-# Downloads and configures JPlatform with VM management support
+# Installs platform-java on VirtOS
+# Downloads and configures platform-java with VM management support
 
 set -e
 
 JPLATFORM_VERSION="${JPLATFORM_VERSION:-1.1}"
-JPLATFORM_HOME="/usr/local/lib/jplatform"
-JPLATFORM_DATA="/var/lib/jplatform"
-DOWNLOAD_URL="https://github.com/FlossWare/jplatform/releases/download/v${JPLATFORM_VERSION}"
+JPLATFORM_HOME="/usr/local/lib/platform-java"
+JPLATFORM_DATA="/var/lib/platform-java"
+DOWNLOAD_URL="https://github.com/FlossWare/platform-java/releases/download/v${JPLATFORM_VERSION}"
 
-echo "VirtOS JPlatform Installation"
+echo "VirtOS platform-java Installation"
 echo "============================="
 echo "Version: $JPLATFORM_VERSION"
 echo "Home: $JPLATFORM_HOME"
@@ -148,23 +148,23 @@ sudo mkdir -p "$JPLATFORM_DATA/apps"
 sudo mkdir -p "$JPLATFORM_DATA/vms"
 sudo mkdir -p "$JPLATFORM_DATA/volumes"
 sudo mkdir -p "$JPLATFORM_DATA/logs"
-sudo mkdir -p /etc/jplatform
+sudo mkdir -p /etc/platform-java
 
-# Download JPlatform
+# Download platform-java
 echo ""
-echo "Downloading JPlatform..."
+echo "Downloading platform-java..."
 cd /tmp
 
 # For now, use placeholder until actual release exists
 # In production, this would download from GitHub releases
 echo "  Note: Using local build (release not yet published)"
-if [ -d "/home/tc/jplatform" ]; then
+if [ -d "/home/tc/platform-java" ]; then
     echo "  Building from source..."
-    cd /home/tc/jplatform
+    cd /home/tc/platform-java
     mvn clean package -DskipTests
-    sudo cp jplatform-launcher/target/jplatform-launcher-*.jar "$JPLATFORM_HOME/jplatform-launcher.jar"
+    sudo cp platform-java-launcher/target/platform-java-launcher-*.jar "$JPLATFORM_HOME/platform-java-launcher.jar"
 else
-    echo "  ERROR: JPlatform source not found at /home/tc/jplatform"
+    echo "  ERROR: platform-java source not found at /home/tc/platform-java"
     echo "  Please clone the repository first or download a release."
     exit 1
 fi
@@ -172,13 +172,13 @@ fi
 # Create default configuration
 echo ""
 echo "Creating default configuration..."
-sudo tee /etc/jplatform/config.yaml > /dev/null << 'YAML_EOF'
-# JPlatform Configuration for VirtOS
+sudo tee /etc/platform-java/config.yaml > /dev/null << 'YAML_EOF'
+# platform-java Configuration for VirtOS
 
 # Platform settings
 platform:
-  name: "virtos-jplatform"
-  dataDirectory: "/var/lib/jplatform"
+  name: "virtos-platform-java"
+  dataDirectory: "/var/lib/platform-java"
 
 # VM management (libvirt)
 vm:
@@ -186,7 +186,7 @@ vm:
   libvirtUri: "qemu:///system"
   defaultVcpu: 2
   defaultMemoryMB: 4096
-  diskDirectory: "/var/lib/jplatform/vms"
+  diskDirectory: "/var/lib/platform-java/vms"
 
 # Container management
 container:
@@ -222,11 +222,11 @@ echo ""
 echo "Installation complete!"
 echo ""
 echo "Usage:"
-echo "  jplatform deploy <app.yaml>    # Deploy an application"
-echo "  jplatform start <app-id>       # Start application/VM"
-echo "  jplatform stop <app-id>        # Stop application/VM"
-echo "  jplatform status               # List all applications"
-echo "  jplatform help                 # Show full help"
+echo "  platform-java deploy <app.yaml>    # Deploy an application"
+echo "  platform-java start <app-id>       # Start application/VM"
+echo "  platform-java stop <app-id>        # Stop application/VM"
+echo "  platform-java status               # List all applications"
+echo "  platform-java help                 # Show full help"
 echo ""
 echo "Example VM deployment:"
 echo "  cat > /tmp/my-vm.yaml << 'EXAMPLE'"
@@ -235,49 +235,49 @@ echo "  name: My Virtual Machine"
 echo "  properties:"
 echo "    vm.vcpu: \"4\""
 echo "    vm.memory: \"8192\""
-echo "    vm.disk: \"/var/lib/jplatform/vms/my-vm.qcow2\""
+echo "    vm.disk: \"/var/lib/platform-java/vms/my-vm.qcow2\""
 echo "    vm.network: \"bridge\""
 echo "  EXAMPLE"
-echo "  jplatform deploy /tmp/my-vm.yaml"
+echo "  platform-java deploy /tmp/my-vm.yaml"
 echo ""
 EOF
-chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-jplatform-install"
+chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-install"
 
 # Create uninstall script
-cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-jplatform-uninstall" << 'EOF'
+cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-uninstall" << 'EOF'
 #!/bin/sh
-# Uninstalls JPlatform from VirtOS
+# Uninstalls platform-java from VirtOS
 
-echo "Uninstalling JPlatform..."
+echo "Uninstalling platform-java..."
 
 # Stop all running applications
-if [ -x /usr/local/bin/jplatform ]; then
-    echo "  Stopping all JPlatform applications..."
-    jplatform shutdown || true
+if [ -x /usr/local/bin/platform-java ]; then
+    echo "  Stopping all platform-java applications..."
+    platform-java shutdown || true
 fi
 
 # Remove directories
-echo "  Removing JPlatform files..."
-sudo rm -rf /usr/local/lib/jplatform
-sudo rm -rf /etc/jplatform
+echo "  Removing platform-java files..."
+sudo rm -rf /usr/local/lib/platform-java
+sudo rm -rf /etc/platform-java
 
 echo ""
-echo "JPlatform uninstalled."
+echo "platform-java uninstalled."
 echo ""
-echo "Note: Application data preserved at /var/lib/jplatform"
-echo "      To remove data: sudo rm -rf /var/lib/jplatform"
+echo "Note: Application data preserved at /var/lib/platform-java"
+echo "      To remove data: sudo rm -rf /var/lib/platform-java"
 EOF
-chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-jplatform-uninstall"
+chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-uninstall"
 
 # Create status/info script
-cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-jplatform-info" << 'EOF'
+cat > "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-info" << 'EOF'
 #!/bin/sh
-# Display JPlatform status and configuration
+# Display platform-java status and configuration
 
-JPLATFORM_HOME="/usr/local/lib/jplatform"
-JPLATFORM_DATA="/var/lib/jplatform"
+JPLATFORM_HOME="/usr/local/lib/platform-java"
+JPLATFORM_DATA="/var/lib/platform-java"
 
-echo "VirtOS JPlatform Status"
+echo "VirtOS platform-java Status"
 echo "======================="
 echo ""
 
@@ -285,7 +285,7 @@ echo ""
 if [ ! -d "$JPLATFORM_HOME" ]; then
     echo "Status: NOT INSTALLED"
     echo ""
-    echo "Run: virtos-jplatform-install"
+    echo "Run: virtos-platform-java-install"
     exit 0
 fi
 
@@ -293,8 +293,8 @@ echo "Status: INSTALLED"
 echo ""
 
 # Version
-if [ -f "$JPLATFORM_HOME/jplatform-launcher.jar" ]; then
-    echo "JAR: $JPLATFORM_HOME/jplatform-launcher.jar"
+if [ -f "$JPLATFORM_HOME/platform-java-launcher.jar" ]; then
+    echo "JAR: $JPLATFORM_HOME/platform-java-launcher.jar"
 fi
 
 # Data directory
@@ -323,43 +323,43 @@ fi
 echo ""
 
 # Running applications
-if [ -x /usr/local/bin/jplatform ] && jplatform status >/dev/null 2>&1; then
+if [ -x /usr/local/bin/platform-java ] && platform-java status >/dev/null 2>&1; then
     echo "Running Applications:"
-    jplatform status
+    platform-java status
 fi
 EOF
-chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-jplatform-info"
+chmod +x "$SCRIPT_DIR/src/usr/local/bin/virtos-platform-java-info"
 
 # Create post-install script
 echo "Creating post-install script..."
 cat > "$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE" << 'EOF'
 #!/bin/sh
-# Post-install script for virtos-jplatform
+# Post-install script for virtos-platform-java
 
-echo "virtos-jplatform installed."
+echo "virtos-platform-java installed."
 echo ""
 echo "Next steps:"
-echo "  1. Install JPlatform: virtos-jplatform-install"
-echo "  2. Check status: virtos-jplatform-info"
-echo "  3. Deploy apps/VMs: jplatform deploy <descriptor.yaml>"
+echo "  1. Install platform-java: virtos-platform-java-install"
+echo "  2. Check status: virtos-platform-java-info"
+echo "  3. Deploy apps/VMs: platform-java deploy <descriptor.yaml>"
 echo ""
-echo "Documentation: /usr/local/share/doc/jplatform/"
+echo "Documentation: /usr/local/share/doc/platform-java/"
 EOF
 chmod +x "$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE"
 
 # Copy documentation
 echo "Copying documentation..."
-cat > "$SCRIPT_DIR/src/usr/local/share/doc/jplatform/README.md" << 'DOC_EOF'
-# JPlatform on VirtOS
+cat > "$SCRIPT_DIR/src/usr/local/share/doc/platform-java/README.md" << 'DOC_EOF'
+# platform-java on VirtOS
 
-JPlatform provides unified orchestration for VMs, containers, Java applications,
+platform-java provides unified orchestration for VMs, containers, Java applications,
 and native binaries on VirtOS.
 
 ## Quick Start
 
-1. Install JPlatform:
+1. Install platform-java:
    ```bash
-   virtos-jplatform-install
+   virtos-platform-java-install
    ```
 
 2. Deploy a virtual machine:
@@ -370,12 +370,12 @@ and native binaries on VirtOS.
    properties:
      vm.vcpu: "2"
      vm.memory: "4096"
-     vm.disk: "/var/lib/jplatform/vms/test.qcow2"
+     vm.disk: "/var/lib/platform-java/vms/test.qcow2"
      vm.network: "bridge"
    EOF
 
-   jplatform deploy my-vm.yaml
-   jplatform start test-vm
+   platform-java deploy my-vm.yaml
+   platform-java start test-vm
    ```
 
 3. Deploy a container:
@@ -389,23 +389,23 @@ and native binaries on VirtOS.
      container.ports: "80:80"
    EOF
 
-   jplatform deploy my-container.yaml
-   jplatform start nginx
+   platform-java deploy my-container.yaml
+   platform-java start nginx
    ```
 
 ## Commands
 
-- `jplatform deploy <yaml>` - Deploy application/VM/container
-- `jplatform start <id>` - Start workload
-- `jplatform stop <id>` - Stop workload
-- `jplatform status` - List all workloads
-- `jplatform logs <id>` - View logs
-- `jplatform metrics <id>` - View resource usage
-- `virtos-jplatform-info` - Show installation status
+- `platform-java deploy <yaml>` - Deploy application/VM/container
+- `platform-java start <id>` - Start workload
+- `platform-java stop <id>` - Stop workload
+- `platform-java status` - List all workloads
+- `platform-java logs <id>` - View logs
+- `platform-java metrics <id>` - View resource usage
+- `virtos-platform-java-info` - Show installation status
 
 ## Documentation
 
-Full documentation: https://github.com/FlossWare/jplatform
+Full documentation: https://github.com/FlossWare/platform-java
 DOC_EOF
 
 # Create package info
@@ -420,16 +420,16 @@ else
 fi
 
 cat > "$SCRIPT_DIR/${PACKAGE}.tcz.info" << INFO_EOF
-Title:          virtos-jplatform.tcz
-Description:    JPlatform integration for VirtOS - unified VM/container/app orchestration
+Title:          virtos-platform-java.tcz
+Description:    platform-java integration for VirtOS - unified VM/container/app orchestration
 Version:        ${PACKAGE_VERSION}
 Author:         FlossWare
-Original-site:  https://github.com/FlossWare/jplatform
+Original-site:  https://github.com/FlossWare/platform-java
 Copying-policy: MIT
 Size:           24K
 Extension_by:   FlossWare
 Tags:           virtualization orchestration java vm container
-Comments:       Integrates JPlatform with VirtOS for managing VMs, containers, Java apps
+Comments:       Integrates platform-java with VirtOS for managing VMs, containers, Java apps
                 and native binaries through a unified API. Requires Java and libvirt.
 Change-log:     2026-05-25 Initial release
 Current:        2026-05-25

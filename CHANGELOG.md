@@ -322,7 +322,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 03-networking.bats (11 tests)
   - 04-storage.bats (13 tests)
   - 05-cluster.bats (15 tests)
-- Test fixtures for JPlatform workloads (5 YAML files)
+- Test fixtures for platform-java workloads (5 YAML files)
 - Integration test README documentation
 
 ## [0.30] - 2026-05-26
@@ -360,7 +360,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced features (19 scripts with working backends)
 - Infrastructure components (9 scripts)
 - Experimental demonstrations (14 scripts)
-- JPlatform integration
+- platform-java integration
 - Build validation and syntax checking
 
 ---

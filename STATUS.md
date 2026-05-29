@@ -229,7 +229,7 @@ All profiles validated in CI ✅
 **⏸️ Awaiting Testing**:
 - ISO builds on real hardware
 - Integration tests in VirtOS runtime
-- JPlatform end-to-end validation
+- platform-java end-to-end validation
 - Multi-host clustering
 - Performance benchmarks
 
@@ -276,7 +276,7 @@ All profiles validated in CI ✅
 - [ ] ISO testing on hardware
 - [ ] Integration test execution
 - [ ] Runtime validation
-- [ ] JPlatform integration testing
+- [ ] platform-java integration testing
 
 ### Planned 📋
 - [ ] Production deployment validation
@@ -291,7 +291,7 @@ All profiles validated in CI ✅
 - Boot VirtOS ISO on test hardware
 - Execute integration tests
 - Validate core VM operations
-- Test JPlatform integration
+- Test platform-java integration
 
 **2. ISO Testing** (High Priority)
 - Follow ISO_TESTING_STATUS.md checklist

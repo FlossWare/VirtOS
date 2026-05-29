@@ -8,9 +8,9 @@
 
 ## Executive Summary
 
-This document provides a comprehensive testing plan for validating VirtOS and JPlatform integration in a real runtime environment. All code is built and tested syntactically, but **end-to-end runtime validation has not been performed**.
+This document provides a comprehensive testing plan for validating VirtOS and platform-java integration in a real runtime environment. All code is built and tested syntactically, but **end-to-end runtime validation has not been performed**.
 
-**Goal**: Boot VirtOS, install packages, verify core VM management works, and confirm JPlatform integration operates correctly.
+**Goal**: Boot VirtOS, install packages, verify core VM management works, and confirm platform-java integration operates correctly.
 
 ---
 
@@ -187,7 +187,7 @@ virtos-setup --version
 - [ ] Help text works (`virtos-setup --help`)
 - [ ] Version info works (`virtos-setup --version`)
 
-### 2.2 Install JPlatform Package
+### 2.2 Install platform-java Package
 
 ```bash
 # Install virtos-jplatform package
@@ -198,15 +198,15 @@ cd /tmp
 unsquashfs -d virtos-jplatform virtos-jplatform.tcz
 sudo cp -r virtos-jplatform/usr /usr/
 
-# Verify JPlatform installation
+# Verify platform-java installation
 which jplatform
 jplatform --version
 ```
 
-**JPlatform Checklist**:
+**platform-java Checklist**:
 - [ ] Package installs without errors
 - [ ] `jplatform` command available
-- [ ] JPlatform jar exists (`/opt/jplatform/jplatform.jar`)
+- [ ] platform-java jar exists (`/opt/jplatform/jplatform.jar`)
 - [ ] Dependencies present (Java runtime)
 
 ---
@@ -422,13 +422,13 @@ virsh list --all | grep backup-test
 
 ---
 
-## Phase 4: JPlatform Integration (2-3 hours)
+## Phase 4: platform-java Integration (2-3 hours)
 
-### 4.1 JPlatform Basic Operations
+### 4.1 platform-java Basic Operations
 
 **Install Example Workloads**:
 ```bash
-# Verify JPlatform responds
+# Verify platform-java responds
 jplatform version
 jplatform list
 
@@ -441,7 +441,7 @@ cd /tmp/jplatform-test
 ```yaml
 # test-vm.yaml
 applicationId: test-vm-jplatform
-name: Test VM via JPlatform
+name: Test VM via platform-java
 type: vm
 properties:
   vm.vcpu: "2"
@@ -452,21 +452,21 @@ dependencies: []
 ```
 
 ```bash
-# Deploy VM via JPlatform
-jplatform deploy test-vm.yaml
+# Deploy VM via platform-java
+platform-java deploy test-vm.yaml
 
 # Start VM
-jplatform start test-vm-jplatform
+platform-java start test-vm-jplatform
 
 # Check status
-jplatform status test-vm-jplatform
+platform-java status test-vm-jplatform
 
 # Stop and undeploy
-jplatform stop test-vm-jplatform
+platform-java stop test-vm-jplatform
 jplatform undeploy test-vm-jplatform
 ```
 
-**JPlatform VM Checklist**:
+**platform-java VM Checklist**:
 - [ ] Workload definition valid
 - [ ] Deploy creates VM in libvirt
 - [ ] Start works
@@ -478,30 +478,30 @@ jplatform undeploy test-vm-jplatform
 
 **Deploy Three-Tier Example**:
 ```bash
-# Get JPlatform examples
+# Get platform-java examples
 git clone https://github.com/FlossWare/jplatform.git /tmp/jplatform
 cd /tmp/jplatform/examples/multi-tier/three-tier-webapp
 
 # Deploy database tier (VM)
-jplatform deploy 1-database-tier.yaml
-jplatform start postgres-db
+platform-java deploy 1-database-tier.yaml
+platform-java start postgres-db
 
 # Wait for DB to start
 sleep 10
 
 # Deploy application tier (Java)
-jplatform deploy 2-app-tier.yaml
-jplatform start spring-app
+platform-java deploy 2-app-tier.yaml
+platform-java start spring-app
 
 # Wait for app to start
 sleep 10
 
 # Deploy web tier (container)
-jplatform deploy 3-web-tier.yaml
-jplatform start nginx-web
+platform-java deploy 3-web-tier.yaml
+platform-java start nginx-web
 
 # Check all running
-jplatform status
+platform-java status
 ```
 
 **Multi-Tier Checklist**:
@@ -514,23 +514,23 @@ jplatform status
 **Dependency Validation**:
 ```bash
 # Stop app tier (should stop web tier too)
-jplatform stop spring-app
+platform-java stop spring-app
 
 # Verify web tier stopped
-jplatform status nginx-web | grep "Stopped"
+platform-java status nginx-web | grep "Stopped"
 
 # Start app tier (should start web tier too)
-jplatform start spring-app
+platform-java start spring-app
 
 # Verify cascading start
-jplatform status | grep Running
+platform-java status | grep Running
 ```
 
 **Cleanup**:
 ```bash
-jplatform stop nginx-web
-jplatform stop spring-app
-jplatform stop postgres-db
+platform-java stop nginx-web
+platform-java stop spring-app
+platform-java stop postgres-db
 
 jplatform undeploy nginx-web
 jplatform undeploy spring-app
@@ -551,8 +551,8 @@ jplatform quota set test-user \
 jplatform quota show test-user
 
 # Deploy VM within quota (should succeed)
-jplatform deploy test-vm.yaml --user test-user
-jplatform start test-vm-jplatform
+platform-java deploy test-vm.yaml --user test-user
+platform-java start test-vm-jplatform
 
 # Try to exceed quota (should fail)
 cat > large-vm.yaml <<EOF
@@ -566,7 +566,7 @@ properties:
 dependencies: []
 EOF
 
-jplatform deploy large-vm.yaml --user test-user  # Should fail
+platform-java deploy large-vm.yaml --user test-user  # Should fail
 ```
 
 **Quota Checklist**:
@@ -666,14 +666,14 @@ sudo virtos-tui
 # 1. VM Management → List VMs
 # 2. VM Management → Create VM
 # 3. Network Management → List Networks
-# 17. JPlatform Management → List Workloads
+# 17. platform-java Management → List Workloads
 ```
 
 **TUI Checklist**:
 - [ ] TUI launches without errors
 - [ ] All menus accessible
 - [ ] VM operations work from TUI
-- [ ] JPlatform menu functional
+- [ ] platform-java menu functional
 - [ ] Navigation intuitive
 
 ---
@@ -891,7 +891,7 @@ virsh list --all | grep test-vm-01
 | ISO Boot | ✓ | ✓ | ✓ | P0 |
 | Package Install | ✓ | ✓ | ✓ | P0 |
 | VM Lifecycle | ✓ | ✓ | ✓ | P0 |
-| JPlatform Basic | ✓ | ✓ | ✓ | P0 |
+| platform-java Basic | ✓ | ✓ | ✓ | P0 |
 | Multi-Tier App | ✓ | ✓ | ✓ | P1 |
 | Live Migration | ✓ | ~ | ✓ | P1 |
 | Clustering | ✓ | - | ✓ | P2 |
@@ -912,7 +912,7 @@ virsh list --all | grep test-vm-01
 - [ ] VirtOS setup completes
 - [ ] Create, start, stop, delete VM
 - [ ] Basic networking (default bridge)
-- [ ] JPlatform deploys simple workload
+- [ ] platform-java deploys simple workload
 
 **If these 6 items work**: VirtOS is MVP-ready.
 
@@ -922,7 +922,7 @@ virsh list --all | grep test-vm-01
 - [ ] Snapshots work
 - [ ] Backups work
 - [ ] Storage pools work
-- [ ] Multi-tier JPlatform app works
+- [ ] Multi-tier platform-java app works
 - [ ] Dependency resolution works
 - [ ] Security validation passes
 - [ ] No critical bugs found in stress testing
@@ -980,12 +980,12 @@ virsh list --all | grep test-vm-01
    - Actual: Error message about unsupported disk format
    - Fix: Need to use qcow2 instead of raw for snapshot support
 
-## Phase 4: JPlatform Integration
+## Phase 4: platform-java Integration
 - [x] Basic operations work
 - [x] Multi-tier app deploys
 - [x] Dependencies resolve correctly
 
-**Notes**: JPlatform integration working well
+**Notes**: platform-java integration working well
 
 ... (continue for all phases)
 
@@ -1040,7 +1040,7 @@ Add validation in virtos-snapshot to check disk format before attempting snapsho
 | 1. ISO Build/Boot | 2-3 hours | Build tools installed |
 | 2. Package Install | 30 min | Phase 1 |
 | 3. Core VM Management | 2-3 hours | Phase 2 |
-| 4. JPlatform Integration | 2-3 hours | Phase 3 |
+| 4. platform-java Integration | 2-3 hours | Phase 3 |
 | 5. Advanced Features | 4-6 hours | Phase 4 |
 | 6. Security Validation | 2-3 hours | Phase 3 |
 | 7. Performance Testing | 2-4 hours | Phase 4 |
@@ -1133,13 +1133,13 @@ virsh destroy auto-test
 virsh undefine auto-test --remove-all-storage
 log "✓ VM deleted"
 
-# Phase 4: JPlatform
-log "Phase 4: JPlatform test"
+# Phase 4: platform-java
+log "Phase 4: platform-java test"
 if command -v jplatform >/dev/null 2>&1; then
-    log "✓ JPlatform installed"
+    log "✓ platform-java installed"
     jplatform version
 else
-    log "✗ JPlatform not installed"
+    log "✗ platform-java not installed"
     exit 1
 fi
 

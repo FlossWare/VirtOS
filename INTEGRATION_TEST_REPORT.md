@@ -1,16 +1,16 @@
-# VirtOS-JPlatform Integration Test Report
+# VirtOS-platform-java Integration Test Report
 
 **Date**: 2026-05-25  
-**Version**: VirtOS 0.1 + JPlatform 1.1  
+**Version**: VirtOS 0.1 + platform-java 1.1  
 **Status**: Build Verification Complete
 
 ## Executive Summary
 
-This report documents the validation and testing performed on the VirtOS-JPlatform integration. All build artifacts have been successfully created and verified. The integration is ready for deployment testing in a real VirtOS environment.
+This report documents the validation and testing performed on the VirtOS-platform-java integration. All build artifacts have been successfully created and verified. The integration is ready for deployment testing in a real VirtOS environment.
 
 ## Build Verification ✓
 
-### JPlatform Build
+### platform-java Build
 - **Status**: ✓ SUCCESS
 - **Build time**: 41.006 seconds
 - **Modules built**: 40 modules
@@ -31,7 +31,7 @@ Key modules verified:
 - **Size**: 336K
 - **Scripts**: 52 management utilities
 - **Version**: 0.1
-- **Includes**: virtos-tui with JPlatform menu integration
+- **Includes**: virtos-tui with platform-java menu integration
 
 #### virtos-jplatform.tcz
 - **Size**: 4.0K
@@ -41,7 +41,7 @@ Key modules verified:
 
 Package contents verified:
 ```
-usr/local/bin/jplatform                    - JPlatform CLI wrapper
+usr/local/bin/jplatform                    - platform-java CLI wrapper
 usr/local/bin/virtos-jplatform-install     - Installation script
 usr/local/bin/virtos-jplatform-uninstall   - Uninstallation script
 usr/local/bin/virtos-jplatform-info        - Package info utility
@@ -51,7 +51,7 @@ usr/local/share/doc/jplatform/README.md    - Documentation
 
 ## Feature Verification ✓
 
-### VM Management (JPlatform 2.2)
+### VM Management (platform-java 2.2)
 
 **Core Features**:
 - ✓ VM lifecycle (create, start, stop, destroy)
@@ -120,7 +120,7 @@ All features implemented with:
 
 ### CI/CD Pipelines ✓
 
-**JPlatform CI** (.github/workflows/ci.yml):
+**platform-java CI** (.github/workflows/ci.yml):
 - ✓ Multi-platform testing (Ubuntu, Fedora, Debian)
 - ✓ Multi-version Java testing (17, 21, 23)
 - ✓ Package build validation
@@ -137,15 +137,15 @@ All features implemented with:
 
 **X.Y Versioning**:
 - ✓ VirtOS: VERSION file (0.1)
-- ✓ JPlatform: Maven versions (1.1)
+- ✓ platform-java: Maven versions (1.1)
 - ✓ Auto-rev scripts implemented
 - ✓ Version synchronization across package metadata
 
 ## Integration Points Verified ✓
 
 ### 1. TUI Integration
-- ✓ virtos-tui includes JPlatform menu (option 17)
-- ✓ Sub-menu with 12 JPlatform operations
+- ✓ virtos-tui includes platform-java menu (option 17)
+- ✓ Sub-menu with 12 platform-java operations
 - ✓ Workload deployment, management, monitoring options
 
 ### 2. Package Dependencies
@@ -165,7 +165,7 @@ All features implemented with:
 ## Validation Checklist
 
 ### Build Artifacts ✓
-- [x] JPlatform builds without errors
+- [x] platform-java builds without errors
 - [x] All 40 Maven modules compile
 - [x] VirtOS packages create successfully
 - [x] Package sizes reasonable (virtos-tools: 336K, virtos-jplatform: 4K)
@@ -199,7 +199,7 @@ The following tests require actual VirtOS deployment and cannot be validated in 
 - [ ] Install virtos-tools.tcz on VirtOS
 - [ ] Install virtos-jplatform.tcz on VirtOS
 - [ ] Verify post-install scripts execute correctly
-- [ ] Confirm jplatform command available in PATH
+- [ ] Confirm platform-java CLI available in PATH
 
 ### Functional Testing
 - [ ] Deploy actual PostgreSQL VM using 1-database-tier.yaml
@@ -218,7 +218,7 @@ The following tests require actual VirtOS deployment and cannot be validated in 
 - [ ] Verify resource changes reflected in VM
 
 ### Integration Testing
-- [ ] Test virtos-tui JPlatform menu
+- [ ] Test virtos-tui platform-java menu
 - [ ] Verify metrics export to Prometheus
 - [ ] Test VNC console access
 - [ ] Validate resource quota enforcement
@@ -296,7 +296,7 @@ The following tests require actual VirtOS deployment and cannot be validated in 
 **Documentation Status**: ✓ **COMPLETE**  
 **Integration Readiness**: ✓ **READY FOR TESTING**
 
-All build artifacts are complete and verified. The VirtOS-JPlatform integration is ready for deployment testing in a real VirtOS environment. Code quality is high with comprehensive unit tests and documentation.
+All build artifacts are complete and verified. The VirtOS-platform-java integration is ready for deployment testing in a real VirtOS environment. Code quality is high with comprehensive unit tests and documentation.
 
 **Next Steps**:
 1. Deploy to test VirtOS instance

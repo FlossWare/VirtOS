@@ -114,7 +114,7 @@ make packages
 
 This creates:
 - `packages/output/virtos-tools.tcz` - Core management scripts
-- `packages/output/virtos-jplatform.tcz` - JPlatform integration
+- `packages/output/virtos-jplatform.tcz` - platform-java integration
 
 ### Step 4: Build ISO
 
@@ -176,7 +176,7 @@ md5sum -c VirtOS-*.iso.md5
 - **Size**: ~400MB
 - **Components**: Everything from standard + containers, monitoring, advanced tools
 - **Use Case**: Production environments, full-featured deployments
-- **Included**: Docker, LXC, advanced networking, JPlatform
+- **Included**: Docker, LXC, advanced networking, platform-java
 
 ### containers
 - **Size**: ~250MB

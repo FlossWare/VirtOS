@@ -11,7 +11,7 @@ This document describes procedures for upgrading VirtOS in production environmen
 
 ### Compatibility Matrix
 
-| VirtOS Version | QEMU Version | libvirt Version | Tiny Core Version | JPlatform Version | Support Status |
+| VirtOS Version | QEMU Version | libvirt Version | Tiny Core Version | platform-java Version | Support Status |
 |----------------|--------------|-----------------|-------------------|-------------------|----------------|
 | 0.80 - 0.82    | 6.2+         | 8.0+            | 14.x              | 0.12 - 0.13       | Legacy         |
 | 0.83 - 0.89    | 7.0+         | 9.0+            | 14.x              | 0.13 - 0.14       | Current        |

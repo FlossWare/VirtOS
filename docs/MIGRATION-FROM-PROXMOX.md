@@ -29,7 +29,7 @@
 **Unified VM + Container Management**:
 - Native support for KVM, LXC, Docker, Podman, containerd
 - Consistent CLI/TUI for all workload types
-- JPlatform orchestration layer
+- platform-java orchestration layer
 
 **Open Development Model**:
 - Fully open-source (GPLv3)

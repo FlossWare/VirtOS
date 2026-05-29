@@ -23,7 +23,7 @@ This document describes how to test VirtOS at various stages of development.
 - Security library fully tested (virtos-common.sh with 46 tests)
 - All 52 scripts have structural validation tests
 - 3 CI workflows validating every commit
-- Test fixtures for JPlatform workloads
+- Test fixtures for platform-java workloads
 - Automated test coverage reporting
 
 ## Testing Levels
@@ -321,7 +321,7 @@ bats *.bats
 
 # Run specific test suite
 bats 01-vm-lifecycle.bats      # VM creation, snapshots, backup
-bats 02-jplatform.bats         # JPlatform workload deployment
+bats 02-jplatform.bats         # platform-java workload deployment
 bats 03-networking.bats        # Network bridges, NAT, DHCP
 bats 04-storage.bats           # Storage pools and volumes
 bats 05-cluster.bats           # Multi-host operations
@@ -329,7 +329,7 @@ bats 05-cluster.bats           # Multi-host operations
 
 **Test Suites**:
 - **01-vm-lifecycle.bats** (7 tests): VM creation, start/stop, snapshots, backup/restore, migration
-- **02-jplatform.bats** (8 tests): JPlatform workload deployment, dependencies
+- **02-jplatform.bats** (8 tests): platform-java workload deployment, dependencies
 - **03-networking.bats** (11 tests): Network bridges, VLANs, NAT, port forwarding
 - **04-storage.bats** (13 tests): Storage pools, volumes, snapshots, cloning
 - **05-cluster.bats** (15 tests): Multi-host clustering, migration, HA

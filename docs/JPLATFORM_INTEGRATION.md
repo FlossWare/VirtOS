@@ -1,10 +1,10 @@
-# JPlatform & VirtOS Integration Opportunities
+# platform-java & VirtOS Integration Opportunities
 
-Analysis of shared functionality and integration opportunities between JPlatform and VirtOS.
+Analysis of shared functionality and integration opportunities between platform-java and VirtOS.
 
 ## Project Overview
 
-### JPlatform
+### platform-java
 - **Purpose**: Java application platform for running multiple isolated Java apps in a single JVM
 - **Language**: Java
 - **Scope**: Single-host application management
@@ -33,7 +33,7 @@ Analysis of shared functionality and integration opportunities between JPlatform
 
 ### 1. Container Management (Docker, Podman, LXC)
 
-**JPlatform Approach:**
+**platform-java Approach:**
 ```java
 // Java API for container deployment
 ApplicationDescriptor nginx = ApplicationDescriptor.builder()
@@ -67,7 +67,7 @@ virtos-tui → Container Management → Docker → Start Container
 
 ### 2. Monitoring & Observability
 
-**JPlatform:**
+**platform-java:**
 - OpenTelemetry integration
 - Prometheus metrics export
 - JMX MBeans
@@ -88,7 +88,7 @@ virtos-tui → Container Management → Docker → Start Container
 
 ### 3. REST API
 
-**JPlatform:**
+**platform-java:**
 - Full REST API for deployment
 - Application lifecycle (deploy, start, stop, undeploy)
 - Metrics retrieval
@@ -107,7 +107,7 @@ virtos-tui → Container Management → Docker → Start Container
 
 ### 4. Terminal UI (TUI)
 
-**JPlatform:**
+**platform-java:**
 - Curses-like interface using JCurses
 - Real-time metrics display
 - Keyboard navigation
@@ -127,7 +127,7 @@ virtos-tui → Container Management → Docker → Start Container
 
 ### 5. Clustering
 
-**JPlatform:**
+**platform-java:**
 - Multi-node clustering via Hazelcast
 - Consul/etcd/Zookeeper backends
 - Service registry
@@ -147,22 +147,22 @@ virtos-tui → Container Management → Docker → Start Container
 
 ## Integration Opportunities
 
-### Option 1: VirtOS Runs JPlatform Applications
+### Option 1: VirtOS Runs platform-java Applications
 
-**Scenario:** VirtOS manages the infrastructure, JPlatform runs Java apps on it
+**Scenario:** VirtOS manages the infrastructure, platform-java runs Java apps on it
 
 ```
 ┌────────────────────────────────────────────┐
 │           VirtOS Host                      │
 │  ┌──────────────────────────────────────┐ │
-│  │  VM 1: Ubuntu + JPlatform            │ │
+│  │  VM 1: Ubuntu + platform-java            │ │
 │  │  - Runs Java applications            │ │
 │  │  - Managed by VirtOS                 │ │
 │  └──────────────────────────────────────┘ │
 │                                            │
 │  ┌──────────────────────────────────────┐ │
 │  │  Container: jplatform-runtime        │ │
-│  │  - Docker container running JPlatform│ │
+│  │  - Docker container running platform-java│ │
 │  │  - Managed by VirtOS                 │ │
 │  └──────────────────────────────────────┘ │
 └────────────────────────────────────────────┘
@@ -170,13 +170,13 @@ virtos-tui → Container Management → Docker → Start Container
 
 **Benefits:**
 - VirtOS provides the infrastructure layer (VMs, networking, storage)
-- JPlatform provides the application layer (Java apps, isolation, monitoring)
+- platform-java provides the application layer (Java apps, isolation, monitoring)
 - Clear separation of concerns
-- VirtOS can deploy JPlatform as a VM or container
+- VirtOS can deploy platform-java as a VM or container
 
 **Implementation:**
 ```bash
-# VirtOS creates VM with JPlatform installed
+# VirtOS creates VM with platform-java installed
 virtos-create-vm \
   --name jplatform-node-1 \
   --cpu 8 \
@@ -194,7 +194,7 @@ virtos-federation vm-deploy jplatform-app on-prem \
 **Use Case:**
 - Run Java microservices on VirtOS infrastructure
 - VirtOS handles infrastructure (VMs, networking, storage, federation)
-- JPlatform handles Java app lifecycle, isolation, monitoring
+- platform-java handles Java app lifecycle, isolation, monitoring
 
 ### Option 2: Shared Container Management Library
 
@@ -212,7 +212,7 @@ virtos-jplatform-common/
     └── container-api.yaml   # Common interface spec
 ```
 
-**JPlatform Usage:**
+**platform-java Usage:**
 ```java
 // Use shared container runtime abstraction
 ContainerRuntime runtime = ContainerRuntime.detect(); // docker/podman/lxc
@@ -239,15 +239,15 @@ create_container "nginx:latest" \
 - Easier maintenance (fix bugs once)
 - Cross-language abstraction (Java + Bash)
 
-### Option 3: VirtOS Uses JPlatform for Java Workloads
+### Option 3: VirtOS Uses platform-java for Java Workloads
 
-**Scenario:** VirtOS delegates Java application management to JPlatform
+**Scenario:** VirtOS delegates Java application management to platform-java
 
 ```
 ┌────────────────────────────────────────────────┐
 │              VirtOS Federation                 │
 │  ┌──────────────┐  ┌──────────────┐           │
-│  │   VirtOS     │  │  JPlatform   │           │
+│  │   VirtOS     │  │  platform-java   │           │
 │  │   (infra)    │→ │  (Java apps) │           │
 │  └──────────────┘  └──────────────┘           │
 │         ↓                  ↓                   │
@@ -258,7 +258,7 @@ create_container "nginx:latest" \
 **VirtOS Enhancement:**
 ```bash
 # New virtos-jplatform script
-virtos-jplatform deploy \
+virtos-platform-java deploy \
   --app myapp.jar \
   --main com.example.MyApp \
   --cpu-quota 4 \
@@ -270,7 +270,7 @@ virtos-tui → Java Application Management → Deploy JAR
 
 **Benefits:**
 - VirtOS gains sophisticated Java app management
-- Leverage JPlatform's classloader isolation
+- Leverage platform-java's classloader isolation
 - Resource quotas for Java apps
 - Hot reload capabilities
 - OpenTelemetry integration
@@ -292,7 +292,7 @@ virtos-tui → Java Application Management → Deploy JAR
 └─────────────────────────────────────────┘
               ↑              ↑
        ┌──────┴──────┐  ┌───┴─────┐
-       │   VirtOS    │  │JPlatform│
+       │   VirtOS    │  │platform-java│
        │  (metrics)  │  │(metrics)│
        └─────────────┘  └─────────┘
 ```
@@ -308,7 +308,7 @@ virtos-monitor export-otel \
   --endpoint http://otel-collector:4317
 ```
 
-**JPlatform Integration:**
+**platform-java Integration:**
 ```java
 // Already supports OpenTelemetry and Prometheus
 // Just configure same endpoint
@@ -321,15 +321,15 @@ OtelExporter.configure("http://otel-collector:4317");
 - Single alerting system
 - Reduced complexity
 
-### Option 5: VirtOS Federation Manages JPlatform Clusters
+### Option 5: VirtOS Federation Manages platform-java Clusters
 
-**Scenario:** VirtOS federation deploys and manages multi-node JPlatform clusters
+**Scenario:** VirtOS federation deploys and manages multi-node platform-java clusters
 
 ```
 ┌──────────────────────────────────────────────────┐
 │          VirtOS Federation                       │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐ │
-│  │ JPlatform  │  │ JPlatform  │  │ JPlatform  │ │
+│  │ platform-java  │  │ platform-java  │  │ platform-java  │ │
 │  │  Node 1    │  │  Node 2    │  │  Node 3    │ │
 │  │ (AWS)      │  │ (Azure)    │  │ (on-prem)  │ │
 │  └────────────┘  └────────────┘  └────────────┘ │
@@ -343,18 +343,18 @@ OtelExporter.configure("http://otel-collector:4317");
 # Initialize federation
 virtos-federation federation-init my-company
 
-# Deploy JPlatform to multiple clouds
+# Deploy platform-java to multiple clouds
 virtos-federation vm-deploy jplatform-aws aws t3.large --install jplatform
 virtos-federation vm-deploy jplatform-azure azure Standard_D4s_v3 --install jplatform
 virtos-create-vm --name jplatform-onprem --cpu 8 --ram 16G --install jplatform
 
-# Configure JPlatform clustering (Consul/Hazelcast)
+# Configure platform-java clustering (Consul/Hazelcast)
 virtos-jplatform cluster-init \
   --nodes jplatform-aws,jplatform-azure,jplatform-onprem \
   --backend consul
 
 # Deploy Java apps to cluster
-virtos-jplatform deploy myapp.jar \
+virtos-platform-java deploy myapp.jar \
   --replicas 3 \
   --placement balanced  # Spread across all nodes
 ```
@@ -362,7 +362,7 @@ virtos-jplatform deploy myapp.jar \
 **Benefits:**
 - Multi-cloud Java application platform
 - Geographic distribution of Java apps
-- VirtOS handles infrastructure, JPlatform handles apps
+- VirtOS handles infrastructure, platform-java handles apps
 - Unified management interface
 
 ## Practical Shared Components
@@ -385,7 +385,7 @@ run_container "nginx:latest" --ports "8080:80"
 ```
 
 ```java
-// Java (JPlatform)
+// Java (platform-java)
 ContainerRuntime runtime = ContainerRuntime.detect();
 runtime.run("nginx:latest")
     .withPorts("8080:80")
@@ -468,7 +468,7 @@ paths:
 
 **Common YAML format:**
 ```yaml
-# Works for both JPlatform apps and VirtOS VMs/containers
+# Works for both platform-java apps and VirtOS VMs/containers
 apiVersion: v1
 kind: Application  # or VM, Container
 metadata:
@@ -478,7 +478,7 @@ metadata:
     team: platform
 
 spec:
-  # JPlatform-specific
+  # platform-java-specific
   mainClass: com.example.MyApp
   classpath: app.jar
   
@@ -517,7 +517,7 @@ spec:
 1. Extract container management code from both projects
 2. Create `virtos-jplatform-container-runtime` library
 3. Bash version for VirtOS
-4. Java version for JPlatform
+4. Java version for platform-java
 5. Tests for docker, podman, lxc
 
 **Benefits:**
@@ -532,7 +532,7 @@ spec:
 **Deliverables:**
 1. Standardize metrics format (OpenTelemetry)
 2. VirtOS exports to Prometheus/OTLP
-3. JPlatform exports to same endpoints
+3. platform-java exports to same endpoints
 4. Shared Grafana dashboards
 5. Unified alerting (Alertmanager)
 
@@ -541,20 +541,20 @@ spec:
 - Infrastructure + application correlation
 - Professional monitoring stack
 
-### Phase 3: VirtOS Deploys JPlatform (Strategic)
+### Phase 3: VirtOS Deploys platform-java (Strategic)
 
 **Timeline:** 8-12 weeks
 
 **Deliverables:**
 1. `virtos-jplatform` management script
 2. TUI integration (Java Application Management menu)
-3. VM template with JPlatform pre-installed
-4. Container image for JPlatform
-5. Federation support (multi-cloud JPlatform clusters)
+3. VM template with platform-java pre-installed
+4. Container image for platform-java
+5. Federation support (multi-cloud platform-java clusters)
 
 **Benefits:**
 - VirtOS gains Java app management
-- JPlatform gains cloud federation
+- platform-java gains cloud federation
 - Unified platform story
 
 ### Phase 4: API Compatibility (Polish)
@@ -564,7 +564,7 @@ spec:
 **Deliverables:**
 1. OpenAPI specification for common endpoints
 2. VirtOS REST API implements spec
-3. JPlatform REST API implements spec
+3. platform-java REST API implements spec
 4. Swagger UI for both
 5. Client libraries
 
@@ -597,19 +597,19 @@ virtos-create-vm --name db-primary --cpu 8 --ram 32G --disk 500G
 virtos-create-vm --name redis-cache --cpu 4 --ram 16G --disk 100G
 virtos-federation vm-deploy nginx-lb aws t3.large
 
-# 3. Install JPlatform on app nodes
+# 3. Install platform-java on app nodes
 virtos-create-vm --name jplatform-onprem --cpu 16 --ram 64G --install jplatform
 virtos-federation vm-deploy jplatform-aws aws c5.4xlarge --install jplatform
 
-# 4. Configure JPlatform cluster
+# 4. Configure platform-java cluster
 virtos-jplatform cluster-init \
   --nodes jplatform-onprem,jplatform-aws \
   --backend consul
 
-# 5. Deploy Java microservices to JPlatform
-virtos-jplatform deploy order-service.jar --replicas 3 --placement balanced
-virtos-jplatform deploy inventory-service.jar --replicas 2 --placement balanced
-virtos-jplatform deploy payment-service.jar --replicas 2 --placement on-prem
+# 5. Deploy Java microservices to platform-java
+virtos-platform-java deploy order-service.jar --replicas 3 --placement balanced
+virtos-platform-java deploy inventory-service.jar --replicas 2 --placement balanced
+virtos-platform-java deploy payment-service.jar --replicas 2 --placement on-prem
 
 # 6. Setup monitoring
 virtos-monitor export-prometheus --endpoint http://prometheus:9090
@@ -618,13 +618,13 @@ virtos-jplatform monitor export-prometheus --endpoint http://prometheus:9090
 # 7. View everything in TUI
 virtos-tui
   → Infrastructure Overview (VMs, DBs, caches)
-  → Java Applications (microservices via JPlatform)
+  → Java Applications (microservices via platform-java)
   → Monitoring (unified Grafana dashboards)
 ```
 
 **Result:**
 - VirtOS manages infrastructure (VMs, networking, storage, federation)
-- JPlatform manages Java apps (isolation, monitoring, hot reload)
+- platform-java manages Java apps (isolation, monitoring, hot reload)
 - Unified monitoring (Prometheus + Grafana)
 - Single management interface (VirtOS TUI)
 - Best of both worlds
@@ -633,17 +633,17 @@ virtos-tui
 
 ### Language Barrier (Java vs Bash)
 
-**Challenge:** JPlatform is Java, VirtOS is Bash
+**Challenge:** platform-java is Java, VirtOS is Bash
 
 **Solutions:**
-1. **REST API bridge** - VirtOS calls JPlatform REST API
+1. **REST API bridge** - VirtOS calls platform-java REST API
 2. **Shared libraries** - JNI or shell wrappers
 3. **Common data formats** - JSON/YAML configuration
-4. **Process execution** - VirtOS launches JPlatform JVM
+4. **Process execution** - VirtOS launches platform-java JVM
 
 ### Dependency Management
 
-**JPlatform Dependencies:**
+**platform-java Dependencies:**
 - Java 11+ runtime
 - Container runtime (docker/podman/lxc)
 - Optional: Consul, Prometheus, Grafana
@@ -659,7 +659,7 @@ virtos-tui
 
 ### Performance
 
-**JPlatform:**
+**platform-java:**
 - JVM overhead (~200MB base memory)
 - Excellent for long-running apps
 - Hot reload without process restart
@@ -670,7 +670,7 @@ virtos-tui
 - Efficient for infrastructure
 
 **Integration Impact:**
-- Running JPlatform in VirtOS VM: +200MB memory, negligible CPU
+- Running platform-java in VirtOS VM: +200MB memory, negligible CPU
 - Worth it for Java app management capabilities
 
 ### Maintenance
@@ -693,15 +693,15 @@ virtos-tui
 1. **Overlapping Functionality:** Container management, monitoring, APIs, TUI
 2. **Complementary Strengths:**
    - VirtOS: Infrastructure, VMs, federation, multi-cloud
-   - JPlatform: Java apps, isolation, hot reload, observability
-3. **Natural Fit:** VirtOS provides infrastructure, JPlatform runs workloads
+   - platform-java: Java apps, isolation, hot reload, observability
+3. **Natural Fit:** VirtOS provides infrastructure, platform-java runs workloads
 4. **Shared Vision:** Unified management platform
 
 **Recommended Path:**
 
 1. **Start Small:** Shared container runtime library (Phase 1)
 2. **Build Value:** Unified monitoring (Phase 2)
-3. **Strategic Integration:** VirtOS deploys JPlatform (Phase 3)
+3. **Strategic Integration:** VirtOS deploys platform-java (Phase 3)
 4. **Polish:** API compatibility (Phase 4)
 
 **End State:**
@@ -716,7 +716,7 @@ virtos-tui
 │  - Multi-cloud federation                       │
 │  - Clustering, HA                               │
 ├─────────────────────────────────────────────────┤
-│  JPlatform (Application Layer)                  │
+│  platform-java (Application Layer)                  │
 │  - Java applications                            │
 │  - Isolation, resource management               │
 │  - Hot reload, observability                    │

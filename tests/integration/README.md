@@ -6,7 +6,7 @@ End-to-end integration tests for VirtOS workflows.
 
 These tests validate complete workflows across VirtOS components:
 - VM lifecycle (create, start, stop, delete, snapshot, backup)
-- JPlatform workload deployment
+- platform-java workload deployment
 - Network configuration
 - Storage management
 - Cluster operations
@@ -15,7 +15,7 @@ These tests validate complete workflows across VirtOS components:
 
 **Current**: Comprehensive framework with 5 test suites and fixtures  
 **Tests**: 54 integration tests across 5 suites  
-**Fixtures**: 5 JPlatform workload definitions  
+**Fixtures**: 5 platform-java workload definitions  
 **Coverage**: Framework complete, tests skipped pending VirtOS runtime environment
 
 ## Requirements
@@ -83,7 +83,7 @@ bats *.bats
 # VM lifecycle tests only
 bats tests/integration/01-vm-lifecycle.bats
 
-# JPlatform tests only
+# platform-java tests only
 bats tests/integration/02-jplatform.bats
 ```
 
@@ -110,7 +110,7 @@ bats --formatter tap tests/integration/*.bats
 tests/integration/
 ├── README.md              # This file
 ├── 01-vm-lifecycle.bats   # VM creation, start, stop, snapshot, backup (7 tests)
-├── 02-jplatform.bats      # JPlatform workload deployment (8 tests)
+├── 02-jplatform.bats      # platform-java workload deployment (8 tests)
 ├── 03-networking.bats     # Network bridges, VLANs, NAT (11 tests)
 ├── 04-storage.bats        # Storage pools and volumes (13 tests)
 ├── 05-cluster.bats        # Multi-host operations (15 tests)
@@ -158,7 +158,7 @@ Example:
 
 ### 02-jplatform.bats (8 tests)
 
-- ✅ jplatform command availability
+- ✅ platform-java CLI availability
 - ✅ jplatform --version check
 - ✅ jplatform --help output
 - ⏸️ jplatform list workloads (placeholder)

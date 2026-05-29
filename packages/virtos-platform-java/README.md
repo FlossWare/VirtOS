@@ -1,28 +1,28 @@
-# VirtOS JPlatform Integration Package
+# VirtOS platform-java Integration Package
 
-Integrates JPlatform with VirtOS to provide unified orchestration for virtual machines, containers, Java applications, and native binaries.
+Integrates platform-java with VirtOS to provide unified orchestration for virtual machines, containers, Java applications, and native binaries.
 
 ## What This Package Provides
 
 **Scripts:**
-- `jplatform` - Main CLI for managing all workload types
-- `virtos-jplatform-install` - Installs JPlatform on VirtOS
-- `virtos-jplatform-uninstall` - Removes JPlatform from VirtOS
-- `virtos-jplatform-info` - Shows installation status and configuration
+- `platform-java` - Main CLI for managing all workload types
+- `virtos-platform-java-install` - Installs platform-java on VirtOS
+- `virtos-platform-java-uninstall` - Removes platform-java from VirtOS
+- `virtos-platform-java-info` - Shows installation status and configuration
 
 **Directories:**
-- `/usr/local/lib/jplatform/` - JPlatform binaries
-- `/var/lib/jplatform/apps/` - Deployed applications
-- `/var/lib/jplatform/vms/` - Virtual machine disk images
-- `/var/lib/jplatform/volumes/` - Persistent storage volumes
-- `/etc/jplatform/` - Configuration files
+- `/usr/local/lib/platform-java/` - platform-java binaries
+- `/var/lib/platform-java/apps/` - Deployed applications
+- `/var/lib/platform-java/vms/` - Virtual machine disk images
+- `/var/lib/platform-java/volumes/` - Persistent storage volumes
+- `/etc/platform-java/` - Configuration files
 
 ## Installation
 
 ### 1. Build the Package
 
 ```bash
-cd /path/to/VirtOS/packages/virtos-jplatform
+cd /path/to/VirtOS/packages/virtos-platform-java
 ./build.sh
 ```
 
@@ -31,23 +31,23 @@ cd /path/to/VirtOS/packages/virtos-jplatform
 Copy the package to your VirtOS system:
 
 ```bash
-sudo cp virtos-jplatform.tcz* /mnt/sda1/tce/optional/
-echo virtos-jplatform.tcz >> /mnt/sda1/tce/onboot.lst
-tce-load -i virtos-jplatform
+sudo cp virtos-platform-java.tcz* /mnt/sda1/tce/optional/
+echo virtos-platform-java.tcz >> /mnt/sda1/tce/onboot.lst
+tce-load -i virtos-platform-java
 ```
 
-### 3. Install JPlatform
+### 3. Install platform-java
 
 Once the package is loaded:
 
 ```bash
-virtos-jplatform-install
+virtos-platform-java-install
 ```
 
 This will:
 - Install OpenJDK 21 (if not present)
 - Install libvirt for VM management
-- Download/build JPlatform
+- Download/build platform-java
 - Create default configuration
 - Set up directories
 
@@ -56,7 +56,7 @@ This will:
 ### Check Status
 
 ```bash
-virtos-jplatform-info
+virtos-platform-java-info
 ```
 
 ### Deploy a Virtual Machine
@@ -68,7 +68,7 @@ name: PostgreSQL Database VM
 properties:
   vm.vcpu: "8"
   vm.memory: "32768"  # 32GB
-  vm.disk: "/var/lib/jplatform/vms/postgres.qcow2"
+  vm.disk: "/var/lib/platform-java/vms/postgres.qcow2"
   vm.network: "bridge"
   vm.vnc.enabled: "true"
 resources:
@@ -76,8 +76,8 @@ resources:
   memory: 32768
 EOF
 
-jplatform deploy database-vm.yaml
-jplatform start postgres-vm
+platform-java deploy database-vm.yaml
+platform-java start postgres-vm
 ```
 
 ### Deploy a Container
@@ -93,8 +93,8 @@ properties:
   container.volumes: "/var/www:/usr/share/nginx/html:ro"
 EOF
 
-jplatform deploy web-container.yaml
-jplatform start nginx
+platform-java deploy web-container.yaml
+platform-java start nginx
 ```
 
 ### Deploy a Java Application
@@ -111,38 +111,38 @@ resources:
   maxThreads: 100
 EOF
 
-jplatform deploy java-app.yaml
-jplatform start my-service
+platform-java deploy java-app.yaml
+platform-java start my-service
 ```
 
 ### List All Workloads
 
 ```bash
-jplatform status
+platform-java status
 ```
 
 ### View Logs
 
 ```bash
-jplatform logs postgres-vm
+platform-java logs postgres-vm
 ```
 
 ### View Metrics
 
 ```bash
-jplatform metrics postgres-vm
+platform-java metrics postgres-vm
 ```
 
 ### Stop and Remove
 
 ```bash
-jplatform stop postgres-vm
-jplatform undeploy postgres-vm
+platform-java stop postgres-vm
+platform-java undeploy postgres-vm
 ```
 
 ## Cross-Workload Dependencies
 
-JPlatform supports dependencies across all workload types:
+platform-java supports dependencies across all workload types:
 
 ```yaml
 applicationId: app-vm
@@ -150,14 +150,14 @@ name: Application VM
 properties:
   vm.vcpu: "4"
   vm.memory: "8192"
-  vm.disk: "/var/lib/jplatform/vms/app.qcow2"
+  vm.disk: "/var/lib/platform-java/vms/app.qcow2"
 dependencies:
   - postgres-vm       # Another VM
   - redis-container   # A container
   - auth-service      # A Java app
 ```
 
-JPlatform ensures:
+platform-java ensures:
 1. `postgres-vm` starts first
 2. `redis-container` starts second
 3. `auth-service` starts third
@@ -175,7 +175,7 @@ JPlatform ensures:
 └─────────────────────────────────────────┘
           ↓ provides
 ┌─────────────────────────────────────────┐
-│    JPlatform (Unified Orchestration)    │
+│    platform-java (Unified Orchestration)    │
 │                                         │
 │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ │
 │  │ VMs  │ │Ctnrs │ │Java  │ │Native│ │
@@ -187,23 +187,23 @@ JPlatform ensures:
 ```
 
 VirtOS provides the infrastructure (virtualization, storage, networking, multi-cloud).
-JPlatform provides the orchestration layer (lifecycle management, dependencies, monitoring).
+platform-java provides the orchestration layer (lifecycle management, dependencies, monitoring).
 
 ## Configuration
 
-Default configuration at `/etc/jplatform/config.yaml`:
+Default configuration at `/etc/platform-java/config.yaml`:
 
 ```yaml
 platform:
-  name: "virtos-jplatform"
-  dataDirectory: "/var/lib/jplatform"
+  name: "virtos-platform-java"
+  dataDirectory: "/var/lib/platform-java"
 
 vm:
   enabled: true
   libvirtUri: "qemu:///system"
   defaultVcpu: 2
   defaultMemoryMB: 4096
-  diskDirectory: "/var/lib/jplatform/vms"
+  diskDirectory: "/var/lib/platform-java/vms"
 
 container:
   enabled: true
@@ -265,7 +265,7 @@ sudo addgroup tc docker
 lsmod | grep kvm
 
 # Check disk image exists
-ls -lh /var/lib/jplatform/vms/
+ls -lh /var/lib/platform-java/vms/
 
 # View libvirt logs
 sudo virsh list --all
@@ -273,10 +273,10 @@ sudo virsh list --all
 
 ## Documentation
 
-- **JPlatform**: https://github.com/FlossWare/jplatform
+- **platform-java**: https://github.com/FlossWare/platform-java
 - **VirtOS**: https://github.com/FlossWare/VirtOS
-- **VM Management**: https://github.com/FlossWare/jplatform/tree/main/jplatform-vm-management
-- **Container Deployment**: https://github.com/FlossWare/jplatform/blob/main/CONTAINER_DEPLOYMENT.md
+- **VM Management**: https://github.com/FlossWare/platform-java/tree/main/platform-java-vm-management
+- **Container Deployment**: https://github.com/FlossWare/platform-java/blob/main/CONTAINER_DEPLOYMENT.md
 
 ## License
 

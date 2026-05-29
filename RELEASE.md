@@ -266,7 +266,7 @@ git push origin v0.2.0-alpha
 
    ### Downloads
    - `virtos-tools.tcz` - Management tools package (~340 KB)
-   - `virtos-jplatform.tcz` - JPlatform integration package (~4 KB)
+   - `virtos-jplatform.tcz` - platform-java integration package (~4 KB)
    - `VirtOS-v0.2.0-alpha.iso` - Bootable ISO (~50-150 MB) [if available]
 
    ### Installation

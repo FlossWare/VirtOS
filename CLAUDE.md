@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for unified management of VMs, containers, and cloud resources. The project integrates JPlatform for workload orchestration.
+VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for unified management of VMs, containers, and cloud resources. The project integrates platform-java for workload orchestration.
 
 **Status**: 56% of management scripts (29/52) are **fully implemented** with working backends. Core VM management is production-ready pending testing.
 
@@ -69,7 +69,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 #### ⚠️ Untested (Working Code, No Runtime Validation)
 - ISO building system - See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for validation checklist
 - VirtOS on real hardware - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
-- JPlatform integration in VirtOS environment - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
+- platform-java integration in VirtOS environment - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
 
 ### Key Directories
 
@@ -77,7 +77,7 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 VirtOS/
 ├── packages/               # TCZ package sources and build scripts
 │   ├── virtos-tools/      # Core management scripts (54 scripts)
-│   ├── virtos-jplatform/  # JPlatform integration
+│   ├── virtos-jplatform/  # platform-java integration
 │   └── output/            # Built TCZ packages (ignored in git)
 ├── build/                 # ISO build system (awaiting testing - see ISO_TESTING_STATUS.md)
 │   ├── scripts/           # Build automation scripts
@@ -100,7 +100,7 @@ VirtOS/
 #### Core Build Files
 - `packages/build-all.sh` - Build all TCZ packages
 - `packages/virtos-tools/build.sh` - Build virtos-tools package
-- `packages/virtos-jplatform/build.sh` - Build JPlatform integration
+- `packages/virtos-jplatform/build.sh` - Build platform-java integration
 - `VERSION` - Current version (0.1)
 
 #### Management Scripts
@@ -270,9 +270,9 @@ cat VERSION  # Shows: 0.1
 grep Version: packages/*/virtos-*.tcz.info
 ```
 
-## JPlatform Integration
+## platform-java Integration
 
-VirtOS integrates JPlatform for unified workload orchestration:
+VirtOS integrates platform-java for unified workload orchestration:
 
 ### Architecture
 ```
@@ -280,7 +280,7 @@ VirtOS integrates JPlatform for unified workload orchestration:
 │   VirtOS (Virtualization OS)       │
 │                                     │
 │  ┌───────────────────────────────┐ │
-│  │    JPlatform (Orchestrator)   │ │
+│  │    platform-java (Orchestrator)   │ │
 │  │                               │ │
 │  │  ┌────┐ ┌────┐ ┌────┐ ┌────┐│ │
 │  │  │VMs │ │Cont│ │Java│ │Bin ││ │
@@ -297,25 +297,25 @@ VirtOS integrates JPlatform for unified workload orchestration:
 
 ### Key Integration Points
 
-1. **virtos-jplatform.tcz** - JPlatform integration package
-2. **jplatform command** - CLI for workload management
-3. **virtos-tui** - Includes JPlatform menu (option 17)
+1. **virtos-jplatform.tcz** - platform-java integration package
+2. **platform-java CLI** - CLI for workload management
+3. **virtos-tui** - Includes platform-java menu (option 17)
 4. **Multi-tier examples** - Database VM + Java app + NGINX container
 
 ### Example Workflow
 ```bash
 # Deploy multi-tier application
-jplatform deploy examples/multi-tier/three-tier-webapp/1-database-tier.yaml
-jplatform deploy examples/multi-tier/three-tier-webapp/2-app-tier.yaml
-jplatform deploy examples/multi-tier/three-tier-webapp/3-web-tier.yaml
+platform-java deploy examples/multi-tier/three-tier-webapp/1-database-tier.yaml
+platform-java deploy examples/multi-tier/three-tier-webapp/2-app-tier.yaml
+platform-java deploy examples/multi-tier/three-tier-webapp/3-web-tier.yaml
 
 # Start in dependency order (automatic)
-jplatform start nginx-web  # Starts database → app → web
+platform-java start nginx-web  # Starts database → app → web
 
 # Monitor
-jplatform status
-jplatform metrics postgres-db
-jplatform logs spring-app
+platform-java status
+platform-java metrics postgres-db
+platform-java logs spring-app
 ```
 
 ## Known Issues
@@ -331,7 +331,7 @@ See [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) for current work
 - **Issue #51**: ✅ **Integration test framework** - COMPLETE (2026-05-26)
   - Created comprehensive test framework with 54 tests across 5 suites (1067 lines)
   - Added CI validation workflow (.github/workflows/integration-tests.yml)
-  - Created 5 JPlatform test fixtures (YAML workload definitions)
+  - Created 5 platform-java test fixtures (YAML workload definitions)
   - Complete documentation in tests/integration/README.md
   - Tests await VirtOS runtime environment for execution
 
@@ -361,7 +361,7 @@ See [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) for current work
 - **Issue #1**: ✅ **Runtime testing documentation** - COMPLETE
   - RUNTIME_TESTING_PLAN.md created with comprehensive test procedures
   - Integration test framework with 54 tests
-  - Test fixtures for JPlatform workloads
+  - Test fixtures for platform-java workloads
 
 - **Issue #52**: ✅ **ISO testing checklist** - COMPLETE
   - ISO_TESTING_STATUS.md created with 47 validation checks
@@ -370,7 +370,7 @@ See [GitHub Issues](https://github.com/FlossWare/VirtOS/issues) for current work
 
 - **Issue #13**: ✅ **VirtOS-Examples validation** - COMPLETE
   - Repository validated and documented
-  - JPlatform workload examples verified
+  - platform-java workload examples verified
 
 ## Contributing
 
@@ -443,7 +443,7 @@ Fixes #X, Addresses #Y
 | **Infrastructure (9)** | ✅ | 🟡 | ✅ | **PARTIAL** |
 | **Experimental (14)** | ✅ | ❌ | ✅ | **DEMO** |
 | Package building | ✅ | ✅ | ✅ | **WORKING** |
-| JPlatform integration | ✅ | ✅ | ✅ | **WORKING** |
+| platform-java integration | ✅ | ✅ | ✅ | **WORKING** |
 | ISO building | ✅ | ⚠️ | ❌ | **UNTESTED** |
 
 **Legend**: ✅ Complete | 🟡 Partial | ⚠️ Unknown | ❌ Not Started
@@ -478,7 +478,7 @@ Fixes #X, Addresses #Y
 
 1. **Runtime Testing** (Issue #1) - CRITICAL ⚠️
    - Test VirtOS on real hardware/VM
-   - Validate JPlatform integration in VirtOS
+   - Validate platform-java integration in VirtOS
    - End-to-end VM lifecycle testing
    - **Gap**: Core works, needs real environment validation
 
@@ -546,7 +546,7 @@ A: **No, those 14 scripts are intentional demonstrations/future concepts.** Core
 ## Additional Resources
 
 - [Main Repository](https://github.com/FlossWare/VirtOS)
-- [JPlatform Repository](https://github.com/FlossWare/jplatform)
+- [platform-java Repository](https://github.com/FlossWare/jplatform)
 - [Integration Test Report](INTEGRATION_TEST_REPORT.md)
 - [Architecture Documentation](docs/ARCHITECTURE.md)
 - [Development Roadmap](docs/ROADMAP.md)
