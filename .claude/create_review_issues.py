@@ -10,6 +10,7 @@ import sys
 from datetime import datetime
 from typing import List, Dict, Any
 
+
 class GitHubIssueCreator:
     def __init__(self):
         self.issues_created = 0
@@ -34,7 +35,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
                 ["gh", "issue", "create", "--title", title, "--body", full_body],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
             )
 
             if result.returncode == 0:
@@ -57,10 +58,20 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
         """Check if similar issue already exists"""
         try:
             result = subprocess.run(
-                ["gh", "issue", "list", "--search", search_term, "--json", "number,title", "--limit", "10"],
+                [
+                    "gh",
+                    "issue",
+                    "list",
+                    "--search",
+                    search_term,
+                    "--json",
+                    "number,title",
+                    "--limit",
+                    "10",
+                ],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
             )
 
             if result.returncode == 0:
@@ -70,6 +81,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
         except Exception:
             return False
+
 
 def main():
     """Main entry point for automated review issue creation"""
@@ -104,6 +116,7 @@ def main():
     print(f"Issues created: {creator.issues_created}")
 
     sys.exit(0 if creator.issues_created == 0 else 1)
+
 
 if __name__ == "__main__":
     main()
