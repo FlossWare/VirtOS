@@ -545,7 +545,7 @@ virtos-create-vm test --cpu 2 --ram 2048
 - [libvirt Authentication](https://libvirt.org/auth.html)
 - [PolicyKit Configuration](https://www.freedesktop.org/software/polkit/docs/latest/)
 - [Fedora Virtualization Guide](https://docs.fedoraproject.org/en-US/quick-docs/virtualization-getting-started/)
-- [VirtOS Runtime Testing](RUNTIME_TESTING_PLAN.md)
+- [VirtOS Runtime Testing](../RUNTIME_TESTING_PLAN.md)
 
 ---
 
