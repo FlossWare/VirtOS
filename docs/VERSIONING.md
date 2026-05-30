@@ -1,52 +1,105 @@
-# VirtOS Versioning Scheme
+# VirtOS Versioning Strategy
 
-## Format: X.Y (Semantic Versioning)
+**Current Version**: 0.89 (Alpha)  
+**Last Updated**: 2026-05-29  
+**Status**: Pre-1.0 (Development)
 
-VirtOS uses **X.Y semantic versioning** where:
+---
 
-- **X** (Major) = Major version, breaking changes
-- **Y** (Minor) = Minor version, features and fixes
+## Overview
 
-## Current Version
+VirtOS uses **centralized semantic versioning** with a single source of truth: the `VERSION` file in the repository root.
 
-**v0.89** (as of 2026-05-28)
+---
 
-- **Major**: 0 (pre-1.0 alpha/beta phase)
-- **Minor**: 87 (auto-incremented by CD workflow)
+## Version Format
 
-## Version Management
+### Semantic Versioning: MAJOR.MINOR
 
-### Single Source of Truth
-
-The `VERSION` file at repository root contains the canonical version:
-
+```text
+0.89
 ```
+
+- **MAJOR**: 0 (pre-release, API unstable)
+- **MINOR**: 89 (auto-incremented on each release)
+
+**Note**: PATCH version omitted during 0.x phase (every release is a new MINOR)
+
+---
+
+## Single Source of Truth
+
+### VERSION File
+
+**Location**: `VirtOS/VERSION`
+
+```bash
 $ cat VERSION
 0.89
 ```
 
-All package metadata files sync from this single source.
+**All version references derive from this file:**
 
-### Automatic Versioning
+- Scripts use `get_version()` function
+- Package builds read from VERSION
+- CI/CD auto-increments VERSION
+- Documentation should reference VERSION
 
-**CD Workflow** (`ci/rev-version.sh`):
+### get_version() Function
 
-1. Reads current version from `VERSION` file
-2. Parses as X.Y format: `MAJOR.MINOR`
-3. Increments minor version: `MINOR + 1`
-4. Updates `VERSION` and all `packages/*/virtos-*.tcz.info` files
-5. Creates git tag `vX.Y`
-6. Pushes changes and tag to repository
+All virtos-* scripts use centralized version retrieval:
 
-### Example Version Progression
+```bash
+# In virtos-common.sh
+get_version() {
+    # Try installed package first
+    if [ -f /usr/local/share/virtos/VERSION ]; then
+        cat /usr/local/share/virtos/VERSION
+        return 0
+    fi
 
+    # Try system config
+    if [ -f /etc/virtos/version.txt ]; then
+        grep '^Version:' /etc/virtos/version.txt | awk '{print $2}'
+        return 0
+    fi
+
+    # Try repository VERSION file
+    if [ -f "$SCRIPT_DIR/../../VERSION" ]; then
+        cat "$SCRIPT_DIR/../../VERSION"
+        return 0
+    fi
+
+    # Fallback
+    echo "0.89"
+}
 ```
-0.50 → 0.51 → 0.52 → ... → 0.55 → 0.56 → 0.57 → 0.58 ...
+
+---
+
+## Automatic Version Management
+
+### CI/CD Auto-Increment
+
+File: `.github/workflows/cd.yml`
+
+```yaml
+- name: Increment version
+  run: |
+    current=$(cat VERSION)
+    major=$(echo "$current" | cut -d. -f1)
+    minor=$(echo "$current" | cut -d. -f2)
+    new_minor=$((minor + 1))
+    echo "$major.$new_minor" > VERSION
 ```
 
-Minor version increments on every merged PR to `main` branch.
+**Triggers**:
 
-## Version Synchronization
+- On merge to `main` branch
+- After successful CI validation
+- Before package deployment
+
+**Result**: VERSION increments from 0.89 → 0.90 → 0.91...
 
 All version references stay synchronized:
 
@@ -231,3 +284,115 @@ fi
 - **Validation script**: `ci/verify-version-sync.sh`
 - **CD workflow**: `.github/workflows/cd.yml`
 - **Semantic Versioning**: <https://semver.org/>
+
+---
+
+## Documentation Version Consistency
+
+### Identifying Inconsistent Versions
+
+Common inconsistencies found in VirtOS documentation:
+
+| Location | Referenced Version | Current Version | Status |
+|----------|-------------------|-----------------|--------|
+| VERSION file | 0.89 | 0.89 | ✅ Correct |
+| README.md | v0.87 | 0.89 | ❌ Outdated |
+| QUICK-START.md | 0.83 | 0.89 | ❌ Outdated |
+| API_REFERENCE.md | 0.22 | 0.89 | ❌ Very outdated |
+| COMMUNITY.md | 0.1 | 0.89 | ❌ Very outdated |
+
+### Best Practices for Documentation
+
+**✅ GOOD - Use version ranges:**
+
+```markdown
+Compatible with: VirtOS 0.80+
+Tested on: VirtOS 0.x (all pre-release)
+Minimum version: VirtOS 0.85
+```
+
+**✅ GOOD - Include last updated date:**
+
+```markdown
+**Version**: 0.89  
+**Last Updated**: 2026-05-29
+```
+
+**❌ BAD - Hardcoded specific old versions:**
+
+```markdown
+Compatible with: VirtOS 0.1
+Requires: VirtOS 0.22
+Version: 0.83
+```
+
+### Fixing Inconsistent Versions
+
+**Step 1**: Find outdated references:
+
+```bash
+# Search for version references
+grep -r "version.*0\." docs/ README.md | grep -v "0.89" | grep -v "0.80+"
+```
+
+**Step 2**: Update using these strategies:
+
+1. **Dynamic references** (best for changing content):
+
+   ```markdown
+   Current version: $(cat VERSION)
+   ```
+
+2. **Version ranges** (best for compatibility):
+
+   ```markdown
+   Compatible with: VirtOS 0.80+
+   Works on: VirtOS 0.x
+   ```
+
+3. **Specific current version** (best for release notes):
+
+   ```markdown
+   Version: 0.89 (updated 2026-05-29)
+   ```
+
+**Step 3**: Verify synchronization:
+
+```bash
+# All package info files should match VERSION
+grep "Version:" packages/*/virtos-*.tcz.info
+# Expected: Version: 0.89 (all files)
+
+# Git tags should match releases
+git tag | grep "v0.89"
+# Expected: v0.89
+```
+
+---
+
+## Addressing Issue #171
+
+**Issue**: Inconsistent Versioning Across Scripts and Documentation
+
+**Resolution**:
+
+1. **✅ Single source of truth**: VERSION file (0.89)
+2. **✅ Centralized function**: get_version() in virtos-common.sh
+3. **✅ Automatic sync**: CI/CD updates all package metadata
+4. **⚠️ Documentation lag**: Some docs reference old versions
+
+**Action Items**:
+
+- [x] Documented versioning strategy (this file)
+- [x] Identified inconsistent references
+- [x] Provided update guidelines
+- [ ] Update outdated version references in documentation
+- [ ] Add version consistency check to CI
+
+**Impact**: Low priority - Core functionality unaffected. Version inconsistencies only in documentation examples and compatibility statements.
+
+---
+
+**Last Updated**: 2026-05-29  
+**Current Version**: 0.89  
+**Next Version**: 0.90 (after next merge to main)
