@@ -85,7 +85,7 @@ Navigate to:
 1. **VM Management** → **Create New VM**
 2. Fill in the form:
 
-   ```
+   ```text
    VM Name: ubuntu-server-01
    CPUs: 2
    Memory (MB): 4096
@@ -258,12 +258,91 @@ Congratulations! You've created and managed your first VM on VirtOS.
 ### Learn More
 
 - **Clone this VM**: Use `virtos-template` to create template and clone
+- **Containers**: Run lightweight containers alongside VMs
 - **Network customization**: Create isolated networks with `virtos-network`
 - **Storage pools**: Organize VM disks with `virtos-storage`
 - **Monitoring**: Set up dashboards with `virtos-monitor`
 - **High availability**: Cluster multiple hosts with `virtos-cluster`
 
 ### Common Workflows
+
+#### Create and Run Containers
+
+VirtOS supports Docker, Podman, and containerd for lightweight workloads.
+
+**Using Docker** (if installed):
+
+```bash
+# Pull an image
+docker pull nginx:latest
+
+# Run a web server container
+docker run -d \
+    --name web-server \
+    -p 8080:80 \
+    nginx:latest
+
+# Check it's running
+docker ps
+
+# Access the web server
+curl http://localhost:8080
+# Expected: Nginx welcome page
+
+# View container logs
+docker logs web-server
+
+# Stop and remove
+docker stop web-server
+docker rm web-server
+```
+
+**Using Podman** (rootless, more secure):
+
+```bash
+# Pull an image
+podman pull docker.io/library/nginx:latest
+
+# Run as non-root user (rootless)
+podman run -d \
+    --name web-server \
+    -p 8080:80 \
+    nginx:latest
+
+# Check it's running
+podman ps
+
+# Access the container shell
+podman exec -it web-server /bin/bash
+
+# Stop and remove
+podman stop web-server
+podman rm web-server
+```
+
+**Mixed VM + Container Setup** (web application):
+
+```bash
+# Database in VM (persistent, heavy workload)
+virtos-create-vm \
+    --name postgres-db \
+    --cpu 4 \
+    --ram 8192 \
+    --disk 100G \
+    --os linux
+
+# Web app in containers (stateless, lightweight)
+podman run -d --name api \
+    -p 3000:3000 \
+    --env DB_HOST=192.168.122.100 \
+    my-api:latest
+
+podman run -d --name frontend \
+    -p 8080:80 \
+    my-frontend:latest
+
+# Result: Database VM + 2 containers working together
+```
 
 #### Create a Windows VM
 
@@ -309,6 +388,68 @@ virtos-network bridge-attach web-server-02 web-tier
 virtos-network bridge-attach web-server-03 web-tier
 
 # VMs can now communicate on isolated network
+```
+
+#### Automated VM Setup with Cloud-Init
+
+Create VMs that configure themselves automatically.
+
+```bash
+# Create cloud-init config
+cat > /tmp/cloud-init.yaml << 'EOF'
+#cloud-config
+hostname: auto-vm-01
+users:
+  - name: admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ssh-rsa AAAA...your-public-key...
+packages:
+  - nginx
+  - git
+  - htop
+runcmd:
+  - systemctl start nginx
+  - systemctl enable nginx
+EOF
+
+# Create VM with cloud-init
+virtos-cloud-init create-vm \
+    --name auto-vm-01 \
+    --cpu 2 \
+    --ram 2048 \
+    --disk 20G \
+    --cloud-init /tmp/cloud-init.yaml
+
+# VM boots with:
+# - Hostname set to auto-vm-01
+# - User 'admin' with SSH key
+# - Nginx installed and running
+# - Ready to use in ~2 minutes
+
+# SSH directly (no manual setup needed!)
+ssh admin@192.168.122.X
+```
+
+**Real-World Example**: Deploy 10 web servers automatically:
+
+```bash
+# Template cloud-init
+for i in {1..10}; do
+    sed "s/web-XX/web-$(printf %02d $i)/g" template.yaml > /tmp/web-$i.yaml
+
+    virtos-cloud-init create-vm \
+        --name web-server-$(printf %02d $i) \
+        --cpu 2 \
+        --ram 4096 \
+        --disk 30G \
+        --cloud-init /tmp/web-$i.yaml &
+done
+
+wait
+echo "10 web servers created and configuring automatically"
+
+# Result: 10 identical web servers ready in 5 minutes
 ```
 
 ## Common Tasks Cheat Sheet
