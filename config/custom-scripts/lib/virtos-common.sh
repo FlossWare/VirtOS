@@ -519,7 +519,7 @@ parse_config_file() {
                     continue
                 fi
 
-                # Set variable in caller's scope using printf+eval (safe because we validated)
+                # Set variable in caller's scope using export (safe because we validated)
                 # shellcheck disable=SC2163
                 export "$key"="$value"
             fi
