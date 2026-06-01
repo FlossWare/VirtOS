@@ -391,7 +391,7 @@ log_message() {
     shift
     local message="$*"
     local timestamp
-timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
     # Only log if log directory exists
     if [ -d "/var/log/virtos" ]; then
@@ -460,6 +460,100 @@ check_free_disk() {
         return 1
     fi
     return 0
+}
+
+#==============================================================================
+# Secure Configuration File Parsing
+#==============================================================================
+
+# Safely parse key=value configuration file (prevents command injection)
+# Usage: parse_config_file <file_path> <var_name1> [var_name2] ...
+# Example: parse_config_file "$quota_file" VM_NAME CPU_LIMIT MEMORY_LIMIT DISK_LIMIT
+# Returns: 0 on success, 1 on error
+# Side effects: Sets specified variables in caller's scope
+parse_config_file() {
+    local file_path="$1"
+    shift
+    local expected_vars=("$@")
+
+    if [ ! -f "$file_path" ]; then
+        warn "Configuration file not found: $file_path"
+        return 1
+    fi
+
+    if [ ! -r "$file_path" ]; then
+        die "Configuration file not readable: $file_path"
+    fi
+
+    # Read file line by line
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip comments and empty lines
+        case "$line" in
+            \#* | '') continue ;;
+        esac
+
+        # Parse key=value (must match KEY=VALUE format exactly)
+        if echo "$line" | grep -qE '^[A-Z_][A-Z0-9_]*='; then
+            local key
+            local value
+            key=$(echo "$line" | cut -d= -f1)
+            value=$(echo "$line" | cut -d= -f2-)
+
+            # Strip quotes from value if present
+            value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+
+            # Check if this key is in expected vars list
+            local is_expected=0
+            for expected_var in "${expected_vars[@]}"; do
+                if [ "$key" = "$expected_var" ]; then
+                    is_expected=1
+                    break
+                fi
+            done
+
+            # Only set variable if it's expected (prevents injection of unexpected vars)
+            if [ "$is_expected" -eq 1 ]; then
+                # Validate value doesn't contain dangerous characters
+                if echo "$value" | grep -qE '[;|&$`<>(){}!\\]'; then
+                    warn "Skipping variable $key: value contains dangerous characters"
+                    continue
+                fi
+
+                # Set variable in caller's scope using printf+eval (safe because we validated)
+                # shellcheck disable=SC2163
+                export "$key"="$value"
+            fi
+        fi
+    done <"$file_path"
+
+    return 0
+}
+
+# Get single config value safely
+# Usage: value=$(get_config_value <file_path> <key>)
+# Returns: Value of key, or empty string if not found
+get_config_value() {
+    local file_path="$1"
+    local key="$2"
+
+    if [ ! -f "$file_path" ]; then
+        return 1
+    fi
+
+    # Validate key format
+    if ! echo "$key" | grep -qE '^[A-Z_][A-Z0-9_]*$'; then
+        warn "Invalid config key format: $key"
+        return 1
+    fi
+
+    # Search for key=value line
+    local value
+    value=$(grep "^${key}=" "$file_path" 2>/dev/null | head -1 | cut -d= -f2-)
+
+    # Strip quotes
+    value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+
+    echo "$value"
 }
 
 #==============================================================================
