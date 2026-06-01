@@ -8,7 +8,6 @@ import json
 import subprocess
 import sys
 from datetime import datetime
-from typing import Any, Dict, List
 
 
 class GitHubIssueCreator:
@@ -16,7 +15,9 @@ class GitHubIssueCreator:
         self.issues_created = 0
         self.review_timestamp = datetime.now().isoformat()
 
-    def create_issue(self, title: str, body: str, priority: str = "P2") -> bool:
+    def create_issue(
+        self, title: str, body: str, priority: str = "P2"
+    ) -> bool:
         """Create a GitHub issue using gh CLI"""
         try:
             # Add metadata to body
@@ -32,7 +33,15 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
             # Create issue via gh CLI
             result = subprocess.run(
-                ["gh", "issue", "create", "--title", title, "--body", full_body],
+                [
+                    "gh",
+                    "issue",
+                    "create",
+                    "--title",
+                    title,
+                    "--body",
+                    full_body,
+                ],
                 capture_output=True,
                 text=True,
                 check=True,
