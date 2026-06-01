@@ -326,12 +326,13 @@ restore_vm() {
 
     # If target name is different, update XML
     if [ "$target_name" != "$vm_name" ]; then
+        local temp_xml=$(mktemp) || { error "Failed to create temporary file"; return 1; }
         log "Updating VM name to: $target_name"
-        sed "s|<name>$vm_name</name>|<name>$target_name</name>|" "$vm_xml" > /tmp/restore-vm.xml
+        sed "s|<name>$vm_name</name>|<name>$target_name</name>|" "$vm_xml" > "$temp_xml"
         # Generate new UUID
         local new_uuid=$(uuidgen)
-        sed -i "s|<uuid>.*</uuid>|<uuid>$new_uuid</uuid>|" /tmp/restore-vm.xml
-        vm_xml="/tmp/restore-vm.xml"
+        sed -i "s|<uuid>.*</uuid>|<uuid>$new_uuid</uuid>|" "$temp_xml"
+        vm_xml="$temp_xml"
     fi
 
     # Restore disks

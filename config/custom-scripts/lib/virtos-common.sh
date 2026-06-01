@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright (c) 2026 FlossWare
 # Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 # VirtOS Common Functions Library
@@ -28,8 +28,6 @@
 # Note: All output functions now integrate with logging (log to file if enabled)
 #
 # See: https://github.com/FlossWare/VirtOS/issues/82, #112
-
-VERSION="1.0"
 
 # Colors (if terminal supports it)
 if [ -t 1 ]; then
@@ -181,12 +179,6 @@ success() {
     local msg="$1"
     echo "${GREEN}✓${NC} $msg"
     log_info "SUCCESS: $msg"
-}
-
-# Print success message
-success() {
-    local msg="$1"
-    echo "${GREEN}${msg}${NC}"
 }
 
 #==============================================================================
@@ -344,7 +336,8 @@ log_message() {
     local level="$1"
     shift
     local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
     # Only log if log directory exists
     if [ -d "/var/log/virtos" ]; then
@@ -391,7 +384,8 @@ validate_network_mode() {
 # Check if system has enough free memory
 check_free_memory() {
     local required_mb="$1"
-    local free_mb=$(free -m | awk '/^Mem:/ {print $7}')
+    local free_mb
+    free_mb=$(free -m | awk '/^Mem:/ {print $7}')
 
     if [ "$free_mb" -lt "$required_mb" ]; then
         warn "Low free memory: ${free_mb}MB available, ${required_mb}MB required"
@@ -404,7 +398,8 @@ check_free_memory() {
 check_free_disk() {
     local path="$1"
     local required_mb="$2"
-    local free_mb=$(df -m "$path" | awk 'NR==2 {print $4}')
+    local free_mb
+    free_mb=$(df -m "$path" | awk 'NR==2 {print $4}')
 
     if [ "$free_mb" -lt "$required_mb" ]; then
         warn "Low disk space on $path: ${free_mb}MB available, ${required_mb}MB required"

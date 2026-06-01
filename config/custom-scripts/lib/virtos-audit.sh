@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # virtos-audit.sh - Centralized audit logging for VirtOS
 #
 # This library provides audit logging functions for tracking sensitive

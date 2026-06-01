@@ -444,9 +444,9 @@ EOF
 # Create package
 echo "Creating TCZ package..."
 cd "$SCRIPT_DIR/src"
-sudo find usr -not -type d >"$SCRIPT_DIR/${PACKAGE}.tcz.list"
-sudo find etc -not -type d >>"$SCRIPT_DIR/${PACKAGE}.tcz.list" 2>/dev/null || true
-sudo find var -not -type d >>"$SCRIPT_DIR/${PACKAGE}.tcz.list" 2>/dev/null || true
+sudo find usr -not -type d | sudo tee "$SCRIPT_DIR/${PACKAGE}.tcz.list"
+sudo find etc -not -type d | sudo tee -a "$SCRIPT_DIR/${PACKAGE}.tcz.list" 2>/dev/null || true
+sudo find var -not -type d | sudo tee -a "$SCRIPT_DIR/${PACKAGE}.tcz.list" 2>/dev/null || true
 sudo mksquashfs . "$SCRIPT_DIR/${PACKAGE}.tcz" -noappend -no-xattrs 2>/dev/null
 
 # Generate MD5

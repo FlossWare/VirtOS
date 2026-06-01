@@ -6,10 +6,10 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$(dirname "$SCRIPT_DIR")"
-PROJECT_ROOT="$(dirname "$BUILD_DIR")"
 
 # Source build configuration for TC version and other settings
 if [ -f "$BUILD_DIR/build.conf" ]; then
+    # shellcheck disable=SC1091
     source "$BUILD_DIR/build.conf"
 else
     echo "ERROR: build.conf not found at $BUILD_DIR/build.conf" >&2
@@ -141,8 +141,8 @@ if [ -d "$INITRD_DIR/lib/modules" ]; then
     KVM_MODULES=$(sudo find "$INITRD_DIR/lib/modules" -name "*kvm*.ko*" 2>/dev/null || true)
     if [ -n "$KVM_MODULES" ]; then
         echo "  Found KVM modules:"
-        echo "$KVM_MODULES" | while read mod; do
-            echo "    - $(basename $mod)"
+        echo "$KVM_MODULES" | while read -r mod; do
+            echo "    - $(basename "$mod")"
         done
     else
         echo "  WARNING: No KVM modules found in kernel!"
@@ -155,8 +155,6 @@ fi
 # Download TCZ extensions (if online repo available)
 echo ""
 echo "Setting up TCZ repository access..."
-TCZ_REPO="$TC_MIRROR/$TC_VERSION/$TC_ARCH/tcz"
-TCZ_DIR="$WORKSPACE_DIR/tcz"
 mkdir -p "$TCZ_DIR"
 
 # List of packages we want (we'll download them later if available)

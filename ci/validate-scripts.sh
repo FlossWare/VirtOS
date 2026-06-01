@@ -77,7 +77,8 @@ EOF
 # Validate single script
 validate_script() {
     local script="$1"
-    local script_name=$(basename "$script")
+    local script_name
+    script_name=$(basename "$script")
     local issues=0
     local script_warnings=0
 

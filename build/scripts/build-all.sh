@@ -8,6 +8,7 @@ BUILD_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Source and validate build configuration
 if [ -f "$BUILD_DIR/build.conf" ]; then
+    # shellcheck disable=SC1091
     source "$BUILD_DIR/build.conf"
 else
     echo "ERROR: build.conf not found at $BUILD_DIR/build.conf" >&2
