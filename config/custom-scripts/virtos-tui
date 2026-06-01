@@ -495,11 +495,9 @@ container_management_menu() {
 jplatform_menu() {
     # Check if JPlatform is installed
     if ! command -v jplatform >/dev/null 2>&1; then
-        $DIALOG $DIALOG_OPTS \
+        if $DIALOG $DIALOG_OPTS \
             --title "JPlatform Not Installed" \
-            --yesno "JPlatform is not installed. Would you like to install it now?" 8 60
-
-        if [ $? -eq 0 ]; then
+            --yesno "JPlatform is not installed. Would you like to install it now?" 8 60; then
             clear
             echo "Installing JPlatform..."
             virtos-jplatform-install
@@ -658,11 +656,9 @@ jplatform_menu() {
             WORKLOAD_ID=$(cat $TEMP_FILE)
 
             if [ -n "$WORKLOAD_ID" ]; then
-                $DIALOG $DIALOG_OPTS \
+                if $DIALOG $DIALOG_OPTS \
                     --title "Confirm" \
-                    --yesno "Undeploy $WORKLOAD_ID? This will remove it permanently." 8 60
-
-                if [ $? -eq 0 ]; then
+                    --yesno "Undeploy $WORKLOAD_ID? This will remove it permanently." 8 60; then
                     clear
                     echo "Undeploying $WORKLOAD_ID..."
                     jplatform undeploy "$WORKLOAD_ID"
@@ -689,11 +685,9 @@ resources:
   memory: 4096
 EOF
 
-            $DIALOG $DIALOG_OPTS \
+            if $DIALOG $DIALOG_OPTS \
                 --title "Example VM" \
-                --yesno "Deploy example VM?\n\nID: example-vm\nCPU: 2 vCPUs\nRAM: 4096 MB\nDisk: /var/lib/jplatform/vms/example-vm.qcow2\n\nNote: You must create the disk image first:\n  qemu-img create -f qcow2 /var/lib/jplatform/vms/example-vm.qcow2 20G" 16 76
-
-            if [ $? -eq 0 ]; then
+                --yesno "Deploy example VM?\n\nID: example-vm\nCPU: 2 vCPUs\nRAM: 4096 MB\nDisk: /var/lib/jplatform/vms/example-vm.qcow2\n\nNote: You must create the disk image first:\n  qemu-img create -f qcow2 /var/lib/jplatform/vms/example-vm.qcow2 20G" 16 76; then
                 clear
                 echo "Deploying example VM..."
                 jplatform deploy "$EXAMPLE_VM"
@@ -718,11 +712,9 @@ properties:
   container.ports: "8080:80"
 EOF
 
-            $DIALOG $DIALOG_OPTS \
+            if $DIALOG $DIALOG_OPTS \
                 --title "Example Container" \
-                --yesno "Deploy example NGINX container?\n\nID: nginx-web\nImage: nginx:alpine\nPort: 8080 -> 80" 10 60
-
-            if [ $? -eq 0 ]; then
+                --yesno "Deploy example NGINX container?\n\nID: nginx-web\nImage: nginx:alpine\nPort: 8080 -> 80" 10 60; then
                 clear
                 echo "Deploying NGINX container..."
                 jplatform deploy "$EXAMPLE_CONTAINER"
@@ -1248,11 +1240,9 @@ ha_menu() {
             VM_NAME=$(cat $TEMP_FILE)
 
             if [ -n "$VM_NAME" ]; then
-                $DIALOG $DIALOG_OPTS \
+                if $DIALOG $DIALOG_OPTS \
                     --title "Confirm" \
-                    --yesno "Disable HA for '$VM_NAME'?" 8 50
-
-                if [ $? -eq 0 ]; then
+                    --yesno "Disable HA for '$VM_NAME'?" 8 50; then
                     virtos-ha disable "$VM_NAME" 2>&1 | \
                         $DIALOG $DIALOG_OPTS --title "Result" --programbox 12 76
                     $DIALOG $DIALOG_OPTS --msgbox "HA disabled for $VM_NAME" 6 50
@@ -1276,11 +1266,9 @@ ha_menu() {
                 DEST_HOST=$(cat $TEMP_FILE)
 
                 if [ -n "$DEST_HOST" ]; then
-                    $DIALOG $DIALOG_OPTS \
+                    if $DIALOG $DIALOG_OPTS \
                         --title "Confirm Failover" \
-                        --yesno "Failover '$VM_NAME' to '$DEST_HOST'?" 8 60
-
-                    if [ $? -eq 0 ]; then
+                        --yesno "Failover '$VM_NAME' to '$DEST_HOST'?" 8 60; then
                         virtos-ha failover "$VM_NAME" "$DEST_HOST" 2>&1 | \
                             $DIALOG $DIALOG_OPTS --title "Failover Progress" --programbox 20 76
                         $DIALOG $DIALOG_OPTS --msgbox "Failover operation completed" 6 50
@@ -1371,11 +1359,9 @@ migration_menu() {
     esac
 
     # Confirm
-    $DIALOG $DIALOG_OPTS \
+    if $DIALOG $DIALOG_OPTS \
         --title "Confirm Migration" \
-        --yesno "Migrate '$VM_NAME' to '$DEST_HOST'?\n\nType: $TYPE_DESC" 10 70
-
-    if [ $? -eq 0 ]; then
+        --yesno "Migrate '$VM_NAME' to '$DEST_HOST'?\n\nType: $TYPE_DESC" 10 70; then
         virtos-migrate $MIG_OPT "$VM_NAME" "$DEST_HOST" 2>&1 | \
             $DIALOG $DIALOG_OPTS --title "Migration Progress" --programbox 25 100
 
@@ -1823,11 +1809,9 @@ update_menu() {
             update_menu
             ;;
         3)
-            $DIALOG $DIALOG_OPTS \
+            if $DIALOG $DIALOG_OPTS \
                 --title "Confirm" \
-                --yesno "Install all available updates?" 8 50
-
-            if [ $? -eq 0 ]; then
+                --yesno "Install all available updates?" 8 50; then
                 virtos-update install-all 2>&1 | \
                     $DIALOG $DIALOG_OPTS --title "Installing Updates" --programbox 20 76
                 $DIALOG $DIALOG_OPTS --msgbox "Updates installed" 6 40
@@ -1909,11 +1893,9 @@ dr_menu() {
             PLAN_NAME=$(cat $TEMP_FILE)
 
             if [ -n "$PLAN_NAME" ]; then
-                $DIALOG $DIALOG_OPTS \
+                if $DIALOG $DIALOG_OPTS \
                     --title "Confirm" \
-                    --yesno "Execute DR plan '$PLAN_NAME'?" 8 60
-
-                if [ $? -eq 0 ]; then
+                    --yesno "Execute DR plan '$PLAN_NAME'?" 8 60; then
                     virtos-dr plan-execute "$PLAN_NAME" 2>&1 | \
                         $DIALOG $DIALOG_OPTS --title "Executing Plan" --programbox 20 76
                 fi
@@ -1948,11 +1930,9 @@ dr_menu() {
             dr_menu
             ;;
         6)
-            $DIALOG $DIALOG_OPTS \
+            if $DIALOG $DIALOG_OPTS \
                 --title "Confirm" \
-                --yesno "Backup entire cluster?" 8 50
-
-            if [ $? -eq 0 ]; then
+                --yesno "Backup entire cluster?" 8 50; then
                 virtos-dr cluster-backup 2>&1 | \
                     $DIALOG $DIALOG_OPTS --title "Cluster Backup" --programbox 20 76
                 $DIALOG $DIALOG_OPTS --msgbox "Cluster backup completed" 6 50
@@ -2074,11 +2054,9 @@ iaas_vm_create_menu() {
     OS_TEMPLATE=$(cat $TEMP_FILE)
 
     # Dry run first
-    $DIALOG $DIALOG_OPTS \
+    if $DIALOG $DIALOG_OPTS \
         --title "Preview Placement" \
-        --yesno "Run a dry-run to see where the VM would be placed?\n\n(Recommended before creating)" 10 70
-
-    if [ $? -eq 0 ]; then
+        --yesno "Run a dry-run to see where the VM would be placed?\n\n(Recommended before creating)" 10 70; then
         if [ -n "$OS_TEMPLATE" ]; then
             virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" --os "$OS_TEMPLATE" --dry-run 2>&1 | \
                 $DIALOG $DIALOG_OPTS --title "Placement Preview" --programbox 20 100
@@ -2087,11 +2065,9 @@ iaas_vm_create_menu() {
                 $DIALOG $DIALOG_OPTS --title "Placement Preview" --programbox 20 100
         fi
 
-        $DIALOG $DIALOG_OPTS \
+        if ! $DIALOG $DIALOG_OPTS \
             --title "Create VM" \
-            --yesno "Proceed with VM creation?" 8 50
-
-        if [ $? -ne 0 ]; then
+            --yesno "Proceed with VM creation?" 8 50; then
             main_menu
             return
         fi
@@ -2213,11 +2189,9 @@ snapshots_menu() {
                 SNAPSHOT_NAME=$(cat $TEMP_FILE)
 
                 if [ -n "$SNAPSHOT_NAME" ]; then
-                    $DIALOG $DIALOG_OPTS \
+                    if $DIALOG $DIALOG_OPTS \
                         --title "Confirm Revert" \
-                        --yesno "Revert VM '$VM_NAME' to snapshot '$SNAPSHOT_NAME'?\n\nCurrent state will be lost!" 10 70
-
-                    if [ $? -eq 0 ]; then
+                        --yesno "Revert VM '$VM_NAME' to snapshot '$SNAPSHOT_NAME'?\n\nCurrent state will be lost!" 10 70; then
                         virtos-snapshot revert "$VM_NAME" "$SNAPSHOT_NAME" 2>&1 | \
                             $DIALOG $DIALOG_OPTS --title "Reverting" --programbox 15 76
                         $DIALOG $DIALOG_OPTS --msgbox "VM reverted to snapshot" 6 40
@@ -2246,11 +2220,9 @@ snapshots_menu() {
                 SNAPSHOT_NAME=$(cat $TEMP_FILE)
 
                 if [ -n "$SNAPSHOT_NAME" ]; then
-                    $DIALOG $DIALOG_OPTS \
+                    if $DIALOG $DIALOG_OPTS \
                         --title "Confirm Delete" \
-                        --yesno "Delete snapshot '$SNAPSHOT_NAME'?\n\nThis cannot be undone!" 10 60
-
-                    if [ $? -eq 0 ]; then
+                        --yesno "Delete snapshot '$SNAPSHOT_NAME'?\n\nThis cannot be undone!" 10 60; then
                         virtos-snapshot delete "$VM_NAME" "$SNAPSHOT_NAME" 2>&1 | \
                             $DIALOG $DIALOG_OPTS --title "Deleting Snapshot" --programbox 15 76
                         $DIALOG $DIALOG_OPTS --msgbox "Snapshot deleted" 6 40
@@ -2331,11 +2303,9 @@ snapshots_menu() {
                     2> $TEMP_FILE
                 KEEP_COUNT=$(cat $TEMP_FILE)
 
-                $DIALOG $DIALOG_OPTS \
+                if $DIALOG $DIALOG_OPTS \
                     --title "Confirm Cleanup" \
-                    --yesno "Remove old snapshots for '$VM_NAME'?\n\nKeeping last $KEEP_COUNT snapshots" 10 60
-
-                if [ $? -eq 0 ]; then
+                    --yesno "Remove old snapshots for '$VM_NAME'?\n\nKeeping last $KEEP_COUNT snapshots" 10 60; then
                     virtos-snapshot cleanup "$VM_NAME" --keep "$KEEP_COUNT" 2>&1 | \
                         $DIALOG $DIALOG_OPTS --title "Cleanup Progress" --programbox 15 76
                     $DIALOG $DIALOG_OPTS --msgbox "Cleanup completed" 6 40
@@ -2462,11 +2432,9 @@ templates_menu() {
             TEMPLATE_NAME=$(cat $TEMP_FILE)
 
             if [ -n "$TEMPLATE_NAME" ]; then
-                $DIALOG $DIALOG_OPTS \
+                if $DIALOG $DIALOG_OPTS \
                     --title "Confirm Delete" \
-                    --yesno "Delete template '$TEMPLATE_NAME'?\n\nThis cannot be undone!" 10 60
-
-                if [ $? -eq 0 ]; then
+                    --yesno "Delete template '$TEMPLATE_NAME'?\n\nThis cannot be undone!" 10 60; then
                     virtos-template delete "$TEMPLATE_NAME" 2>&1 | \
                         $DIALOG $DIALOG_OPTS --title "Deleting Template" --programbox 15 76
                     $DIALOG $DIALOG_OPTS --msgbox "Template deleted" 6 40
@@ -2517,11 +2485,9 @@ backup_restore_menu() {
 
             if [ -n "$VM_NAME" ]; then
                 # Ask for remote destination (optional)
-                $DIALOG $DIALOG_OPTS \
+                if $DIALOG $DIALOG_OPTS \
                     --title "Backup Destination" \
-                    --yesno "Backup to remote location?\n\nNo = Local backup\nYes = Specify remote" 10 50
-
-                if [ $? -eq 0 ]; then
+                    --yesno "Backup to remote location?\n\nNo = Local backup\nYes = Specify remote" 10 50; then
                     $DIALOG $DIALOG_OPTS \
                         --title "Remote Destination" \
                         --inputbox "Enter remote destination:\n(e.g., scp://user@host:/path or s3://bucket/path)" 12 76 \
@@ -2560,11 +2526,9 @@ backup_restore_menu() {
                 BACKUP_DATE=$(cat $TEMP_FILE)
 
                 if [ -n "$BACKUP_DATE" ]; then
-                    $DIALOG $DIALOG_OPTS \
+                    if $DIALOG $DIALOG_OPTS \
                         --title "Confirm Restore" \
-                        --yesno "Restore VM '$VM_NAME' from backup '$BACKUP_DATE'?\n\nThis will overwrite the current VM!" 10 60
-
-                    if [ $? -eq 0 ]; then
+                        --yesno "Restore VM '$VM_NAME' from backup '$BACKUP_DATE'?\n\nThis will overwrite the current VM!" 10 60; then
                         virtos-backup restore "$VM_NAME" "$BACKUP_DATE" 2>&1 | \
                             $DIALOG $DIALOG_OPTS --title "Restore Progress" --programbox 20 76
                         $DIALOG $DIALOG_OPTS --msgbox "Restore operation completed\n\nCheck logs for status" 8 50
@@ -2628,11 +2592,9 @@ backup_restore_menu() {
             backup_restore_menu
             ;;
         5)
-            $DIALOG $DIALOG_OPTS \
+            if $DIALOG $DIALOG_OPTS \
                 --title "Cleanup Backups" \
-                --yesno "Remove old backups according to retention policy?\n\nThis cannot be undone!" 10 60
-
-            if [ $? -eq 0 ]; then
+                --yesno "Remove old backups according to retention policy?\n\nThis cannot be undone!" 10 60; then
                 virtos-backup cleanup 2>&1 | \
                     $DIALOG $DIALOG_OPTS --title "Cleanup Progress" --programbox 20 76
                 $DIALOG $DIALOG_OPTS --msgbox "Cleanup completed" 6 40
@@ -3607,10 +3569,9 @@ security_menu() {
             security_menu
             ;;
         7)
-            $DIALOG $DIALOG_OPTS \
+            if $DIALOG $DIALOG_OPTS \
                 --title "SSH Hardening" \
-                --yesno "This will apply SSH hardening settings.\n\nContinue?" 10 50
-            if [ $? -eq 0 ]; then
+                --yesno "This will apply SSH hardening settings.\n\nContinue?" 10 50; then
                 virtos-security ssh-harden 2>&1 | \
                     $DIALOG $DIALOG_OPTS --title "Result" --programbox 15 76
             fi
@@ -6969,10 +6930,9 @@ settings_menu() {
             settings_menu
             ;;
         4)
-            $DIALOG $DIALOG_OPTS \
+            if $DIALOG $DIALOG_OPTS \
                 --title "Backup Configuration" \
-                --yesno "Backup VirtOS configuration now?\n\nThis will run: filetool.sh -b" 10 50
-            if [ $? -eq 0 ]; then
+                --yesno "Backup VirtOS configuration now?\n\nThis will run: filetool.sh -b" 10 50; then
                 filetool.sh -b
                 $DIALOG $DIALOG_OPTS --msgbox "Configuration backed up" 6 40
             fi
@@ -6989,10 +6949,9 @@ settings_menu() {
 
 # Check if running as root
 if [ "$(id -u)" -ne 0 ]; then
-    $DIALOG $DIALOG_OPTS \
+    if ! $DIALOG $DIALOG_OPTS \
         --title "Permission Required" \
-        --yesno "Some features require root access.\n\nContinue anyway?" 8 50
-    if [ $? -ne 0 ]; then
+        --yesno "Some features require root access.\n\nContinue anyway?" 8 50; then
         exit 1
     fi
 fi

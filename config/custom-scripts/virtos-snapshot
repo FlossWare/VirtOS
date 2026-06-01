@@ -95,15 +95,20 @@ create_snapshot() {
     local snapshot_name="snapshot-$(date +%Y%m%d-%H%M%S)"
 
     # Create snapshot
+    local snapshot_cmd_ok=false
     if [ "$snapshot_type" = "memory" ]; then
         echo "Creating snapshot with memory state..."
-        virsh snapshot-create-as "$vm_name" "$snapshot_name" "$description"
+        if virsh snapshot-create-as "$vm_name" "$snapshot_name" "$description"; then
+            snapshot_cmd_ok=true
+        fi
     else
         echo "Creating disk-only snapshot..."
-        virsh snapshot-create-as "$vm_name" "$snapshot_name" "$description" --disk-only --atomic
+        if virsh snapshot-create-as "$vm_name" "$snapshot_name" "$description" --disk-only --atomic; then
+            snapshot_cmd_ok=true
+        fi
     fi
 
-    if [ $? -eq 0 ]; then
+    if [ "$snapshot_cmd_ok" = "true" ]; then
         echo "Snapshot created: $snapshot_name"
         return 0
     else
@@ -199,9 +204,7 @@ revert_snapshot() {
     fi
 
     # Revert
-    virsh snapshot-revert "$vm_name" "$snapshot_name"
-
-    if [ $? -eq 0 ]; then
+    if virsh snapshot-revert "$vm_name" "$snapshot_name"; then
         echo "VM reverted to snapshot: $snapshot_name"
         return 0
     else
@@ -233,9 +236,7 @@ delete_snapshot() {
     fi
 
     # Delete snapshot
-    virsh snapshot-delete "$vm_name" "$snapshot_name" --metadata
-
-    if [ $? -eq 0 ]; then
+    if virsh snapshot-delete "$vm_name" "$snapshot_name" --metadata; then
         echo "Snapshot deleted: $snapshot_name"
         return 0
     else
@@ -310,8 +311,7 @@ cleanup_snapshots() {
     for ((i=0; i<delete_count; i++)); do
         local snapshot="${snapshots[$i]}"
         echo "Deleting: $snapshot"
-        virsh snapshot-delete "$vm_name" "$snapshot" --metadata
-        if [ $? -eq 0 ]; then
+        if virsh snapshot-delete "$vm_name" "$snapshot" --metadata; then
             deleted=$((deleted + 1))
         fi
     done

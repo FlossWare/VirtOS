@@ -194,52 +194,54 @@ backup_vm() {
 
         log "Backing up disk $disk_num: $disk"
 
-        # Check if VM is running
-        if [ "$vm_state" = "running" ]; then
-            # Create snapshot for consistent backup
-            log "Creating temporary snapshot for consistent backup..."
-            virsh snapshot-create-as "$vm_name" backup-snapshot-$timestamp \
-                "Temporary snapshot for backup" --disk-only --atomic 2>/dev/null
-
-            if [ $? -eq 0 ]; then
-                # Copy the backing file (original disk)
-                if [ "$COMPRESSION" = "yes" ]; then
-                    log "Compressing disk image..."
-                    qemu-img convert -c -O qcow2 "$disk" "$backup_disk.qcow2"
-                else
-                    cp "$disk" "$backup_disk"
-                fi
-
-                # Delete snapshot (merges changes back)
-                virsh snapshot-delete "$vm_name" backup-snapshot-$timestamp --metadata
-            else
-                warn "Snapshot failed, backing up live disk (may be inconsistent)"
-                if [ "$COMPRESSION" = "yes" ]; then
-                    qemu-img convert -c -O qcow2 "$disk" "$backup_disk.qcow2"
-                else
-                    cp "$disk" "$backup_disk"
-                fi
-            fi
-        else
-            # VM is not running, safe to backup directly
+        # Copy disk image helper - returns non-zero on failure
+        copy_disk() {
             if [ "$COMPRESSION" = "yes" ]; then
                 log "Compressing disk image..."
                 qemu-img convert -c -O qcow2 "$disk" "$backup_disk.qcow2"
             else
                 cp "$disk" "$backup_disk"
             fi
-        fi
+        }
 
-        if [ $? -eq 0 ]; then
-            success "Disk $disk_num backed up successfully"
+        # Check if VM is running
+        if [ "$vm_state" = "running" ]; then
+            # Create snapshot for consistent backup
+            log "Creating temporary snapshot for consistent backup..."
+            if virsh snapshot-create-as "$vm_name" backup-snapshot-$timestamp \
+                "Temporary snapshot for backup" --disk-only --atomic 2>/dev/null; then
+                # Copy the backing file (original disk)
+                if copy_disk; then
+                    success "Disk $disk_num backed up successfully"
+                else
+                    error "Failed to backup disk $disk_num"
+                    return 1
+                fi
 
-            # Save disk info
-            echo "$disk" >> "$backup_path/disk-mapping.txt"
-            qemu-img info "$disk" > "$backup_path/disk-$disk_num-info.txt"
+                # Delete snapshot (merges changes back)
+                virsh snapshot-delete "$vm_name" backup-snapshot-$timestamp --metadata
+            else
+                warn "Snapshot failed, backing up live disk (may be inconsistent)"
+                if copy_disk; then
+                    success "Disk $disk_num backed up successfully"
+                else
+                    error "Failed to backup disk $disk_num"
+                    return 1
+                fi
+            fi
         else
-            error "Failed to backup disk $disk_num"
-            return 1
+            # VM is not running, safe to backup directly
+            if copy_disk; then
+                success "Disk $disk_num backed up successfully"
+            else
+                error "Failed to backup disk $disk_num"
+                return 1
+            fi
         fi
+
+        # Save disk info
+        echo "$disk" >> "$backup_path/disk-mapping.txt"
+        qemu-img info "$disk" > "$backup_path/disk-$disk_num-info.txt"
     done
 
     # Create backup manifest
@@ -373,8 +375,7 @@ restore_vm() {
     # Verify checksums
     log "Verifying backup integrity..."
     if [ -f "$backup_path/checksums.sha256" ]; then
-        (cd "$backup_path" && sha256sum -c checksums.sha256 --quiet)
-        if [ $? -eq 0 ]; then
+        if (cd "$backup_path" && sha256sum -c checksums.sha256 --quiet); then
             success "Backup integrity verified"
         else
             error "Backup integrity check failed!"
@@ -433,9 +434,7 @@ restore_vm() {
         log "Restoring disk $disk_num to: $restore_disk"
 
         # Copy disk
-        qemu-img convert -O qcow2 "$disk_backup" "$restore_disk"
-
-        if [ $? -eq 0 ]; then
+        if qemu-img convert -O qcow2 "$disk_backup" "$restore_disk"; then
             success "Disk $disk_num restored successfully"
 
             # Update XML with new disk path
@@ -449,9 +448,7 @@ restore_vm() {
 
     # Define VM
     log "Defining VM in libvirt..."
-    virsh define "$vm_xml"
-
-    if [ $? -eq 0 ]; then
+    if virsh define "$vm_xml"; then
         success "VM '$target_name' restored successfully"
 
         # Cleanup temp files
@@ -740,5 +737,3 @@ case "$COMMAND" in
         exit 1
         ;;
 esac
-
-exit $?

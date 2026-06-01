@@ -262,9 +262,8 @@ import_cloud_image() {
 
     # Download image
     echo "Downloading image..."
-    wget -O "$template_path/disk-1.qcow2" "$image_url" || curl -L -o "$template_path/disk-1.qcow2" "$image_url"
-
-    if [ $? -ne 0 ]; then
+    if ! wget -O "$template_path/disk-1.qcow2" "$image_url" 2>/dev/null && \
+       ! curl -L -o "$template_path/disk-1.qcow2" "$image_url" 2>/dev/null; then
         echo "Error: Failed to download image"
         rm -rf "$template_path"
         return 1

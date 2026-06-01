@@ -227,10 +227,8 @@ sync_to_cloud() {
         rsync_opts="$rsync_opts --update"
     fi
 
-    rsync $rsync_opts "$path" "vmadmin@$CLOUD_HUB:/var/lib/virtos/edge-data/$EDGE_LOCATION/" \
-        2>&1 | tee -a "$LOG_FILE"
-
-    if [ $? -eq 0 ]; then
+    if rsync $rsync_opts "$path" "vmadmin@$CLOUD_HUB:/var/lib/virtos/edge-data/$EDGE_LOCATION/" \
+        2>&1 | tee -a "$LOG_FILE"; then
         log "Sync to cloud completed successfully"
     else
         log "ERROR: Sync to cloud failed"
@@ -261,10 +259,8 @@ sync_from_cloud() {
         rsync_opts="$rsync_opts --update"
     fi
 
-    rsync $rsync_opts "vmadmin@$CLOUD_HUB:/var/lib/virtos/cloud-data/" "$path" \
-        2>&1 | tee -a "$LOG_FILE"
-
-    if [ $? -eq 0 ]; then
+    if rsync $rsync_opts "vmadmin@$CLOUD_HUB:/var/lib/virtos/cloud-data/" "$path" \
+        2>&1 | tee -a "$LOG_FILE"; then
         log "Sync from cloud completed successfully"
     else
         log "ERROR: Sync from cloud failed"
