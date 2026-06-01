@@ -1,0 +1,137 @@
+
+In ./config/custom-scripts/lib/virtos-audit.sh line 118:
+        escaped_error="$(echo "$error" | sed 's/"/\\"/g')"
+                         ^-----------------------------^ SC2001 (style): See if you can use ${variable//search/replace} instead.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2001 -- See if you can use ${variable//se...
+
+In ./config/custom-scripts/lib/virtos-common.sh line 191:
+    local msg="${2:-Command '$cmd' is required but not found}"
+                            ^----^ SC2016 (info): Expressions don't expand in single quotes, use double quotes for that.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2016 -- Expressions don't expand in singl...
+
+In ./packages/virtos-tools/src/usr/local/bin/add-user.sh line 31:
+read -p "Add "USERNAME" to sudo/admin group? [y/N] " -n 1 -r
+              ^------^ SC2140 (warning): Word is of the form "A"B"C" (B indicated). Did you mean "ABC" or "A\"B\"C"?
+
+
+In ./packages/virtos-tools/src/usr/local/bin/add-user.sh line 33:
+if [[ "REPLY" =~ ^[Yy]$ ]]; then
+              ^-- SC2050 (warning): This expression is constant. Did you forget the $ on a variable?
+
+
+In ./packages/virtos-tools/src/usr/local/bin/add-user.sh line 46:
+echo "Groups: "$(groups "$USERNAME")""
+               ^-------------------^ SC2027 (warning): The surrounding quotes actually unquote this. Remove or escape them.
+               ^-------------------^ SC2046 (warning): Quote this to prevent word splitting.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2027 -- The surrounding quotes actually u...
+  https://www.shellcheck.net/wiki/SC2046 -- Quote this to prevent word splitt...
+  https://www.shellcheck.net/wiki/SC2050 -- This expression is constant. Did ...
+
+In ./packages/virtos-tools/src/usr/local/lib/virtos-common.sh line 167:
+        die "This command must be run as root. Use: sudo "0" $*" 1
+                                                          ^-- SC2140 (warning): Word is of the form "A"B"C" (B indicated). Did you mean "ABC" or "A\"B\"C"?
+
+
+In ./packages/virtos-tools/src/usr/local/lib/virtos-common.sh line 213:
+        die "VM '"vm_name"' not found. List VMs with: virsh list --all"
+                  ^-----^ SC2140 (warning): Word is of the form "A"B"C" (B indicated). Did you mean "ABC" or "A\"B\"C"?
+
+
+In ./packages/virtos-tools/src/usr/local/lib/virtos-common.sh line 228:
+        prompt=""prompt" [Y/n]: "
+                 ^----^ SC2140 (warning): Word is of the form "A"B"C" (B indicated). Did you mean "ABC" or "A\"B\"C"?
+
+
+In ./packages/virtos-tools/src/usr/local/lib/virtos-common.sh line 230:
+        prompt=""prompt" [y/N]: "
+                 ^----^ SC2140 (warning): Word is of the form "A"B"C" (B indicated). Did you mean "ABC" or "A\"B\"C"?
+
+
+In ./packages/virtos-tools/src/usr/local/lib/virtos-common.sh line 371:
+        warn "Low disk space on "path": ${free_mb}MB available, ${required_mb}MB required"
+                                 ^--^ SC2140 (warning): Word is of the form "A"B"C" (B indicated). Did you mean "ABC" or "A\"B\"C"?
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2140 -- Word is of the form "A"B"C" (B in...
+
+In ./ci/migrate-error-handling.sh line 105:
+            local count=$(grep -c 'echo.*[Ee]rror' "$script" || echo 0)
+                  ^---^ SC2155 (warning): Declare and assign separately to avoid masking return values.
+
+
+In ./ci/migrate-error-handling.sh line 151:
+    local echo_errors=$(grep -c 'echo.*[Ee]rror' "$script" 2>/dev/null || echo 0)
+          ^---------^ SC2155 (warning): Declare and assign separately to avoid masking return values.
+
+
+In ./ci/migrate-error-handling.sh line 152:
+    local echo_warnings=$(grep -c 'echo.*[Ww]arning' "$script" 2>/dev/null || echo 0)
+          ^-----------^ SC2155 (warning): Declare and assign separately to avoid masking return values.
+
+
+In ./ci/migrate-error-handling.sh line 153:
+    local echo_info=$(grep -c 'echo.*[Ii]nfo' "$script" 2>/dev/null || echo 0)
+          ^-------^ SC2155 (warning): Declare and assign separately to avoid masking return values.
+
+
+In ./ci/migrate-error-handling.sh line 193:
+        DRY_RUN=true
+        ^-----^ SC2034 (warning): DRY_RUN appears unused. Verify use (or export if used externally).
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2034 -- DRY_RUN appears unused. Verify us...
+  https://www.shellcheck.net/wiki/SC2155 -- Declare and assign separately to ...
+
+In ./ci/rev-version.sh line 19:
+NEXT_MINOR="$((${MINOR} + 1))"
+               ^------^ SC2004 (style): $/${} is unnecessary on arithmetic variables.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2004 -- $/${} is unnecessary on arithmeti...
+
+In ./ci/update-version-handling.sh line 30:
+    if grep -q 'get_version()' "$script" || grep -q 'VERSION=$(get_version)' "$script"; then
+                                                    ^----------------------^ SC2016 (info): Expressions don't expand in single quotes, use double quotes for that.
+
+
+In ./ci/update-version-handling.sh line 67:
+        sed -i 's/^VERSION=.*/VERSION=$(get_version)/' "$script"
+               ^-- SC2016 (info): Expressions don't expand in single quotes, use double quotes for that.
+
+
+In ./ci/update-version-handling.sh line 68:
+    elif ! grep -q '^VERSION=' "$script" && ! grep -q 'VERSION=$(get_version)' "$script"; then
+                                                      ^----------------------^ SC2016 (info): Expressions don't expand in single quotes, use double quotes for that.
+
+
+In ./ci/update-version-handling.sh line 89:
+            sed -i '/case.*in/a\    -v|--version)\n        echo "'"$script"' version $VERSION"\n        exit 0\n        ;;' "$script"
+                                                                           ^-- SC2016 (info): Expressions don't expand in single quotes, use double quotes for that.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2016 -- Expressions don't expand in singl...
+
+In ./tests/test_helper.bash line 24:
+    export TEST_TMP="$(mktemp -d)"
+           ^------^ SC2155 (warning): Declare and assign separately to avoid masking return values.
+
+
+In ./tests/test_helper.bash line 27:
+    trap "rm -rf $TEST_TMP" EXIT
+                 ^-------^ SC2064 (warning): Use single quotes, otherwise this expands now rather than when signalled.
+
+
+In ./tests/test_helper.bash line 85:
+    [ -f /usr/local/share/virtos/VERSION ] || [ -d /usr/local/bin/virtos-* ]
+                                                   ^---------------------^ SC2144 (error): -d doesn't work with globs. Use a for loop.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2144 -- -d doesn't work with globs. Use a...
+  https://www.shellcheck.net/wiki/SC2064 -- Use single quotes, otherwise this...
+  https://www.shellcheck.net/wiki/SC2155 -- Declare and assign separately to ...
