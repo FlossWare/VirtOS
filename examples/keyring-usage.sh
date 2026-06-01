@@ -9,6 +9,7 @@ echo ""
 
 # Load libraries
 if [ -f /usr/local/lib/virtos-common.sh ]; then
+    # shellcheck source=/dev/null
     source /usr/local/lib/virtos-common.sh
 else
     echo "Error: virtos-common.sh not found (not in VirtOS environment)"
@@ -16,10 +17,12 @@ else
 fi
 
 if [ -f /usr/local/lib/virtos-audit.sh ]; then
+    # shellcheck source=/dev/null
     source /usr/local/lib/virtos-audit.sh
 fi
 
 if [ -f /usr/local/lib/virtos-keyring.sh ]; then
+    # shellcheck source=/dev/null
     source /usr/local/lib/virtos-keyring.sh
 else
     echo "Error: virtos-keyring.sh not found"
@@ -141,7 +144,6 @@ echo "======================================="
 
 # Simulate VM creation with credentials
 vm_name="test-vm"
-admin_user="admin"
 
 # Prompt for password (not visible in shell history)
 echo -n "Enter VM admin password: "
@@ -161,7 +163,7 @@ vm_password=$(keyring_get "vm.${vm_name}.admin.password")
 if [ -n "$vm_password" ]; then
     echo "✓ Retrieved password for VM configuration"
     # Configure VM with password
-    # virsh set-user-password $vm_name $admin_user "$vm_password"
+    # virsh set-user-password "$vm_name" admin "$vm_password"
 fi
 
 # Clean up
@@ -181,7 +183,7 @@ echo "================================="
 keyring_store "audit.test.password" "secret123" "password" 600
 echo "✓ Stored credential (audited)"
 
-keyring_get "audit.test.password" > /dev/null
+keyring_get "audit.test.password" >/dev/null
 echo "✓ Retrieved credential (audited)"
 
 keyring_delete "audit.test.password"
