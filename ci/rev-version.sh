@@ -28,7 +28,7 @@ echo "${NEXT_VERSION}" >VERSION
 for info_file in packages/*/virtos-*.tcz.info; do
     if [ -f "$info_file" ]; then
         sed -i "s/Version:.*/Version:        ${NEXT_VERSION}/" "$info_file"
-        echo "Updated $(basename $info_file)"
+        echo "Updated $(basename "$info_file")"
     fi
 done
 

@@ -173,9 +173,9 @@ BUILD_SCRIPTS=(
 
 for script in "${BUILD_SCRIPTS[@]}"; do
     if [ -x "$PROJECT_ROOT/$script" ]; then
-        success "$(basename $script) is executable"
+        success "$(basename "$script") is executable"
     else
-        error "$(basename $script) is not executable (run: chmod +x $script)"
+        error "$(basename "$script") is not executable (run: chmod +x $script)"
     fi
 done
 
@@ -197,9 +197,9 @@ if command -v bash >/dev/null 2>&1; then
     for script in "$PROJECT_ROOT"/build/scripts/*.sh; do
         if [ -f "$script" ]; then
             if bash -n "$script" 2>/dev/null; then
-                success "$(basename $script) syntax OK"
+                success "$(basename "$script") syntax OK"
             else
-                error "$(basename $script) has syntax errors"
+                error "$(basename "$script") has syntax errors"
                 SYNTAX_ERRORS=$((SYNTAX_ERRORS + 1))
             fi
         fi
@@ -210,16 +210,16 @@ if command -v bash >/dev/null 2>&1; then
     for script in "$PROJECT_ROOT"/config/custom-scripts/virtos-*; do
         if [ -f "$script" ] && [ -x "$script" ] && [ $VIRTOS_CHECKED -lt 5 ]; then
             if bash -n "$script" 2>/dev/null; then
-                success "$(basename $script) syntax OK"
+                success "$(basename "$script") syntax OK"
             else
-                error "$(basename $script) has syntax errors"
+                error "$(basename "$script") has syntax errors"
                 SYNTAX_ERRORS=$((SYNTAX_ERRORS + 1))
             fi
             VIRTOS_CHECKED=$((VIRTOS_CHECKED + 1))
         fi
     done
 
-    if [ $VIRTOS_CHECKED -lt $VIRTOS_SCRIPT_COUNT ]; then
+    if [ $VIRTOS_CHECKED -lt "$VIRTOS_SCRIPT_COUNT" ]; then
         info "Checked $VIRTOS_CHECKED of $VIRTOS_SCRIPT_COUNT scripts (sample)"
     fi
 fi
@@ -236,6 +236,7 @@ fi
 section "Build Configuration"
 if [ -f "$BUILD_DIR/build.conf" ]; then
     # shellcheck disable=SC1090
+    # shellcheck disable=SC1091
     source "$BUILD_DIR/build.conf"
 
     success "Profile: ${PROFILE:-custom}"

@@ -100,7 +100,7 @@ fi
 echo "=== FlossWare VirtOS Ready ==="
 echo ""
 echo "Available virtualization:"
-echo "  - KVM/QEMU: " $(which qemu-system-x86_64 >/dev/null 2>&1 && echo "installed" || echo "not installed")
-echo "  - LXC:      " $(which lxc-start >/dev/null 2>&1 && echo "installed" || echo "not installed")
-echo "  - Containers:" $(which docker >/dev/null 2>&1 && echo "docker" || which podman >/dev/null 2>&1 && echo "podman" || echo "not installed")
+echo "  - KVM/QEMU: $(which qemu-system-x86_64 >/dev/null 2>&1 && echo "installed" || echo "not installed")"
+echo "  - LXC:      $(which lxc-start >/dev/null 2>&1 && echo "installed" || echo "not installed")"
+echo "  - Containers: $(which docker >/dev/null 2>&1 && echo "docker" || which podman >/dev/null 2>&1 && echo "podman" || echo "not installed")"
 echo ""

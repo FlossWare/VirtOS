@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # VirtOS - Add user for remote management
 
 if [ "$#" -lt 1 ]; then
@@ -42,7 +42,7 @@ fi
 echo ""
 echo "User $USERNAME created successfully!"
 echo ""
-echo "Groups: $(groups $USERNAME)"
+echo "Groups: $(groups "$USERNAME")"
 echo ""
 echo "You can now connect remotely:"
 echo "  virt-manager -c qemu+ssh://$USERNAME@virtos/system"

@@ -22,7 +22,6 @@ NC='\033[0m'
 
 SCRIPTS_DIR="packages/virtos-tools/src/usr/local/bin"
 DRY_RUN=false
-REPORT_ONLY=false
 
 # Show usage
 show_help() {
@@ -192,7 +191,6 @@ case "${1:-}" in
         ;;
     --dry-run)
         DRY_RUN=true
-        shift
         ;;
     --all)
         echo "Error: --all migration not yet implemented" >&2

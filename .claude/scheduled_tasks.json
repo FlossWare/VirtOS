@@ -1,25 +1,15 @@
 {
   "tasks": [
     {
-      "id": "71605b8c",
+      "id": "63cad285",
       "cron": "*/10 * * * *",
-      "prompt": "Run automated code review for VirtOS: Execute /home/sfloess/Development/github/FlossWare/VirtOS/.claude/automated-review.sh and create GitHub issues for any findings. If issues are found, attempt to fix them automatically where safe, commit with co-authored signature, and push to GitHub.",
-      "createdAt": 1780061620930,
-      "lastFiredAt": 1780098133146,
+      "prompt": "Run continuous code review: Execute .claude/scripts/code_review.sh to scan Python (mypy, flake8, bandit), Java (security), and shell scripts (security, TODOs). Create GitHub issues for findings via create_review_issues.py and auto-fix safe issues. Continue until no new issues found.",
+      "createdAt": 1780098979681,
+      "lastFiredAt": 1780332122881,
       "recurring": true,
-      "createdBySessionId": "6539f596-60bb-4465-9ff2-e2120d1ddfd4",
-      "createdByPid": 1119381,
-      "createdByProcStart": "3819842"
-    },
-    {
-      "id": "9d1bbba3",
-      "cron": "*/10 * * * *",
-      "prompt": "Run continuous code review for VirtOS: Execute /home/sfloess/Development/github/FlossWare/VirtOS/.claude/continuous-review.sh and create GitHub issues for any findings. Auto-fix safe issues, commit with co-authored signature, and push to GitHub. Continue until no new issues are found.",
-      "createdAt": 1780098357710,
-      "recurring": true,
-      "createdBySessionId": "6539f596-60bb-4465-9ff2-e2120d1ddfd4",
-      "createdByPid": 1119381,
-      "createdByProcStart": "3819842"
+      "createdBySessionId": "2890664b-c9a1-439e-9e80-d25d4cb4e8cd",
+      "createdByPid": 1099659,
+      "createdByProcStart": "3735345"
     }
   ]
 }

@@ -25,7 +25,7 @@ echo "[2/5] Checking script syntax..."
 SYNTAX_ERRORS=0
 for script in "$PROJECT_ROOT"/build/scripts/*.sh; do
     if ! bash -n "$script" 2>/dev/null; then
-        echo "  ✗ $(basename $script) has syntax errors"
+        echo "  ✗ $(basename "$script") has syntax errors"
         SYNTAX_ERRORS=$((SYNTAX_ERRORS + 1))
     fi
 done
@@ -43,7 +43,7 @@ CHECKED=0
 for script in "$PROJECT_ROOT"/config/custom-scripts/virtos-*; do
     if [ -f "$script" ] && [ -x "$script" ]; then
         if ! bash -n "$script" 2>/dev/null; then
-            echo "  ✗ $(basename $script) has syntax errors"
+            echo "  ✗ $(basename "$script") has syntax errors"
             VIRTOS_ERRORS=$((VIRTOS_ERRORS + 1))
         fi
         CHECKED=$((CHECKED + 1))
