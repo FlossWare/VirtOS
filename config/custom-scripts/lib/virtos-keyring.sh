@@ -128,7 +128,7 @@ _keyring_validate_type() {
     local cred_type="$1"
 
     case "$cred_type" in
-        password|token|key|certificate|secret|api-key)
+        password | token | key | certificate | secret | api-key)
             return 0
             ;;
         *)
@@ -656,8 +656,11 @@ keyring_clear() {
         printf "Are you sure? [y/N]: "
         read -r response
         case "$response" in
-            [Yy]|[Yy][Ee][Ss]) ;;
-            *) echo "Operation cancelled."; return 0 ;;
+            [Yy] | [Yy][Ee][Ss]) ;;
+            *)
+                echo "Operation cancelled."
+                return 0
+                ;;
         esac
     fi
 
@@ -682,7 +685,7 @@ keyring_clear() {
     fi
 
     local count=0
-    echo "$keys" | tr ' ' '\n' | while read -r key_id; do
+    while read -r key_id; do
         if [ -z "$key_id" ]; then
             continue
         fi
@@ -695,7 +698,7 @@ keyring_clear() {
             keyctl unlink "$key_id" "@$keyring_id" 2>/dev/null || true
             count=$((count + 1))
         fi
-    done
+    done < <(echo "$keys" | tr ' ' '\n')
 
     echo "Cleared $count credentials from keyring"
 
