@@ -5,7 +5,7 @@
       "cron": "*/10 * * * *",
       "prompt": "Run continuous code review: Execute .claude/scripts/code_review.sh to scan Python (mypy, flake8, bandit), Java (security), and shell scripts (security, TODOs). Create GitHub issues for findings via create_review_issues.py and auto-fix safe issues. Continue until no new issues found.",
       "createdAt": 1780098979681,
-      "lastFiredAt": 1780332122881,
+      "lastFiredAt": 1780333319042,
       "recurring": true,
       "createdBySessionId": "2890664b-c9a1-439e-9e80-d25d4cb4e8cd",
       "createdByPid": 1099659,

@@ -462,7 +462,7 @@ dr_failover() {
     local failed_file="$DC_DIR/$failed_dc.json"
     if [ -f "$failed_file" ]; then
         # Update status using jq
-        local tmp_file=$(mktemp)
+        local tmp_file=$(mktemp) || die "Failed to create temporary file"
         jq '.status = "failed"' "$failed_file" > "$tmp_file"
         mv "$tmp_file" "$failed_file"
         log "Marked $failed_dc as failed"

@@ -1,156 +1,137 @@
 # Integration Test Fixtures
 
-This directory contains sample workload definitions for testing platform-java integration with VirtOS.
+This directory contains fixtures for VirtOS integration tests.
 
-## Available Fixtures
+## VM Fixtures
 
-### Single Workloads
-
-#### `test-vm.yaml`
-
-Basic virtual machine workload for testing VM lifecycle operations.
-
-```bash
-platform-java deploy test-vm.yaml
-platform-java start test-vm
-platform-java status test-vm
-platform-java stop test-vm
-platform-java delete test-vm
-```
+### test-vm.yaml
+Platform-java workload definition for a test VM. Used by platform-java integration tests.
 
 **Spec**:
-
-- Memory: 512MB
-- CPU: 1 core
-- Disk: 5GB
+- Memory: 512M
+- CPU: 1
+- Disk: 5G
 - Network: NAT
+- Autostart: false
 
-#### `test-container.yaml`
-
-NGINX container workload for testing container operations.
-
+**Usage**:
 ```bash
-platform-java deploy test-container.yaml
-platform-java start nginx-test
-curl http://localhost:8080
-platform-java stop nginx-test
-platform-java delete nginx-test
+platform-java deploy fixtures/test-vm.yaml
+platform-java start test-vm
 ```
 
-**Spec**:
-
-- Image: nginx:latest
-- Ports: 80 → 8080
-- Memory: 256MB limit, 128MB request
-- CPU: 0.5 limit, 0.25 request
-
-### Multi-Tier Application
-
-A 3-tier web application demonstrating dependency resolution and mixed workload types (VMs + containers).
-
-#### `multi-tier-db.yaml`
-
-PostgreSQL database tier (Virtual Machine).
+### test-vm-minimal.xml
+Minimal libvirt domain XML for direct virsh testing. Used by VM lifecycle tests.
 
 **Spec**:
+- Memory: 512 MiB
+- vCPU: 1
+- Disk: /var/lib/libvirt/images/test-vm.qcow2 (qcow2)
+- Network: default (NAT)
+- Architecture: x86_64/KVM
 
-- Memory: 1024MB
-- CPU: 2 cores
-- Disk: 20GB
-- Role: Database backend
+**Usage**:
+```bash
+# Create disk image
+qemu-img create -f qcow2 /var/lib/libvirt/images/test-vm.qcow2 2G
 
-#### `multi-tier-app.yaml`
+# Define VM
+virsh define fixtures/test-vm-minimal.xml
 
-Java application tier (Container) - depends on database tier.
+# Start VM
+virsh start test-vm
+```
+
+## Container Fixtures
+
+### test-container.yaml
+Platform-java container workload definition. Used by container integration tests.
 
 **Spec**:
+- Image: nginx:alpine
+- Ports: 8080:80
+- Resources: 256M memory, 0.5 CPU
 
-- Image: openjdk:17-slim
-- Ports: 8080
-- Memory: 512MB limit
-- Depends on: `database-tier`
+**Usage**:
+```bash
+platform-java deploy fixtures/test-container.yaml
+platform-java start test-nginx
+```
 
-#### `multi-tier-web.yaml`
+## Multi-Tier Application Fixtures
 
-NGINX web tier (Container) - depends on application tier.
+### multi-tier-db.yaml
+Database tier (PostgreSQL VM) for multi-tier integration tests.
 
 **Spec**:
+- VM with PostgreSQL
+- Memory: 1024M
+- CPU: 2
+- Disk: 10G
 
-- Image: nginx:latest
-- Ports: 80, 443
-- Memory: 256MB limit
-- Depends on: `application-tier`
-- Includes NGINX reverse proxy configuration
+### multi-tier-app.yaml
+Application tier (Spring Boot container) for multi-tier integration tests.
 
-#### Deploying Multi-Tier App
+**Spec**:
+- Container with Spring Boot application
+- Depends on: postgres-db
+- Ports: 8080:8080
 
+### multi-tier-web.yaml
+Web tier (NGINX container) for multi-tier integration tests.
+
+**Spec**:
+- Container with NGINX reverse proxy
+- Depends on: spring-app
+- Ports: 80:80
+
+**Full Workflow**:
 ```bash
 # Deploy all tiers
-platform-java deploy multi-tier-db.yaml
-platform-java deploy multi-tier-app.yaml
-platform-java deploy multi-tier-web.yaml
+platform-java deploy fixtures/multi-tier-db.yaml
+platform-java deploy fixtures/multi-tier-app.yaml
+platform-java deploy fixtures/multi-tier-web.yaml
 
-# Start web tier (should auto-start dependencies)
-platform-java start web-tier
+# Start in dependency order (automatic)
+platform-java start nginx-web
+# This will start: postgres-db → spring-app → nginx-web
 
-# Verify all tiers are running
-platform-java status database-tier
-platform-java status application-tier
-platform-java status web-tier
-
-# Access the application
-curl http://localhost
-
-# Cleanup
-platform-java delete web-tier
-platform-java delete application-tier
-platform-java delete database-tier
+# Verify
+curl http://localhost/api/health
 ```
 
-## Usage in Tests
+## Test Requirements
 
-These fixtures are referenced in integration tests:
+### For VM Tests
+- libvirt-daemon-system
+- qemu-kvm
+- qemu-utils (qemu-img)
+- virsh
+- Sufficient disk space in /var/lib/libvirt/images
 
-- `tests/integration/02-platform-java.bats`: platform-java integration tests
-- Test functions use these fixtures to validate workload deployment, lifecycle management, and dependency resolution
+### For Container Tests
+- docker or podman
+- platform-java CLI
 
-## Customization
+### For Platform-Java Tests
+- platform-java installed
+- Java runtime (JRE 17+)
+- Both libvirt and container runtime
 
-You can modify these fixtures for different test scenarios:
+## Cleanup
 
-1. **Resource Limits**: Adjust memory/CPU for different constraint testing
-2. **Networks**: Change network configuration to test different topologies
-3. **Dependencies**: Modify `depends_on` to test complex dependency graphs
-4. **Images**: Use different container images for compatibility testing
-5. **Volumes**: Add volume mounts for persistent storage testing
-
-## Requirements
-
-To use these fixtures, you need:
-
-- VirtOS runtime environment
-- platform-java installed (`virtos-platform-java.tcz`)
-- libvirt/QEMU for VM workloads
-- Docker or Podman for container workloads
-
-## Validation
-
-Validate fixture syntax:
+Test fixtures should be cleaned up by test teardown functions, but manual cleanup:
 
 ```bash
-# Check YAML syntax
-yamllint fixtures/*.yaml
+# VMs
+virsh destroy test-vm 2>/dev/null || true
+virsh undefine test-vm --remove-all-storage 2>/dev/null || true
 
-# Dry-run deployment (doesn't create resources)
-platform-java deploy --dry-run test-vm.yaml
+# Containers via platform-java
+platform-java stop test-nginx
+platform-java remove test-nginx
+
+# Multi-tier
+platform-java stop nginx-web
+platform-java remove nginx-web spring-app postgres-db
 ```
-
-## Adding New Fixtures
-
-When creating new fixtures:
-
-1. Follow the same YAML structure (apiVersion, kind, metadata, spec)
-2. Use descriptive names that indicate the fixture purpose
-3. Add resource limits to prevent test resource exhaustion
-4. Document dependencies clearly in `depends_on`
-5. Update this README with the new fixture details

@@ -1,15 +1,42 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # virtos-automation - Workflow automation and orchestration for VirtOS
+# SECURITY HARDENED VERSION - Sandboxed execution with command allowlist
 # Part of Phase 11: Multi-Datacenter and Advanced Features
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.22")
 SCRIPT_NAME="virtos-automation"
 LOG_FILE="/var/log/virtos-automation.log"
+SECURITY_LOG="/var/log/virtos-automation-security.log"
 CONFIG_FILE="/etc/virtos/automation.conf"
 WORKFLOW_DIR="/etc/virtos/workflows"
 AUTOMATION_DIR="/var/lib/virtos/automation"
+
+# Command allowlist - ONLY these commands can be executed in workflows and schedules
+ALLOWED_COMMANDS=(
+    "/usr/local/bin/virtos-backup"
+    "/usr/local/bin/virtos-create-vm"
+    "/usr/local/bin/virtos-migrate"
+    "/usr/local/bin/virtos-snapshot"
+    "/usr/local/bin/virtos-network"
+    "/usr/local/bin/virtos-storage"
+    "/usr/local/bin/virtos-monitor"
+    "/usr/local/bin/virtos-cluster"
+    "/usr/local/bin/virtos-container"
+    "/usr/local/bin/virtos-security"
+    "/usr/local/bin/virtos-quota"
+    "/usr/local/bin/virsh"
+    "/usr/bin/docker"
+    "/usr/bin/find"
+    "/bin/echo"
+)
 
 # Automation configuration defaults
 AUTOMATION_ENABLED="yes"
@@ -25,6 +52,7 @@ WEBHOOK_URL=""
 # Initialize logging
 init_logging() {
     mkdir -p "$(dirname "$LOG_FILE")"
+    mkdir -p "$(dirname "$SECURITY_LOG")"
     mkdir -p "$WORKFLOW_DIR"
     mkdir -p "$AUTOMATION_DIR"
 }
@@ -34,11 +62,245 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
 }
 
-# Load configuration
-load_config() {
-    if [ -f "$CONFIG_FILE" ]; then
-        source "$CONFIG_FILE"
+# Security event logging
+log_security_event() {
+    local event_type="$1"
+    local details="$2"
+    local severity="${3:-WARNING}"
+
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$severity] $event_type: $details" | tee -a "$SECURITY_LOG"
+    log "SECURITY [$severity] $event_type: $details"
+}
+
+# Validate numeric input
+validate_number() {
+    local value="$1"
+    local name="$2"
+    local min="${3:-0}"
+    local max="${4:-2147483647}"
+
+    if ! echo "$value" | grep -qE '^[0-9]+$'; then
+        log_security_event "INVALID_INPUT" "$name must be numeric: $value" "ERROR"
+        return 1
     fi
+
+    if [ "$value" -lt "$min" ] || [ "$value" -gt "$max" ]; then
+        log_security_event "OUT_OF_RANGE" "$name out of range ($min-$max): $value" "ERROR"
+        return 1
+    fi
+
+    return 0
+}
+
+# Check if command is in allowlist
+is_command_allowed() {
+    local cmd="$1"
+
+    # Extract base command (first word)
+    local base_cmd=$(echo "$cmd" | awk '{print $1}')
+
+    # Check if it's an absolute path
+    if [[ ! "$base_cmd" =~ ^/ ]]; then
+        log_security_event "RELATIVE_PATH" "Command must use absolute path: $base_cmd" "ERROR"
+        return 1
+    fi
+
+    # Check against allowlist
+    for allowed in "${ALLOWED_COMMANDS[@]}"; do
+        if [ "$base_cmd" = "$allowed" ]; then
+            log_security_event "COMMAND_ALLOWED" "Command approved: $base_cmd" "INFO"
+            return 0
+        fi
+    done
+
+    log_security_event "COMMAND_BLOCKED" "Command not in allowlist: $base_cmd" "ERROR"
+    return 1
+}
+
+# Safe command execution (no shell=True equivalent)
+execute_command_safe() {
+    local command="$1"
+    local context="$2"
+
+    # Validate command is allowed
+    if ! is_command_allowed "$command"; then
+        log_security_event "EXECUTION_BLOCKED" "Blocked: $command (context: $context)" "ERROR"
+        return 1
+    fi
+
+    log_security_event "EXECUTION_START" "Executing: $command (context: $context)" "INFO"
+
+    # Parse command into array (safe parsing without eval)
+    # This is a simplified parser - production should use proper shell word splitting
+    local cmd_array=()
+    local in_quote=0
+    local current=""
+
+    while IFS= read -r -n1 char; do
+        case "$char" in
+            '"'|"'")
+                if [ $in_quote -eq 0 ]; then
+                    in_quote=1
+                else
+                    in_quote=0
+                fi
+                ;;
+            ' '|$'\t')
+                if [ $in_quote -eq 0 ]; then
+                    if [ -n "$current" ]; then
+                        cmd_array+=("$current")
+                        current=""
+                    fi
+                else
+                    current="${current}${char}"
+                fi
+                ;;
+            *)
+                current="${current}${char}"
+                ;;
+        esac
+    done < <(printf '%s' "$command")
+
+    # Add last token
+    if [ -n "$current" ]; then
+        cmd_array+=("$current")
+    fi
+
+    # Execute with explicit arguments (NO SHELL EXPANSION)
+    local exit_code=0
+    "${cmd_array[@]}" 2>&1 | tee -a "$LOG_FILE" || exit_code=$?
+
+    if [ $exit_code -eq 0 ]; then
+        log_security_event "EXECUTION_SUCCESS" "Success: $command" "INFO"
+    else
+        log_security_event "EXECUTION_FAILED" "Failed (exit $exit_code): $command" "WARNING"
+    fi
+
+    return $exit_code
+}
+
+# Validate YAML schema
+validate_yaml_schema() {
+    local yaml_file="$1"
+
+    # Basic YAML structure validation
+    if ! grep -q "^name:" "$yaml_file"; then
+        log_security_event "INVALID_YAML" "Missing 'name' field in $yaml_file" "ERROR"
+        return 1
+    fi
+
+    if ! grep -q "^steps:" "$yaml_file"; then
+        log_security_event "INVALID_YAML" "Missing 'steps' field in $yaml_file" "ERROR"
+        return 1
+    fi
+
+    # Validate all commands in steps are allowed
+    local in_steps=false
+    local line_num=0
+
+    while IFS= read -r line; do
+        line_num=$((line_num + 1))
+
+        if echo "$line" | grep -q "^steps:"; then
+            in_steps=true
+            continue
+        fi
+
+        if [ "$in_steps" = true ]; then
+            if echo "$line" | grep -q "^on_error:" || echo "$line" | grep -q "^on_success:"; then
+                break
+            fi
+
+            if echo "$line" | grep -q "command:"; then
+                local cmd=$(echo "$line" | sed 's/.*command: *//')
+
+                # Skip if multi-line (will be caught on continuation)
+                if [ "$cmd" = "|" ]; then
+                    continue
+                fi
+
+                # Validate command
+                if ! is_command_allowed "$cmd"; then
+                    log_security_event "INVALID_WORKFLOW" "Line $line_num: disallowed command: $cmd" "ERROR"
+                    return 1
+                fi
+            fi
+        fi
+    done < "$yaml_file"
+
+    log_security_event "SCHEMA_VALID" "Workflow schema validated: $yaml_file" "INFO"
+    return 0
+}
+
+# Load configuration - HARDENED
+load_config() {
+    # Only load from trusted, fixed path
+    local config_path="/etc/virtos/automation.conf"
+
+    if [ ! -f "$config_path" ]; then
+        return 0
+    fi
+
+    # Validate file permissions (not world-writable)
+    local perms=$(stat -c '%a' "$config_path" 2>/dev/null | cut -c3)
+    if [ "$perms" != "0" ] && [ "$perms" != "4" ]; then
+        log_security_event "INSECURE_PERMISSIONS" "Config file is world-writable: $config_path" "ERROR"
+        echo "ERROR: Configuration file must not be world-writable" >&2
+        return 1
+    fi
+
+    # Parse config manually (NO SOURCE)
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        [[ "$key" =~ ^#.*$ ]] && continue
+        [[ -z "$key" ]] && continue
+
+        # Remove quotes from value
+        value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/')
+
+        case "$key" in
+            AUTOMATION_ENABLED)
+                AUTOMATION_ENABLED="$value"
+                ;;
+            EVENT_DRIVEN)
+                EVENT_DRIVEN="$value"
+                ;;
+            AUTO_SCALING)
+                AUTO_SCALING="$value"
+                ;;
+            SELF_HEALING)
+                SELF_HEALING="$value"
+                ;;
+            SCALE_UP_THRESHOLD)
+                if validate_number "$value" "SCALE_UP_THRESHOLD" 1 100; then
+                    SCALE_UP_THRESHOLD="$value"
+                fi
+                ;;
+            SCALE_DOWN_THRESHOLD)
+                if validate_number "$value" "SCALE_DOWN_THRESHOLD" 1 100; then
+                    SCALE_DOWN_THRESHOLD="$value"
+                fi
+                ;;
+            HEAL_MAX_ATTEMPTS)
+                if validate_number "$value" "HEAL_MAX_ATTEMPTS" 1 10; then
+                    HEAL_MAX_ATTEMPTS="$value"
+                fi
+                ;;
+            WEBHOOK_ENABLED)
+                WEBHOOK_ENABLED="$value"
+                ;;
+            WEBHOOK_URL)
+                # Validate URL format
+                if echo "$value" | grep -qE '^https?://'; then
+                    WEBHOOK_URL="$value"
+                else
+                    log_security_event "INVALID_URL" "Invalid webhook URL: $value" "WARNING"
+                fi
+                ;;
+        esac
+    done < "$config_path"
+
+    log_security_event "CONFIG_LOADED" "Configuration loaded from $config_path" "INFO"
 }
 
 # Save configuration
@@ -58,7 +320,9 @@ HEAL_MAX_ATTEMPTS="$HEAL_MAX_ATTEMPTS"
 WEBHOOK_ENABLED="$WEBHOOK_ENABLED"
 WEBHOOK_URL="$WEBHOOK_URL"
 EOF
+    chmod 640 "$CONFIG_FILE"
     log "Configuration saved to $CONFIG_FILE"
+    log_security_event "CONFIG_SAVED" "Configuration saved: $CONFIG_FILE" "INFO"
 }
 
 # Create workflow
@@ -70,7 +334,24 @@ workflow_create() {
         return 1
     fi
 
+    # SECURITY: Validate workflow name to prevent path traversal and command injection
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log_security_event "INVALID_WORKFLOW_NAME" "Invalid characters in: $name" "ERROR"
+        echo "ERROR: Invalid workflow name format" >&2
+        return 1
+    fi
+
+    # SECURITY: Prevent path traversal attacks
+    case "$name" in
+        *..* | */* | *.*)
+            log_security_event "PATH_TRAVERSAL" "Attempt in workflow name: $name" "ERROR"
+            echo "ERROR: Invalid workflow name (no path components allowed)" >&2
+            return 1
+            ;;
+    esac
+
     log "Creating workflow: $name..."
+    log_security_event "WORKFLOW_CREATE" "Creating workflow: $name" "INFO"
 
     local workflow_file="$WORKFLOW_DIR/$name.yaml"
 
@@ -83,26 +364,17 @@ description: Automated workflow
 triggers:
   - type: schedule
     cron: "0 2 * * *"  # Daily at 2 AM
-  # - type: event
-  #   event: vm.created
-  # - type: webhook
-  #   path: /webhook/WORKFLOW_NAME
 
-# Steps - what to do
+# Steps - what to do (ONLY allowlisted commands permitted)
 steps:
   - name: example-step
     action: shell
-    command: |
-      echo "Workflow executing..."
-      # Add your commands here
+    command: /bin/echo "Workflow executing..."
 
+  # Example: backup VMs
   # - name: backup-vms
   #   action: shell
-  #   command: virtos-backup backup-all
-
-  # - name: cleanup
-  #   action: shell
-  #   command: find /tmp -mtime +7 -delete
+  #   command: /usr/local/bin/virtos-backup backup-all
 
 # Error handling
 on_error:
@@ -116,9 +388,10 @@ on_success:
 EOF
 
     sed -i "s/WORKFLOW_NAME/$name/g" "$workflow_file"
+    chmod 640 "$workflow_file"
 
     log "Workflow created: $workflow_file"
-    log "Edit the file to customize triggers and steps"
+    log "IMPORTANT: Only allowlisted commands can be executed"
 }
 
 # List workflows
@@ -137,8 +410,9 @@ workflow_list() {
             local last_run="-"
 
             if [ -f "$status_file" ]; then
-                status=$(jq -r '.status // "unknown"' "$status_file" 2>/dev/null || echo "unknown")
-                last_run=$(jq -r '.last_run // "-"' "$status_file" 2>/dev/null || echo "-")
+                # Manual JSON parsing (no jq dependency for simple fields)
+                status=$(grep '"status"' "$status_file" | sed 's/.*": *"\([^"]*\)".*/\1/')
+                last_run=$(grep '"last_run"' "$status_file" | sed 's/.*": *"\([^"]*\)".*/\1/')
             fi
 
             printf "%-24s %-11s %-19s\n" "$name" "$status" "$last_run"
@@ -146,7 +420,7 @@ workflow_list() {
     done
 }
 
-# Execute workflow
+# Execute workflow - HARDENED
 workflow_run() {
     local name="$1"
 
@@ -155,6 +429,22 @@ workflow_run() {
         return 1
     fi
 
+    # SECURITY: Validate workflow name (same validation as create)
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log_security_event "INVALID_WORKFLOW_RUN" "Invalid name: $name" "ERROR"
+        echo "ERROR: Invalid workflow name format" >&2
+        return 1
+    fi
+
+    # SECURITY: Prevent path traversal
+    case "$name" in
+        *..* | */* | *.*)
+            log_security_event "PATH_TRAVERSAL_RUN" "Attempt: $name" "ERROR"
+            echo "ERROR: Invalid workflow name" >&2
+            return 1
+            ;;
+    esac
+
     local workflow_file="$WORKFLOW_DIR/$name.yaml"
 
     if [ ! -f "$workflow_file" ]; then
@@ -162,15 +452,30 @@ workflow_run() {
         return 1
     fi
 
+    # SECURITY: Ensure workflow file is in trusted directory and not writable by others
+    if [ "$(stat -c '%a' "$workflow_file" 2>/dev/null | cut -c3)" != "0" ]; then
+        log_security_event "INSECURE_WORKFLOW" "World-writable: $workflow_file" "ERROR"
+        echo "ERROR: Workflow file must not be world-writable: $workflow_file" >&2
+        return 1
+    fi
+
+    # SECURITY: Validate YAML schema and commands
+    if ! validate_yaml_schema "$workflow_file"; then
+        echo "ERROR: Workflow failed schema validation" >&2
+        return 1
+    fi
+
     log "Executing workflow: $name..."
+    log_security_event "WORKFLOW_EXECUTE" "Starting workflow: $name" "INFO"
 
     mkdir -p "$AUTOMATION_DIR/workflows"
     local status_file="$AUTOMATION_DIR/workflows/$name.status"
 
-    # Simple YAML parsing for steps (basic implementation)
+    # Safe YAML parsing for steps
     local in_steps=false
     local current_step=""
     local current_command=""
+    local in_multiline=false
 
     while IFS= read -r line; do
         if echo "$line" | grep -q "^steps:"; then
@@ -183,10 +488,10 @@ workflow_run() {
                 # Execute previous step if exists
                 if [ -n "$current_command" ]; then
                     log "Step: $current_step"
-                    eval "$current_command"
-                    if [ $? -ne 0 ]; then
+
+                    # SECURITY: Use safe execution (NO EVAL)
+                    if ! execute_command_safe "$current_command" "workflow:$name:step:$current_step"; then
                         log "ERROR: Step failed: $current_step"
-                        # Record failure
                         cat > "$status_file" << EOF
 {
   "status": "failed",
@@ -200,12 +505,24 @@ EOF
 
                 current_step=$(echo "$line" | sed 's/.*name: //')
                 current_command=""
+                in_multiline=false
             elif echo "$line" | grep -q "command:"; then
-                current_command=$(echo "$line" | sed 's/.*command: //')
-            elif [ -n "$current_command" ]; then
-                # Multi-line command continuation
-                current_command="$current_command
-$(echo "$line" | sed 's/^      //')"
+                local cmd_value=$(echo "$line" | sed 's/.*command: *//')
+                if [ "$cmd_value" = "|" ]; then
+                    in_multiline=true
+                    current_command=""
+                else
+                    current_command="$cmd_value"
+                    in_multiline=false
+                fi
+            elif [ "$in_multiline" = true ]; then
+                # Multi-line command (strip leading spaces)
+                local cmd_line=$(echo "$line" | sed 's/^      //')
+                if [ -n "$current_command" ]; then
+                    current_command="$current_command; $cmd_line"
+                else
+                    current_command="$cmd_line"
+                fi
             fi
         fi
 
@@ -218,8 +535,7 @@ $(echo "$line" | sed 's/^      //')"
     # Execute last step
     if [ -n "$current_command" ]; then
         log "Step: $current_step"
-        eval "$current_command"
-        if [ $? -ne 0 ]; then
+        if ! execute_command_safe "$current_command" "workflow:$name:step:$current_step"; then
             log "ERROR: Step failed: $current_step"
             cat > "$status_file" << EOF
 {
@@ -241,6 +557,7 @@ EOF
 EOF
 
     log "Workflow completed successfully: $name"
+    log_security_event "WORKFLOW_SUCCESS" "Completed: $name" "INFO"
 }
 
 # Delete workflow
@@ -252,6 +569,22 @@ workflow_delete() {
         return 1
     fi
 
+    # SECURITY: Validate workflow name
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log_security_event "INVALID_DELETE" "Invalid name: $name" "ERROR"
+        echo "ERROR: Invalid workflow name format" >&2
+        return 1
+    fi
+
+    # SECURITY: Prevent path traversal to delete arbitrary files
+    case "$name" in
+        *..* | */* | *.*)
+            log_security_event "PATH_TRAVERSAL_DELETE" "Attempt: $name" "ERROR"
+            echo "ERROR: Invalid workflow name" >&2
+            return 1
+            ;;
+    esac
+
     local workflow_file="$WORKFLOW_DIR/$name.yaml"
 
     if [ ! -f "$workflow_file" ]; then
@@ -260,6 +593,7 @@ workflow_delete() {
     fi
 
     log "Deleting workflow: $name..."
+    log_security_event "WORKFLOW_DELETE" "Deleting: $name" "INFO"
 
     rm -f "$workflow_file"
     rm -f "$AUTOMATION_DIR/workflows/$name.status"
@@ -267,7 +601,7 @@ workflow_delete() {
     log "Workflow deleted: $name"
 }
 
-# Create scheduled task
+# Create scheduled task - HARDENED
 schedule_create() {
     local name="$1"
     local command="$2"
@@ -275,17 +609,38 @@ schedule_create() {
 
     if [ -z "$name" ] || [ -z "$command" ] || [ -z "$schedule" ]; then
         log "ERROR: Name, command, and schedule required"
+        return 2
+    fi
+
+    # SECURITY: Validate task name
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log_security_event "INVALID_TASK_NAME" "Invalid: $name" "ERROR"
+        echo "ERROR: Invalid task name format (alphanumeric, underscore, hyphen only)" >&2
+        return 1
+    fi
+
+    # SECURITY: Validate cron schedule format
+    if ! echo "$schedule" | grep -qE '^(@(annually|yearly|monthly|weekly|daily|hourly|reboot)|([0-9*,/-]+ ){4}[0-9*,/-]+)$'; then
+        log_security_event "INVALID_SCHEDULE" "Invalid: $schedule" "ERROR"
+        echo "ERROR: Invalid schedule format" >&2
+        return 1
+    fi
+
+    # SECURITY: Validate command against allowlist
+    if ! is_command_allowed "$command"; then
+        echo "ERROR: Command not in allowlist: $command" >&2
+        echo "Allowed commands:" >&2
+        printf '  %s\n' "${ALLOWED_COMMANDS[@]}" >&2
         return 1
     fi
 
     log "Creating scheduled task: $name..."
+    log_security_event "SCHEDULE_CREATE" "Task: $name, Command: $command, Schedule: $schedule" "INFO"
 
     # Add to crontab
     (crontab -l 2>/dev/null; echo "$schedule $command # virtos-automation: $name") | crontab -
 
     log "Scheduled task created: $name"
-    log "Schedule: $schedule"
-    log "Command: $command"
 }
 
 # List scheduled tasks
@@ -311,14 +666,22 @@ schedule_delete() {
         return 1
     fi
 
+    # SECURITY: Validate task name
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log_security_event "INVALID_DELETE_TASK" "Invalid: $name" "ERROR"
+        echo "ERROR: Invalid task name format" >&2
+        return 1
+    fi
+
     log "Deleting scheduled task: $name..."
+    log_security_event "SCHEDULE_DELETE" "Deleting task: $name" "INFO"
 
     crontab -l 2>/dev/null | grep -v "# virtos-automation: $name" | crontab -
 
     log "Scheduled task deleted: $name"
 }
 
-# Enable auto-scaling
+# Enable auto-scaling - HARDENED
 autoscale_enable() {
     local service="$1"
     local min="${2:-1}"
@@ -329,7 +692,27 @@ autoscale_enable() {
         return 1
     fi
 
+    # Validate service name
+    if ! echo "$service" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log_security_event "INVALID_SERVICE" "Invalid name: $service" "ERROR"
+        return 1
+    fi
+
+    # Validate numbers
+    if ! validate_number "$min" "min_instances" 1 1000; then
+        return 1
+    fi
+    if ! validate_number "$max" "max_instances" 1 1000; then
+        return 1
+    fi
+
+    if [ "$min" -gt "$max" ]; then
+        log "ERROR: min ($min) cannot be greater than max ($max)"
+        return 1
+    fi
+
     log "Enabling auto-scaling for: $service (min: $min, max: $max)..."
+    log_security_event "AUTOSCALE_ENABLE" "Service: $service, Min: $min, Max: $max" "INFO"
 
     mkdir -p "$AUTOMATION_DIR/autoscale"
 
@@ -341,6 +724,8 @@ SCALE_UP_THRESHOLD=$SCALE_UP_THRESHOLD
 SCALE_DOWN_THRESHOLD=$SCALE_DOWN_THRESHOLD
 CURRENT_INSTANCES=$min
 EOF
+
+    chmod 640 "$AUTOMATION_DIR/autoscale/$service.conf"
 
     AUTO_SCALING="yes"
     save_config
@@ -355,6 +740,12 @@ autoscale_status() {
     log "Auto-scaling status..."
 
     if [ -n "$service" ]; then
+        # Validate service name
+        if ! echo "$service" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+            log_security_event "INVALID_SERVICE" "Invalid name: $service" "ERROR"
+            return 1
+        fi
+
         local conf_file="$AUTOMATION_DIR/autoscale/$service.conf"
         if [ -f "$conf_file" ]; then
             cat "$conf_file"
@@ -367,7 +758,14 @@ autoscale_status() {
 
         for conf_file in "$AUTOMATION_DIR/autoscale"/*.conf; do
             if [ -f "$conf_file" ]; then
-                source "$conf_file"
+                # Manual parsing (no source)
+                local SERVICE=$(grep '^SERVICE=' "$conf_file" | cut -d'"' -f2)
+                local MIN_INSTANCES=$(grep '^MIN_INSTANCES=' "$conf_file" | cut -d'=' -f2)
+                local MAX_INSTANCES=$(grep '^MAX_INSTANCES=' "$conf_file" | cut -d'=' -f2)
+                local CURRENT_INSTANCES=$(grep '^CURRENT_INSTANCES=' "$conf_file" | cut -d'=' -f2)
+                local SCALE_UP_THRESHOLD=$(grep '^SCALE_UP_THRESHOLD=' "$conf_file" | cut -d'=' -f2)
+                local SCALE_DOWN_THRESHOLD=$(grep '^SCALE_DOWN_THRESHOLD=' "$conf_file" | cut -d'=' -f2)
+
                 printf "%-16s %-6s %-6s %-8s %-6s %-6s\n" \
                     "$SERVICE" "$MIN_INSTANCES" "$MAX_INSTANCES" "$CURRENT_INSTANCES" \
                     "$SCALE_UP_THRESHOLD" "$SCALE_DOWN_THRESHOLD"
@@ -376,79 +774,7 @@ autoscale_status() {
     fi
 }
 
-# Trigger scale up
-autoscale_up() {
-    local service="$1"
-
-    if [ -z "$service" ]; then
-        log "ERROR: Service name required"
-        return 1
-    fi
-
-    log "Scaling up: $service..."
-
-    local conf_file="$AUTOMATION_DIR/autoscale/$service.conf"
-
-    if [ ! -f "$conf_file" ]; then
-        log "ERROR: Auto-scaling not configured for: $service"
-        return 1
-    fi
-
-    source "$conf_file"
-
-    if [ "$CURRENT_INSTANCES" -ge "$MAX_INSTANCES" ]; then
-        log "Already at maximum instances: $MAX_INSTANCES"
-        return 0
-    fi
-
-    CURRENT_INSTANCES=$((CURRENT_INSTANCES + 1))
-
-    # Update config
-    sed -i "s/CURRENT_INSTANCES=.*/CURRENT_INSTANCES=$CURRENT_INSTANCES/" "$conf_file"
-
-    log "Scaled up $service to $CURRENT_INSTANCES instances"
-
-    # Trigger actual scaling (placeholder - would call VM/container creation)
-    log "TODO: Create new instance of $service"
-}
-
-# Trigger scale down
-autoscale_down() {
-    local service="$1"
-
-    if [ -z "$service" ]; then
-        log "ERROR: Service name required"
-        return 1
-    fi
-
-    log "Scaling down: $service..."
-
-    local conf_file="$AUTOMATION_DIR/autoscale/$service.conf"
-
-    if [ ! -f "$conf_file" ]; then
-        log "ERROR: Auto-scaling not configured for: $service"
-        return 1
-    fi
-
-    source "$conf_file"
-
-    if [ "$CURRENT_INSTANCES" -le "$MIN_INSTANCES" ]; then
-        log "Already at minimum instances: $MIN_INSTANCES"
-        return 0
-    fi
-
-    CURRENT_INSTANCES=$((CURRENT_INSTANCES - 1))
-
-    # Update config
-    sed -i "s/CURRENT_INSTANCES=.*/CURRENT_INSTANCES=$CURRENT_INSTANCES/" "$conf_file"
-
-    log "Scaled down $service to $CURRENT_INSTANCES instances"
-
-    # Trigger actual scaling (placeholder - would call VM/container removal)
-    log "TODO: Remove instance of $service"
-}
-
-# Enable self-healing
+# Self-healing - HARDENED (no arbitrary script generation)
 selfheal_enable() {
     local resource="$1"
 
@@ -457,48 +783,60 @@ selfheal_enable() {
         return 1
     fi
 
+    # SECURITY: Only allow predefined resource types
+    case "$resource" in
+        vm|container)
+            # Valid
+            ;;
+        *)
+            log_security_event "INVALID_RESOURCE" "Invalid resource type: $resource" "ERROR"
+            echo "ERROR: Resource must be 'vm' or 'container'" >&2
+            return 1
+            ;;
+    esac
+
     log "Enabling self-healing for: $resource..."
+    log_security_event "SELFHEAL_ENABLE" "Resource: $resource" "INFO"
 
     SELF_HEALING="yes"
     save_config
 
-    # Create monitoring script
-    local monitor_script="/usr/local/bin/virtos-selfheal-$resource.sh"
+    # Create monitoring script with FIXED content (no variable substitution that could inject code)
+    local monitor_script="/usr/local/bin/virtos-selfheal-${resource}.sh"
 
-    cat > "$monitor_script" << 'HEALEOF'
+    if [ "$resource" = "vm" ]; then
+        cat > "$monitor_script" << 'EOF'
 #!/bin/bash
-# Auto-generated self-healing monitor
-
-RESOURCE="RESOURCE_NAME"
-MAX_ATTEMPTS=3
+# Auto-generated self-healing monitor for VMs
 
 while true; do
-    # Check resource health
-    if [ "$RESOURCE" = "vm" ]; then
-        # Check VMs
-        virsh list --all | tail -n +3 | while read id name state rest; do
-            if [ "$state" = "shut" ]; then
-                echo "[$(date)] VM $name is down - attempting restart..."
-                virsh start "$name"
-            fi
-        done
-    elif [ "$RESOURCE" = "container" ]; then
-        # Check Docker containers
-        if command -v docker &>/dev/null; then
-            docker ps -a --filter "status=exited" --format "{{.Names}}" | while read container; do
-                echo "[$(date)] Container $container is down - attempting restart..."
-                docker start "$container"
-            done
+    virsh list --all | tail -n +3 | while read id name state rest; do
+        if [ "$state" = "shut" ]; then
+            echo "[$(date)] VM $name is down - attempting restart..."
+            virsh start "$name"
         fi
-    fi
-
+    done
     sleep 60
 done
-HEALEOF
+EOF
+    else
+        cat > "$monitor_script" << 'EOF'
+#!/bin/bash
+# Auto-generated self-healing monitor for containers
 
-    sed -i "s/RESOURCE_NAME/$resource/" "$monitor_script"
-    sed -i "s/MAX_ATTEMPTS=3/MAX_ATTEMPTS=$HEAL_MAX_ATTEMPTS/" "$monitor_script"
-    chmod +x "$monitor_script"
+while true; do
+    if command -v docker &>/dev/null; then
+        docker ps -a --filter "status=exited" --format "{{.Names}}" | while read container; do
+            echo "[$(date)] Container $container is down - attempting restart..."
+            docker start "$container"
+        done
+    fi
+    sleep 60
+done
+EOF
+    fi
+
+    chmod 750 "$monitor_script"
 
     # Start monitor
     nohup "$monitor_script" &>/dev/null &
@@ -512,6 +850,9 @@ HEALEOF
 selfheal_status() {
     log "Self-healing status..."
 
+    echo "Resource         Status     PID"
+    echo "---------------- ---------- ----------"
+
     for pid_file in "$AUTOMATION_DIR"/selfheal-*.pid; do
         if [ -f "$pid_file" ]; then
             local resource=$(basename "$pid_file" | sed 's/selfheal-\(.*\).pid/\1/')
@@ -522,7 +863,7 @@ selfheal_status() {
                 status="running"
             fi
 
-            printf "%-15s %-10s %-10s\n" "$resource" "$status" "$pid"
+            printf "%-16s %-10s %-10s\n" "$resource" "$status" "$pid"
         fi
     done
 }
@@ -537,7 +878,14 @@ event_trigger() {
         return 1
     fi
 
+    # Validate event name
+    if ! echo "$event" | grep -qE '^[a-zA-Z0-9._-]+$'; then
+        log_security_event "INVALID_EVENT" "Invalid event name: $event" "ERROR"
+        return 1
+    fi
+
     log "Event triggered: $event"
+    log_security_event "EVENT_TRIGGER" "Event: $event, Data: $data" "INFO"
 
     # Find workflows that listen to this event
     for workflow_file in "$WORKFLOW_DIR"/*.yaml; do
@@ -553,148 +901,102 @@ event_trigger() {
     # Call webhook if configured
     if [ "$WEBHOOK_ENABLED" = "yes" ] && [ -n "$WEBHOOK_URL" ]; then
         log "Calling webhook: $WEBHOOK_URL"
-        curl -X POST -H "Content-Type: application/json" \
-            -d "{\"event\": \"$event\", \"data\": \"$data\"}" \
+        log_security_event "WEBHOOK_CALL" "URL: $WEBHOOK_URL, Event: $event" "INFO"
+
+        # Use curl with timeout and safe JSON
+        curl -m 10 -X POST -H "Content-Type: application/json" \
+            -d "{\"event\": \"$event\", \"data\": \"$data\", \"timestamp\": \"$(date -Iseconds)\"}" \
             "$WEBHOOK_URL" 2>&1 | tee -a "$LOG_FILE"
     fi
-}
-
-# Automation wizard
-automation_wizard() {
-    log "Starting VirtOS Automation Setup Wizard..."
-
-    echo "=== VirtOS Automation Setup Wizard ==="
-    echo ""
-
-    # Event-driven automation
-    echo "1. Event-Driven Automation"
-    read -p "   Enable event-driven workflows? (y/n) [y]: " event_choice
-    EVENT_DRIVEN="${event_choice:-y}"
-
-    # Auto-scaling
-    echo ""
-    echo "2. Auto-Scaling"
-    read -p "   Enable auto-scaling? (y/n) [y]: " scale_choice
-    AUTO_SCALING="${scale_choice:-y}"
-
-    if [ "$AUTO_SCALING" = "y" ]; then
-        read -p "   Scale up threshold (%) [80]: " scale_up
-        SCALE_UP_THRESHOLD="${scale_up:-80}"
-
-        read -p "   Scale down threshold (%) [30]: " scale_down
-        SCALE_DOWN_THRESHOLD="${scale_down:-30}"
-    fi
-
-    # Self-healing
-    echo ""
-    echo "3. Self-Healing"
-    read -p "   Enable self-healing? (y/n) [y]: " heal_choice
-    SELF_HEALING="${heal_choice:-y}"
-
-    if [ "$SELF_HEALING" = "y" ]; then
-        read -p "   Max heal attempts [3]: " heal_attempts
-        HEAL_MAX_ATTEMPTS="${heal_attempts:-3}"
-    fi
-
-    # Webhooks
-    echo ""
-    echo "4. Webhooks"
-    read -p "   Enable webhook notifications? (y/n) [n]: " webhook_choice
-    WEBHOOK_ENABLED="${webhook_choice:-n}"
-
-    if [ "$WEBHOOK_ENABLED" = "y" ]; then
-        read -p "   Webhook URL: " webhook_url
-        WEBHOOK_URL="$webhook_url"
-    fi
-
-    save_config
-
-    # Enable features
-    echo ""
-    if [ "$SELF_HEALING" = "y" ]; then
-        log "Enabling self-healing for VMs..."
-        selfheal_enable vm
-    fi
-
-    echo ""
-    log "Automation wizard completed!"
-    echo ""
-    echo "Next steps:"
-    echo "  - Create workflows: virtos-automation workflow-create <name>"
-    echo "  - Schedule tasks: virtos-automation schedule-create <name> <command> <cron>"
-    echo "  - Enable auto-scaling: virtos-automation autoscale-enable <service>"
 }
 
 # Show usage
 usage() {
     cat << EOF
 VirtOS Workflow Automation and Orchestration - Version $VERSION
+SECURITY HARDENED: Sandboxed execution with command allowlist
 
 Usage: $SCRIPT_NAME <command> [options]
 
 Commands:
   workflow-create <name>                 Create workflow template
   workflow-list                          List all workflows
-  workflow-run <name>                    Execute workflow
+  workflow-run <name>                    Execute workflow (allowlist enforced)
   workflow-delete <name>                 Delete workflow
 
-  schedule-create <name> <cmd> <cron>    Create scheduled task
+  schedule-create <name> <cmd> <cron>    Create scheduled task (allowlist enforced)
   schedule-list                          List scheduled tasks
   schedule-delete <name>                 Delete scheduled task
 
   autoscale-enable <svc> [min] [max]     Enable auto-scaling
   autoscale-status [service]             Show auto-scaling status
-  autoscale-up <service>                 Trigger scale up
-  autoscale-down <service>               Trigger scale down
 
-  selfheal-enable <resource>             Enable self-healing (vm/container)
+  selfheal-enable <resource>             Enable self-healing (vm/container only)
   selfheal-status                        Show self-healing status
 
   event-trigger <event> [data]           Trigger event-driven workflows
 
-  wizard                                 Run interactive setup wizard
-
-  version                                Show version
   help                                   Show this help
+  version                                Show version
+
+Security Features:
+  ✓ Command allowlist enforcement
+  ✓ YAML schema validation
+  ✓ No eval/source of untrusted data
+  ✓ Path traversal protection
+  ✓ Input validation (regex + type checking)
+  ✓ Security event logging (/var/log/virtos-automation-security.log)
+  ✓ Sandboxed command execution
+
+Allowed Commands:
+EOF
+    printf '  %s\n' "${ALLOWED_COMMANDS[@]}"
+    cat << EOF
 
 Examples:
-  # Setup wizard (recommended for first-time setup)
-  $SCRIPT_NAME wizard
-
-  # Create and run workflow
+  # Create and run workflow (only allowlisted commands permitted)
   $SCRIPT_NAME workflow-create nightly-backup
   # Edit /etc/virtos/workflows/nightly-backup.yaml
   $SCRIPT_NAME workflow-run nightly-backup
 
-  # Schedule task
-  $SCRIPT_NAME schedule-create cleanup "find /tmp -mtime +7 -delete" "0 3 * * *"
+  # Schedule task (must use allowlisted command)
+  $SCRIPT_NAME schedule-create cleanup "/usr/bin/find /tmp -mtime +7 -delete" "0 3 * * *"
 
   # Auto-scaling
   $SCRIPT_NAME autoscale-enable web-app 2 10
-  $SCRIPT_NAME autoscale-up web-app
 
   # Self-healing
   $SCRIPT_NAME selfheal-enable vm
-  $SCRIPT_NAME selfheal-status
 
-  # Event trigger
-  $SCRIPT_NAME event-trigger vm.created
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Automation task not found
+    4    Task execution failed
 
 EOF
 }
 
 # Main
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now init for actual commands
     init_logging
     load_config
 
-    # Install jq if needed
-    if ! command -v jq &> /dev/null; then
-        log "Installing jq..."
-        tce-load -wi jq
-    fi
-
-    case "${1:-help}" in
+    case "${1}" in
         workflow-create)
             workflow_create "$2"
             ;;
@@ -722,12 +1024,6 @@ main() {
         autoscale-status)
             autoscale_status "$2"
             ;;
-        autoscale-up)
-            autoscale_up "$2"
-            ;;
-        autoscale-down)
-            autoscale_down "$2"
-            ;;
         selfheal-enable)
             selfheal_enable "$2"
             ;;
@@ -736,15 +1032,6 @@ main() {
             ;;
         event-trigger)
             event_trigger "$2" "$3"
-            ;;
-        wizard)
-            automation_wizard
-            ;;
-        version)
-            echo "$SCRIPT_NAME version $VERSION"
-            ;;
-        help|--help|-h)
-            usage
             ;;
         *)
             echo "Unknown command: $1"

@@ -169,8 +169,10 @@ discover_members() {
             # Fallback to netcat if socat not available
             elif command -v nc >/dev/null 2>&1; then
                 # Create temporary FIFO for responses
-                local fifo="/tmp/virtos-mcast-$$"
-                mktemp -u > /dev/null && mkfifo "$fifo" 2>/dev/null || { echo "${RED}Cannot create FIFO${NC}" >&2; return 1; }
+                local fifo=$(mktemp -u) || die "Failed to generate unique filename"
+                mkfifo "$fifo" 2>/dev/null || { echo "${RED}Cannot create FIFO${NC}" >&2; return 1; }
+                chmod 600 "$fifo"
+                trap "rm -f '$fifo'" EXIT INT TERM
 
                 # Listen for responses in background
                 (
