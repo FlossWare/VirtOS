@@ -96,7 +96,7 @@ stop_cockpit() {
     log_message "Stopping Cockpit service..."
 
     if [ -f "$WEB_CONFIG_DIR/cockpit.pid" ]; then
-        kill $(cat "$WEB_CONFIG_DIR/cockpit.pid") 2>/dev/null
+        kill $(cat "$WEB_CONFIG_DIR/cockpit.pid") 2>/dev/null || true
         rm "$WEB_CONFIG_DIR/cockpit.pid"
         log_message "Cockpit stopped"
     fi
@@ -305,7 +305,7 @@ stop_custom_ui() {
     log_message "Stopping custom VirtOS web UI..."
 
     if [ -f "$WEB_CONFIG_DIR/custom-ui.pid" ]; then
-        kill $(cat "$WEB_CONFIG_DIR/custom-ui.pid") 2>/dev/null
+        kill $(cat "$WEB_CONFIG_DIR/custom-ui.pid") 2>/dev/null || true
         rm "$WEB_CONFIG_DIR/custom-ui.pid"
         log_message "Custom UI stopped"
     fi
