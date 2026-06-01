@@ -1,7 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2026 FlossWare
-# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
+
 # VirtOS Migrate - Live VM migration with and without shared storage
 # Enhanced migration capabilities including block migration
 
@@ -48,14 +47,6 @@ Examples:
   # Compressed migration
   virtos-migrate --block --compressed large-vm virtos-3
 
-EXIT CODES:
-    0    Success
-    1    General error
-    2    Invalid arguments
-    3    VM not found
-    4    Migration failed
-    5    Destination host unreachable
-
 EOF
 }
 
@@ -67,26 +58,9 @@ check_requirements() {
     local vm_name="$1"
     local dest_host="$2"
 
-    # SECURITY: Validate inputs using virtos-common.sh functions
-    if ! validate_vm_name "$vm_name" 2>/dev/null; then
-        echo "Error: Invalid VM name '$vm_name'" >&2
-        echo "VM names must contain only alphanumeric characters, hyphens, and underscores" >&2
-        return 1
-    fi
-
-    if ! validate_hostname "$dest_host" 2>/dev/null; then
-        echo "Error: Invalid destination host '$dest_host'" >&2
-        return 1
-    fi
-
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
-        echo "Error: VM '$vm_name' not found on source host" >&2
-        echo "" >&2
-        echo "Available VMs on this host:" >&2
-        virsh list --all --name 2>/dev/null | grep -v '^$' | sed 's/^/  • /' >&2 || echo "  (none)" >&2
-        echo "" >&2
-        echo "To migrate a VM, it must exist on the source host." >&2
+        echo "Error: VM '$vm_name' not found"
         return 1
     fi
 
@@ -94,78 +68,29 @@ check_requirements() {
     if [ "$MIGRATION_TYPE" = "live" ] || [ "$MIGRATION_TYPE" = "block" ]; then
         local state=$(virsh domstate "$vm_name")
         if [ "$state" != "running" ]; then
-            echo "Error: VM must be running for live migration" >&2
-            echo "" >&2
-            echo "VM '$vm_name' state: $state" >&2
-            echo "Migration type: $MIGRATION_TYPE" >&2
-            echo "" >&2
-            echo "Options:" >&2
-            echo "  1. Start the VM first:" >&2
-            echo "     virsh start $vm_name" >&2
-            echo "     virtos-migrate --live $vm_name $dest_host" >&2
-            echo "" >&2
-            echo "  2. Use offline migration (shutdown → copy → start):" >&2
-            echo "     virtos-migrate --offline $vm_name $dest_host" >&2
+            echo "Error: VM must be running for live migration"
+            echo "Current state: $state"
+            echo "Use --offline for offline migration"
             return 1
         fi
     fi
 
     # Check destination host reachability
     if ! ping -c 1 -W 2 "$dest_host" >/dev/null 2>&1; then
-        echo "Error: Destination host '$dest_host' is unreachable" >&2
-        echo "" >&2
-        echo "Network connectivity check failed." >&2
-        echo "" >&2
-        echo "Troubleshooting steps:" >&2
-        echo "  1. Verify hostname/IP is correct:" >&2
-        echo "     ping $dest_host" >&2
-        echo "" >&2
-        echo "  2. Check network connectivity:" >&2
-        echo "     ip route get $dest_host" >&2
-        echo "" >&2
-        echo "  3. Verify DNS resolution (if using hostname):" >&2
-        echo "     nslookup $dest_host" >&2
-        echo "     # Or try IP directly instead of hostname" >&2
+        echo "Error: Destination host '$dest_host' unreachable"
         return 1
     fi
 
     # Check SSH connectivity
     if ! ssh -o ConnectTimeout=5 "root@$dest_host" "echo test" >/dev/null 2>&1; then
-        echo "Error: SSH connection to root@$dest_host failed" >&2
-        echo "" >&2
-        echo "Migration requires passwordless SSH access to destination." >&2
-        echo "" >&2
-        echo "Setup SSH key authentication:" >&2
-        echo "  1. Generate SSH key (if not exists):" >&2
-        echo "     ssh-keygen -t rsa -b 4096" >&2
-        echo "" >&2
-        echo "  2. Copy key to destination:" >&2
-        echo "     ssh-copy-id root@$dest_host" >&2
-        echo "" >&2
-        echo "  3. Test SSH connection:" >&2
-        echo "     ssh root@$dest_host \"echo test\"" >&2
-        echo "" >&2
-        echo "Alternative: Check SSH service on destination:" >&2
-        echo "  ssh root@$dest_host  # Manual login to verify" >&2
+        echo "Error: SSH connection to root@$dest_host failed"
+        echo "Ensure SSH key-based authentication is configured"
         return 1
     fi
 
     # Check destination has libvirt
     if ! ssh "root@$dest_host" "command -v virsh" >/dev/null 2>&1; then
-        echo "Error: libvirt not available on destination host '$dest_host'" >&2
-        echo "" >&2
-        echo "The destination host must have libvirt installed to receive VMs." >&2
-        echo "" >&2
-        echo "Install libvirt on destination:" >&2
-        echo "  ssh root@$dest_host \"tce-load -wi libvirt qemu\"" >&2
-        echo "" >&2
-        echo "Or manually:" >&2
-        echo "  1. SSH to destination:" >&2
-        echo "     ssh root@$dest_host" >&2
-        echo "  2. Install libvirt:" >&2
-        echo "     tce-load -wi libvirt qemu" >&2
-        echo "  3. Start libvirt service:" >&2
-        echo "     /usr/local/etc/init.d/libvirtd start" >&2
+        echo "Error: libvirt not available on destination host"
         return 1
     fi
 
@@ -197,15 +122,13 @@ migrate_live_shared() {
     fi
 
     # Perform migration
-    virsh migrate $migrate_opts "$vm_name" "qemu+ssh://root@$dest_host/system"
-
-    if [ $? -eq 0 ]; then
+    if virsh migrate $migrate_opts "$vm_name" "qemu+ssh://root@$dest_host/system"; then
         log_message "Migration completed successfully"
-        echo "✓ VM $vm_name successfully migrated to $dest_host"
+        echo "VM $vm_name successfully migrated to $dest_host"
         return 0
     else
         log_message "Migration failed"
-        echo "✗ Migration failed"
+        echo "Migration failed"
         return 1
     fi
 }
@@ -235,15 +158,13 @@ migrate_block() {
     echo ""
 
     # Perform block migration
-    virsh migrate $migrate_opts "$vm_name" "qemu+ssh://root@$dest_host/system"
-
-    if [ $? -eq 0 ]; then
+    if virsh migrate $migrate_opts "$vm_name" "qemu+ssh://root@$dest_host/system"; then
         log_message "Block migration completed successfully"
-        echo "✓ VM $vm_name successfully migrated to $dest_host (with disks)"
+        echo "VM $vm_name successfully migrated to $dest_host (with disks)"
         return 0
     else
         log_message "Block migration failed"
-        echo "✗ Block migration failed"
+        echo "Block migration failed"
         return 1
     fi
 }
@@ -282,9 +203,8 @@ migrate_offline() {
 
     # Get VM XML
     echo "Exporting VM configuration..."
-    local vm_xml=$(create_secure_temp_file "migrate-${vm_name}" ".xml")
-    local remote_xml=$(ssh "root@$dest_host" "mktemp --suffix=.xml") || die "Failed to create remote temp file"
-    register_cleanup_trap "$vm_xml"
+    local vm_xml=$(mktemp --suffix=".xml") || die "Failed to create temporary file"
+    trap "rm -f '$vm_xml'" EXIT
     virsh dumpxml "$vm_name" > "$vm_xml"
 
     # Get disk paths
@@ -302,9 +222,7 @@ migrate_offline() {
             ssh "root@$dest_host" "mkdir -p $dest_dir"
 
             # Copy disk
-            scp "$disk" "root@$dest_host:$dest_dir/$disk_name"
-
-            if [ $? -ne 0 ]; then
+            if ! scp "$disk" "root@$dest_host:$dest_dir/$disk_name"; then
                 echo "Error: Failed to copy $disk"
                 return 1
             fi
@@ -316,13 +234,12 @@ migrate_offline() {
 
     # Copy XML to destination
     echo "Copying VM configuration..."
+    local remote_xml=$(ssh "root@$dest_host" "mktemp --suffix=.xml") || die "Failed to create remote temp file"
     scp "$vm_xml" "root@$dest_host:$remote_xml"
 
     # Define VM on destination
     echo "Defining VM on destination..."
-    ssh "root@$dest_host" "virsh define '$remote_xml'"
-
-    if [ $? -eq 0 ]; then
+    if ssh "root@$dest_host" "virsh define '$remote_xml' && rm -f '$remote_xml'"; then
         # Undefine on source if requested
         if [ "$UNDEFINE_SOURCE" = "yes" ]; then
             virsh undefine "$vm_name"
@@ -334,16 +251,16 @@ migrate_offline() {
         ssh "root@$dest_host" "virsh start $vm_name"
 
         log_message "Offline migration completed successfully"
-        echo "✓ VM $vm_name successfully migrated to $dest_host"
+        echo "VM $vm_name successfully migrated to $dest_host"
 
-        # Cleanup remote temp file
-        ssh "root@$dest_host" "rm -f '$remote_xml'" 2>/dev/null || true
+        # Cleanup (local temp file - remote already cleaned by trap)
+        rm -f "$vm_xml"
 
         return 0
     else
         log_message "Offline migration failed"
-        echo "✗ Migration failed"
-        ssh "root@$dest_host" "rm -f '$remote_xml'" 2>/dev/null || true
+        echo "Migration failed"
+        rm -f "$vm_xml"
         return 1
     fi
 }
@@ -422,6 +339,19 @@ if [ -z "$VM_NAME" ] || [ -z "$DEST_HOST" ]; then
     echo "Error: VM name and destination host required"
     echo ""
     usage
+    exit 1
+fi
+
+# Security: Validate inputs before using in commands
+if ! validate_vm_name "$VM_NAME"; then
+    echo "Error: Invalid VM name '$VM_NAME'"
+    echo "VM names must contain only alphanumeric characters, dashes, and underscores (max 64 chars)"
+    exit 1
+fi
+
+if ! validate_hostname "$DEST_HOST"; then
+    echo "Error: Invalid destination hostname '$DEST_HOST'"
+    echo "Hostnames must contain only alphanumeric characters, dots, and dashes"
     exit 1
 fi
 

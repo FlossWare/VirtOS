@@ -92,13 +92,12 @@ check_prerequisites() {
         if curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 -o "$helm_install"; then
             log "Downloaded Helm install script to $helm_install"
             log "WARNING: Review the script before execution in production"
-            bash "$helm_install"
-            local result=$?
-            rm -f "$helm_install"
-            if [ $result -ne 0 ]; then
+            if ! bash "$helm_install"; then
+                rm -f "$helm_install"
                 log "ERROR: Failed to install Helm"
                 return 1
             fi
+            rm -f "$helm_install"
         else
             log "ERROR: Failed to download Helm install script"
             return 1
@@ -128,13 +127,12 @@ istio_install() {
         if curl -L https://istio.io/downloadIstio -o "$istio_install"; then
             log "Downloaded Istio install script to $istio_install"
             log "WARNING: Review the script before execution in production"
-            ISTIO_VERSION=$ISTIO_VERSION sh "$istio_install"
-            local result=$?
-            rm -f "$istio_install"
-            if [ $result -ne 0 ]; then
+            if ! ISTIO_VERSION=$ISTIO_VERSION sh "$istio_install"; then
+                rm -f "$istio_install"
                 log "ERROR: Failed to download Istio"
                 return 1
             fi
+            rm -f "$istio_install"
         else
             log "ERROR: Failed to download Istio install script"
             return 1
@@ -146,9 +144,7 @@ istio_install() {
 
     # Install Istio
     log "Installing Istio control plane..."
-    istioctl install --set profile=default -y
-
-    if [ $? -ne 0 ]; then
+    if ! istioctl install --set profile=default -y; then
         log "ERROR: Failed to install Istio"
         return 1
     fi
@@ -190,13 +186,12 @@ linkerd_install() {
     if curl -fsL https://run.linkerd.io/install -o "$linkerd_install"; then
         log "Downloaded Linkerd install script to $linkerd_install"
         log "WARNING: Review the script before execution in production"
-        sh "$linkerd_install"
-        local result=$?
-        rm -f "$linkerd_install"
-        if [ $result -ne 0 ]; then
+        if ! sh "$linkerd_install"; then
+            rm -f "$linkerd_install"
             log "ERROR: Failed to install Linkerd"
             return 1
         fi
+        rm -f "$linkerd_install"
     else
         log "ERROR: Failed to download Linkerd install script"
         return 1
@@ -211,9 +206,7 @@ linkerd_install() {
     # Install Linkerd control plane
     log "Installing Linkerd control plane..."
     linkerd install --crds | kubectl apply -f -
-    linkerd install | kubectl apply -f -
-
-    if [ $? -ne 0 ]; then
+    if ! linkerd install | kubectl apply -f -; then
         log "ERROR: Failed to install Linkerd"
         return 1
     fi
@@ -251,14 +244,12 @@ consul_install() {
 
     # Install Consul
     log "Installing Consul via Helm..."
-    helm install consul hashicorp/consul \
+    if ! helm install consul hashicorp/consul \
         --set global.name=consul \
         --set connectInject.enabled=true \
         --set ui.enabled=true \
         --create-namespace \
-        --namespace "$MESH_NAMESPACE"
-
-    if [ $? -ne 0 ]; then
+        --namespace "$MESH_NAMESPACE"; then
         log "ERROR: Failed to install Consul"
         return 1
     fi

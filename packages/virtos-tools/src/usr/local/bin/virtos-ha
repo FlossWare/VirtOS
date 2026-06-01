@@ -262,9 +262,7 @@ perform_failover() {
     # If target is local, start here
     if [ "$target_host" = "$(hostname)" ]; then
         sleep "$RESTART_DELAY"
-        virsh start "$vm_name"
-
-        if [ $? -eq 0 ]; then
+        if virsh start "$vm_name"; then
             # Update config
             sed -i "s/^CURRENT_HOST=.*/CURRENT_HOST=\"$(hostname)\"/" "$vm_conf"
             sed -i "s/^RESTART_COUNT=.*/RESTART_COUNT=$((RESTART_COUNT + 1))/" "$vm_conf"

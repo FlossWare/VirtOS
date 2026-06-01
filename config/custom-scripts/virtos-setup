@@ -264,11 +264,9 @@ EOF
 #==============================================================================
 
 welcome_screen() {
-    $DIALOG $DIALOG_OPTS \
+    if ! $DIALOG $DIALOG_OPTS \
         --title "Welcome to VirtOS" \
-        --yesno "\n\Z4Welcome to VirtOS Setup Wizard\Zn\n\nThis wizard will help you configure:\n\n • Hostname and networking\n • Storage for VMs\n • Clustering (optional)\n • Services to enable\n • Admin user account\n\nSetup takes 5-10 minutes.\n\nReady to begin?" 18 60
-
-    if [ $? -ne 0 ]; then
+        --yesno "\n\Z4Welcome to VirtOS Setup Wizard\Zn\n\nThis wizard will help you configure:\n\n • Hostname and networking\n • Storage for VMs\n • Clustering (optional)\n • Services to enable\n • Admin user account\n\nSetup takes 5-10 minutes.\n\nReady to begin?" 18 60; then
         exit 0
     fi
 }
@@ -343,11 +341,9 @@ setup_storage() {
         return
     fi
 
-    $DIALOG $DIALOG_OPTS \
+    if ! $DIALOG $DIALOG_OPTS \
         --title "Storage Configuration" \
-        --yesno "Configure dedicated storage for VMs?\n\nDetected disks:\n$DISKS\n\nSelect 'Yes' to configure, 'No' to skip." 14 70
-
-    if [ $? -ne 0 ]; then
+        --yesno "Configure dedicated storage for VMs?\n\nDetected disks:\n$DISKS\n\nSelect 'Yes' to configure, 'No' to skip." 14 70; then
         return
     fi
 
@@ -390,11 +386,11 @@ setup_storage() {
     SETUP_VM_DIR=$(cat $TEMP_FILE)
 
     # Warning for destructive operation
-    $DIALOG $DIALOG_OPTS \
+    if $DIALOG $DIALOG_OPTS \
         --title "WARNING" \
-        --yesno "\Z1WARNING: This will FORMAT $SETUP_STORAGE_DISK\Zn\n\nAll data on this disk will be DESTROYED!\n\nFilesystem: $SETUP_STORAGE_FS\nMount point: $SETUP_VM_DIR\n\nAre you SURE you want to continue?" 14 60
-
-    if [ $? -ne 0 ]; then
+        --yesno "\Z1WARNING: This will FORMAT $SETUP_STORAGE_DISK\Zn\n\nAll data on this disk will be DESTROYED!\n\nFilesystem: $SETUP_STORAGE_FS\nMount point: $SETUP_VM_DIR\n\nAre you SURE you want to continue?" 14 60; then
+        :  # User confirmed, proceed with formatting
+    else
         SETUP_STORAGE_DISK=""
         SETUP_STORAGE_FS=""
     fi
@@ -407,11 +403,9 @@ setup_clustering() {
         return
     fi
 
-    $DIALOG $DIALOG_OPTS \
+    if $DIALOG $DIALOG_OPTS \
         --title "Clustering" \
-        --yesno "Enable multi-host clustering?\n\nThis allows:\n • Automatic discovery of other VirtOS hosts\n • Resource pooling\n • VM migration (with shared storage)\n • Coordinated management\n\nRequires: Avahi/mDNS\n\nEnable clustering?" 16 60
-
-    if [ $? -eq 0 ]; then
+        --yesno "Enable multi-host clustering?\n\nThis allows:\n • Automatic discovery of other VirtOS hosts\n • Resource pooling\n • VM migration (with shared storage)\n • Coordinated management\n\nRequires: Avahi/mDNS\n\nEnable clustering?" 16 60; then
         SETUP_CLUSTERING="yes"
 
         $DIALOG $DIALOG_OPTS \
@@ -463,11 +457,9 @@ setup_services() {
 }
 
 setup_admin_user() {
-    $DIALOG $DIALOG_OPTS \
+    if ! $DIALOG $DIALOG_OPTS \
         --title "Admin User" \
-        --yesno "Create admin user for remote access?\n\n • SSH access\n • libvirt/virsh permissions\n • sudo access\n\nRecommended for virt-manager remote management.\n\nCreate admin user?" 14 60
-
-    if [ $? -ne 0 ]; then
+        --yesno "Create admin user for remote access?\n\n • SSH access\n • libvirt/virsh permissions\n • sudo access\n\nRecommended for virt-manager remote management.\n\nCreate admin user?" 14 60; then
         return
     fi
 
@@ -516,11 +508,13 @@ review_configuration() {
         REVIEW="${REVIEW}Admin user: $SETUP_ADMIN_USER\n"
     fi
 
-    $DIALOG $DIALOG_OPTS \
+    if $DIALOG $DIALOG_OPTS \
         --title "Review Configuration" \
-        --yesno "$REVIEW\nApply this configuration?" 20 70
-
-    return $?
+        --yesno "$REVIEW\nApply this configuration?" 20 70; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 completion_screen() {
@@ -565,11 +559,9 @@ main() {
 
     # Check if already configured
     if [ -f "$CONFIG_FILE" ]; then
-        $DIALOG $DIALOG_OPTS \
+        if ! $DIALOG $DIALOG_OPTS \
             --title "Already Configured" \
-            --yesno "VirtOS appears to be already configured.\n\nConfiguration file exists: $CONFIG_FILE\n\nRun setup again?\n\n(This will overwrite existing configuration)" 12 60
-
-        if [ $? -ne 0 ]; then
+            --yesno "VirtOS appears to be already configured.\n\nConfiguration file exists: $CONFIG_FILE\n\nRun setup again?\n\n(This will overwrite existing configuration)" 12 60; then
             exit 0
         fi
     fi
@@ -600,11 +592,9 @@ main() {
     completion_screen
 
     # Offer to reboot
-    $DIALOG $DIALOG_OPTS \
+    if $DIALOG $DIALOG_OPTS \
         --title "Reboot Required" \
-        --yesno "Some changes require a reboot to take effect.\n\nReboot now?" 8 50
-
-    if [ $? -eq 0 ]; then
+        --yesno "Some changes require a reboot to take effect.\n\nReboot now?" 8 50; then
         reboot
     fi
 }

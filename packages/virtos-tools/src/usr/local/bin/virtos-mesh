@@ -81,8 +81,7 @@ check_prerequisites() {
     # Check for Helm
     if ! command -v helm &> /dev/null; then
         log "Installing Helm..."
-        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-        if [ $? -ne 0 ]; then
+        if ! curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash; then
             log "ERROR: Failed to install Helm"
             return 1
         fi
@@ -106,8 +105,7 @@ istio_install() {
     if [ ! -d "$istio_dir" ]; then
         log "Downloading Istio..."
         cd "$MESH_DIR" || return 1
-        curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$ISTIO_VERSION sh -
-        if [ $? -ne 0 ]; then
+        if ! curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$ISTIO_VERSION sh -; then
             log "ERROR: Failed to download Istio"
             return 1
         fi
@@ -118,9 +116,7 @@ istio_install() {
 
     # Install Istio
     log "Installing Istio control plane..."
-    istioctl install --set profile=default -y
-
-    if [ $? -ne 0 ]; then
+    if ! istioctl install --set profile=default -y; then
         log "ERROR: Failed to install Istio"
         return 1
     fi
@@ -157,9 +153,7 @@ linkerd_install() {
 
     # Download Linkerd CLI
     log "Downloading Linkerd CLI..."
-    curl -fsL https://run.linkerd.io/install | sh
-
-    if [ $? -ne 0 ]; then
+    if ! curl -fsL https://run.linkerd.io/install | sh; then
         log "ERROR: Failed to download Linkerd"
         return 1
     fi
@@ -173,9 +167,7 @@ linkerd_install() {
     # Install Linkerd control plane
     log "Installing Linkerd control plane..."
     linkerd install --crds | kubectl apply -f -
-    linkerd install | kubectl apply -f -
-
-    if [ $? -ne 0 ]; then
+    if ! linkerd install | kubectl apply -f -; then
         log "ERROR: Failed to install Linkerd"
         return 1
     fi
@@ -213,14 +205,12 @@ consul_install() {
 
     # Install Consul
     log "Installing Consul via Helm..."
-    helm install consul hashicorp/consul \
+    if ! helm install consul hashicorp/consul \
         --set global.name=consul \
         --set connectInject.enabled=true \
         --set ui.enabled=true \
         --create-namespace \
-        --namespace "$MESH_NAMESPACE"
-
-    if [ $? -ne 0 ]; then
+        --namespace "$MESH_NAMESPACE"; then
         log "ERROR: Failed to install Consul"
         return 1
     fi

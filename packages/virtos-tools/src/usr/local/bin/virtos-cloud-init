@@ -278,13 +278,11 @@ generate_iso() {
     local iso_cmd="genisoimage"
     command -v genisoimage >/dev/null 2>&1 || iso_cmd="mkisofs"
 
-    $iso_cmd -output "$iso_path" \
+    if $iso_cmd -output "$iso_path" \
         -volid cidata \
         -joliet -rock \
         "$config_dir"/* \
-        >/dev/null 2>&1
-
-    if [ $? -eq 0 ]; then
+        >/dev/null 2>&1; then
         log_message "ISO generated: $iso_path"
         echo "Cloud-init ISO generated: $iso_path"
         echo ""
@@ -325,9 +323,7 @@ attach_iso() {
     fi
 
     # Attach the ISO
-    virsh change-media "$vm_name" sda "$iso_path" --insert --force
-
-    if [ $? -eq 0 ]; then
+    if virsh change-media "$vm_name" sda "$iso_path" --insert --force; then
         log_message "ISO attached to $vm_name"
         echo "Cloud-init ISO attached to $vm_name"
         echo ""

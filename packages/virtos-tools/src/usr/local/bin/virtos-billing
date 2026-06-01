@@ -84,7 +84,7 @@ billing_init() {
     # Create database
     local db_file="$BILLING_DIR/billing.db"
 
-    sqlite3 "$db_file" << 'EOF'
+    if sqlite3 "$db_file" << 'EOF'
 CREATE TABLE IF NOT EXISTS resources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     vm_name TEXT NOT NULL,
@@ -124,8 +124,7 @@ CREATE INDEX IF NOT EXISTS idx_resources_vm ON resources(vm_name);
 CREATE INDEX IF NOT EXISTS idx_resources_billed ON resources(billed);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 EOF
-
-    if [ $? -eq 0 ]; then
+    then
         log "Billing database initialized at $db_file"
     else
         log "ERROR: Failed to initialize billing database"
@@ -147,8 +146,8 @@ track_usage() {
     log "Tracking usage for VM: $vm_name..."
 
     # Get VM info
-    local vm_info=$(virsh dominfo "$vm_name" 2>/dev/null)
-    if [ $? -ne 0 ]; then
+    local vm_info
+    if ! vm_info=$(virsh dominfo "$vm_name" 2>/dev/null); then
         log "ERROR: VM not found: $vm_name"
         return 1
     fi
@@ -401,9 +400,7 @@ mark_paid() {
     local db_file="$BILLING_DIR/billing.db"
     local now=$(date +%s)
 
-    sqlite3 "$db_file" "UPDATE invoices SET status = 'paid', paid_at = $now WHERE invoice_number = '$invoice_number';"
-
-    if [ $? -eq 0 ]; then
+    if sqlite3 "$db_file" "UPDATE invoices SET status = 'paid', paid_at = $now WHERE invoice_number = '$invoice_number';"; then
         log "Invoice marked as paid"
     else
         log "ERROR: Failed to update invoice"

@@ -70,8 +70,7 @@ selinux_init() {
     # Check if SELinux is available
     if ! command -v setenforce &> /dev/null; then
         log "ERROR: SELinux not available. Installing..."
-        tce-load -wi selinux-policy-targeted
-        if [ $? -ne 0 ]; then
+        if ! tce-load -wi selinux-policy-targeted; then
             log "ERROR: Failed to install SELinux"
             return 1
         fi
@@ -162,20 +161,17 @@ selinux_policy_compile() {
 
     cd "$POLICY_DIR" || return 1
 
-    checkmodule -M -m -o "${name}.mod" "${name}.te"
-    if [ $? -ne 0 ]; then
+    if ! checkmodule -M -m -o "${name}.mod" "${name}.te"; then
         log "ERROR: Failed to compile policy module"
         return 1
     fi
 
-    semodule_package -o "${name}.pp" -m "${name}.mod"
-    if [ $? -ne 0 ]; then
+    if ! semodule_package -o "${name}.pp" -m "${name}.mod"; then
         log "ERROR: Failed to package policy module"
         return 1
     fi
 
-    semodule -i "${name}.pp"
-    if [ $? -ne 0 ]; then
+    if ! semodule -i "${name}.pp"; then
         log "ERROR: Failed to install policy module"
         return 1
     fi
@@ -192,8 +188,7 @@ apparmor_init() {
     # Check if AppArmor is available
     if ! command -v aa-status &> /dev/null; then
         log "ERROR: AppArmor not available. Installing..."
-        tce-load -wi apparmor
-        if [ $? -ne 0 ]; then
+        if ! tce-load -wi apparmor; then
             log "ERROR: Failed to install AppArmor"
             return 1
         fi
@@ -271,8 +266,7 @@ apparmor_profile_load() {
 
     log "Loading AppArmor profile: $name..."
 
-    apparmor_parser -r "$profile_file"
-    if [ $? -ne 0 ]; then
+    if ! apparmor_parser -r "$profile_file"; then
         log "ERROR: Failed to load AppArmor profile"
         return 1
     fi
