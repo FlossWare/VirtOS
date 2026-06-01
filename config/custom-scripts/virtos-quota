@@ -83,6 +83,112 @@ log_message() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# SECURITY: Safe configuration parsing without source/eval
+# Prevents command injection from malicious config files
+# Returns: Success (0) or failure (1)
+# Sets variables: Caller should declare them first
+safe_load_quota_file() {
+    local quota_file="$1"
+    local var_name="$2"
+    local default_value="${3:-0}"
+
+    # Verify file exists and is readable
+    if [ ! -f "$quota_file" ] || [ ! -r "$quota_file" ]; then
+        return 1
+    fi
+
+    # Verify file permissions are safe (reject world-writable files)
+    local file_perms
+    file_perms=$(stat -c '%a' "$quota_file" 2>/dev/null)
+    if [ -n "$file_perms" ]; then
+        # Extract the "others" permission digit (last digit of octal mode)
+        local others_perm="${file_perms#??}"
+        # Check if world-writable: others digit includes write bit (2, 3, 6, 7)
+        case "$others_perm" in
+            2|3|6|7)
+                echo "Error: Quota file is world-writable: $quota_file (mode ${file_perms})" >&2
+                log_message "SECURITY: World-writable quota file rejected: $quota_file ($file_perms)"
+                return 1
+                ;;
+        esac
+    fi
+
+    local value
+    # Use grep to extract only the specific variable, then validate
+    value=$(grep "^${var_name}=" "$quota_file" 2>/dev/null | cut -d'=' -f2- | head -1)
+
+    # Remove quotes if present
+    value="${value%\"}"
+    value="${value#\"}"
+
+    # Validate the extracted value
+    if [ -z "$value" ]; then
+        # Return default value if variable not found
+        # SECURITY: Use printf -v instead of eval for safe variable assignment
+        printf -v "$var_name" '%s' "$default_value"
+        return 0
+    fi
+
+    # Validate based on variable type
+    case "$var_name" in
+        VM_NAME)
+            # VM names: alphanumeric, dash, underscore
+            if ! echo "$value" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+                echo "Error: Invalid VM_NAME in $quota_file: $value" >&2
+                return 1
+            fi
+            ;;
+        CPU_LIMIT|MEMORY_LIMIT|DISK_LIMIT|MAX_VMS|MAX_TOTAL_CPU|MAX_TOTAL_MEMORY|MAX_TOTAL_DISK)
+            # Numeric limits: must be non-negative integer
+            if ! echo "$value" | grep -qE '^[0-9]+$'; then
+                echo "Error: Invalid $var_name in $quota_file: $value (must be numeric)" >&2
+                return 1
+            fi
+            ;;
+        ENFORCE_QUOTAS|ALLOW_OVERCOMMIT)
+            # Boolean values: yes/no only
+            if ! echo "$value" | grep -qE '^(yes|no)$'; then
+                echo "Error: Invalid $var_name in $quota_file: $value (must be yes or no)" >&2
+                return 1
+            fi
+            ;;
+        *)
+            # Unknown variable - reject to prevent injection
+            echo "Error: Unknown quota variable: $var_name" >&2
+            return 1
+            ;;
+    esac
+
+    # SECURITY: Safe assignment using printf -v (no eval/source)
+    printf -v "$var_name" '%s' "$value"
+    return 0
+}
+
+# Load cluster configuration safely
+# Initializes global cluster variables with validation
+safe_load_cluster_config() {
+    local config_file="$1"
+
+    # Declare variables locally first (prevents inadvertent globalization)
+    local MAX_VMS=100
+    local MAX_TOTAL_CPU=256
+    local MAX_TOTAL_MEMORY=524288
+    local MAX_TOTAL_DISK=10240
+    local ENFORCE_QUOTAS="yes"
+    local ALLOW_OVERCOMMIT="no"
+
+    # Load each variable safely
+    safe_load_quota_file "$config_file" "MAX_VMS" "100" || true
+    safe_load_quota_file "$config_file" "MAX_TOTAL_CPU" "256" || true
+    safe_load_quota_file "$config_file" "MAX_TOTAL_MEMORY" "524288" || true
+    safe_load_quota_file "$config_file" "MAX_TOTAL_DISK" "10240" || true
+    safe_load_quota_file "$config_file" "ENFORCE_QUOTAS" "yes" || true
+    safe_load_quota_file "$config_file" "ALLOW_OVERCOMMIT" "no" || true
+
+    # Export to parent scope (these are used by other functions)
+    export MAX_VMS MAX_TOTAL_CPU MAX_TOTAL_MEMORY MAX_TOTAL_DISK ENFORCE_QUOTAS ALLOW_OVERCOMMIT
+}
+
 # Default configuration
 init_config() {
     if [ ! -f "$CONFIG_DIR/cluster.conf" ]; then
@@ -99,9 +205,20 @@ MAX_TOTAL_DISK=10240
 ENFORCE_QUOTAS=yes
 ALLOW_OVERCOMMIT=no
 EOF
+        # Set safe permissions on new config file
+        chmod 600 "$CONFIG_DIR/cluster.conf"
     fi
 
-    source "$CONFIG_DIR/cluster.conf"
+    # SECURITY: Use safe loading instead of source
+    safe_load_cluster_config "$CONFIG_DIR/cluster.conf" || {
+        # Fallback to defaults if config loading fails
+        export MAX_VMS=100
+        export MAX_TOTAL_CPU=256
+        export MAX_TOTAL_MEMORY=524288
+        export MAX_TOTAL_DISK=10240
+        export ENFORCE_QUOTAS="yes"
+        export ALLOW_OVERCOMMIT="no"
+    }
 
     # Create VM quotas directory
     mkdir -p "$CONFIG_DIR/vms" || true
@@ -153,6 +270,8 @@ CPU_LIMIT=0
 MEMORY_LIMIT=0
 DISK_LIMIT=0
 EOF
+        # SECURITY: Set safe permissions on new quota file (owner read/write only)
+        chmod 600 "$quota_file"
     fi
 
     # Update limit
@@ -194,7 +313,17 @@ get_vm_quota() {
         return 0
     fi
 
-    source "$quota_file"
+    # SECURITY: Use safe loading instead of source
+    local CPU_LIMIT=0
+    local MEMORY_LIMIT=0
+    local DISK_LIMIT=0
+
+    safe_load_quota_file "$quota_file" "CPU_LIMIT" "0" || {
+        echo "Error: Failed to load quota file: $quota_file" >&2
+        return 1
+    }
+    safe_load_quota_file "$quota_file" "MEMORY_LIMIT" "0" || true
+    safe_load_quota_file "$quota_file" "DISK_LIMIT" "0" || true
 
     echo "Resource Quotas for: $vm_name"
     echo "=============================="
@@ -215,7 +344,21 @@ list_quotas() {
             return 0
         fi
 
-        source "$quota_file"
+        # SECURITY: Use safe loading instead of source
+        local VM_NAME=""
+        local CPU_LIMIT=0
+        local MEMORY_LIMIT=0
+        local DISK_LIMIT=0
+
+        safe_load_quota_file "$quota_file" "VM_NAME" "" || continue
+        safe_load_quota_file "$quota_file" "CPU_LIMIT" "0" || true
+        safe_load_quota_file "$quota_file" "MEMORY_LIMIT" "0" || true
+        safe_load_quota_file "$quota_file" "DISK_LIMIT" "0" || true
+
+        # Skip entries that failed to load properly
+        if [ -z "$VM_NAME" ]; then
+            continue
+        fi
 
         local cpu_str=$([ "$CPU_LIMIT" -gt 0 ] && echo "$CPU_LIMIT" || echo "-")
         local mem_str=$([ "$MEMORY_LIMIT" -gt 0 ] && echo "$MEMORY_LIMIT" || echo "-")
@@ -228,10 +371,10 @@ list_quotas() {
     echo ""
     echo "Cluster Quotas"
     echo "=============="
-    echo "Max VMs: $MAX_VMS"
-    echo "Max Total CPU: $MAX_TOTAL_CPU cores"
-    echo "Max Total Memory: $MAX_TOTAL_MEMORY MB"
-    echo "Max Total Disk: $MAX_TOTAL_DISK GB"
+    echo "Max VMs: ${MAX_VMS:-100}"
+    echo "Max Total CPU: ${MAX_TOTAL_CPU:-256} cores"
+    echo "Max Total Memory: ${MAX_TOTAL_MEMORY:-524288} MB"
+    echo "Max Total Disk: ${MAX_TOTAL_DISK:-10240} GB"
 }
 
 check_vm_quota() {
@@ -249,7 +392,17 @@ check_vm_quota() {
         return 0
     fi
 
-    source "$quota_file"
+    # SECURITY: Use safe loading instead of source
+    local CPU_LIMIT=0
+    local MEMORY_LIMIT=0
+    local DISK_LIMIT=0
+
+    safe_load_quota_file "$quota_file" "CPU_LIMIT" "0" || {
+        echo "Error: Failed to load quota file: $quota_file" >&2
+        return 1
+    }
+    safe_load_quota_file "$quota_file" "MEMORY_LIMIT" "0" || true
+    safe_load_quota_file "$quota_file" "DISK_LIMIT" "0" || true
 
     # Get VM current resources
     if ! virsh list --all | grep -q " $vm_name "; then
