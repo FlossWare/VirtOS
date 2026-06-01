@@ -10,10 +10,11 @@ wait_for_vm_state() {
     local timeout="${3:-30}"
     local elapsed=0
 
-    while [ $elapsed -lt $timeout ]; do
-        local current_state=$(virsh domstate "$vm_name" 2>/dev/null | tr '[:upper:]' '[:lower:]')
+    while [ $elapsed -lt "$timeout" ]; do
+        local current_state
+        current_state=$(virsh domstate "$vm_name" 2>/dev/null | tr '[:upper:]' '[:lower:]')
 
-        if [[ "$current_state" =~ "$expected_state" ]]; then
+        if [[ "$current_state" =~ $expected_state ]]; then
             return 0
         fi
 
@@ -48,7 +49,7 @@ force_cleanup_vm() {
         virsh destroy "$vm_name" 2>/dev/null || true
 
         # Delete all snapshots
-        virsh snapshot-list "$vm_name" --name 2>/dev/null | while read snapshot; do
+        virsh snapshot-list "$vm_name" --name 2>/dev/null | while read -r snapshot; do
             [ -n "$snapshot" ] && virsh snapshot-delete "$vm_name" "$snapshot" --metadata 2>/dev/null || true
         done
 
@@ -98,7 +99,7 @@ snapshot_exists() {
 # Usage: count_snapshots <vm-name>
 count_snapshots() {
     local vm_name="$1"
-    virsh snapshot-list "$vm_name" --name 2>/dev/null | grep -v '^$' | wc -l
+    virsh snapshot-list "$vm_name" --name 2>/dev/null | grep -vc '^$'
 }
 
 # Get VM disk path from XML

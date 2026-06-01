@@ -7,6 +7,7 @@ echo "=== VirtOS Security Fix Validation ==="
 echo ""
 
 # Load common library
+# shellcheck disable=SC1091  # Runtime-only source
 source config/custom-scripts/lib/virtos-common.sh
 
 passed=0
@@ -106,12 +107,14 @@ else
     test_failed "virtos-backup: still contains /tmp/restore-vm.xml"
 fi
 
+# shellcheck disable=SC2016  # Intentionally searching for literal string with escaped $
 if ! grep -q '/tmp/\${vm_name}\.xml' config/custom-scripts/virtos-migrate; then
     test_passed "virtos-migrate: no hardcoded /tmp/\${vm_name}.xml"
 else
     test_failed "virtos-migrate: still contains /tmp/\${vm_name}.xml"
 fi
 
+# shellcheck disable=SC2016  # Intentionally searching for literal string with escaped $
 if ! grep -q '/tmp/\$new_vm_name\.xml' config/custom-scripts/virtos-template; then
     test_passed "virtos-template: no hardcoded /tmp/\$new_vm_name.xml"
 else
@@ -176,8 +179,7 @@ mktemp_no_error_handling=$(grep -rn 'mktemp' config/custom-scripts/virtos-* 2>/d
     grep -v create_secure_temp | \
     grep -v '||' | \
     grep -v '#' | \
-    grep -v Binary | \
-    wc -l)
+    grep -vc Binary)
 
 if [ "$mktemp_no_error_handling" -eq 0 ]; then
     test_passed "All mktemp calls have error handling"
