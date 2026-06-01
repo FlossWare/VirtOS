@@ -360,7 +360,7 @@ restore_vm() {
 
         # Extract
         log "Extracting backup..."
-        local temp_dir=$(mktemp -d)
+        local temp_dir=$(mktemp -d) || die "Failed to create temporary directory"
         tar -xzf "$backup_path" -C "$temp_dir"
         backup_path="$temp_dir/$backup_date"
     elif [ -d "$BACKUP_DIR/$vm_name/$backup_date" ]; then
@@ -408,11 +408,13 @@ restore_vm() {
     # If target name is different, update XML
     if [ "$target_name" != "$vm_name" ]; then
         log "Updating VM name to: $target_name"
-        sed "s|<name>$vm_name</name>|<name>$target_name</name>|" "$vm_xml" > /tmp/restore-vm.xml
+        local restore_xml=$(create_secure_temp_file "restore-vm" ".xml")
+        register_cleanup_trap "$restore_xml" ${temp_dir:+"$temp_dir"}
+        sed "s|<name>$vm_name</name>|<name>$target_name</name>|" "$vm_xml" > "$restore_xml"
         # Generate new UUID
         local new_uuid=$(uuidgen)
-        sed -i "s|<uuid>.*</uuid>|<uuid>$new_uuid</uuid>|" /tmp/restore-vm.xml
-        vm_xml="/tmp/restore-vm.xml"
+        sed -i "s|<uuid>.*</uuid>|<uuid>$new_uuid</uuid>|" "$restore_xml"
+        vm_xml="$restore_xml"
     fi
 
     # Restore disks

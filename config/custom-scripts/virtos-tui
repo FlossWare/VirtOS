@@ -75,11 +75,12 @@ else
 fi
 
 # Temp file for dialog output
-TEMP_FILE=$(mktemp)
+TEMP_FILE=$(mktemp) || die "Failed to create temporary file"
 trap "rm -f $TEMP_FILE" EXIT
 
 # Colors (for dialog)
-export DIALOGRC=/tmp/dialogrc.$$
+export DIALOGRC=$(create_secure_temp_file "dialogrc" "")
+trap "rm -f '$DIALOGRC'" EXIT INT TERM
 cat > $DIALOGRC << 'EOF'
 use_colors = ON
 screen_color = (WHITE,BLUE,ON)
@@ -673,7 +674,8 @@ jplatform_menu() {
             ;;
         10)
             # Deploy example VM
-            EXAMPLE_VM="/tmp/example-vm-$$.yaml"
+            EXAMPLE_VM=$(create_secure_temp_file "example-vm" ".yaml")
+            trap "rm -f '$EXAMPLE_VM'" EXIT INT TERM
             cat > "$EXAMPLE_VM" << 'EOF'
 applicationId: example-vm
 name: Example Virtual Machine
@@ -705,7 +707,8 @@ EOF
             ;;
         11)
             # Deploy example container
-            EXAMPLE_CONTAINER="/tmp/example-container-$$.yaml"
+            EXAMPLE_CONTAINER=$(create_secure_temp_file "example-container" ".yaml")
+            trap "rm -f '$EXAMPLE_CONTAINER'" EXIT INT TERM
             cat > "$EXAMPLE_CONTAINER" << 'EOF'
 applicationId: nginx-web
 name: NGINX Web Server
@@ -2100,14 +2103,14 @@ iaas_vm_create_menu() {
         --infobox "Creating VM '$VM_NAME' on optimal host...\n\nPlease wait..." 8 60
 
     if [ -n "$OS_TEMPLATE" ]; then
-        virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" --os "$OS_TEMPLATE" > /tmp/iaas-result.txt 2>&1
+    IAAS_RESULT=$(create_secure_temp_file "iaas-result" ".txt")
+        virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" --os "$OS_TEMPLATE" > "$IAAS_RESULT" 2>&1
     else
-        virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" > /tmp/iaas-result.txt 2>&1
+        virtos-create-vm --name "$VM_NAME" --cpu "$CPU_COUNT" --ram "$RAM_MB" --disk "$DISK_SIZE" --policy "$POLICY" --priority "$PRIORITY" > "$IAAS_RESULT" 2>&1
     fi
 
     # Show result
-    RESULT=$(cat /tmp/iaas-result.txt)
-    rm -f /tmp/iaas-result.txt
+    RESULT=$(cat "$IAAS_RESULT")
 
     $DIALOG $DIALOG_OPTS \
         --title "VM Creation Result" \

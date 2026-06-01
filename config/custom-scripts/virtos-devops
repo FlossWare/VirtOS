@@ -74,7 +74,7 @@ install_flux() {
     log_message "Installing Flux for GitOps..."
 
     # Install Flux CLI (SECURITY: Download and review before executing)
-    local install_script=$(mktemp)
+    local install_script=$(mktemp) || die "Failed to create temporary file"
     if curl -s https://fluxcd.io/install.sh -o "$install_script"; then
         log_message "Downloaded Flux install script to $install_script"
         log_message "WARNING: Review the script before execution in production"
@@ -316,7 +316,7 @@ install_pulumi() {
     log_message "Installing Pulumi for cloud infrastructure..."
 
     # Install Pulumi (SECURITY: Download and review before executing)
-    local install_script=$(mktemp)
+    local install_script=$(mktemp) || die "Failed to create temporary file"
     if curl -fsSL https://get.pulumi.com -o "$install_script"; then
         log_message "Downloaded Pulumi install script to $install_script"
         log_message "WARNING: Review the script before execution in production"

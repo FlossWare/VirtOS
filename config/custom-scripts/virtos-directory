@@ -263,7 +263,9 @@ create_ldap_group() {
     local base_dn=$(cat "$DIRECTORY_CONFIG_DIR/ldap-base-dn.conf" 2>/dev/null)
 
     # Create LDIF file
-    cat > /tmp/group.ldif <<EOF
+    local group_ldif=$(create_secure_temp_file "group" ".ldif")
+    register_cleanup_trap "$group_ldif"
+    cat > "$group_ldif" <<EOF
 dn: cn=$group_name,ou=groups,$base_dn
 objectClass: top
 objectClass: posixGroup
@@ -272,9 +274,8 @@ gidNumber: $gid
 EOF
 
     # Add to LDAP
-    ldapadd -x -H "ldap://$ldap_server" -D "cn=admin,$base_dn" -W -f /tmp/group.ldif
+    ldapadd -x -H "ldap://$ldap_server" -D "cn=admin,$base_dn" -W -f "$group_ldif"
 
-    rm /tmp/group.ldif
     log_message "LDAP group created: $group_name"
 }
 
@@ -292,7 +293,9 @@ create_ldap_user() {
     local base_dn=$(cat "$DIRECTORY_CONFIG_DIR/ldap-base-dn.conf" 2>/dev/null)
 
     # Create LDIF file
-    cat > /tmp/user.ldif <<EOF
+    local user_ldif=$(create_secure_temp_file "user" ".ldif")
+    register_cleanup_trap "$user_ldif"
+    cat > "$user_ldif" <<EOF
 dn: uid=$username,ou=users,$base_dn
 objectClass: top
 objectClass: person
@@ -310,9 +313,8 @@ loginShell: /bin/bash
 EOF
 
     # Add to LDAP
-    ldapadd -x -H "ldap://$ldap_server" -D "cn=admin,$base_dn" -W -f /tmp/user.ldif
+    ldapadd -x -H "ldap://$ldap_server" -D "cn=admin,$base_dn" -W -f "$user_ldif"
 
-    rm /tmp/user.ldif
     log_message "LDAP user created: $username"
 }
 

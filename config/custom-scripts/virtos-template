@@ -175,7 +175,8 @@ clone_from_template() {
     done
 
     # Update XML
-    local new_xml="/tmp/$new_vm_name.xml"
+    local new_xml=$(create_secure_temp_file "vm-config-${new_vm_name}" ".xml")
+    register_cleanup_trap "$new_xml"
     cp "$template_path/template.xml" "$new_xml"
 
     # Update name and UUID
@@ -191,7 +192,6 @@ clone_from_template() {
 
     # Define VM
     virsh define "$new_xml"
-    rm "$new_xml"
 
     echo "VM '$new_vm_name' cloned successfully"
     echo "Start with: virsh start $new_vm_name"

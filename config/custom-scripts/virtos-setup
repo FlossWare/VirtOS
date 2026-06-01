@@ -80,7 +80,7 @@ else
 fi
 
 # Temp file for dialog output
-TEMP_FILE=$(mktemp)
+TEMP_FILE=$(mktemp) || die "Failed to create temporary file"
 trap "rm -f $TEMP_FILE" EXIT
 
 # Configuration storage
@@ -90,7 +90,8 @@ CONFIG_FILE="$CONFIG_DIR/setup.conf"
 mkdir -p "$CONFIG_DIR"
 
 # Color setup
-export DIALOGRC=/tmp/dialogrc.setup.$$
+export DIALOGRC=$(create_secure_temp_file "dialogrc" "")
+trap "rm -f '$DIALOGRC'" EXIT INT TERM
 cat > $DIALOGRC << 'EOF'
 use_colors = ON
 screen_color = (WHITE,BLUE,ON)

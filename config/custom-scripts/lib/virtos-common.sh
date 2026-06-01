@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2001,SC2004,SC2016,SC2027,SC2034,SC2046,SC2050,SC2064,SC2140,SC2144,SC2155
 # Copyright (c) 2026 FlossWare
 # Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 # VirtOS Common Functions Library
@@ -323,6 +324,59 @@ require_file() {
     if [ ! -r "$file" ]; then
         die "File not readable: $file"
     fi
+}
+
+#==============================================================================
+# Secure Temporary File/Directory Creation
+#==============================================================================
+
+# Create secure temporary file with automatic cleanup
+# Usage: temp_file=$(create_secure_temp_file [prefix] [suffix])
+# Returns: Path to temporary file
+# Example: xml_file=$(create_secure_temp_file "vm-config" ".xml")
+create_secure_temp_file() {
+    local prefix="${1:-virtos}"
+    local suffix="${2:-}"
+    local temp_file
+
+    # Create temp file with mktemp
+    if [ -n "$suffix" ]; then
+        temp_file=$(mktemp -t "${prefix}-XXXXXX${suffix}") || die "Failed to create temporary file"
+    else
+        temp_file=$(mktemp -t "${prefix}-XXXXXX") || die "Failed to create temporary file"
+    fi
+
+    # Set restrictive permissions (owner read/write only)
+    chmod 600 "$temp_file" 2>/dev/null || true
+
+    echo "$temp_file"
+}
+
+# Create secure temporary directory with automatic cleanup
+# Usage: temp_dir=$(create_secure_temp_dir [prefix])
+# Returns: Path to temporary directory
+# Example: work_dir=$(create_secure_temp_dir "vm-backup")
+create_secure_temp_dir() {
+    local prefix="${1:-virtos}"
+    local temp_dir
+
+    # Create temp directory with mktemp
+    temp_dir=$(mktemp -d -t "${prefix}-XXXXXX") || die "Failed to create temporary directory"
+
+    # Set restrictive permissions (owner read/write/execute only)
+    chmod 700 "$temp_dir" 2>/dev/null || true
+
+    echo "$temp_dir"
+}
+
+# Register cleanup trap for temporary files/directories
+# Usage: register_cleanup_trap "$temp_file" "$temp_dir" ...
+# Note: Automatically removes files/dirs on EXIT, INT, TERM signals
+register_cleanup_trap() {
+    local cleanup_list="$*"
+
+    # shellcheck disable=SC2064
+    trap "rm -rf $cleanup_list 2>/dev/null || true" EXIT INT TERM
 }
 
 #==============================================================================

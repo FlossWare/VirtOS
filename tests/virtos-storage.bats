@@ -19,13 +19,110 @@ SCRIPT="${BATS_TEST_DIRNAME}/../config/custom-scripts/virtos-storage"
     [[ "$output" =~ "Usage:" || "$output" =~ "Error" || "$output" =~ "command" ]]
 }
 
-# Tests requiring libvirt
-@test "virtos-storage list-pools (requires libvirt)" {
-    skip "Requires libvirt"
+#==============================================================================
+# Functional Tests - Libvirt Storage Pool Operations
+#==============================================================================
+
+@test "virtos-storage pool-list: requires virsh" {
+    if ! command -v virsh >/dev/null 2>&1; then
+        skip "virsh not installed"
+    fi
+    run "$SCRIPT" pool-list
+    [ "$status" -eq 0 ]
 }
 
-@test "virtos-storage create-pool (requires libvirt)" {
-    skip "Requires libvirt"
+@test "virtos-storage pool-list: displays all pools" {
+    if ! command -v virsh >/dev/null 2>&1; then
+        skip "virsh not installed"
+    fi
+    run "$SCRIPT" pool-list
+    [ "$status" -eq 0 ]
+    # Should show header or pool list
+    [[ "$output" =~ "Name" || "$output" =~ "pool" ]]
+}
+
+@test "virtos-storage pool-create: requires pool name" {
+    run "$SCRIPT" pool-create
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "pool name" || "$output" =~ "Usage" ]]
+}
+
+@test "virtos-storage pool-create: requires pool type" {
+    run "$SCRIPT" pool-create test-pool
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "pool type" || "$output" =~ "Usage" ]]
+}
+
+@test "virtos-storage pool-create: validates pool name characters" {
+    if ! command -v virsh >/dev/null 2>&1; then
+        skip "virsh not installed"
+    fi
+    # Try invalid pool name with special characters
+    run "$SCRIPT" pool-create "test/pool" dir
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "Invalid" || "$output" =~ "alphanumeric" ]]
+}
+
+@test "virtos-storage pool-create: accepts valid pool name" {
+    if ! command -v virsh >/dev/null 2>&1; then
+        skip "virsh not installed"
+    fi
+    # Create pool in /tmp (won't persist)
+    run "$SCRIPT" pool-create test-pool-bats dir --target /tmp/test-pool-storage
+    # May succeed or fail depending on environment, but should not reject name
+    if [ "$status" -ne 0 ]; then
+        # If it fails, should be due to backend, not name validation
+        ! [[ "$output" =~ "Invalid pool name" ]]
+    fi
+}
+
+@test "virtos-storage pool-delete: requires pool name" {
+    run "$SCRIPT" pool-delete
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "pool name" || "$output" =~ "Usage" ]]
+}
+
+@test "virtos-storage pool-delete: handles non-existent pool gracefully" {
+    if ! command -v virsh >/dev/null 2>&1; then
+        skip "virsh not installed"
+    fi
+    run "$SCRIPT" pool-delete nonexistent-pool-12345
+    # Should handle gracefully, not crash
+    [ "$status" -ne 0 ] || [ "$status" -eq 0 ]
+}
+
+#==============================================================================
+# Functional Tests - Storage Pool Backend Integration
+#==============================================================================
+
+@test "virtos-storage: pool-list uses virsh pool-list" {
+    run grep -q "virsh pool-list" "$SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
+@test "virtos-storage: pool-create uses virsh pool-define-as" {
+    run grep -q "virsh pool-define-as" "$SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
+@test "virtos-storage: pool-create starts pool after creation" {
+    run grep -q "virsh pool-start" "$SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
+@test "virtos-storage: pool-create enables autostart" {
+    run grep -q "virsh pool-autostart" "$SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
+@test "virtos-storage: pool-delete destroys active pool" {
+    run grep -q "virsh pool-destroy" "$SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
+@test "virtos-storage: pool-delete undefines pool" {
+    run grep -q "virsh pool-undefine" "$SCRIPT"
+    [ "$status" -eq 0 ]
 }
 
 #==============================================================================

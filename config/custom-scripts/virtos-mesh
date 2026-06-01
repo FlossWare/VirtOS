@@ -88,7 +88,7 @@ check_prerequisites() {
     if ! command -v helm &> /dev/null; then
         log "Installing Helm..."
         # SECURITY: Download and review before executing
-        local helm_install=$(mktemp)
+        local helm_install=$(mktemp) || die "Failed to create temporary file"
         if curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 -o "$helm_install"; then
             log "Downloaded Helm install script to $helm_install"
             log "WARNING: Review the script before execution in production"
@@ -124,7 +124,7 @@ istio_install() {
         log "Downloading Istio..."
         cd "$MESH_DIR" || return 1
         # SECURITY: Download and review before executing
-        local istio_install=$(mktemp)
+        local istio_install=$(mktemp) || die "Failed to create temporary file"
         if curl -L https://istio.io/downloadIstio -o "$istio_install"; then
             log "Downloaded Istio install script to $istio_install"
             log "WARNING: Review the script before execution in production"
@@ -186,7 +186,7 @@ linkerd_install() {
     # Download Linkerd CLI
     log "Downloading Linkerd CLI..."
     # SECURITY: Download and review before executing
-    local linkerd_install=$(mktemp)
+    local linkerd_install=$(mktemp) || die "Failed to create temporary file"
     if curl -fsL https://run.linkerd.io/install -o "$linkerd_install"; then
         log "Downloaded Linkerd install script to $linkerd_install"
         log "WARNING: Review the script before execution in production"

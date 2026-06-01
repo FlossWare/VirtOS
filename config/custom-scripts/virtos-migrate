@@ -282,7 +282,9 @@ migrate_offline() {
 
     # Get VM XML
     echo "Exporting VM configuration..."
-    local vm_xml="/tmp/${vm_name}.xml"
+    local vm_xml=$(create_secure_temp_file "migrate-${vm_name}" ".xml")
+    local remote_xml=$(ssh "root@$dest_host" "mktemp --suffix=.xml") || die "Failed to create remote temp file"
+    register_cleanup_trap "$vm_xml"
     virsh dumpxml "$vm_name" > "$vm_xml"
 
     # Get disk paths
@@ -314,11 +316,11 @@ migrate_offline() {
 
     # Copy XML to destination
     echo "Copying VM configuration..."
-    scp "$vm_xml" "root@$dest_host:/tmp/${vm_name}.xml"
+    scp "$vm_xml" "root@$dest_host:$remote_xml"
 
     # Define VM on destination
     echo "Defining VM on destination..."
-    ssh "root@$dest_host" "virsh define /tmp/${vm_name}.xml"
+    ssh "root@$dest_host" "virsh define '$remote_xml'"
 
     if [ $? -eq 0 ]; then
         # Undefine on source if requested
@@ -334,15 +336,14 @@ migrate_offline() {
         log_message "Offline migration completed successfully"
         echo "✓ VM $vm_name successfully migrated to $dest_host"
 
-        # Cleanup
-        rm -f "$vm_xml"
-        ssh "root@$dest_host" "rm -f /tmp/${vm_name}.xml"
+        # Cleanup remote temp file
+        ssh "root@$dest_host" "rm -f '$remote_xml'" 2>/dev/null || true
 
         return 0
     else
         log_message "Offline migration failed"
         echo "✗ Migration failed"
-        rm -f "$vm_xml"
+        ssh "root@$dest_host" "rm -f '$remote_xml'" 2>/dev/null || true
         return 1
     fi
 }
