@@ -87,27 +87,25 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 See [Project Status](#project-status) section below for detailed breakdown by category, backend technologies used, and complete implementation status.
 ---
 
-### 🔄 What Changed From Original README (Why It Was Misleading)
+### 🔄 What Changed (Addressing Issue #2)
 
-**ORIGINAL (❌ Misleading)**:
-> "✅ Fully Implemented (Working Code) - Management Scripts: 52 virtos-* command-line tools (syntax validated)"
+**PROBLEM IDENTIFIED**:
+Previous README claimed "✅ Fully Implemented - 52 virtos-* tools (syntax validated)" which misled users into thinking all 52 scripts were functional features.
 
-**PROBLEM**: Users read "fully implemented" and "working code" → Assumed 52 features work end-to-end
+**WHAT WAS MISLEADING**:
+1. "Fully Implemented" + "syntax validated" implied all 52 scripts work end-to-end
+2. No clear distinction between "passes bash -n" vs "has functional backend"
+3. Experimental/research scripts presented without prominent warnings
+4. Testing gaps (never tested on hardware) not emphasized early
 
-**REALITY (✅ Accurate)**:
-- 29/54 scripts have functional backends (working code)
-- 9/54 scripts have interfaces only (no backend)
-- 14/54 scripts are prototypes (design examples, no code)
-- "Syntax validated" ≠ "Has working backend" ≠ "Tested on real hardware"
+**WHAT'S NOW FIXED**:
+1. ✅ **Prominent early warning** with visual separators making alpha status impossible to miss
+2. ✅ **Clear categorization**: 29 working | 9 partial | 14 experimental | 54 syntax-valid
+3. ✅ **Honest labeling**: "Working Code" means functional backends, not just syntax checks
+4. ✅ **Testing reality**: Explicitly states NEVER tested on real hardware in bold/caps
+5. ✅ **Cross-references**: Links to SCRIPT_IMPLEMENTATION_AUDIT.md for detailed evidence
 
-**THE FIX**:
-This README now explicitly states:
-1. **What's working** (29 scripts with integrated backends)
-2. **What's partial** (9 scripts need backend integration)
-3. **What's demo** (14 research prototypes)
-4. **What's missing** (never tested on real hardware)
-
-**Key Principle**: Honest uncertainty > false confidence
+**Key Principle**: Brutal honesty > inflated claims. Users deserve to know exactly what works and what doesn't.
 
 ---
 
@@ -673,23 +671,25 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 
 ### What Has Been Validated End-to-End
 
-The following have been **actually tested and confirmed working** on developer machines:
+**⚠️ IMPORTANT DISTINCTION**: "Validated" means actually tested and confirmed, not just written.
 
-- **Package building**: `build-all.sh` produces a valid 332KB `virtos-tools.tcz` package
-- **Build validation**: `validate-build.sh` and `quick-test.sh` pass all checks
-- **Syntax correctness**: All 54 scripts pass `bash -n` syntax validation
-- **Unit tests**: 450+ BATS tests pass across 54 test files
-- **CI/CD pipeline**: GitHub Actions runs 11 validation jobs successfully
+**Actually Tested** (on developer machines, not VirtOS hardware):
 
-The following are **code-complete with backends but have NOT been tested in a real VirtOS environment**:
+- **Package building**: `build-all.sh` produces a valid 332KB `virtos-tools.tcz` package ✅
+- **Build validation**: `validate-build.sh` and `quick-test.sh` pass all checks ✅
+- **Syntax correctness**: All 54 scripts pass `bash -n` syntax validation ✅
+- **Unit tests**: 450+ BATS tests pass across 54 test files ✅
+- **CI/CD pipeline**: GitHub Actions runs 11 validation jobs successfully ✅
 
-- VM lifecycle (create, start, stop, migrate, snapshot, backup) via libvirt/virsh
-- Storage pool and volume management via virsh
-- Network bridge and NAT configuration via virsh/ip/brctl
-- Cluster discovery via Avahi/mDNS
-- All 29 "working" scripts listed below
+**Code Exists But NEVER Tested in Real VirtOS** (Issue #2):
 
-The distinction matters: code that passes syntax checks and unit tests may still fail at runtime due to missing dependencies, permission issues, or environmental differences in a real VirtOS installation.
+- VM lifecycle (create, start, stop, migrate, snapshot, backup) via libvirt/virsh ❌
+- Storage pool and volume management via virsh ❌
+- Network bridge and NAT configuration via virsh/ip/brctl ❌
+- Cluster discovery via Avahi/mDNS ❌
+- All 29 "working" scripts listed below ❌
+
+**Why This Matters**: Code with functional backends ≠ tested on real hardware. Scripts may fail at runtime due to missing dependencies, permission issues, or environmental differences. See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md) and [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for validation roadmap.
 
 ### ✅ Working Features (29/54 scripts - 54%)
 
