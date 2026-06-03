@@ -547,7 +547,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 
 > **⚠️ Clarification**: "Implemented" means **code is written with functional backends AND passes syntax validation**. However, **these features have NOT been tested in a real VirtOS environment**. See [Critical Gaps](#-critical-gaps-blocking-production) for what testing is still needed.
 
-**✅ Already Implemented** (backend code exists, not yet validated on real hardware):
+**✅ Already Implemented** (backends exist, but never validated on real hardware -- see [Current Limitations](#%EF%B8%8F-current-limitations)):
 
 - ✅ Automated backup/restore (`virtos-backup` - 649 lines, working)
 - ✅ VM snapshots (`virtos-snapshot` - 389 lines, working)

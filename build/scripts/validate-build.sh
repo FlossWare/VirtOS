@@ -84,8 +84,6 @@ section "Build Tools"
 REQUIRED_TOOLS=(
     "bash:bash"
     "wget:wget"
-    "genisoimage:genisoimage"
-    "isohybrid:syslinux-utils"
     "cpio:cpio"
     "gzip:gzip"
     "find:findutils"
@@ -104,6 +102,32 @@ for tool_info in "${REQUIRED_TOOLS[@]}"; do
         error "$tool not found (install: $package)"
     fi
 done
+
+# Check for ISO creation tool (at least one required)
+ISO_TOOL_FOUND=false
+if command -v genisoimage >/dev/null 2>&1; then
+    success "genisoimage found (ISO creation)"
+    ISO_TOOL_FOUND=true
+fi
+if command -v mkisofs >/dev/null 2>&1; then
+    success "mkisofs found (ISO creation)"
+    ISO_TOOL_FOUND=true
+fi
+if command -v xorriso >/dev/null 2>&1; then
+    success "xorriso found (ISO creation)"
+    ISO_TOOL_FOUND=true
+fi
+
+if [ "$ISO_TOOL_FOUND" = false ]; then
+    error "No ISO creation tool found (install one of: genisoimage, xorriso, or mkisofs)"
+fi
+
+# Check for isohybrid (optional, for USB boot)
+if command -v isohybrid >/dev/null 2>&1; then
+    success "isohybrid found (USB boot support)"
+else
+    warning "isohybrid not found - ISO will not be USB-bootable (install: syslinux-utils)"
+fi
 
 # Check optional tools
 section "Optional Tools (for testing)"
