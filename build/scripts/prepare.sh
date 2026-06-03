@@ -7,6 +7,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$(dirname "$SCRIPT_DIR")"
 
+# Preserve any PROFILE exported by parent (build-all.sh --profile)
+_OVERRIDE_PROFILE="${PROFILE:-}"
+
 # Source build configuration for TC version and other settings
 if [ -f "$BUILD_DIR/build.conf" ]; then
     # shellcheck disable=SC1091
@@ -14,6 +17,11 @@ if [ -f "$BUILD_DIR/build.conf" ]; then
 else
     echo "ERROR: build.conf not found at $BUILD_DIR/build.conf" >&2
     exit 1
+fi
+
+# Restore overridden profile from parent script (takes priority over build.conf)
+if [ -n "$_OVERRIDE_PROFILE" ]; then
+    PROFILE="$_OVERRIDE_PROFILE"
 fi
 
 # Validate profile if set
@@ -31,12 +39,19 @@ if [ -n "${PROFILE:-}" ]; then
         echo "Edit build/build.conf and select a valid PROFILE" >&2
         exit 1
     fi
+
+    # Load profile configuration to override build.conf settings
+    if [ -f "$BUILD_DIR/profiles/$PROFILE.conf" ]; then
+        # shellcheck disable=SC1090
+        source "$BUILD_DIR/profiles/$PROFILE.conf"
+    fi
 fi
 
 # Additional configuration
 TC_MIRROR="${TC_MIRROR:-http://tinycorelinux.net}"
 DOWNLOAD_DIR="$BUILD_DIR/downloads"
 WORKSPACE_DIR="$BUILD_DIR/workspace"
+TCZ_DIR="$WORKSPACE_DIR/tcz"
 
 echo "=== FlossWare VirtOS - Prepare Build Environment ==="
 if [ -n "${PROFILE:-}" ]; then

@@ -1,0 +1,174 @@
+name: ISO Build Testing
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - fix/issue-*
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Profile to test'
+        required: false
+        default: 'standard'
+
+jobs:
+  validate:
+    name: Validate Build Configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            genisoimage syslinux-utils wget bash cpio gzip \
+            squashfs-tools isolinux p7zip-full
+
+      - name: Make scripts executable
+        run: |
+          chmod +x build/scripts/*.sh
+
+      - name: Run pre-build validation
+        run: |
+          build/scripts/validate-build.sh
+
+  build-test:
+    name: Test ISO Build (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: validate
+    strategy:
+      matrix:
+        profile: [minimal, standard, containers]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            genisoimage syslinux-utils wget bash cpio gzip squashfs-tools \
+            isolinux xorriso p7zip-full
+
+      - name: Install optional tools
+        run: |
+          sudo apt-get install -y qemu-system-x86 || true
+
+      - name: Make scripts executable
+        run: |
+          chmod +x build/scripts/*.sh
+          chmod +x config/custom-scripts/virtos-* || true
+
+      - name: Test ISO build - ${{ matrix.profile }}
+        run: |
+          cd build/scripts
+          export TEST_PROFILES="${{ matrix.profile }}"
+          ./test-iso-build.sh
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iso-test-logs-${{ matrix.profile }}
+          path: |
+            /tmp/virtos-build*.log
+          retention-days: 7
+
+      - name: Check ISO creation
+        run: |
+          ls -lh build/output/VirtOS-*.iso || echo "No ISO found"
+
+      - name: Verify ISO integrity
+        if: success()
+        run: |
+          for iso in build/output/VirtOS-*.iso; do
+            if [ -f "$iso" ]; then
+              echo "Verifying: $(basename $iso)"
+              if [ -f "$iso.md5" ]; then
+                md5sum -c "$iso.md5"
+              fi
+            fi
+          done
+
+  content-validation:
+    name: Validate ISO Content
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build-test
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y genisoimage isolinux
+
+      - name: Download ISO artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Validate ISO files
+        run: |
+          for iso in artifacts/*/VirtOS-*.iso; do
+            if [ -f "$iso" ]; then
+              echo "Validating: $(basename $iso)"
+
+              # Check ISO format
+              if dd if="$iso" bs=1 skip=32769 count=5 2>/dev/null | grep -q "CD001"; then
+                echo "  ✓ Valid ISO 9660 format"
+              else
+                echo "  ✗ Invalid ISO format"
+                exit 1
+              fi
+
+              # Check for boot loader
+              if isoinfo -f -R -i "$iso" 2>/dev/null | grep -q "isolinux.bin"; then
+                echo "  ✓ Boot loader present"
+              else
+                echo "  ✗ Boot loader missing"
+              fi
+
+              # Check for kernel
+              if isoinfo -f -R -i "$iso" 2>/dev/null | grep -q "vmlinuz"; then
+                echo "  ✓ Linux kernel present"
+              else
+                echo "  ✗ Linux kernel missing"
+              fi
+            fi
+          done
+
+  report-results:
+    name: Report Test Results
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [validate, build-test, content-validation]
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# ISO Build Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase 1: Pre-Build Validation | $([ '${{ needs.validate.result }}' == 'success' ] && echo '✓' || echo '✗') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase 2: ISO Build | $([ '${{ needs.build-test.result }}' == 'success' ] && echo '✓' || echo '✗') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase 3: Content Validation | $([ '${{ needs.content-validation.result }}' == 'success' ] && echo '✓' || echo '✗') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "See attached artifacts for detailed test logs." >> $GITHUB_STEP_SUMMARY
