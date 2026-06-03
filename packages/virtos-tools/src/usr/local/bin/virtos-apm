@@ -1,17 +1,35 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Application Performance Monitoring
 # APM integration, profiling, transaction tracing
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.23")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-apm version $VERSION"
+    exit 0
+fi
+
 
 # Configuration
 APM_CONFIG_DIR="/etc/virtos/apm"
 APM_LOG="/var/log/virtos-apm.log"
 
 # Ensure config directory exists
-mkdir -p "$APM_CONFIG_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$APM_CONFIG_DIR" || true
+fi
 
 # Logging function
 log_message() {
@@ -122,8 +140,10 @@ EOF
             log_message "Installing Dynatrace OneAgent..."
 
             # Download and install OneAgent
-            wget -O /tmp/Dynatrace-OneAgent.sh "https://YOUR_ENVIRONMENT.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=YOUR_TOKEN"
-            sh /tmp/Dynatrace-OneAgent.sh --set-app-log-content-access=true
+            # SECURITY FIX: Use secure temp file instead of /tmp (Issue #300)
+            dynatrace_installer=$(create_temp_file "dynatrace-installer" ".sh")
+            wget -O "$dynatrace_installer" "https://YOUR_ENVIRONMENT.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=YOUR_TOKEN"
+            sh "$dynatrace_installer" --set-app-log-content-access=true
 
             log_message "Dynatrace OneAgent installed"
             ;;
@@ -173,10 +193,12 @@ profile_application() {
 # CPU Profile for $app_name
 
 # Using perf
-perf record -g -p \$(pgrep $app_name) -o /tmp/perf-$app_name.data -- sleep $duration
+# SECURITY FIX: Use secure temp file
+perf_output=\$(mktemp -t "perf-$app_name-XXXXXX.data")
+perf record -g -p \$(pgrep $app_name) -o "\$perf_output" -- sleep $duration
 
 # Generate flamegraph
-perf script -i /tmp/perf-$app_name.data | stackcollapse-perf.pl | flamegraph.pl > $APM_CONFIG_DIR/flamegraph-$app_name.svg
+perf script -i "\$perf_output" | stackcollapse-perf.pl | flamegraph.pl > $APM_CONFIG_DIR/flamegraph-$app_name.svg
 
 echo "CPU profile saved to $APM_CONFIG_DIR/flamegraph-$app_name.svg"
 EOF
@@ -194,7 +216,9 @@ EOF
 # Memory Profile for $app_name
 
 # Using valgrind
-valgrind --tool=massif --massif-out-file=/tmp/massif-$app_name.out $app_name &
+# SECURITY FIX: Use secure temp file instead of /tmp (Issue #300)
+    massif_output=$(create_temp_file "massif-$app_name" ".out")
+    valgrind --tool=massif --massif-out-file="$massif_output" $app_name &
 VALGRIND_PID=\$!
 
 sleep $duration
@@ -202,7 +226,7 @@ sleep $duration
 kill -INT \$VALGRIND_PID
 
 # Generate report
-ms_print /tmp/massif-$app_name.out > $APM_CONFIG_DIR/memory-profile-$app_name.txt
+ms_print "$massif_output" > $APM_CONFIG_DIR/memory-profile-$app_name.txt
 
 echo "Memory profile saved to $APM_CONFIG_DIR/memory-profile-$app_name.txt"
 EOF
@@ -542,45 +566,72 @@ apm_wizard() {
         --msgbox "APM setup complete!\n\nRun 'virtos-apm status' to verify." 10 50
 }
 
-# Show usage
-usage() {
+# Show help text
+show_help() {
     cat <<EOF
-VirtOS Application Performance Monitoring
+Usage: virtos-apm [OPTIONS] <command> [arguments]
 
-Usage: virtos-apm <command> [options]
+VirtOS Application Performance Monitoring - APM integration, profiling, and tracing.
 
-APM Platform Commands:
-  setup-apm <platform>                         Setup APM (newrelic/datadog/appdynamics/dynatrace/elastic)
+COMMANDS:
+  APM Platform:
+    setup-apm <platform>              Setup APM platform
+                                      (newrelic/datadog/appdynamics/dynatrace/elastic)
 
-Profiling Commands:
-  profile-app <name> <duration> <type>         Profile application (cpu/memory/blocking)
+  Profiling:
+    profile-app <name> <duration> <type>
+                                      Profile application
+                                      Types: cpu, memory, blocking
 
-Tracing Commands:
-  setup-tracing <service>                      Setup transaction tracing
+  Tracing:
+    setup-tracing <service>           Setup transaction tracing for service
 
-Error Tracking Commands:
-  setup-error-tracking <platform>              Setup error tracking (sentry/rollbar/bugsnag)
+  Error Tracking:
+    setup-error-tracking <platform>   Setup error tracking
+                                      (sentry/rollbar/bugsnag)
 
-RUM Commands:
-  setup-rum <platform>                         Setup Real User Monitoring
+  Real User Monitoring:
+    setup-rum <platform>              Setup RUM (newrelic/datadog/elastic)
 
-Dashboard Commands:
-  performance-dashboard                        Generate performance dashboard
+  Dashboard:
+    performance-dashboard             Generate performance dashboard
 
-Status Commands:
-  status                                       Show APM status
-  wizard                                       Interactive setup wizard
+  Status:
+    status                            Show APM status
+    wizard                            Interactive setup wizard
 
-Examples:
-  virtos-apm setup-apm newrelic
-  virtos-apm profile-app myapp 60 cpu
-  virtos-apm setup-tracing api-service
-  virtos-apm setup-error-tracking sentry
-  virtos-apm setup-rum datadog
-  virtos-apm performance-dashboard
-  virtos-apm wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Setup APM platform
+    virtos-apm setup-apm newrelic
+
+    # Profile application CPU usage
+    virtos-apm profile-app myapp 60 cpu
+
+    # Setup transaction tracing
+    virtos-apm setup-tracing api-service
+
+    # Setup error tracking
+    virtos-apm setup-error-tracking sentry
+
+    # Setup Real User Monitoring
+    virtos-apm setup-rum datadog
+
+    # Generate performance dashboard
+    virtos-apm performance-dashboard
+
+    # Interactive wizard
+    virtos-apm wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -610,7 +661,16 @@ case "$1" in
     wizard)
         apm_wizard
         ;;
+    --version|-v|version)
+        echo "virtos-apm version $VERSION"
+        exit 0
+        ;;
+    --help|-h|help|"")
+        show_help
+        exit 0
+        ;;
     *)
-        usage
+        show_help
+        exit 1
         ;;
 esac
