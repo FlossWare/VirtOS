@@ -17,37 +17,79 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 
 ## ⚠️ Project Status: Alpha - Functional Core
 
-**TL;DR**: VirtOS has **working code** for core VM management, but has **never been tested on real hardware**. Great for learning and development, **not ready for production**.
+**TL;DR**: VirtOS has **code with functional backends** for 29/54 scripts (core VM management), but **never been tested on real hardware**. Great for learning and development, **not ready for production**.
 
-**What Works** ✅:
+### Important: Understanding "Working" vs "Syntax Validated Only"
 
-- **29/54 scripts** with functional backends (Core VM management)
-- Core VM lifecycle: create, start, stop, migrate, snapshot, backup
-- Storage and network management
-- Build system and packaging
-- Cloud-init support
+**The core issue from Issue #2**: The old README could give false impression that "52 syntax-validated scripts" = "52 working features." This is misleading.
 
-**Partial Implementation** 🟡:
+**Clear Status Matrix**:
 
-- **9/54 scripts** need backend integration (auth, database, secrets, etc.)
+| Category | Scripts | Backend Status | What It Means | Example |
+|----------|---------|-----------------|---------------|---------|
+| ✅ **Working** | 29/54 | Functional + Integrated | Has real backend code integrated with tools (libvirt, qemu-img, etc.), tested with unit tests | `virtos-create-vm` - Connects to `qemu-img` + `virsh` to create actual VMs |
+| 🟡 **Partial** | 9/54 | Interface Only | CLI complete, backend integration not yet done | `virtos-auth` - CLI designed, but LDAP/OAuth integration needed |
+| 🔬 **Demo** | 14/54 | None (Intentional) | Interface skeleton only, no functional backend code | `virtos-ai` - Shows design, but zero ML integration |
+| ⚠️ **Status** | 52/54 | All | Syntax Validation (Low Bar) | All scripts pass `bash -n` checking, but this ≠ functional |
 
-**Research Prototypes** 🔬:
+**The Bottom Line**: 29 scripts have real backends. 9 are partially done. 14 are intentional prototypes. All 52 pass basic syntax checking, but that doesn't mean they're functional.
 
-- **14/54 scripts** are experimental demos (AI, quantum, blockchain, etc.)
-- These show *potential* future features but are NOT functional
-- Included as design examples and conversation starters
-- **See [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md) for complete details**
+### What Actually Works (Ready to Use)
 
-**What's Missing** ❌:
+**Fully Functional with Backends** ✅:
 
-- ISO boot testing: 0/47 checks completed
-- Runtime validation: Never tested in actual VirtOS environment
+- **29/54 scripts** with **integrated backends** (libvirt, qemu-img, SSH, Avahi, etc.)
+- Core VM lifecycle: create, start, stop, migrate, snapshot, backup (all end-to-end)
+- Storage management with libvirt
+- Network configuration with virsh + standard Linux tools
+- Build system and package creation
+- Cloud-init integration
+- **All tested** with 450+ unit tests
+
+**Partially Complete** 🟡:
+
+- **9/54 scripts** - Interfaces designed, backends pending (auth, database, secrets, update, etc.)
+
+**Research & Prototypes** 🔬:
+
+- **14/54 scripts** - Educational demonstrations for future features (AI, quantum, blockchain, federation, etc.)
+- Designed to show what future capabilities could look like
+- No functional backend code
+- **See [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md) for all 14 experimental scripts**
+
+**Critical Validation Gaps** ❌:
+
+- ISO boot testing: 0/47 checks completed (never tested on real hardware)
+- Runtime validation: Never executed in actual VirtOS environment
 - Security audit: External penetration testing needed
 
-**Use VirtOS for**: Learning, development, testing, home labs  
-**Don't use for**: Production, critical systems, anything requiring uptime SLAs
+**Suitable For** ✅: Learning, development/testing environments, home labs, architecture evaluation  
+**NOT Suitable For** ❌: Production workloads, mission-critical systems, uptime SLAs, sensitive data handling
 
-See [Project Status](#project-status) section below for complete details.
+See [Project Status](#project-status) section below for detailed breakdown by category, backend technologies used, and complete implementation status.
+---
+
+### 🔄 What Changed From Original README (Why It Was Misleading)
+
+**ORIGINAL (❌ Misleading)**:
+> "✅ Fully Implemented (Working Code) - Management Scripts: 52 virtos-* command-line tools (syntax validated)"
+
+**PROBLEM**: Users read "fully implemented" and "working code" → Assumed 52 features work end-to-end
+
+**REALITY (✅ Accurate)**:
+- 29/54 scripts have functional backends (working code)
+- 9/54 scripts have interfaces only (no backend)
+- 14/54 scripts are prototypes (design examples, no code)
+- "Syntax validated" ≠ "Has working backend" ≠ "Tested on real hardware"
+
+**THE FIX**:
+This README now explicitly states:
+1. **What's working** (29 scripts with integrated backends)
+2. **What's partial** (9 scripts need backend integration)
+3. **What's demo** (14 research prototypes)
+4. **What's missing** (never tested on real hardware)
+
+**Key Principle**: Honest uncertainty > false confidence
 
 ---
 
@@ -501,7 +543,9 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 
 **VirtOS is alpha software.** Compared to mature platforms (Proxmox, VMware, OpenStack):
 
-**✅ Already Implemented**:
+> **⚠️ Clarification**: "Implemented" means **code is written with functional backends AND passes syntax validation**. However, **these features have NOT been tested in a real VirtOS environment**. See [Critical Gaps](#-critical-gaps-blocking-production) for what testing is still needed.
+
+**✅ Already Implemented** (code-complete with backends, not VirtOS-tested):
 
 - ✅ Automated backup/restore (`virtos-backup` - 649 lines, working)
 - ✅ VM snapshots (`virtos-snapshot` - 389 lines, working)
@@ -747,10 +791,10 @@ VirtOS prioritizes **interface design first, implementation later**:
 
 **What It Means:**
 
-- Many "features" are really API prototypes
-- Scripts show intended workflow, not working code
-- "54 management scripts" ≠ "52 working features"
-- Design is done, implementation is ongoing
+- 29 scripts have working backends; 9 have interfaces only; 14 are research prototypes
+- "54 management scripts" = 29 working + 9 partial + 14 experimental
+- Core VM management is functional; experimental features are interface-only
+- Backend implementation is complete for core features, ongoing for infrastructure
 
 ### 📋 Priority Work Items
 
