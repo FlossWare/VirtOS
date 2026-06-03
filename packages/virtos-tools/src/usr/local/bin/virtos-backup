@@ -222,6 +222,9 @@ EOF
     if [ "$COMPRESSION" = "yes" ]; then
         log "Creating backup archive..."
         tar -czf "$backup_path.tar.gz" -C "$BACKUP_DIR/$vm_name" "$timestamp"
+        if [ -z "${backup_path:-${template_path:-$path}}" ] || [ "${backup_path:-${template_path:-$path}}" = "/" ]; then
+            die "Invalid or dangerous path for rm -rf"
+        fi
         rm -rf "$backup_path"
         backup_path="$backup_path.tar.gz"
     fi
