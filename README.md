@@ -466,6 +466,8 @@ Infrastructure as a Service - simplified! See [docs/IAAS.md](docs/IAAS.md) for a
 
 ### Cloud Federation - Multi-Cloud & Hybrid
 
+> **Note**: Cloud Federation is an **experimental/research prototype** (see [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md)). The interface below demonstrates the intended workflow, but backend integration with cloud providers is not yet implemented. See [Project Status](#project-status) for what is currently working.
+
 **Manage on-premises AND public cloud from one interface:**
 
 ```bash
@@ -529,7 +531,7 @@ VirtOS occupies a unique niche:
 **Trade-offs:**
 
 - Less mature (new project vs 10+ years)
-- No web UI (terminal/SSH only)
+- No built-in web UI (optional Cockpit integration available; TUI-first design)
 - Smaller community
 - Manual HA (no automatic failover yet)
 
@@ -545,7 +547,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 
 > **⚠️ Clarification**: "Implemented" means **code is written with functional backends AND passes syntax validation**. However, **these features have NOT been tested in a real VirtOS environment**. See [Critical Gaps](#-critical-gaps-blocking-production) for what testing is still needed.
 
-**✅ Already Implemented** (code-complete with backends, not VirtOS-tested):
+**✅ Already Implemented** (backend code exists, not yet validated on real hardware):
 
 - ✅ Automated backup/restore (`virtos-backup` - 649 lines, working)
 - ✅ VM snapshots (`virtos-snapshot` - 389 lines, working)
@@ -623,7 +625,7 @@ See [BUILD.md](BUILD.md) for complete build guide and status.
 
 ## Project Status
 
-**Last Updated**: 2026-05-29 | **Version: 0.89 | **Status**: Alpha - Functional Core
+**Last Updated**: 2026-05-29 | **Version**: 0.89 | **Status**: Alpha - Functional Core
 
 > **⚠️ IMPORTANT**: VirtOS is in **alpha** status. Core VM management functionality works, but the system has **never been tested on real hardware**. ISO boot testing and runtime validation are incomplete. See [Current Limitations](#%EF%B8%8F-current-limitations) below.
 
@@ -791,22 +793,27 @@ VirtOS prioritizes **interface design first, implementation later**:
 
 **What It Means:**
 
-- 29 scripts have working backends; 9 have interfaces only; 14 are research prototypes
-- "54 management scripts" = 29 working + 9 partial + 14 experimental
-- Core VM management is functional; experimental features are interface-only
-- Backend implementation is complete for core features, ongoing for infrastructure
+- 29 scripts have working backends; 14 are research prototypes (see [Experimental Features](docs/EXPERIMENTAL_FEATURES.md))
+- "54 management scripts" includes working, partial, and demo scripts
+- Core VM management is functional; experimental features show intended design
+- Implementation continues for infrastructure backends (9 scripts)
+
 
 ### 📋 Priority Work Items
 
-To make VirtOS actually functional:
+**Completed** (no longer blocking):
 
-1. **Backend Integration** (Issue #7) - Connect to libvirt/Docker/LXC
-2. **Security Review** (Issue #6) - Fix sudo scripts, add validation
-3. **Runtime Testing** (Issue #1) - Test on real VirtOS instance
-4. **ISO Build Validation** (Issue #3) - Verify ISO building works
-5. **Unit Tests** (Issue #4) - Add BATS tests for scripts
+- ~~Backend Integration (Issue #7)~~ - 29 scripts have libvirt/QEMU backends
+- ~~Security Review (Issue #6)~~ - virtos-common.sh library implemented (361 lines)
+- ~~Unit Tests (Issue #15)~~ - 100% coverage (54 test files, 450+ tests)
 
-### ⚠️ Current Limitations
+**Current priorities** to move VirtOS toward production readiness:
+
+1. **Runtime Testing** (Issue #1) - Test on real VirtOS hardware/VM environment
+2. **ISO Build Validation** (Issue #3) - Verify ISO builds and boots successfully
+3. **Infrastructure Backends** (Issue #87) - Implement 9 remaining scripts (auth, secrets, database, etc.)
+4. **External Security Audit** - Penetration testing and independent review
+5. **Performance Benchmarking** - Validate performance under load
 
 **VirtOS Alpha Status - Use With Caution**:
 
