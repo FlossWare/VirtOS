@@ -464,11 +464,11 @@ virtos-create-vm \
 
 Infrastructure as a Service - simplified! See [docs/IAAS.md](docs/IAAS.md) for automated placement, scheduling policies, and resource management.
 
-### Cloud Federation - Multi-Cloud & Hybrid
+### Cloud Federation - Multi-Cloud & Hybrid (Experimental)
 
-> **Note**: Cloud Federation (`virtos-federation`) is an **experimental/demo script** -- see [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md). The interface below shows the intended design, but backends are not yet implemented.
+> **Note**: Cloud Federation is an **experimental/research prototype**. The interface below demonstrates the intended design but requires significant backend implementation before it becomes functional. See [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md) for details.
 
-**Manage on-premises AND public cloud from one interface (planned):**
+**Intended design -- manage on-premises AND public cloud from one interface:**
 
 ```bash
 # Initialize federation
@@ -489,7 +489,7 @@ virtos-federation vm-migrate myvm on-prem aws
 virtos-federation cost-optimize --report monthly
 ```
 
-**Federation features:**
+**Planned federation features** (not yet functional):
 
 - **Unified management** across on-prem + AWS + Azure + GCP
 - **Cross-cloud networking** (VPN tunnels, unified IP space)
@@ -499,7 +499,7 @@ virtos-federation cost-optimize --report monthly
 - **Cost optimization** (compare providers, placement recommendations)
 - **VM migration** between any providers
 
-See [docs/FEDERATION.md](docs/FEDERATION.md) for multi-cloud setup, hybrid deployments, and cost optimization strategies.
+See [docs/FEDERATION.md](docs/FEDERATION.md) for multi-cloud design concepts and future plans.
 
 ### Customization
 
@@ -609,7 +609,7 @@ VirtOS now has a **fully functional package build system** that creates real art
 
 ```text
 ✓ Package built successfully (332KB)
-✓ All 54 virtos scripts syntax validated
+✓ All 54 virtos scripts syntax validated (29 with working backends)
 ✓ Build configuration valid (7 profiles)
 ✓ ALL TESTS PASSED
 ```
@@ -802,7 +802,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for detaile
 
 ### 🎯 Development Philosophy
 
-VirtOS prioritizes **interface design first, implementation later**:
+VirtOS uses **interface design first, then implementation**:
 
 **Why This Approach?**
 
@@ -811,14 +811,12 @@ VirtOS prioritizes **interface design first, implementation later**:
 - Enables modular, incremental implementation
 - Provides documentation-driven development
 
-**What It Means:**
+**Current Reality:**
 
-- 29 scripts have working backends; 14 are research prototypes (see [Experimental Features](docs/EXPERIMENTAL_FEATURES.md))
-- "54 management scripts" includes working, partial, and demo scripts
-- Core VM management is functional; experimental features show intended design
-- Implementation continues for infrastructure backends (9 scripts)
-
-
+- 29 scripts have full working backends (libvirt/QEMU)
+- 9 scripts have interfaces complete but need backend integration
+- 14 scripts are research prototypes showing future possibilities
+- Core VM management is implemented, not just designed
 ### 📋 Priority Work Items
 
 **Completed** (no longer blocking):
@@ -886,11 +884,11 @@ See [Production Readiness Master Checklist](https://github.com/FlossWare/VirtOS/
 
 **Most Valuable Contributions:**
 
-1. Implement backend integration for existing prototypes
-2. Add unit tests for management scripts
-3. Perform security review and add input validation
-4. Test ISO building end-to-end
-5. Test platform-java integration in real environment
+1. Test ISO building end-to-end on real hardware
+2. Test platform-java integration in real VirtOS environment
+3. Implement backends for 9 infrastructure scripts (auth, database, secrets, etc.)
+4. Run integration tests in a live VirtOS instance
+5. Contribute to external security audit and penetration testing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md) for detailed guidance.
 
