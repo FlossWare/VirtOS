@@ -167,7 +167,7 @@ cd packages
 ./build-all.sh
 
 # Output: packages/output/virtos-tools.tcz (332KB)
-# Contains: All 53 virtos-* management scripts
+# Contains: All 54 virtos-* management scripts (29 with functional backends)
 ```
 
 **Result:** A working Tiny Core Linux package with all VirtOS management tools!
@@ -553,7 +553,7 @@ VirtOS now has a **fully functional package build system** that creates real art
 
 **Built & Tested:**
 
-- ✅ **virtos-tools.tcz** (332KB) - All 54 management scripts packaged
+- ✅ **virtos-tools.tcz** (332KB) - All 54 management scripts packaged (29 fully functional, 9 partial, 14 experimental)
 - ✅ Automated package building (`packages/build-all.sh`)
 - ✅ Build validation (`build/scripts/validate-build.sh`)
 - ✅ Quick testing (`build/scripts/quick-test.sh`)
@@ -563,7 +563,7 @@ VirtOS now has a **fully functional package build system** that creates real art
 
 ```text
 ✓ Package built successfully (332KB)
-✓ All 53 virtos scripts syntax validated
+✓ All 54 virtos scripts syntax validated
 ✓ Build configuration valid (7 profiles)
 ✓ ALL TESTS PASSED
 ```
