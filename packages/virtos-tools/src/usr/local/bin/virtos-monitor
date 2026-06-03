@@ -1,15 +1,33 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Monitor - Automated monitoring and alerting
 # Health checks, resource tracking, and alert notifications
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.22")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-monitor version $VERSION"
+    exit 0
+fi
+
 CONFIG_DIR="/etc/virtos/monitor"
 STATE_DIR="/var/run/virtos/monitor"
 LOG_FILE="/var/log/virtos-monitor.log"
 
-mkdir -p "$CONFIG_DIR" "$STATE_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$CONFIG_DIR" "$STATE_DIR" || true
+fi
 
 usage() {
     cat << EOF
@@ -55,6 +73,14 @@ Examples:
 
   # View active alerts
   virtos-monitor alerts
+
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Monitoring daemon not running
+    4    Configuration failed
+    5    Health check failed
 
 EOF
 }
@@ -109,7 +135,20 @@ EOF
     fi
 
     # Load configuration
-    source "$CONFIG_DIR/config.conf"
+    # SECURITY FIX: Use parse_config_file instead of source (Issue #296)
+    if [ -f "$CONFIG_DIR/config.conf" ]; then
+        parse_config_file "$CONFIG_DIR/config.conf"             CPU_WARNING CPU_CRITICAL             MEM_WARNING MEM_CRITICAL             DISK_WARNING DISK_CRITICAL             CHECK_INTERVAL ALERT_EMAIL
+    else
+        # Set defaults if config doesn't exist
+        CPU_WARNING=80
+        CPU_CRITICAL=95
+        MEM_WARNING=80
+        MEM_CRITICAL=95
+        DISK_WARNING=80
+        DISK_CRITICAL=95
+        CHECK_INTERVAL=60
+        ALERT_EMAIL=""
+    fi
 }
 
 check_cpu() {
@@ -451,12 +490,14 @@ configure_threshold() {
     esac
 }
 
-# Initialize
-init_config
+# Initialize (skip for --help/--version)
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+    init_config
+fi
 
 # Main command handler
-COMMAND="$1"
-shift
+COMMAND="${1:-}"
+[ -n "$COMMAND" ] && shift
 
 case "$COMMAND" in
     start)
@@ -484,6 +525,10 @@ case "$COMMAND" in
     enable|disable)
         CHECK_NAME="$1"
         echo "Enable/disable not yet implemented"
+        ;;
+    --version|-v|version)
+        echo "virtos-monitor version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

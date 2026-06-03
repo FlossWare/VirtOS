@@ -1,6 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Network - Network virtualization and SDN
 # VLAN management, OVN, network policies, and software-defined networking
 
@@ -10,11 +11,23 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
 fi
 
 VERSION=$(get_version 2>/dev/null || echo "0.21")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-network version $VERSION"
+    exit 0
+fi
+
 NETWORK_DIR="/var/lib/virtos/network"
 STATE_DIR="/var/run/virtos/network"
 LOG_FILE="/var/log/virtos-network.log"
 
-mkdir -p "$NETWORK_DIR" "$STATE_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$NETWORK_DIR" "$STATE_DIR" || true
+fi
 
 usage() {
     cat << EOF
@@ -87,6 +100,14 @@ Examples:
   # Create bridge for isolated network
   virtos-network bridge-create isolated-br0
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Network/bridge not found
+    4    Operation failed
+    5    OVN not initialized
+
 EOF
 }
 
@@ -122,7 +143,10 @@ DEFAULT_POLICY=drop
 EOF
     fi
 
-    source "$NETWORK_DIR/config.conf"
+    # SECURITY FIX: Use parse_config_file instead of source (Issue #296)
+    if [ -f "$NETWORK_DIR/config.conf" ]; then
+        parse_config_file "$NETWORK_DIR/config.conf" DEFAULT_BRIDGE DEFAULT_NAT_NETWORK
+    fi
 }
 
 # VLAN Management
@@ -131,12 +155,38 @@ vlan_create() {
     local vlan_name="$2"
 
     if [ -z "$vlan_id" ] || [ -z "$vlan_name" ]; then
-        echo "Error: VLAN ID and name required"
+        echo "Error: VLAN ID and name are required" >&2
+        echo "" >&2
+        echo "Usage:" >&2
+        echo "  virtos-network vlan-create <vlan-id> <name>" >&2
+        echo "" >&2
+        echo "Arguments:" >&2
+        echo "  vlan-id    VLAN ID number (1-4094)" >&2
+        echo "  name       VLAN name (alphanumeric, hyphen, underscore)" >&2
+        echo "" >&2
+        echo "Example:" >&2
+        echo "  virtos-network vlan-create 100 dmz-network" >&2
+        return 1
+    fi
+
+    # SECURITY: Validate VLAN name to prevent command injection
+    if ! echo "$vlan_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid VLAN name '$vlan_name' (only alphanumeric, underscore, hyphen allowed)" >&2
         return 1
     fi
 
     if [ "$vlan_id" -lt 1 ] || [ "$vlan_id" -gt 4094 ]; then
-        echo "Error: VLAN ID must be between 1-4094"
+        echo "Error: VLAN ID out of valid range" >&2
+        echo "" >&2
+        echo "Provided VLAN ID: $vlan_id" >&2
+        echo "Valid range:      1-4094" >&2
+        echo "" >&2
+        echo "Note: VLAN IDs are defined by IEEE 802.1Q standard" >&2
+        echo "  • 0:        Reserved (priority tagging)" >&2
+        echo "  • 1-4094:   Available for use" >&2
+        echo "  • 4095:     Reserved" >&2
+        echo "" >&2
+        echo "Choose a VLAN ID in the valid range and try again." >&2
         return 1
     fi
 
@@ -262,13 +312,28 @@ vlan_attach() {
         return 1
     fi
 
+    # SECURITY: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        echo "Error: Invalid VM name '$vm_name'" >&2
+        return 1
+    fi
+
     log_message "Attaching VM $vm_name to VLAN $vlan_id"
 
     # Get VLAN network name
     local vlan_name=$(virsh net-list --all 2>/dev/null | grep "vlan.*${vlan_id}" | awk '{print $1}')
 
     if [ -z "$vlan_name" ]; then
-        echo "Error: VLAN $vlan_id not found"
+        echo "Error: VLAN $vlan_id not found" >&2
+        echo "" >&2
+        echo "Available VLANs:" >&2
+        virsh net-list --all 2>/dev/null | grep "vlan" || echo "  (none)" >&2
+        echo "" >&2
+        echo "To create VLAN $vlan_id:" >&2
+        echo "  virtos-network vlan-create $vlan_id <vlan-name>" >&2
+        echo "" >&2
+        echo "Example:" >&2
+        echo "  virtos-network vlan-create $vlan_id vlan-${vlan_id}" >&2
         return 1
     fi
 
@@ -299,8 +364,18 @@ ovn_init() {
     echo ""
 
     if ! command -v ovn-nbctl >/dev/null 2>&1; then
-        echo "Error: OVN not installed"
-        echo "Install with: tce-load -i openvswitch ovn"
+        echo "Error: OVN (Open Virtual Network) is not installed" >&2
+        echo "" >&2
+        echo "OVN provides software-defined networking for VirtOS:" >&2
+        echo "  • Virtual networks and logical switches" >&2
+        echo "  • Network isolation and segmentation" >&2
+        echo "  • Advanced routing and firewall capabilities" >&2
+        echo "" >&2
+        echo "To install OVN:" >&2
+        echo "  tce-load -wi openvswitch ovn" >&2
+        echo "" >&2
+        echo "For minimal networking needs, use bridge mode instead:" >&2
+        echo "  virtos-network bridge-create <name>" >&2
         return 1
     fi
 
@@ -438,6 +513,12 @@ bridge_create() {
         return 1
     fi
 
+    # SECURITY: Validate bridge name to prevent command injection
+    if ! echo "$bridge_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Invalid bridge name '$bridge_name' (only alphanumeric, underscore, hyphen allowed)" >&2
+        return 1
+    fi
+
     log_message "Creating bridge: $bridge_name"
 
     echo "Creating Virtual Bridge"
@@ -534,6 +615,12 @@ firewall_create() {
     if [ -z "$vm_name" ] || [ -z "$rule" ]; then
         echo "Error: VM name and rule required"
         echo "Rule format: allow|deny tcp|udp|icmp port[,port]"
+        return 1
+    fi
+
+    # SECURITY: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        echo "Error: Invalid VM name '$vm_name'" >&2
         return 1
     fi
 
@@ -695,7 +782,7 @@ qos_set() {
     echo "Rate: ${rate} Mbps"
 
     # Save QoS settings
-    mkdir -p "$NETWORK_DIR/qos"
+    mkdir -p "$NETWORK_DIR/qos" || true
     echo "$rate" > "$NETWORK_DIR/qos/${vm_name}.rate"
 
     # In production:
@@ -775,12 +862,14 @@ sdn_status() {
     echo "QoS: $([ "$QOS_ENABLED" = "yes" ] && echo "Enabled" || echo "Disabled")"
 }
 
-# Initialize
-init_config
+# Initialize (skip for --help/--version)
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+    init_config
+fi
 
 # Main command handler
-COMMAND="$1"
-shift
+COMMAND="${1:-}"
+[ -n "$COMMAND" ] && shift
 
 case "$COMMAND" in
     vlan-create)
