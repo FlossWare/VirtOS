@@ -1,1 +1,7 @@
 === Shell Security Patterns ===
+./config/custom-scripts/lib/virtos-keyring.sh:7:# This library provides secure credential storage and retrieval using the Linux
+./config/custom-scripts/lib/virtos-keyring.sh:269:# Credential Retrieval
+./config/custom-scripts/lib/virtos-keyring.sh:331:    # Audit log (successful retrieval)
+./packages/virtos-tools/src/usr/local/lib/virtos-keyring.sh:7:# This library provides secure credential storage and retrieval using the Linux
+./packages/virtos-tools/src/usr/local/lib/virtos-keyring.sh:269:# Credential Retrieval
+./packages/virtos-tools/src/usr/local/lib/virtos-keyring.sh:331:    # Audit log (successful retrieval)
