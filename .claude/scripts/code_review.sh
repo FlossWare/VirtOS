@@ -28,7 +28,7 @@ echo "Found $PYTHON_COUNT Python files, $SHELL_COUNT shell scripts"
 echo ""
 
 # Python checks (if Python files exist)
-if [ $PYTHON_COUNT -gt 0 ]; then
+if [ "$PYTHON_COUNT" -gt 0 ]; then
     echo "=== Python Code Checks ==="
 
     # 1. MyPy (type checking)
@@ -61,7 +61,7 @@ else
 fi
 
 # Shell script checks
-if [ $SHELL_COUNT -gt 0 ]; then
+if [ "$SHELL_COUNT" -gt 0 ]; then
     echo "=== Shell Script Checks ==="
 
     # 1. ShellCheck (if available)
@@ -110,7 +110,7 @@ else
 fi
 
 # Python security scans (if exists)
-if [ $PYTHON_COUNT -gt 0 ]; then
+if [ "$PYTHON_COUNT" -gt 0 ]; then
     echo "=== Python Security Pattern Scan ==="
     {
         echo "=== Python Security Patterns ==="

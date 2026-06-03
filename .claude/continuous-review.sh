@@ -40,7 +40,7 @@ auto_commit_push() {
 
     if [ -n "$(git status --porcelain)" ]; then
         echo "Committing changes: $message" | tee -a "$REVIEW_LOG"
-        git add $files
+        git add "$files"
         git commit -m "$message
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" 2>&1 | tee -a "$REVIEW_LOG"
@@ -199,7 +199,7 @@ $JAVA_SECURITY
 
     # 2. TODO/FIXME in Java files
     echo "Scanning Java files for TODO/FIXME..." | tee -a "$REVIEW_LOG"
-    JAVA_TODOS=$(grep -rn "TODO\|FIXME\|XXX\|HACK" $JAVA_FILES 2>/dev/null || true)
+    JAVA_TODOS=$(grep -rn "TODO\|FIXME\|XXX\|HACK" "$JAVA_FILES" 2>/dev/null || true 2>/dev/null || true)
     if [ -n "$JAVA_TODOS" ]; then
         create_issue "[Java] TODO/FIXME items found" "## Java Action Items
 
