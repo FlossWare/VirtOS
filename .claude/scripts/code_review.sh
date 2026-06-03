@@ -21,8 +21,8 @@ cd "$PROJECT_ROOT"
 rm -f "$REVIEW_OUTPUT_DIR"/*.txt
 
 # Count files
-PYTHON_COUNT=$(find . -name "*.py" -type f ! -path "./.git/*" ! -path "./.claude/*" | wc -l)
-SHELL_COUNT=$(find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/*" | wc -l)
+PYTHON_COUNT=$(find . -name "*.py" -type f ! -path "./.git/*" ! -path "./.claude/*" 2>/dev/null | wc -l)
+SHELL_COUNT=$(find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/*" 2>/dev/null | wc -l)
 
 echo "Found $PYTHON_COUNT Python files, $SHELL_COUNT shell scripts"
 echo ""
@@ -71,9 +71,8 @@ if [ $SHELL_COUNT -gt 0 ]; then
             find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/*" -exec shellcheck -x {} \; 2>&1 || true
         } >"$REVIEW_OUTPUT_DIR/shellcheck.txt"
 
-        SHELLCHECK_COUNT=$(wc -l <"$REVIEW_OUTPUT_DIR/shellcheck.txt" 2>/dev/null || echo "0")
-        SHELLCHECK_COUNT=$(echo "$SHELLCHECK_COUNT" | tr -d ' \n')
-        if [ "$SHELLCHECK_COUNT" -gt 0 ] 2>/dev/null; then
+        SHELLCHECK_COUNT=$(wc -l <"$REVIEW_OUTPUT_DIR/shellcheck.txt" 2>/dev/null | tr -d ' \n')
+        if [ "${SHELLCHECK_COUNT:-0}" -gt 0 ]; then
             echo "✗ Found $SHELLCHECK_COUNT shellcheck issues"
         else
             echo "✓ ShellCheck: PASSED"
@@ -82,17 +81,24 @@ if [ $SHELL_COUNT -gt 0 ]; then
         echo "[1/2] ShellCheck not installed, skipping"
     fi
 
-    # 2. Security patterns for shell scripts
+    # 2. Security patterns for shell scripts - FIXED to avoid false positives
     echo "[2/2] Running security pattern scan..."
     {
         echo "=== Shell Security Patterns ==="
-        # Look for dangerous patterns (exclude .claude/ and documented usage)
-        find . -type f \( -name "*.sh" -o -name "*.bash" \) ! -path "./.git/*" ! -path "./.claude/*" ! -path "./packages/*/build.sh" -exec grep -Hn "eval\|rm -rf /\|curl.*|.*sh\|wget.*|.*sh" {} \; 2>/dev/null | grep -v "# SECURITY NOTE" || true
+        # Look for dangerous patterns using word boundaries and excluding comments
+        # \beval\b = word-boundary eval (not "retrieval")
+        # Filter out comment-only lines
+        find . -type f \( -name "*.sh" -o -name "*.bash" \) \
+            ! -path "./.git/*" ! -path "./.claude/*" ! -path "./packages/*/build.sh" \
+            -exec grep -Hn -E '\beval\b|rm\s+-rf\s+/|curl[^|]*\|[^|]*sh|wget[^|]*\|[^|]*sh' {} \; 2>/dev/null \
+            | grep -v '^\s*#' \
+            | grep -v 'retrieval' \
+            | grep -v 'SECURITY NOTE' \
+            || true
     } >"$REVIEW_OUTPUT_DIR/shell-security-scans.txt"
 
-    SHELL_SECURITY_COUNT=$(grep -c "\\.sh:" "$REVIEW_OUTPUT_DIR/shell-security-scans.txt" 2>/dev/null || echo "0")
-    SHELL_SECURITY_COUNT=$(echo "$SHELL_SECURITY_COUNT" | tr -d ' \n')
-    if [ "$SHELL_SECURITY_COUNT" -gt 0 ] 2>/dev/null; then
+    SHELL_SECURITY_COUNT=$(grep -c "\.sh:" "$REVIEW_OUTPUT_DIR/shell-security-scans.txt" 2>/dev/null | tr -d ' \n')
+    if [ "${SHELL_SECURITY_COUNT:-0}" -gt 0 ]; then
         echo "✗ Found $SHELL_SECURITY_COUNT security patterns in shell scripts"
     else
         echo "✓ Shell Security: PASSED"
@@ -111,9 +117,8 @@ if [ $PYTHON_COUNT -gt 0 ]; then
         find . -type f -name "*.py" ! -path "./.git/*" ! -path "./.claude/*" -exec grep -Hn "eval\|exec\|__import__\|pickle.loads\|yaml.load[^s]\|subprocess.call\|os.system" {} \; 2>/dev/null || true
     } >"$REVIEW_OUTPUT_DIR/python-security-scans.txt"
 
-    PY_SECURITY_COUNT=$(grep -c ".py:" "$REVIEW_OUTPUT_DIR/python-security-scans.txt" 2>/dev/null || echo "0")
-    PY_SECURITY_COUNT=$(echo "$PY_SECURITY_COUNT" | tr -d ' \n')
-    if [ "$PY_SECURITY_COUNT" -gt 0 ] 2>/dev/null; then
+    PY_SECURITY_COUNT=$(grep -c ".py:" "$REVIEW_OUTPUT_DIR/python-security-scans.txt" 2>/dev/null | tr -d ' \n')
+    if [ "${PY_SECURITY_COUNT:-0}" -gt 0 ]; then
         echo "✗ Found $PY_SECURITY_COUNT security patterns in Python code"
     else
         echo "✓ Python Security Patterns: PASSED"
@@ -123,9 +128,17 @@ fi
 
 # TODO/FIXME checks (all languages)
 echo "=== TODO/FIXME Checks ==="
-find . -type f \( -name "*.sh" -o -name "*.bash" -o -name "*.py" \) ! -path "./.git/*" ! -path "./.claude/*" -exec grep -Hn "TODO\|FIXME\|XXX\|HACK" {} \; 2>/dev/null | grep -v "# TODO\|# FIXME" | grep -v "code review\|pattern" || true >"$REVIEW_OUTPUT_DIR/todo-checks.txt"
-TODO_COUNT=$(wc -l <"$REVIEW_OUTPUT_DIR/todo-checks.txt" || echo 0)
-echo "Found $TODO_COUNT TODO/FIXME comments"
+{
+    find . -type f \( -name "*.sh" -o -name "*.bash" -o -name "*.py" \) \
+        ! -path "./.git/*" ! -path "./.claude/*" \
+        -exec grep -Hn "TODO\|FIXME\|XXX\|HACK" {} \; 2>/dev/null \
+        | grep -v "^[^:]*:[^:]*:\s*#.*TODO" \
+        | grep -v "code review\|pattern\|TODO/FIXME" \
+        || true
+} >"$REVIEW_OUTPUT_DIR/todo-checks.txt"
+
+TODO_COUNT=$(wc -l <"$REVIEW_OUTPUT_DIR/todo-checks.txt" 2>/dev/null | tr -d ' \n')
+echo "Found ${TODO_COUNT:-0} TODO/FIXME comments"
 
 echo ""
 echo "========================================="
