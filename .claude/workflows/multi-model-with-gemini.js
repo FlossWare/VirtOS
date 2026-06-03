@@ -284,6 +284,8 @@ ${Object.entries(voteCounts).map(([model, count]) => `- ${model}: ${count} vote(
 
 ### Arbiter Opinions:
 
+### Rejected Models Reasoning:\n\n**From Opus Arbiter**:\n${arbiterVotes.opusArbiter?.rejected_models?.map(r => `- **${r.model.toUpperCase()}**: ${r.rejection_reason}`).join("\n") || "No rejections documented"}\n\n**From Sonnet Arbiter**:\n${arbiterVotes.sonnetArbiter?.rejected_models?.map(r => `- **${r.model.toUpperCase()}**: ${r.rejection_reason}`).join("\n") || "No rejections documented"}\n\n**From Gemini Arbiter**:\n${arbiterVotes.geminiArbiter?.rejected_models?.map(r => `- **${r.model.toUpperCase()}**: ${r.rejection_reason}`).join("\n") || "No rejections documented"}\n
+
 **Opus Arbiter**: Selected ${arbiterVotes.opusArbiter?.selected_model || 'unknown'}
 > ${arbiterVotes.opusArbiter?.accepted_reasoning || 'N/A'}
 
