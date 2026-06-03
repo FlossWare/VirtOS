@@ -127,7 +127,10 @@ REPLICATION_FACTOR=3
 EOF
     fi
 
-    source "$STORAGE_DIR/config.conf"
+    # SECURITY FIX: Use parse_config_file instead of source (Issue #296)
+    if [ -f "$STORAGE_DIR/config.conf" ]; then
+        parse_config_file "$STORAGE_DIR/config.conf" DEFAULT_POOL_DIR DEFAULT_VOLUME_FORMAT
+    fi
 }
 
 # Ceph Management

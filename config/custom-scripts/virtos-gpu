@@ -103,7 +103,10 @@ GPU_ASSIGNMENTS=""
 EOF
     fi
 
-    source "$GPU_DIR/config.conf"
+    # SECURITY FIX: Use parse_config_file instead of source (Issue #296)
+    if [ -f "$GPU_DIR/config.conf" ]; then
+        parse_config_file "$GPU_DIR/config.conf" GPU_VENDOR GPU_MODEL GPU_DRIVER
+    fi
 }
 
 # GPU Detection
