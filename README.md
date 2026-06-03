@@ -466,9 +466,9 @@ Infrastructure as a Service - simplified! See [docs/IAAS.md](docs/IAAS.md) for a
 
 ### Cloud Federation - Multi-Cloud & Hybrid
 
-> **Note**: Cloud Federation is an **experimental/research prototype** (see [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md)). The interface below demonstrates the intended workflow, but backend integration with cloud providers is not yet implemented. See [Project Status](#project-status) for what is currently working.
+> **Note**: Cloud Federation (`virtos-federation`) is an **experimental/demo script** -- see [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md). The interface below shows the intended design, but backends are not yet implemented.
 
-**Manage on-premises AND public cloud from one interface:**
+**Manage on-premises AND public cloud from one interface (planned):**
 
 ```bash
 # Initialize federation
@@ -652,6 +652,26 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 - 🔬 **Demo** - Prototype/research only
 - ⚠️ **Unknown** - Exists but not validated
 - ❌ **Not Started** - Not implemented
+
+### What Has Been Validated End-to-End
+
+The following have been **actually tested and confirmed working** on developer machines:
+
+- **Package building**: `build-all.sh` produces a valid 332KB `virtos-tools.tcz` package
+- **Build validation**: `validate-build.sh` and `quick-test.sh` pass all checks
+- **Syntax correctness**: All 54 scripts pass `bash -n` syntax validation
+- **Unit tests**: 450+ BATS tests pass across 54 test files
+- **CI/CD pipeline**: GitHub Actions runs 11 validation jobs successfully
+
+The following are **code-complete with backends but have NOT been tested in a real VirtOS environment**:
+
+- VM lifecycle (create, start, stop, migrate, snapshot, backup) via libvirt/virsh
+- Storage pool and volume management via virsh
+- Network bridge and NAT configuration via virsh/ip/brctl
+- Cluster discovery via Avahi/mDNS
+- All 29 "working" scripts listed below
+
+The distinction matters: code that passes syntax checks and unit tests may still fail at runtime due to missing dependencies, permission issues, or environmental differences in a real VirtOS installation.
 
 ### ✅ Working Features (29/54 scripts - 54%)
 
