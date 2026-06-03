@@ -6,58 +6,26 @@ set -e
 
 REVIEW_LOG="/tmp/virtos-review-$(date +%Y%m%d-%H%M%S).log"
 ISSUES_CREATED=0
-ISSUES_SKIPPED=0
 REPO_ROOT="/home/sfloess/Development/github/FlossWare/VirtOS"
 
 cd "$REPO_ROOT"
-
-# Load deduplication library
-# shellcheck source=.claude/scripts/issue_deduplication.sh
-source "$REPO_ROOT/.claude/scripts/issue_deduplication.sh"
 
 echo "=== VirtOS Automated Code Review ===" | tee -a "$REVIEW_LOG"
 echo "Started: $(date)" | tee -a "$REVIEW_LOG"
 echo "" | tee -a "$REVIEW_LOG"
 
-# Function to create GitHub issue with deduplication
+# Function to create GitHub issue
 create_issue() {
     local title="$1"
     local body="$2"
 
-    # Check for duplicate
-    if is_duplicate_issue "$title" "$body"; then
-        echo "⏭️  SKIPPED (duplicate): $title" | tee -a "$REVIEW_LOG"
-        ISSUES_SKIPPED=$((ISSUES_SKIPPED + 1))
-        return 0
-    fi
-
     echo "Creating issue: $title" | tee -a "$REVIEW_LOG"
 
-    # Write body to temp file to avoid "argument list too long"
-    local body_file
-    body_file=$(mktemp)
-    echo "$body" >"$body_file"
-
-    local issue_url
-    if issue_url=$(gh issue create --title "$title" --body-file "$body_file" 2>&1 | tee -a "$REVIEW_LOG"); then
-        rm -f "$body_file"
-
-        # Extract issue number from URL
-        local issue_number
-        issue_number=$(echo "$issue_url" | grep -oE "/issues/[0-9]+$" | grep -oE "[0-9]+$")
-
-        if [ -n "$issue_number" ]; then
-            record_issue_hash "$title" "$body" "$issue_number"
-            ISSUES_CREATED=$((ISSUES_CREATED + 1))
-            echo "✅ Issue #$issue_number created successfully" | tee -a "$REVIEW_LOG"
-        else
-            ISSUES_CREATED=$((ISSUES_CREATED + 1))
-            echo "✅ Issue created successfully (could not extract number)" | tee -a "$REVIEW_LOG"
-        fi
+    if gh issue create --title "$title" --body "$body" 2>&1 | tee -a "$REVIEW_LOG"; then
+        ISSUES_CREATED=$((ISSUES_CREATED + 1))
+        echo "✅ Issue created successfully" | tee -a "$REVIEW_LOG"
     else
-        rm -f "$body_file"
         echo "❌ Failed to create issue" | tee -a "$REVIEW_LOG"
-        return 1
     fi
 }
 

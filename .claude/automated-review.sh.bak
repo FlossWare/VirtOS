@@ -33,20 +33,15 @@ create_issue() {
 
     echo "Creating issue: $title" | tee -a "$REVIEW_LOG"
 
-    # Write body to temp file to avoid "argument list too long"
-    local body_file
-    body_file=$(mktemp)
-    echo "$body" >"$body_file"
-
+    # Create issue and capture issue number
     local issue_url
-    if issue_url=$(gh issue create --title "$title" --body-file "$body_file" 2>&1 | tee -a "$REVIEW_LOG"); then
-        rm -f "$body_file"
-
-        # Extract issue number from URL
+    if issue_url=$(gh issue create --title "$title" --body "$body" 2>&1 | tee -a "$REVIEW_LOG"); then
+        # Extract issue number from URL (e.g., https://github.com/owner/repo/issues/123)
         local issue_number
-        issue_number=$(echo "$issue_url" | grep -oE "/issues/[0-9]+$" | grep -oE "[0-9]+$")
+        issue_number=$(echo "$issue_url" | grep -oE '/issues/[0-9]+$' | grep -oE '[0-9]+$')
 
         if [ -n "$issue_number" ]; then
+            # Record hash to prevent future duplicates
             record_issue_hash "$title" "$body" "$issue_number"
             ISSUES_CREATED=$((ISSUES_CREATED + 1))
             echo "✅ Issue #$issue_number created successfully" | tee -a "$REVIEW_LOG"
@@ -55,7 +50,6 @@ create_issue() {
             echo "✅ Issue created successfully (could not extract number)" | tee -a "$REVIEW_LOG"
         fi
     else
-        rm -f "$body_file"
         echo "❌ Failed to create issue" | tee -a "$REVIEW_LOG"
         return 1
     fi
@@ -135,11 +129,7 @@ done < <(grep -rn "TODO\|FIXME\|XXX\|HACK" . \
     2>/dev/null || true)
 
 if [ -n "$TODO_FINDINGS" ]; then
-    # Check if we already created issues for these TODOs (avoid duplicates)
-    existing_todo_issues=$(gh issue list --search "TODO FIXME" --json number,title --limit 50 2>/dev/null || echo "[]")
-
-    if ! echo "$existing_todo_issues" | grep -q "TODO\|FIXME"; then
-        create_issue "[Code Review] TODO/FIXME items found in codebase" "## Action Items Found
+    create_issue "[Code Review] TODO/FIXME items found in codebase" "## Action Items Found
 
 The following TODO/FIXME/XXX/HACK items need attention:
 
@@ -156,9 +146,6 @@ Review each item and either:
 
 **Auto-detected**: $(date)
 **Review log**: $REVIEW_LOG"
-    else
-        echo "ℹ️  TODO issues already exist - skipping duplicate" | tee -a "$REVIEW_LOG"
-    fi
 fi
 
 # 3. Security Scans
@@ -361,7 +348,12 @@ echo "" | tee -a "$REVIEW_LOG"
 echo "=== Review Summary ===" | tee -a "$REVIEW_LOG"
 echo "Completed: $(date)" | tee -a "$REVIEW_LOG"
 echo "Issues created: $ISSUES_CREATED" | tee -a "$REVIEW_LOG"
+echo "Issues skipped (duplicates): $ISSUES_SKIPPED" | tee -a "$REVIEW_LOG"
 echo "Review log: $REVIEW_LOG" | tee -a "$REVIEW_LOG"
+
+# Show deduplication stats
+echo "" | tee -a "$REVIEW_LOG"
+hash_stats | tee -a "$REVIEW_LOG"
 
 # Return exit code based on issues found
 if [ "$ISSUES_CREATED" -gt 0 ]; then
