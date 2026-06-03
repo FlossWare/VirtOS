@@ -140,8 +140,10 @@ EOF
             log_message "Installing Dynatrace OneAgent..."
 
             # Download and install OneAgent
-            wget -O /tmp/Dynatrace-OneAgent.sh "https://YOUR_ENVIRONMENT.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=YOUR_TOKEN"
-            sh /tmp/Dynatrace-OneAgent.sh --set-app-log-content-access=true
+            # SECURITY FIX: Use secure temp file instead of /tmp (Issue #300)
+            dynatrace_installer=$(create_temp_file "dynatrace-installer" ".sh")
+            wget -O "$dynatrace_installer" "https://YOUR_ENVIRONMENT.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=YOUR_TOKEN"
+            sh "$dynatrace_installer" --set-app-log-content-access=true
 
             log_message "Dynatrace OneAgent installed"
             ;;
@@ -191,10 +193,12 @@ profile_application() {
 # CPU Profile for $app_name
 
 # Using perf
-perf record -g -p \$(pgrep $app_name) -o /tmp/perf-$app_name.data -- sleep $duration
+# SECURITY FIX: Use secure temp file
+perf_output=\$(mktemp -t "perf-$app_name-XXXXXX.data")
+perf record -g -p \$(pgrep $app_name) -o "\$perf_output" -- sleep $duration
 
 # Generate flamegraph
-perf script -i /tmp/perf-$app_name.data | stackcollapse-perf.pl | flamegraph.pl > $APM_CONFIG_DIR/flamegraph-$app_name.svg
+perf script -i "\$perf_output" | stackcollapse-perf.pl | flamegraph.pl > $APM_CONFIG_DIR/flamegraph-$app_name.svg
 
 echo "CPU profile saved to $APM_CONFIG_DIR/flamegraph-$app_name.svg"
 EOF
@@ -212,7 +216,9 @@ EOF
 # Memory Profile for $app_name
 
 # Using valgrind
-valgrind --tool=massif --massif-out-file=/tmp/massif-$app_name.out $app_name &
+# SECURITY FIX: Use secure temp file instead of /tmp (Issue #300)
+    massif_output=$(create_temp_file "massif-$app_name" ".out")
+    valgrind --tool=massif --massif-out-file="$massif_output" $app_name &
 VALGRIND_PID=\$!
 
 sleep $duration
@@ -220,7 +226,7 @@ sleep $duration
 kill -INT \$VALGRIND_PID
 
 # Generate report
-ms_print /tmp/massif-$app_name.out > $APM_CONFIG_DIR/memory-profile-$app_name.txt
+ms_print "$massif_output" > $APM_CONFIG_DIR/memory-profile-$app_name.txt
 
 echo "Memory profile saved to $APM_CONFIG_DIR/memory-profile-$app_name.txt"
 EOF
