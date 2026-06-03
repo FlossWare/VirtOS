@@ -77,12 +77,20 @@ phase_preflight() {
 
     # Check required tools
     TOOLS_OK=true
-    for tool in bash wget genisoimage isohybrid cpio gzip; do
+    for tool in bash wget cpio gzip; do
         if ! command -v "$tool" >/dev/null 2>&1; then
             log_warning "Tool not found: $tool"
             TOOLS_OK=false
         fi
     done
+
+    # Check for ISO creation tool (at least one required)
+    if ! command -v genisoimage >/dev/null 2>&1 && \
+       ! command -v mkisofs >/dev/null 2>&1 && \
+       ! command -v xorriso >/dev/null 2>&1; then
+        log_warning "No ISO creation tool found (need genisoimage, mkisofs, or xorriso)"
+        TOOLS_OK=false
+    fi
 
     if [ "$TOOLS_OK" = "true" ]; then
         test_result "Required build tools available" "pass"

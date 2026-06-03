@@ -81,12 +81,20 @@ phase1_validation() {
 
     # Test 1.1: ISO build tools available
     local tools_ok=true
-    for tool in genisoimage isohybrid; do
-        if ! command -v "$tool" >/dev/null 2>&1; then
-            log_test "Tool available: $tool" "FAIL" "Not installed"
-            tools_ok=false
-        fi
-    done
+    # Check for ISO creation tool (at least one required)
+    if command -v genisoimage >/dev/null 2>&1; then
+        log_test "ISO tool available: genisoimage" "PASS"
+    elif command -v mkisofs >/dev/null 2>&1; then
+        log_test "ISO tool available: mkisofs" "PASS"
+    elif command -v xorriso >/dev/null 2>&1; then
+        log_test "ISO tool available: xorriso" "PASS"
+    else
+        log_test "ISO creation tool available" "FAIL" "Need genisoimage, mkisofs, or xorriso"
+        tools_ok=false
+    fi
+    if ! command -v isohybrid >/dev/null 2>&1; then
+        log_test "isohybrid available (optional)" "SKIP" "ISO will not be USB-bootable"
+    fi
     [ "$tools_ok" = true ] && log_test "Build tools installed" "PASS"
 
     # Test 1.2: build.conf exists and valid
