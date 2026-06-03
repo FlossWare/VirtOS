@@ -1,10 +1,16 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS GPU - GPU passthrough wizard and management
 # PCI passthrough, VFIO configuration, and GPU scheduling
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.25")
 GPU_DIR="/var/lib/virtos/gpu"
 STATE_DIR="/var/run/virtos/gpu"
 LOG_FILE="/var/log/virtos-gpu.log"
@@ -63,6 +69,14 @@ Examples:
   # Schedule automatic GPU attachment
   virtos-gpu schedule-attach workstation-vm 0000:01:00.0
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    GPU not found
+    4    IOMMU not enabled
+    5    GPU isolation failed
+
 EOF
 }
 
@@ -89,7 +103,10 @@ GPU_ASSIGNMENTS=""
 EOF
     fi
 
-    source "$GPU_DIR/config.conf"
+    # SECURITY FIX: Use parse_config_file instead of source (Issue #296)
+    if [ -f "$GPU_DIR/config.conf" ]; then
+        parse_config_file "$GPU_DIR/config.conf" GPU_VENDOR GPU_MODEL GPU_DRIVER
+    fi
 }
 
 # GPU Detection
@@ -641,6 +658,10 @@ case "$COMMAND" in
         ;;
     schedule-detach)
         schedule_detach "$1" "$2"
+        ;;
+    --version|-v|version)
+        echo "virtos-gpu version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage
