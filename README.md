@@ -531,7 +531,7 @@ VirtOS occupies a unique niche:
 **Trade-offs:**
 
 - Less mature (new project vs 10+ years)
-- No built-in web UI (optional Cockpit integration available; TUI-first design)
+- Web UI via Cockpit only (no custom web interface)
 - Smaller community
 - Manual HA (no automatic failover yet)
 
@@ -545,7 +545,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 
 **VirtOS is alpha software.** Compared to mature platforms (Proxmox, VMware, OpenStack):
 
-> **⚠️ Clarification**: "Implemented" means **code is written with functional backends AND passes syntax validation**. However, **these features have NOT been tested in a real VirtOS environment**. See [Critical Gaps](#-critical-gaps-blocking-production) for what testing is still needed.
+> **Important**: "Implemented" below means the code exists with working backends, but these features have **never been validated on real hardware or in a live VirtOS environment**. See [Critical Gaps](#%EF%B8%8F-critical-gaps-blocking-production-use) for details.
 
 **✅ Already Implemented** (backends exist, but never validated on real hardware -- see [Current Limitations](#%EF%B8%8F-current-limitations)):
 
@@ -811,27 +811,24 @@ VirtOS uses **interface design first, then implementation**:
 - Enables modular, incremental implementation
 - Provides documentation-driven development
 
-**Current Reality:**
+**What It Means Today:**
 
-- 29 scripts have full working backends (libvirt/QEMU)
-- 9 scripts have interfaces complete but need backend integration
-- 14 scripts are research prototypes showing future possibilities
-- Core VM management is implemented, not just designed
+- **29 scripts** have working backends and are functional (see [Working Features](#-working-features-2954-scripts---54) above)
+- **9 scripts** have complete interfaces but need backend integration
+- **14 scripts** are research prototypes demonstrating potential future features
+- **2 scripts** (virtos-common.sh, virtos-audit.sh) are shared libraries
+- "54 management scripts" includes all categories -- check individual script status before relying on it
 ### 📋 Priority Work Items
 
-**Completed** (no longer blocking):
-
-- ~~Backend Integration (Issue #7)~~ - 29 scripts have libvirt/QEMU backends
-- ~~Security Review (Issue #6)~~ - virtos-common.sh library implemented (361 lines)
-- ~~Unit Tests (Issue #15)~~ - 100% coverage (54 test files, 450+ tests)
-
-**Current priorities** to move VirtOS toward production readiness:
+Remaining work to reach production readiness:
 
 1. **Runtime Testing** (Issue #1) - Test on real VirtOS hardware/VM environment
-2. **ISO Build Validation** (Issue #3) - Verify ISO builds and boots successfully
-3. **Infrastructure Backends** (Issue #87) - Implement 9 remaining scripts (auth, secrets, database, etc.)
-4. **External Security Audit** - Penetration testing and independent review
-5. **Performance Benchmarking** - Validate performance under load
+2. **ISO Build Validation** (Issue #3) - Verify ISO boots and functions correctly (0/47 checks)
+3. **Infrastructure Backends** (Issue #87) - Complete 9 partial scripts (auth, secrets, database, etc.)
+4. **External Security Audit** (Issue #90) - Independent penetration testing
+5. **90-Day Stability Validation** - Long-running reliability testing
+
+**Already Completed**: Backend Integration (Issue #7), Security Review (Issue #6), Unit Tests (Issue #15), VERSION Standardization (Issue #37)
 
 **VirtOS Alpha Status - Use With Caution**:
 
