@@ -35,6 +35,13 @@ if (!isLoopMode && !issueNumber) {
   return { status: 'error', message: 'Issue number required' }
 }
 
+if (!isLoopMode && (!/^\d+$/.test(String(issueNumber)) || parseInt(String(issueNumber), 10) <= 0)) {
+  log(`❌ Error: Invalid issue number: "${issueNumber}"`)
+  log('Issue number must be a positive integer (e.g., 42)')
+  log('Usage: /code-solve <issue_number> [--create-pr] [--apply]')
+  return { status: 'error', message: `Invalid issue number: "${issueNumber}". Must be a positive integer.` }
+}
+
 // PHASE 1: Setup
 phase('Setup')
 
@@ -124,7 +131,7 @@ Sort by priority: bugs first, then enhancements.`, {
 
 } else {
   // Single issue resolution
-  return await resolveSingleIssue(issueNumber, platform, shouldCreatePR, applyDirectly)
+  return await resolveSingleIssue(parseInt(String(issueNumber), 10), platform, shouldCreatePR, applyDirectly)
 }
 
 // Helper function to resolve a single issue

@@ -1,11 +1,13 @@
 # VirtOS ISO Testing Status
 
-**Last Updated**: 2026-05-26  
+**Last Updated**: 2026-06-03  
 **Build Status**: ✅ Complete  
-**Test Status**: ⏳ Not Started  
-**Tests Passed**: 0/47
+**Test Status**: ⏳ Automated Testing Framework Added (Issue #3 Fix)  
+**Tests Passed**: 0/47 (Manual testing awaited)
+**Automated Tests**: ✅ Framework implemented
 
 > **Note**: This document tracks ISO testing progress. See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md) for detailed test procedures.
+> **NEW**: Automated ISO testing framework now available. See [Automated Testing](#automated-testing-framework) section below.
 
 ## Testing Phases
 
@@ -157,9 +159,94 @@ VirtOS ISO can be marked as "tested" when:
 
 ---
 
+## Automated Testing Framework
+
+**NEW (Issue #3 Fix)**: VirtOS now includes automated ISO testing scripts!
+
+### Quick Start
+
+```bash
+# Test single profile (standard)
+cd build/scripts
+./iso-test.sh standard
+
+# Test all 7 profiles
+./test-all-profiles.sh
+
+# Enable QEMU boot testing
+ENABLE_QEMU_TEST=yes ./iso-test.sh minimal
+```
+
+### Testing Scripts
+
+**iso-test.sh** - Complete automated ISO testing suite
+- Phase 1: Pre-build validation (5 tests)
+- Phase 2: ISO build verification (5 tests)
+- Phase 3: ISO content validation (4 tests)
+- Phase 4: QEMU boot testing (3 tests)
+- Generates detailed test reports
+
+**test-all-profiles.sh** - Profile testing harness
+- Tests all 7 build profiles
+- Tracks build times and success rates
+- Generates per-profile test logs
+
+**CI/CD Integration** - GitHub Actions workflow
+- Automatically tests on push and pull requests
+- Runs on: minimal, standard, containers profiles
+- Validates ISO integrity and content
+- Full test on main branch push
+
+### Test Results Interpretation
+
+| Tests Passed | Status | Recommendation |
+|-------------|--------|---|
+| 0-10 | ❌ Build Broken | Fix build system |
+| 11-20 | ⚠️ Partial Success | Build works, some features missing |
+| 21-30 | ✓ Basic Pass | ISO boots, core features work |
+| 31-47 | ✓✓ Full Pass | Complete validation |
+
+### Running Tests Locally
+
+```bash
+# Basic test (no QEMU)
+ENABLE_QEMU_TEST=no ./iso-test.sh standard
+
+# Verbose output
+VERBOSE=1 ./iso-test.sh standard
+
+# Save output to custom location
+OUTPUT_LOG=~/iso-test-results.log ./iso-test.sh standard
+
+# Test minimal profile with QEMU (requires qemu-system-x86_64)
+./iso-test.sh minimal
+
+# Test all profiles
+./test-all-profiles.sh
+```
+
+### CI/CD Status
+
+The workflow `iso-build-test.yml` now:
+- Tests ISO build on every push/PR
+- Validates 3 key profiles: minimal, standard, containers
+- Checks ISO integrity (MD5/SHA256)
+- Uploads test logs as artifacts
+- Generates summary in GitHub Actions
+
+### Next Steps
+
+1. **Run tests locally** to validate your build
+2. **Monitor CI/CD** in GitHub Actions tab
+3. **Track progress** in ISO_TESTING_STATUS.md
+4. **Update manual tests** once automated tests pass
+
+---
+
 ## See Also
 
 - [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md) - Detailed test procedures
 - [ISO_BUILD_STATUS.md](ISO_BUILD_STATUS.md) - Build system status
 - [INTEGRATION_TEST_REPORT.md](INTEGRATION_TEST_REPORT.md) - Integration test results
 - [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [.github/workflows/iso-build-test.yml](.github/workflows/iso-build-test.yml) - CI/CD workflow

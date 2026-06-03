@@ -127,18 +127,24 @@ Return the PR URL.`, {
 }
 
 export async function fetchIssue(agent, platform, issueNumber) {
+  // Validate issue number to prevent invalid CLI arguments and potential injection
+  const num = parseInt(String(issueNumber), 10)
+  if (isNaN(num) || num <= 0 || String(num) !== String(issueNumber).trim()) {
+    throw new Error(`Invalid issue number: "${issueNumber}". Must be a positive integer.`)
+  }
+
   const cli = platform.cli
 
   const result = await agent(`Fetch issue details.
 
 Platform: ${platform.platform}
-Issue Number: ${issueNumber}
+Issue Number: ${num}
 
 Execute:
-${cli} issue view ${issueNumber} --json title,body,labels,state,author,url
+${cli} issue view ${num} --json title,body,labels,state,author,url
 
 Parse and return the issue details.`, {
-    label: `Fetch Issue #${issueNumber}`,
+    label: `Fetch Issue #${num}`,
     schema: {
       type: 'object',
       properties: {
@@ -158,18 +164,23 @@ Parse and return the issue details.`, {
 }
 
 export async function fetchPR(agent, platform, prNumber) {
+  const num = parseInt(String(prNumber), 10)
+  if (isNaN(num) || num <= 0) {
+    throw new Error(`Invalid PR number: "${prNumber}". Must be a positive integer.`)
+  }
+
   const cli = platform.cli
 
   const result = await agent(`Fetch PR/MR details.
 
 Platform: ${platform.platform}
-PR Number: ${prNumber}
+PR Number: ${num}
 
 Execute:
-${cli} pr view ${prNumber} --json title,body,labels,state,author,url,headRefName,baseRefName
+${cli} pr view ${num} --json title,body,labels,state,author,url,headRefName,baseRefName
 
 Parse and return the PR details.`, {
-    label: `Fetch PR #${prNumber}`,
+    label: `Fetch PR #${num}`,
     schema: {
       type: 'object',
       properties: {
@@ -191,18 +202,23 @@ Parse and return the PR details.`, {
 }
 
 export async function postComment(agent, platform, issueOrPR, number, comment) {
+  const validatedNumber = parseInt(String(number), 10)
+  if (isNaN(validatedNumber) || validatedNumber <= 0) {
+    throw new Error(`Invalid ${issueOrPR} number: "${number}". Must be a positive integer.`)
+  }
+
   const cli = platform.cli
   const type = issueOrPR === 'issue' ? 'issue' : 'pr'
 
-  const result = await agent(`Post a comment to ${type} #${number}.
+  const result = await agent(`Post a comment to ${type} #${validatedNumber}.
 
 Platform: ${platform.platform}
 
 Execute:
-${cli} ${type} comment ${number} --body "${comment}"
+${cli} ${type} comment ${validatedNumber} --body "${comment}"
 
 Return success status.`, {
-    label: `Comment on ${type} #${number}`,
+    label: `Comment on ${type} #${validatedNumber}`,
     schema: {
       type: 'object',
       properties: {

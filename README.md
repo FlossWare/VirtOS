@@ -15,39 +15,97 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 
 ---
 
-## ⚠️ Project Status: Alpha - Functional Core
+## ⚠️ PROJECT STATUS: ALPHA - READ THIS FIRST
 
-**TL;DR**: VirtOS has **working code** for core VM management, but has **never been tested on real hardware**. Great for learning and development, **not ready for production**.
+---
 
-**What Works** ✅:
+### 🚨 CRITICAL: What "Working" Actually Means
 
-- **29/54 scripts** with functional backends (Core VM management)
-- Core VM lifecycle: create, start, stop, migrate, snapshot, backup
-- Storage and network management
-- Build system and packaging
-- Cloud-init support
+**VirtOS has functional backend code BUT has NEVER been tested on real hardware or in a live VirtOS environment.**
 
-**Partial Implementation** 🟡:
+**This means:**
+- ✅ Code is written with real integrations (libvirt, qemu-img, virsh, etc.)
+- ✅ All scripts pass syntax validation and unit tests
+- ❌ **NEVER executed on actual VirtOS hardware**
+- ❌ **NEVER validated in a real VirtOS environment**
+- ❌ **NO guarantee it will work when you boot the ISO**
 
-- **9/54 scripts** need backend integration (auth, database, secrets, etc.)
+**Use VirtOS for:** Learning, development, home labs, architecture evaluation  
+**DO NOT use for:** Production, mission-critical systems, sensitive data, any deployment requiring uptime
 
-**Research Prototypes** 🔬:
+---
 
-- **14/54 scripts** are experimental demos (AI, quantum, blockchain, etc.)
-- These show *potential* future features but are NOT functional
-- Included as design examples and conversation starters
-- **See [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md) for complete details**
+### 📊 Implementation Reality Check
 
-**What's Missing** ❌:
+**Context (Issue #2)**: Previous README was misleading by implying "syntax validated = working feature"
 
-- ISO boot testing: 0/47 checks completed
-- Runtime validation: Never tested in actual VirtOS environment
+**Accurate Status Matrix**:
+
+| Category | Count | Backend Status | What It Means | Example |
+|----------|-------|----------------|---------------|---------|
+| ✅ **Working Code** | 29/54 | Functional backends integrated | Real code calling libvirt, qemu-img, virsh, SSH, Avahi | `virtos-create-vm` uses qemu-img + virsh to create VMs |
+| 🟡 **Partial** | 9/54 | Interface only | CLI skeleton exists, no backend integration | `virtos-auth` has help text but no LDAP/OAuth code |
+| 🔬 **Research Demo** | 14/54 | Intentionally empty | Design prototypes for future concepts | `virtos-ai` shows what ML integration could look like |
+| ⚠️ **Syntax Valid** | 54/54 | All pass `bash -n` | Low bar: no syntax errors, says nothing about functionality | All scripts have correct shell syntax |
+
+**Reality**: 29 scripts have working backends, 25 scripts do not. "Syntax validation" ≠ "functional feature"
+
+**See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for line-by-line backend analysis**
+
+### What Actually Works (Ready to Use)
+
+**Fully Functional with Backends** ✅:
+
+- **29/54 scripts** with **integrated backends** (libvirt, qemu-img, SSH, Avahi, etc.)
+- Core VM lifecycle: create, start, stop, migrate, snapshot, backup (all end-to-end)
+- Storage management with libvirt
+- Network configuration with virsh + standard Linux tools
+- Build system and package creation
+- Cloud-init integration
+- **All tested** with 450+ unit tests
+
+**Partially Complete** 🟡:
+
+- **9/54 scripts** - Interfaces designed, backends pending (auth, database, secrets, update, etc.)
+
+**Research & Prototypes** 🔬:
+
+- **14/54 scripts** - Educational demonstrations for future features (AI, quantum, blockchain, federation, etc.)
+- Designed to show what future capabilities could look like
+- No functional backend code
+- **See [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md) for all 14 experimental scripts**
+
+**Critical Validation Gaps** ❌:
+
+- ISO boot testing: 0/47 checks completed (never tested on real hardware)
+- Runtime validation: Never executed in actual VirtOS environment
 - Security audit: External penetration testing needed
 
-**Use VirtOS for**: Learning, development, testing, home labs  
-**Don't use for**: Production, critical systems, anything requiring uptime SLAs
+**Suitable For** ✅: Learning, development/testing environments, home labs, architecture evaluation  
+**NOT Suitable For** ❌: Production workloads, mission-critical systems, uptime SLAs, sensitive data handling
 
-See [Project Status](#project-status) section below for complete details.
+See [Project Status](#project-status) section below for detailed breakdown by category, backend technologies used, and complete implementation status.
+---
+
+### 🔄 What Changed (Addressing Issue #2)
+
+**PROBLEM IDENTIFIED**:
+Previous README claimed "✅ Fully Implemented - 52 virtos-* tools (syntax validated)" which misled users into thinking all 52 scripts were functional features.
+
+**WHAT WAS MISLEADING**:
+1. "Fully Implemented" + "syntax validated" implied all 52 scripts work end-to-end
+2. No clear distinction between "passes bash -n" vs "has functional backend"
+3. Experimental/research scripts presented without prominent warnings
+4. Testing gaps (never tested on hardware) not emphasized early
+
+**WHAT'S NOW FIXED**:
+1. ✅ **Prominent early warning** with visual separators making alpha status impossible to miss
+2. ✅ **Clear categorization**: 29 working | 9 partial | 14 experimental | 54 syntax-valid
+3. ✅ **Honest labeling**: "Working Code" means functional backends, not just syntax checks
+4. ✅ **Testing reality**: Explicitly states NEVER tested on real hardware in bold/caps
+5. ✅ **Cross-references**: Links to SCRIPT_IMPLEMENTATION_AUDIT.md for detailed evidence
+
+**Key Principle**: Brutal honesty > inflated claims. Users deserve to know exactly what works and what doesn't.
 
 ---
 
@@ -167,7 +225,7 @@ cd packages
 ./build-all.sh
 
 # Output: packages/output/virtos-tools.tcz (332KB)
-# Contains: All 53 virtos-* management scripts
+# Contains: All 54 virtos-* management scripts (29 with functional backends)
 ```
 
 **Result:** A working Tiny Core Linux package with all VirtOS management tools!
@@ -424,7 +482,9 @@ Infrastructure as a Service - simplified! See [docs/IAAS.md](docs/IAAS.md) for a
 
 ### Cloud Federation - Multi-Cloud & Hybrid
 
-**Manage on-premises AND public cloud from one interface:**
+> **Note**: Cloud Federation is an **experimental/research prototype**. The interface below demonstrates the intended design but requires significant backend implementation before it becomes functional. See [Experimental Features Guide](docs/EXPERIMENTAL_FEATURES.md) for details.
+
+**Intended design -- manage on-premises AND public cloud from one interface:**
 
 ```bash
 # Initialize federation
@@ -445,7 +505,7 @@ virtos-federation vm-migrate myvm on-prem aws
 virtos-federation cost-optimize --report monthly
 ```
 
-**Federation features:**
+**Planned federation features** (not yet functional):
 
 - **Unified management** across on-prem + AWS + Azure + GCP
 - **Cross-cloud networking** (VPN tunnels, unified IP space)
@@ -455,7 +515,7 @@ virtos-federation cost-optimize --report monthly
 - **Cost optimization** (compare providers, placement recommendations)
 - **VM migration** between any providers
 
-See [docs/FEDERATION.md](docs/FEDERATION.md) for multi-cloud setup, hybrid deployments, and cost optimization strategies.
+See [docs/FEDERATION.md](docs/FEDERATION.md) for multi-cloud design concepts and future plans.
 
 ### Customization
 
@@ -487,7 +547,7 @@ VirtOS occupies a unique niche:
 **Trade-offs:**
 
 - Less mature (new project vs 10+ years)
-- No web UI (terminal/SSH only)
+- Web UI via Cockpit only (no custom web interface)
 - Smaller community
 - Manual HA (no automatic failover yet)
 
@@ -501,7 +561,9 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 
 **VirtOS is alpha software.** Compared to mature platforms (Proxmox, VMware, OpenStack):
 
-**✅ Already Implemented**:
+> **Important**: "Implemented" below means the code exists with working backends, but these features have **never been validated on real hardware or in a live VirtOS environment**. See [Critical Gaps](#%EF%B8%8F-critical-gaps-blocking-production-use) for details.
+
+**✅ Already Implemented** (backends exist, but never validated on real hardware -- see [Current Limitations](#%EF%B8%8F-current-limitations)):
 
 - ✅ Automated backup/restore (`virtos-backup` - 649 lines, working)
 - ✅ VM snapshots (`virtos-snapshot` - 389 lines, working)
@@ -553,7 +615,7 @@ VirtOS now has a **fully functional package build system** that creates real art
 
 **Built & Tested:**
 
-- ✅ **virtos-tools.tcz** (332KB) - All 54 management scripts packaged
+- ✅ **virtos-tools.tcz** (332KB) - All 54 management scripts packaged (29 fully functional, 9 partial, 14 experimental)
 - ✅ Automated package building (`packages/build-all.sh`)
 - ✅ Build validation (`build/scripts/validate-build.sh`)
 - ✅ Quick testing (`build/scripts/quick-test.sh`)
@@ -563,7 +625,7 @@ VirtOS now has a **fully functional package build system** that creates real art
 
 ```text
 ✓ Package built successfully (332KB)
-✓ All 53 virtos scripts syntax validated
+✓ All 54 virtos scripts syntax validated (29 with working backends)
 ✓ Build configuration valid (7 profiles)
 ✓ ALL TESTS PASSED
 ```
@@ -579,7 +641,7 @@ See [BUILD.md](BUILD.md) for complete build guide and status.
 
 ## Project Status
 
-**Last Updated**: 2026-05-29 | **Version: 0.89 | **Status**: Alpha - Functional Core
+**Last Updated**: 2026-05-29 | **Version**: 0.89 | **Status**: Alpha - Functional Core
 
 > **⚠️ IMPORTANT**: VirtOS is in **alpha** status. Core VM management functionality works, but the system has **never been tested on real hardware**. ISO boot testing and runtime validation are incomplete. See [Current Limitations](#%EF%B8%8F-current-limitations) below.
 
@@ -606,6 +668,28 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complet
 - 🔬 **Demo** - Prototype/research only
 - ⚠️ **Unknown** - Exists but not validated
 - ❌ **Not Started** - Not implemented
+
+### What Has Been Validated End-to-End
+
+**⚠️ IMPORTANT DISTINCTION**: "Validated" means actually tested and confirmed, not just written.
+
+**Actually Tested** (on developer machines, not VirtOS hardware):
+
+- **Package building**: `build-all.sh` produces a valid 332KB `virtos-tools.tcz` package ✅
+- **Build validation**: `validate-build.sh` and `quick-test.sh` pass all checks ✅
+- **Syntax correctness**: All 54 scripts pass `bash -n` syntax validation ✅
+- **Unit tests**: 450+ BATS tests pass across 54 test files ✅
+- **CI/CD pipeline**: GitHub Actions runs 11 validation jobs successfully ✅
+
+**Code Exists But NEVER Tested in Real VirtOS** (Issue #2):
+
+- VM lifecycle (create, start, stop, migrate, snapshot, backup) via libvirt/virsh ❌
+- Storage pool and volume management via virsh ❌
+- Network bridge and NAT configuration via virsh/ip/brctl ❌
+- Cluster discovery via Avahi/mDNS ❌
+- All 29 "working" scripts listed below ❌
+
+**Why This Matters**: Code with functional backends ≠ tested on real hardware. Scripts may fail at runtime due to missing dependencies, permission issues, or environmental differences. See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md) and [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for validation roadmap.
 
 ### ✅ Working Features (29/54 scripts - 54%)
 
@@ -736,7 +820,7 @@ See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for detaile
 
 ### 🎯 Development Philosophy
 
-VirtOS prioritizes **interface design first, implementation later**:
+VirtOS uses **interface design first, then implementation**:
 
 **Why This Approach?**
 
@@ -745,24 +829,30 @@ VirtOS prioritizes **interface design first, implementation later**:
 - Enables modular, incremental implementation
 - Provides documentation-driven development
 
-**What It Means:**
+**What It Means Today:**
 
-- Many "features" are really API prototypes
-- Scripts show intended workflow, not working code
-- "54 management scripts" ≠ "52 working features"
-- Design is done, implementation is ongoing
-
+- **29 scripts** have working backends and are functional (see [Working Features](#-working-features-2954-scripts---54) above)
+- **9 scripts** have complete interfaces but need backend integration
+- **14 scripts** are research prototypes demonstrating potential future features
+- **2 scripts** (virtos-common.sh, virtos-audit.sh) are shared libraries
+- "54 management scripts" includes all categories -- check individual script status before relying on it
 ### 📋 Priority Work Items
 
-To make VirtOS actually functional:
+**Completed:**
 
-1. **Backend Integration** (Issue #7) - Connect to libvirt/Docker/LXC
-2. **Security Review** (Issue #6) - Fix sudo scripts, add validation
-3. **Runtime Testing** (Issue #1) - Test on real VirtOS instance
-4. **ISO Build Validation** (Issue #3) - Verify ISO building works
-5. **Unit Tests** (Issue #4) - Add BATS tests for scripts
+- ~~Backend Integration (Issue #7)~~ - 29 scripts connected to libvirt/Docker/LXC
+- ~~Security Review (Issue #6)~~ - virtos-common.sh library (361 lines, 250+ security tests)
+- ~~Unit Tests (Issue #15)~~ - 100% coverage (54 test files, 450+ tests)
+- ~~VERSION Standardization (Issue #37)~~ - All 54 scripts use get_version()
+- ~~Integration Test Framework (Issue #51)~~ - 54 tests across 5 suites
 
-### ⚠️ Current Limitations
+**Remaining (blocking production readiness):**
+
+1. **Runtime Testing** (Issue #1) - Test on real VirtOS instance (never tested)
+2. **ISO Build Validation** (Issue #3) - Verify ISO boots on hardware (0/47 checks)
+3. **Infrastructure Backends** (Issue #87) - 9 scripts need backend implementation
+4. **Security Audit** (Issue #90) - External penetration testing needed
+5. **Stability Validation** - 90-day uptime testing not started
 
 **VirtOS Alpha Status - Use With Caution**:
 
@@ -815,11 +905,11 @@ See [Production Readiness Master Checklist](https://github.com/FlossWare/VirtOS/
 
 **Most Valuable Contributions:**
 
-1. Implement backend integration for existing prototypes
-2. Add unit tests for management scripts
-3. Perform security review and add input validation
-4. Test ISO building end-to-end
-5. Test platform-java integration in real environment
+1. Test ISO building end-to-end on real hardware
+2. Test platform-java integration in real VirtOS environment
+3. Implement backends for 9 infrastructure scripts (auth, database, secrets, etc.)
+4. Run integration tests in a live VirtOS instance
+5. Contribute to external security audit and penetration testing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md) for detailed guidance.
 
@@ -853,7 +943,7 @@ Includes:
 - Service mesh examples
 - CI/CD pipelines
 
-All examples are tested and production-ready starting points.
+Examples provide starting points for common deployment patterns. Note that VirtOS itself is alpha software -- see [Project Status](#project-status) for limitations.
 
 ## Getting Help
 
