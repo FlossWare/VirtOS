@@ -143,7 +143,10 @@ DEFAULT_POLICY=drop
 EOF
     fi
 
-    source "$NETWORK_DIR/config.conf"
+    # SECURITY FIX: Use parse_config_file instead of source (Issue #296)
+    if [ -f "$NETWORK_DIR/config.conf" ]; then
+        parse_config_file "$NETWORK_DIR/config.conf" DEFAULT_BRIDGE DEFAULT_NAT_NETWORK
+    fi
 }
 
 # VLAN Management

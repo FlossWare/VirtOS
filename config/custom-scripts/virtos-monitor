@@ -135,7 +135,20 @@ EOF
     fi
 
     # Load configuration
-    source "$CONFIG_DIR/config.conf"
+    # SECURITY FIX: Use parse_config_file instead of source (Issue #296)
+    if [ -f "$CONFIG_DIR/config.conf" ]; then
+        parse_config_file "$CONFIG_DIR/config.conf"             CPU_WARNING CPU_CRITICAL             MEM_WARNING MEM_CRITICAL             DISK_WARNING DISK_CRITICAL             CHECK_INTERVAL ALERT_EMAIL
+    else
+        # Set defaults if config doesn't exist
+        CPU_WARNING=80
+        CPU_CRITICAL=95
+        MEM_WARNING=80
+        MEM_CRITICAL=95
+        DISK_WARNING=80
+        DISK_CRITICAL=95
+        CHECK_INTERVAL=60
+        ALERT_EMAIL=""
+    fi
 }
 
 check_cpu() {
