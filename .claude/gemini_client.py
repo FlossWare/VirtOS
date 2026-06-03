@@ -4,9 +4,10 @@ Gemini API Client for VirtOS Code Review
 Calls Google Gemini API with prompts and returns structured responses
 """
 
+import json
 import os
 import sys
-import json
+
 import requests
 
 
