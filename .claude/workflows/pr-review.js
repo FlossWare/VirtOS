@@ -24,18 +24,32 @@ export const meta = {
 
 // Parse arguments
 const prNumber = args?.[0]
-const isLoopMode = prNumber === 'loop' || args?.loop
-const shouldPost = args?.post || args?.['--post']
+let isLoopMode = prNumber === 'loop' || args?.loop || !prNumber  // Default to loop if no PR specified
+const shouldPost = args?.post || args?.['--post'] || true  // Auto-post by default
 const shouldApprove = args?.approve || args?.['--approve'] || args?.['auto-approve']
 const qualityThreshold = args?.threshold || args?.['--threshold'] || 90
+const strategy = args?.strategy || args?.['--strategy'] || 'rotating'
+const arbiterModel = args?.arbiter || args?.['--arbiter'] || null
+const workersArg = args?.workers || args?.['--workers'] || 'opus,sonnet,haiku'
+const workers = workersArg.split(',')
 
-// Validation
-if (!isLoopMode && !prNumber) {
-  log('❌ Error: PR number required')
-  log('Usage: /pr-review <pr_number> [--post] [--approve]')
-  log('   or: /pr-review loop [--auto-approve]')
-  return { status: 'error', message: 'PR number required' }
+// If PR number provided, not loop mode
+if (prNumber && prNumber !== 'loop' && !isNaN(parseInt(prNumber))) {
+  isLoopMode = false
 }
+
+log('')
+log('═'.repeat(60))
+log('🔍 Multi-Model PR Review')
+log('═'.repeat(60))
+log(`Mode: ${isLoopMode ? 'CONTINUOUS (auto-discover)' : `Single PR #${prNumber}`}`)
+log(`Strategy: ${strategy}`)
+log(`Workers: ${workers.join(', ')}`)
+log(`Arbiter: ${arbiterModel || 'auto (based on strategy)'}`)
+log(`Auto-post: ${shouldPost ? 'YES' : 'NO'}`)
+log(`Auto-approve: ${shouldApprove ? `YES (threshold ${qualityThreshold})` : 'NO'}`)
+log('═'.repeat(60))
+log('')
 
 // PHASE 1: Setup
 phase('Setup')
@@ -101,7 +115,7 @@ Skip PRs already reviewed by this bot (check for AI review comments).`, {
       for (const num of prNumbers.slice(0, 5)) { // Review max 5 PRs per iteration
         log(`\n═══ Reviewing PR #${num} ═══`)
 
-        const reviewResult = await reviewSinglePR(num, platform, shouldApprove, qualityThreshold)
+        const reviewResult = await reviewSinglePR(num, platform, shouldApprove, qualityThreshold, shouldPost, workers, strategy, arbiterModel)
         results.push(reviewResult)
       }
 
@@ -119,11 +133,11 @@ Skip PRs already reviewed by this bot (check for AI review comments).`, {
 
 } else {
   // Single PR review
-  return await reviewSinglePR(prNumber, platform, shouldApprove, qualityThreshold)
+  return await reviewSinglePR(prNumber, platform, shouldApprove, qualityThreshold, shouldPost, workers, strategy, arbiterModel)
 }
 
 // Helper function to review a single PR
-async function reviewSinglePR(num, platform, shouldApprove, threshold) {
+async function reviewSinglePR(num, platform, shouldApprove, threshold, shouldPost, workers, strategy, arbiterModel) {
   // PHASE 2: Fetch PR
   phase('Fetch PR')
 
@@ -188,6 +202,9 @@ Provide:
 - Your confidence (0-100)`
 
   const reviews = await multiModelReview(reviewPrompt, PR_REVIEW_SCHEMA, {
+    workers,
+    strategy,
+    arbiterModel,
     phase: 'Multi-Model Review',
     labelPrefix: `PR #${num}`,
   })
@@ -203,6 +220,8 @@ Provide:
     `Pull Request #${num}: "${pr.title}"`,
     reviews,
     {
+      strategy,
+      arbiterModel,
       decisionType: 'pr',
       phase: 'Arbiter Decision',
     }
