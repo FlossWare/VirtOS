@@ -131,7 +131,7 @@ echo "=== TODO/FIXME Checks ==="
 {
     find . -type f \( -name "*.sh" -o -name "*.bash" -o -name "*.py" \) \
         ! -path "./.git/*" ! -path "./.claude/*" \
-        -exec grep -Hn "TODO\|FIXME\|XXX\|HACK" {} \; 2>/dev/null \
+        -exec grep -Hn -E "\bTODO\b|\bFIXME\b|\bXXX\b|\bHACK\b" {} \; 2>/dev/null \
         | grep -v "^[^:]*:[^:]*:\s*#.*TODO" \
         | grep -v "code review\|pattern\|TODO/FIXME" \
         || true
