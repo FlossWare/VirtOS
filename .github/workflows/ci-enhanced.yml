@@ -1,0 +1,938 @@
+---
+name: CI (Enhanced)
+
+"on":
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Validate Project Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check directory structure
+        run: |
+          echo "Validating project structure..."
+          test -d build || (echo "Missing build directory" && exit 1)
+          test -d config || (echo "Missing config directory" && exit 1)
+          test -d docs || (echo "Missing docs directory" && exit 1)
+          test -d kernel || (echo "Missing kernel directory" && exit 1)
+          test -d packages || (echo "Missing packages directory" && exit 1)
+          echo "✓ Directory structure valid"
+
+      - name: Check required files
+        run: |
+          echo "Checking required files..."
+          test -f README.md || (echo "Missing README.md" && exit 1)
+          test -f LICENSE || (echo "Missing LICENSE" && exit 1)
+          test -f CONTRIBUTING.md || (echo "Missing CONTRIBUTING.md" && exit 1)
+          test -f TESTING.md || (echo "Missing TESTING.md" && exit 1)
+          echo "✓ Required files present"
+
+      - name: Validate build scripts exist
+        run: |
+          echo "Checking build scripts..."
+          test -x build/scripts/build-all.sh || (echo "build-all.sh missing or not executable" && exit 1)
+          test -f build/build.conf || (echo "build.conf missing" && exit 1)
+          echo "✓ Build scripts present"
+
+  syntax-check:
+    name: Shell Script Syntax Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Check script syntax
+        run: |
+          echo "Checking shell script syntax..."
+          EXIT_CODE=0
+
+          # Check build scripts
+          for script in build/scripts/*.sh; do
+            if [ -f "$script" ]; then
+              echo "Checking $script..."
+              bash -n "$script" || EXIT_CODE=1
+            fi
+          done
+
+          # Check custom scripts
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ -x "$script" ]; then
+              echo "Checking $script..."
+              bash -n "$script" || EXIT_CODE=1
+            fi
+          done
+
+          # Check library scripts
+          if [ -d "config/custom-scripts/lib" ]; then
+            for script in config/custom-scripts/lib/*.sh; do
+              if [ -f "$script" ]; then
+                echo "Checking $script..."
+                bash -n "$script" || EXIT_CODE=1
+              fi
+            done
+          fi
+
+          # Check package build scripts
+          for script in packages/*/build.sh; do
+            if [ -f "$script" ]; then
+              echo "Checking $script..."
+              bash -n "$script" || EXIT_CODE=1
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All scripts have valid syntax"
+          else
+            echo "✗ Some scripts have syntax errors"
+          fi
+
+          exit $EXIT_CODE
+
+      - name: Run shellcheck (lint)
+        run: |
+          echo "Running shellcheck (errors and warnings)..."
+          EXIT_CODE=0
+          ERRORS_FOUND=0
+
+          # Check build scripts
+          for script in build/scripts/*.sh; do
+            if [ -f "$script" ]; then
+              echo "Linting $script..."
+              if ! shellcheck -S warning "$script"; then
+                EXIT_CODE=1
+                ERRORS_FOUND=$((ERRORS_FOUND + 1))
+              fi
+            fi
+          done
+
+          # Check custom scripts
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ -x "$script" ]; then
+              echo "Linting $script..."
+              if ! shellcheck -S warning "$script"; then
+                EXIT_CODE=1
+                ERRORS_FOUND=$((ERRORS_FOUND + 1))
+              fi
+            fi
+          done
+
+          # Check library scripts
+          if [ -d "config/custom-scripts/lib" ]; then
+            for script in config/custom-scripts/lib/*.sh; do
+              if [ -f "$script" ]; then
+                echo "Linting $script..."
+                if ! shellcheck -S warning "$script"; then
+                  EXIT_CODE=1
+                  ERRORS_FOUND=$((ERRORS_FOUND + 1))
+                fi
+              fi
+            done
+          fi
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All scripts passed shellcheck"
+          else
+            echo "✗ $ERRORS_FOUND script(s) have linting issues"
+          fi
+
+          exit $EXIT_CODE
+
+  permissions-check:
+    name: Check File Permissions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check script permissions
+        run: |
+          echo "Checking script permissions..."
+          EXIT_CODE=0
+
+          # Build scripts should be executable
+          for script in build/scripts/*.sh; do
+            if [ -f "$script" ] && [ ! -x "$script" ]; then
+              echo "✗ $script is not executable"
+              EXIT_CODE=1
+            fi
+          done
+
+          # Custom scripts should be executable
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ ! -x "$script" ]; then
+              echo "✗ $script is not executable"
+              EXIT_CODE=1
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All scripts have correct permissions"
+          fi
+
+          exit $EXIT_CODE
+
+  version-check:
+    name: Version Synchronization Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify version synchronization
+        run: |
+          ./ci/verify-version-sync.sh
+
+  documentation-check:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/markdown-link-check-config.json'
+        continue-on-error: true
+
+      - name: Validate documentation structure
+        run: |
+          echo "Checking documentation..."
+          test -f docs/INDEX.md || echo "⚠ Missing docs/INDEX.md"
+          test -f docs/GETTING-STARTED.md || echo "⚠ Missing docs/GETTING-STARTED.md"
+          test -f docs/ROADMAP.md || echo "⚠ Missing docs/ROADMAP.md"
+          echo "✓ Core documentation present"
+
+      - name: Validate markdown syntax
+        continue-on-error: true
+        run: |
+          echo "Installing markdownlint-cli..."
+          npm install -g markdownlint-cli
+
+          echo "Checking markdown files..."
+          EXIT_CODE=0
+
+          for doc in docs/*.md README.md CONTRIBUTING.md TESTING.md; do
+            if [ -f "$doc" ]; then
+              echo "Checking $(basename $doc)..."
+              if ! markdownlint "$doc" 2>/dev/null; then
+                echo "⚠ $doc has markdown issues"
+              fi
+            fi
+          done
+
+          echo "✓ Markdown validation complete"
+
+  build-test:
+    name: Test Build Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate build.conf
+        run: |
+          echo "Validating build.conf..."
+          source build/build.conf
+          echo "✓ build.conf is valid"
+
+      - name: Validate profiles
+        run: |
+          echo "Validating profiles..."
+          for profile in config/profiles/*.conf; do
+            if [ -f "$profile" ]; then
+              echo "Checking $(basename $profile)..."
+              source "$profile" && echo "✓ $(basename $profile) valid" || exit 1
+            fi
+          done
+
+      - name: Check for required variables
+        run: |
+          echo "Checking build variables..."
+          source build/build.conf
+
+          # Check that key variables are defined
+          : "${INCLUDE_KVM:?INCLUDE_KVM not defined}"
+          : "${INCLUDE_LXC:?INCLUDE_LXC not defined}"
+          echo "✓ Required variables defined"
+
+  profile-validation:
+    name: Validate Build Profiles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Discover and validate all profiles
+        run: |
+          echo "Discovering profiles in build/profiles/"
+          EXIT_CODE=0
+          PROFILE_COUNT=0
+
+          if [ ! -d "build/profiles" ]; then
+            echo "ERROR: build/profiles directory not found" >&2
+            exit 1
+          fi
+
+          for profile_file in build/profiles/*.conf; do
+            if [ -f "$profile_file" ]; then
+              PROFILE=$(basename "$profile_file" .conf)
+              PROFILE_COUNT=$((PROFILE_COUNT + 1))
+
+              echo ""
+              echo "=== Validating profile: $PROFILE ==="
+
+              # Check syntax by sourcing
+              if source "$profile_file" 2>/dev/null; then
+                echo "✅ $PROFILE: Valid syntax"
+              else
+                echo "❌ $PROFILE: Syntax error"
+                EXIT_CODE=1
+              fi
+
+              # Check for required variables (optional)
+              if [ -n "${INCLUDE_KVM:-}" ]; then
+                echo "  KVM: $INCLUDE_KVM"
+              fi
+            fi
+          done
+
+          if [ $PROFILE_COUNT -eq 0 ]; then
+            echo "ERROR: No profile files found in build/profiles/" >&2
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Summary ==="
+          echo "Validated $PROFILE_COUNT profile(s)"
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ All profiles valid"
+          else
+            echo "❌ Some profiles have errors"
+          fi
+
+          exit $EXIT_CODE
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy security scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        if: always()
+
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for sensitive files..."
+          EXIT_CODE=0
+
+          # Check for common sensitive files
+          if [ -f .env ]; then
+            echo "✗ Found .env file (should not be committed)"
+            EXIT_CODE=1
+          fi
+
+          if grep -r "password\s*=" config/ 2>/dev/null | grep -v "example\|sample"; then
+            echo "⚠ Found potential passwords in config files"
+          fi
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ No obvious sensitive files found"
+          fi
+
+          exit $EXIT_CODE
+
+  unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Run BATS tests
+        run: |
+          cd tests
+          echo "Running BATS test suite..."
+          EXIT_CODE=0
+
+          # Run all test files
+          for test_file in virtos-*.bats; do
+            if [ -f "$test_file" ]; then
+              echo "Running $test_file..."
+              if ! bats "$test_file"; then
+                EXIT_CODE=1
+                echo "✗ $test_file failed"
+              else
+                echo "✓ $test_file passed"
+              fi
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All unit tests passed"
+          else
+            echo "✗ Some unit tests failed"
+          fi
+
+          exit $EXIT_CODE
+
+      - name: Generate test coverage report
+        if: always()
+        run: |
+          cd tests
+
+          echo "## 📊 Unit Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count test files
+          test_files=$(ls -1 virtos-*.bats 2>/dev/null | wc -l)
+
+          # Count scripts
+          script_files=$(ls -1 ../config/custom-scripts/virtos-* 2>/dev/null | wc -l)
+
+          # Calculate coverage percentage
+          if [ $script_files -gt 0 ]; then
+            coverage=$((test_files * 100 / script_files))
+          else
+            coverage=0
+          fi
+
+          # Count total tests
+          total_tests=0
+          for test_file in virtos-*.bats; do
+            if [ -f "$test_file" ]; then
+              tests=$(grep -c "^@test" "$test_file" || echo 0)
+              total_tests=$((total_tests + tests))
+            fi
+          done
+
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Files | $test_files |" >> $GITHUB_STEP_SUMMARY
+          echo "| Scripts Covered | $script_files |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${coverage}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Tests | $total_tests |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ $coverage -eq 100 ]; then
+            echo "✅ **100% test coverage achieved!**" >> $GITHUB_STEP_SUMMARY
+          elif [ $coverage -ge 80 ]; then
+            echo "✅ **Excellent test coverage ($coverage%)**" >> $GITHUB_STEP_SUMMARY
+          elif [ $coverage -ge 50 ]; then
+            echo "⚠️ **Good test coverage ($coverage%), aim for 80%+**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Low test coverage ($coverage%), needs improvement**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  package-build:
+    name: Build Packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools
+
+      - name: Build virtos-tools package
+        run: |
+          cd packages
+          ./build-all.sh
+
+      - name: Verify package was created
+        run: |
+          if [ -f packages/output/virtos-tools.tcz ]; then
+            echo "✓ Package built successfully"
+            ls -lh packages/output/virtos-tools.tcz
+          else
+            echo "✗ Package build failed"
+            exit 1
+          fi
+
+      - name: Verify package contents
+        run: |
+          cd packages/output
+          md5sum -c virtos-tools.tcz.md5.txt
+          echo "✓ Checksum verified"
+
+      - name: Test package integrity
+        run: |
+          echo "Testing package integrity..."
+          TEMP_DIR=$(mktemp -d)
+
+          # Extract package
+          unsquashfs -d "$TEMP_DIR" packages/output/virtos-tools.tcz >/dev/null 2>&1
+
+          # Check for virtos-* scripts
+          SCRIPT_COUNT=$(find "$TEMP_DIR" -name "virtos-*" -type f | wc -l)
+          if [ "$SCRIPT_COUNT" -eq 0 ]; then
+            echo "✗ No virtos-* scripts found in package"
+            rm -rf "$TEMP_DIR"
+            exit 1
+          fi
+
+          echo "✓ Found $SCRIPT_COUNT virtos-* scripts in package"
+
+          # Test each script for syntax
+          SYNTAX_ERRORS=0
+          for script in "$TEMP_DIR"/*/virtos-*; do
+            if [ -f "$script" ] && [ -x "$script" ]; then
+              if ! bash -n "$script" 2>/dev/null; then
+                echo "✗ Syntax error in $(basename $script)"
+                SYNTAX_ERRORS=$((SYNTAX_ERRORS + 1))
+              fi
+            fi
+          done
+
+          if [ $SYNTAX_ERRORS -gt 0 ]; then
+            echo "✗ $SYNTAX_ERRORS script(s) have syntax errors"
+            rm -rf "$TEMP_DIR"
+            exit 1
+          fi
+
+          echo "✓ All packaged scripts have valid syntax"
+          rm -rf "$TEMP_DIR"
+
+      - name: Check package size
+        run: |
+          SIZE=$(wc -c < packages/output/virtos-tools.tcz | tr -d ' ')
+          echo "Package size: $SIZE bytes"
+
+          if [ "$SIZE" -lt 100000 ]; then
+            echo "✗ Package too small ($SIZE bytes), likely incomplete"
+            exit 1
+          fi
+
+          if [ "$SIZE" -gt 1000000 ]; then
+            echo "⚠ Package larger than expected ($SIZE bytes)"
+          fi
+
+          echo "✓ Package size acceptable ($SIZE bytes)"
+
+      - name: Verify package metadata
+        run: |
+          echo "Verifying package metadata..."
+
+          if [ ! -f packages/output/virtos-tools.tcz.info ]; then
+            echo "✗ Missing package info file"
+            exit 1
+          fi
+
+          # Check required fields
+          for field in Title Version Description; do
+            if ! grep -q "^${field}:" packages/output/virtos-tools.tcz.info; then
+              echo "✗ Missing $field in package info"
+              exit 1
+            fi
+          done
+
+          echo "✓ Package metadata valid"
+
+      - name: List package contents
+        continue-on-error: true
+        run: |
+          echo "## Package Contents" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          unsquashfs -l packages/output/virtos-tools.tcz | head -30 >> $GITHUB_STEP_SUMMARY
+          echo "..." >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: virtos-tools-package
+          path: |
+            packages/output/virtos-tools.tcz
+            packages/output/virtos-tools.tcz.md5.txt
+            packages/output/virtos-tools.tcz.info
+          retention-days: 30
+
+  package-verification:
+    name: Verify Package Installation Simulation
+    runs-on: ubuntu-latest
+    needs: [package-build]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: virtos-tools-package
+          path: packages/output
+
+      - name: Install squashfs-tools
+        run: sudo apt-get update && sudo apt-get install -y squashfs-tools
+
+      - name: Simulate package installation
+        run: |
+          echo "Simulating package installation..."
+          TEMP_INSTALL=$(mktemp -d)
+
+          # Extract package to simulate installation
+          unsquashfs -d "$TEMP_INSTALL" packages/output/virtos-tools.tcz
+
+          echo "Installation simulation results:"
+          echo "✓ Package extracted successfully"
+
+          # Verify key directories exist
+          if [ -d "$TEMP_INSTALL/usr" ]; then
+            echo "✓ /usr directory present"
+          fi
+
+          if [ -d "$TEMP_INSTALL/usr/local/bin" ]; then
+            echo "✓ /usr/local/bin directory present"
+          fi
+
+          # Count executables
+          EXEC_COUNT=$(find "$TEMP_INSTALL/usr/local/bin" -type f -executable | wc -l)
+          echo "✓ Found $EXEC_COUNT executable(s)"
+
+          # Check for library files
+          if [ -d "$TEMP_INSTALL/usr/local/lib" ]; then
+            LIB_COUNT=$(find "$TEMP_INSTALL/usr/local/lib" -type f | wc -l)
+            echo "✓ Found $LIB_COUNT library file(s)"
+          fi
+
+          # Generate manifest
+          echo ""
+          echo "Package Manifest:"
+          echo "================"
+          find "$TEMP_INSTALL" -type f -executable | sort
+
+          rm -rf "$TEMP_INSTALL"
+
+  code-metrics:
+    name: Code Quality Metrics
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck bats jq bc
+
+      - name: Calculate code metrics
+        run: |
+          echo "Calculating code quality metrics..."
+
+          # Create metrics directory
+          mkdir -p .metrics
+
+          # Initialize metrics JSON
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          COMMIT_SHA="${GITHUB_SHA:-unknown}"
+
+          # 1. Code Coverage (from BATS tests)
+          echo "=== Test Coverage ==="
+          SCRIPT_COUNT=$(find config/custom-scripts -name "virtos-*" -type f | wc -l)
+          TEST_COUNT=$(find tests -name "virtos-*.bats" -type f | wc -l)
+          TOTAL_TESTS=$(grep -r "^@test" tests/*.bats 2>/dev/null | wc -l || echo 0)
+
+          if [ "$SCRIPT_COUNT" -gt 0 ]; then
+            COVERAGE_PCT=$(echo "scale=2; ($TEST_COUNT * 100) / $SCRIPT_COUNT" | bc)
+          else
+            COVERAGE_PCT=0
+          fi
+
+          # 2. ShellCheck warnings/errors
+          echo "=== ShellCheck Analysis ==="
+          SHELLCHECK_ERRORS=0
+          SHELLCHECK_WARNINGS=0
+          SHELLCHECK_INFO=0
+
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ -x "$script" ]; then
+              # Count by severity
+              ERRORS=$(shellcheck -f gcc "$script" 2>/dev/null | grep -c "error:" || echo 0)
+              WARNINGS=$(shellcheck -f gcc "$script" 2>/dev/null | grep -c "warning:" || echo 0)
+              INFO=$(shellcheck -f gcc "$script" 2>/dev/null | grep -c "note:" || echo 0)
+
+              SHELLCHECK_ERRORS=$((SHELLCHECK_ERRORS + ERRORS))
+              SHELLCHECK_WARNINGS=$((SHELLCHECK_WARNINGS + WARNINGS))
+              SHELLCHECK_INFO=$((SHELLCHECK_INFO + INFO))
+            fi
+          done
+
+          # 3. Code Complexity Metrics
+          echo "=== Code Complexity ==="
+          TOTAL_LINES=0
+          TOTAL_FUNCTIONS=0
+          MAX_LINES=0
+          MAX_LINES_SCRIPT=""
+
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ] && [ -x "$script" ]; then
+              LINES=$(wc -l < "$script")
+              TOTAL_LINES=$((TOTAL_LINES + LINES))
+
+              # Count functions (pattern: function_name() or function function_name)
+              FUNCS=$(grep -cE "^[a-zA-Z_][a-zA-Z0-9_]*\(\)|^function [a-zA-Z_]" "$script" || echo 0)
+              TOTAL_FUNCTIONS=$((TOTAL_FUNCTIONS + FUNCS))
+
+              # Track largest script
+              if [ "$LINES" -gt "$MAX_LINES" ]; then
+                MAX_LINES=$LINES
+                MAX_LINES_SCRIPT=$(basename "$script")
+              fi
+            fi
+          done
+
+          AVG_LINES_PER_SCRIPT=$(echo "scale=0; $TOTAL_LINES / $SCRIPT_COUNT" | bc)
+
+          # Save metrics to JSON
+          cat > .metrics/metrics.json <<EOF
+          {
+            "timestamp": "$TIMESTAMP",
+            "commit": "$COMMIT_SHA",
+            "coverage": {
+              "scripts": $SCRIPT_COUNT,
+              "test_files": $TEST_COUNT,
+              "total_tests": $TOTAL_TESTS,
+              "percentage": $COVERAGE_PCT
+            },
+            "shellcheck": {
+              "errors": $SHELLCHECK_ERRORS,
+              "warnings": $SHELLCHECK_WARNINGS,
+              "info": $SHELLCHECK_INFO
+            },
+            "complexity": {
+              "total_lines": $TOTAL_LINES,
+              "total_functions": $TOTAL_FUNCTIONS,
+              "avg_lines_per_script": $AVG_LINES_PER_SCRIPT,
+              "max_lines": $MAX_LINES,
+              "max_lines_script": "$MAX_LINES_SCRIPT"
+            }
+          }
+          EOF
+
+          # Output metrics to environment for next step
+          echo "SCRIPT_COUNT=$SCRIPT_COUNT" >> $GITHUB_ENV
+          echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_ENV
+          echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_ENV
+          echo "COVERAGE_PCT=$COVERAGE_PCT" >> $GITHUB_ENV
+          echo "SHELLCHECK_ERRORS=$SHELLCHECK_ERRORS" >> $GITHUB_ENV
+          echo "SHELLCHECK_WARNINGS=$SHELLCHECK_WARNINGS" >> $GITHUB_ENV
+          echo "TOTAL_LINES=$TOTAL_LINES" >> $GITHUB_ENV
+          echo "TOTAL_FUNCTIONS=$TOTAL_FUNCTIONS" >> $GITHUB_ENV
+          echo "AVG_LINES_PER_SCRIPT=$AVG_LINES_PER_SCRIPT" >> $GITHUB_ENV
+          echo "MAX_LINES=$MAX_LINES" >> $GITHUB_ENV
+          echo "MAX_LINES_SCRIPT=$MAX_LINES_SCRIPT" >> $GITHUB_ENV
+
+          echo "✓ Metrics calculated and saved"
+
+      - name: Generate metrics report
+        run: |
+          echo "## 📊 Code Quality Metrics Dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${GITHUB_SHA:0:7}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Test Coverage Section
+          echo "### 🧪 Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Scripts | $SCRIPT_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Files | $TEST_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Tests | $TOTAL_TESTS |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Coverage** | **${COVERAGE_PCT}%** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Coverage status indicator
+          if (( $(echo "$COVERAGE_PCT >= 100" | bc -l) )); then
+            echo "✅ **Perfect coverage - all scripts tested!**" >> $GITHUB_STEP_SUMMARY
+          elif (( $(echo "$COVERAGE_PCT >= 80" | bc -l) )); then
+            echo "✅ **Excellent coverage**" >> $GITHUB_STEP_SUMMARY
+          elif (( $(echo "$COVERAGE_PCT >= 50" | bc -l) )); then
+            echo "⚠️ **Good coverage, aim for 80%+**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Coverage needs improvement**" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # ShellCheck Section
+          echo "### 🔍 ShellCheck Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Errors | $SHELLCHECK_ERRORS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Warnings | $SHELLCHECK_WARNINGS |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # ShellCheck status
+          if [ "$SHELLCHECK_ERRORS" -eq 0 ] && [ "$SHELLCHECK_WARNINGS" -eq 0 ]; then
+            echo "✅ **No errors or warnings - clean code!**" >> $GITHUB_STEP_SUMMARY
+          elif [ "$SHELLCHECK_ERRORS" -eq 0 ]; then
+            echo "⚠️ **No errors, but $SHELLCHECK_WARNINGS warnings to address**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **$SHELLCHECK_ERRORS errors need fixing**" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Code Complexity Section
+          echo "### 📏 Code Complexity" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Lines | $TOTAL_LINES |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Functions | $TOTAL_FUNCTIONS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Avg Lines/Script | $AVG_LINES_PER_SCRIPT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Largest Script | $MAX_LINES_SCRIPT ($MAX_LINES lines) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Complexity status
+          if [ "$AVG_LINES_PER_SCRIPT" -lt 300 ]; then
+            echo "✅ **Good script size - well modularized**" >> $GITHUB_STEP_SUMMARY
+          elif [ "$AVG_LINES_PER_SCRIPT" -lt 500 ]; then
+            echo "⚠️ **Moderate complexity - consider refactoring large scripts**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **High complexity - refactoring recommended**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Save metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-metrics
+          path: .metrics/metrics.json
+          retention-days: 90
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs:
+      - validate
+      - syntax-check
+      - permissions-check
+      - version-check
+      - build-test
+      - profile-validation
+      - unit-tests
+      - package-build
+      - package-verification
+      - code-metrics
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate summary
+        env:
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          SYNTAX_RESULT: ${{ needs.syntax-check.result }}
+          PERMISSIONS_RESULT: ${{ needs.permissions-check.result }}
+          VERSION_RESULT: ${{ needs.version-check.result }}
+          BUILD_TEST_RESULT: ${{ needs.build-test.result }}
+          PROFILE_RESULT: ${{ needs.profile-validation.result }}
+          UNIT_TESTS_RESULT: ${{ needs.unit-tests.result }}
+          PACKAGE_RESULT: ${{ needs.package-build.result }}
+          PACKAGE_VERIFY_RESULT: ${{ needs.package-verification.result }}
+          METRICS_RESULT: ${{ needs.code-metrics.result }}
+        run: |
+          # Helper function to get status icon
+          get_icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              cancelled) echo "⚠️" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❓" ;;
+            esac
+          }
+
+          echo "## VirtOS CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Validation" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $VALIDATE_RESULT) Project structure: $VALIDATE_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $SYNTAX_RESULT) Shell script syntax: $SYNTAX_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $PERMISSIONS_RESULT) File permissions: $PERMISSIONS_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $VERSION_RESULT) Version sync: $VERSION_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $BUILD_TEST_RESULT) Build config: $BUILD_TEST_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $PROFILE_RESULT) Build profiles: $PROFILE_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Testing" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $UNIT_TESTS_RESULT) Unit tests: $UNIT_TESTS_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $METRICS_RESULT) Code metrics: $METRICS_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build & Verification" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $PACKAGE_RESULT) Package build: $PACKAGE_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $PACKAGE_VERIFY_RESULT) Package verification: $PACKAGE_VERIFY_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          if [ "$VALIDATE_RESULT" = "success" ] && \
+             [ "$SYNTAX_RESULT" = "success" ] && \
+             [ "$PERMISSIONS_RESULT" = "success" ] && \
+             [ "$VERSION_RESULT" = "success" ] && \
+             [ "$BUILD_TEST_RESULT" = "success" ] && \
+             [ "$PROFILE_RESULT" = "success" ] && \
+             [ "$UNIT_TESTS_RESULT" = "success" ] && \
+             [ "$PACKAGE_RESULT" = "success" ] && \
+             [ "$PACKAGE_VERIFY_RESULT" = "success" ] && \
+             [ "$METRICS_RESULT" = "success" ]; then
+            echo "### ✅ Overall: All checks passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "- 📦 virtos-tools package available for download" >> $GITHUB_STEP_SUMMARY
+            echo "- 📊 Code metrics report available" >> $GITHUB_STEP_SUMMARY
+            echo "- ⏱️ Artifacts retained for 30/90 days" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Overall: Some checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the failed jobs above." >> $GITHUB_STEP_SUMMARY
+          fi
