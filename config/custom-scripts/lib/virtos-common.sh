@@ -19,6 +19,7 @@
 #   validate_path()          - Validates file paths (prevents command injection)
 #   validate_network_mode()  - Validates network modes (nat, bridge, isolated)
 #   sanitize_input()         - Removes dangerous characters from input
+#   safe_source_config()     - Safely source config files with validation
 #
 # Available Output Functions (standardized messages with logging):
 #   die "message" [code]     - Display error to stderr, log, and exit (default: 1)
@@ -138,6 +139,76 @@ sanitize_input() {
     local input="$1"
     # Remove dangerous characters
     echo "$input" | tr -d ';|&$`<>(){}[]!\\\"'"'"
+}
+
+#==============================================================================
+# Safe Configuration Sourcing
+#==============================================================================
+
+# Safely source a configuration file with validation
+# Usage: safe_source_config "/path/to/config.conf" [required]
+# Arguments:
+#   $1 - Path to configuration file
+#   $2 - Optional: "required" if file must exist (default: optional)
+# Returns:
+#   0 on success or if optional file doesn't exist
+#   1 on validation failure or if required file is missing
+# Security:
+#   - Validates file path format
+#   - Checks file ownership (must be root or current user)
+#   - Checks file permissions (must not be world-writable)
+#   - Validates content for dangerous patterns before sourcing
+safe_source_config() {
+    local config_file="$1"
+    local required="${2:-optional}"
+
+    # Check if file exists
+    if [ ! -f "$config_file" ]; then
+        if [ "$required" = "required" ]; then
+            warn "Required configuration file not found: $config_file"
+            return 1
+        fi
+        # Optional file doesn't exist - this is OK
+        return 0
+    fi
+
+    # Validate file path format (prevent directory traversal, command injection)
+    if ! validate_path "$config_file"; then
+        warn "Invalid configuration file path format: $config_file"
+        return 1
+    fi
+
+    # Security check: File must not be world-writable
+    if [ -w "$config_file" ] && [ "$(stat -c '%a' "$config_file" 2>/dev/null || stat -f '%A' "$config_file" 2>/dev/null)" != "" ]; then
+        local perms
+        perms=$(stat -c '%a' "$config_file" 2>/dev/null || stat -f '%A' "$config_file" 2>/dev/null)
+        if [ "${perms: -1}" -ge 2 ]; then
+            warn "Configuration file is world-writable (insecure): $config_file"
+            return 1
+        fi
+    fi
+
+    # Security check: File owner must be root or current user
+    local file_owner
+    file_owner=$(stat -c '%U' "$config_file" 2>/dev/null || stat -f '%Su' "$config_file" 2>/dev/null)
+    local current_user
+    current_user=$(whoami)
+    if [ "$file_owner" != "root" ] && [ "$file_owner" != "$current_user" ]; then
+        warn "Configuration file has untrusted owner ($file_owner): $config_file"
+        return 1
+    fi
+
+    # Content validation: Check for dangerous patterns before sourcing
+    # Look for command substitution, pipes, redirects, etc.
+    if grep -qE '`|\$\(.*\)|;\s*rm|;\s*dd|>\s*/dev|<\s*\(|>\s*\(' "$config_file" 2>/dev/null; then
+        warn "Configuration file contains potentially dangerous commands: $config_file"
+        return 1
+    fi
+
+    # All checks passed - safe to source
+    # shellcheck disable=SC1090
+    . "$config_file"
+    return 0
 }
 
 #==============================================================================

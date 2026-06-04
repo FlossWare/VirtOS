@@ -54,13 +54,38 @@ else
     exit 1
 fi
 
+# Validate profile name (prevent command injection)
+validate_profile_name() {
+    local profile="$1"
+    # Profile names must be alphanumeric, hyphens, underscores only
+    if ! echo "$profile" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "ERROR: Invalid profile name '$profile' (must contain only alphanumeric, hyphens, underscores)" >&2
+        return 1
+    fi
+    # Check length (max 64 chars)
+    if [ ${#profile} -gt 64 ]; then
+        echo "ERROR: Profile name too long (max 64 characters)" >&2
+        return 1
+    fi
+    return 0
+}
+
 # Override profile if specified on command line
 if [ -n "$OVERRIDE_PROFILE" ]; then
+    # Validate before using
+    if ! validate_profile_name "$OVERRIDE_PROFILE"; then
+        exit 1
+    fi
     PROFILE="$OVERRIDE_PROFILE"
 fi
 
 # Validate and load profile if set
 if [ -n "${PROFILE:-}" ]; then
+    # Validate profile name format first (security)
+    if ! validate_profile_name "$PROFILE"; then
+        exit 1
+    fi
+
     VALID_PROFILES="minimal standard full containers developer kubernetes storage"
 
     if ! echo " $VALID_PROFILES " | grep -q " $PROFILE "; then
