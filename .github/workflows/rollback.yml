@@ -92,7 +92,7 @@ jobs:
           fi
 
       - name: Create rollback release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ github.event.inputs.version }}-rollback
           name: VirtOS v${{ github.event.inputs.version }} (Rollback)
