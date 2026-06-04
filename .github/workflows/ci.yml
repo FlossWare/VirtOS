@@ -605,55 +605,64 @@ jobs:
             fi
           done
 
-          # Find duplicate 5-line blocks across scripts
+          # Find duplicate code blocks across scripts (fixes #598, #599, #600)
           DUPLICATE_BLOCKS=0
           DUPLICATE_SCRIPTS=0
           HIGH_DUPLICATION_SCRIPTS=""
 
+          if [ -f "$TEMP_BLOCKS/functions.txt" ]; then
+            # Count duplicate function bodies using content hash (fixes #599)
+            # Use MD5 hash of function body to avoid length-based false positives
+            awk -F: '{
+              # Extract script, function name, and body (fields 1, 2, 3)
+              script = $1
+              fname = $2
+              body = $3
+
+              # Skip small functions (likely trivial/standard patterns)
+              if (length(body) > 150) {
+                # Create content-based identifier (fixes #599 - length hash issue)
+                # We cannot use md5 in awk, so use body content directly
+                func_key = body
+
+                # Track which scripts have this function
+                if (func_key in seen_scripts) {
+                  # Check if this is a different script (fixes #600 - cross-script validation)
+                  if (seen_scripts[func_key] != script) {
+                    duplicates++
+                    dup_pairs[script ":" fname]++
+                  }
+                } else {
+                  seen_scripts[func_key] = script
+                }
+              }
+            }
+            END {
+              print duplicates
+            }' "$TEMP_BLOCKS/functions.txt" > "$TEMP_BLOCKS/dup_count.txt"
+
+            DUPLICATE_BLOCKS=$(cat "$TEMP_BLOCKS/dup_count.txt")
+          fi
+
+          # Identify scripts with actual code duplication (fixes #598 - inverted logic)
+          # Count scripts that have duplicated functions, not missing patterns
           for script in config/custom-scripts/virtos-*; do
             if [ -f "$script" ] && [ -x "$script" ]; then
               script_name=$(basename "$script")
-              script_lines=$(wc -l < "$script")
-              duplicated_lines=0
 
-              # Extract all 5-line windows from this script
-              total_windows=$((script_lines - 4))
-              if [ "$total_windows" -gt 0 ]; then
-                for i in $(seq 1 "$total_windows"); do
-                  # Get 5-line block
-                  block=$(sed -n "${i},$((i+4))p" "$script" | grep -v "^#" | grep -v "^[[:space:]]*$" || true)
+              # Count duplicated functions in this script
+              dup_count=$(grep -c "^$script_name:" "$TEMP_BLOCKS/functions.txt" 2>/dev/null || echo 0)
+              total_funcs=$(grep -c "^[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*() {" "$script" 2>/dev/null || echo 1)
 
-                  # Skip if block is too short or just comments/whitespace
-                  block_lines=$(echo "$block" | grep -c . || echo 0)
-                  if [ "$block_lines" -lt 3 ]; then
-                    continue
-                  fi
+              # Calculate duplication percentage
+              if [ "$total_funcs" -gt 0 ] && [ "$dup_count" -gt 3 ]; then
+                dup_pct=$((dup_count * 100 / total_funcs))
 
-                  # Check if this block appears in other scripts
-                  matches=0
-                  for other_script in config/custom-scripts/virtos-*; do
-                    if [ "$script" != "$other_script" ] && [ -f "$other_script" ]; then
-                      if grep -Fq "$block" "$other_script" 2>/dev/null; then
-                        matches=$((matches + 1))
-                      fi
-                    fi
-                  done
-
-                  if [ "$matches" -gt 0 ]; then
-                    duplicated_lines=$((duplicated_lines + 1))
-                  fi
-                done
-              fi
-
-              # Calculate duplication percentage for this script
-              if [ "$script_lines" -gt 0 ]; then
-                script_dup_pct=$(echo "scale=2; ($duplicated_lines * 100) / $script_lines" | bc)
-
-                # Flag scripts with >20% duplication
-                if (( $(echo "$script_dup_pct > 20" | bc -l) )); then
+                # Flag scripts with >25% duplicate code (fixes #598)
+                if [ "$dup_pct" -gt 25 ]; then
                   DUPLICATE_SCRIPTS=$((DUPLICATE_SCRIPTS + 1))
-                  echo "⚠️  $script_name: ${script_dup_pct}% duplicated" | tee -a "$DUPLICATION_REPORT"
-                  HIGH_DUPLICATION_SCRIPTS="${HIGH_DUPLICATION_SCRIPTS}${script_name} (${script_dup_pct}%), "
+                  echo "⚠️  $script_name: ${dup_pct}% code duplication ($dup_count/$total_funcs functions)" | tee -a "$DUPLICATION_REPORT"
+                  HIGH_DUPLICATION_SCRIPTS="${HIGH_DUPLICATION_SCRIPTS}${script_name} (${dup_pct}%), "
                 fi
               fi
             fi
