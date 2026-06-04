@@ -4,10 +4,19 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="$SCRIPT_DIR/output"
 
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
+
+# Extract version information once (shared across all packages)
+if command -v git >/dev/null 2>&1 && [ -d "$PROJECT_ROOT/.git" ]; then
+    export VIRTOS_GIT_COMMIT="$(cd "$PROJECT_ROOT" && git rev-parse HEAD)"
+    echo "Git commit: ${VIRTOS_GIT_COMMIT:0:7}"
+else
+    export VIRTOS_GIT_COMMIT="unknown"
+fi
 
 echo "VirtOS Package Builder"
 echo "======================"

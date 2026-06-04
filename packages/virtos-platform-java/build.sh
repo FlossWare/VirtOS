@@ -408,6 +408,19 @@ and native binaries on VirtOS.
 Full documentation: https://github.com/FlossWare/platform-java
 DOC_EOF
 
+# Create build metadata
+echo "Creating build metadata..."
+
+# Use pre-extracted git commit if available (from build-all.sh)
+if [ -n "${VIRTOS_GIT_COMMIT:-}" ]; then
+    GIT_COMMIT="$VIRTOS_GIT_COMMIT"
+elif command -v git >/dev/null 2>&1 && [ -d "$PROJECT_ROOT/.git" ]; then
+    GIT_COMMIT="$(cd "$PROJECT_ROOT" && git rev-parse HEAD)"
+else
+    GIT_COMMIT="unknown"
+fi
+echo "  GIT_COMMIT: ${GIT_COMMIT:0:7}"
+
 # Create package info
 echo "Creating package metadata..."
 

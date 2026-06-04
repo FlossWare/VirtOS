@@ -96,7 +96,11 @@ fi
 date -u +"%Y-%m-%d %H:%M:%S UTC" >"$SCRIPT_DIR/src/usr/local/share/virtos/BUILD_DATE"
 echo "  BUILD_DATE: $(cat "$SCRIPT_DIR/src/usr/local/share/virtos/BUILD_DATE")"
 
-if command -v git >/dev/null 2>&1 && [ -d "$PROJECT_ROOT/.git" ]; then
+# Use pre-extracted git commit if available (from build-all.sh), otherwise extract it
+if [ -n "${VIRTOS_GIT_COMMIT:-}" ]; then
+    echo "$VIRTOS_GIT_COMMIT" >"$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT"
+    echo "  GIT_COMMIT: ${VIRTOS_GIT_COMMIT:0:7} (from build-all.sh)"
+elif command -v git >/dev/null 2>&1 && [ -d "$PROJECT_ROOT/.git" ]; then
     cd "$PROJECT_ROOT"
     git rev-parse HEAD >"$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT"
     echo "  GIT_COMMIT: $(cat "$SCRIPT_DIR/src/usr/local/share/virtos/GIT_COMMIT" | cut -c1-7)"

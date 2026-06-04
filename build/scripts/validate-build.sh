@@ -8,38 +8,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$(dirname "$SCRIPT_DIR")"
 PROJECT_ROOT="$(dirname "$BUILD_DIR")"
 
+# Source common build functions for logging and utilities
+# shellcheck source=packages/build-common.sh
+source "$PROJECT_ROOT/packages/build-common.sh"
+
 ERRORS=0
 WARNINGS=0
 
-# Colors for output
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Override error/warning to increment counters
+_error() { error "$1"; ERRORS=$((ERRORS + 1)); }
+_warning() { warning "$1"; WARNINGS=$((WARNINGS + 1)); }
 
-error() {
-    echo -e "${RED}✗${NC} $1"
-    ERRORS=$((ERRORS + 1))
-}
-
-warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-    WARNINGS=$((WARNINGS + 1))
-}
-
-success() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-info() {
-    echo -e "${BLUE}ℹ${NC} $1"
-}
-
-section() {
-    echo ""
-    echo -e "${BLUE}===${NC} $1"
-}
+# Use prefixed versions for this script
+error() { _error "$1"; }
+warning() { _warning "$1"; }
 
 echo "VirtOS Build Validation"
 echo "======================="

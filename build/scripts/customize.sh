@@ -272,6 +272,26 @@ SIZE=$2
 ISO=$3
 VMDIR="/mnt/sda1/vms"  # Adjust to your persistent storage
 
+# Validate ISO path if provided
+if [ -n "$ISO" ]; then
+    if [ ! -f "$ISO" ]; then
+        echo "ERROR: ISO file not found: $ISO" >&2
+        exit 1
+    fi
+    if [ ! -r "$ISO" ]; then
+        echo "ERROR: ISO file not readable: $ISO" >&2
+        exit 1
+    fi
+    # Basic check that it's actually an ISO file
+    case "$ISO" in
+        *.iso|*.ISO) ;;
+        *)
+            echo "WARNING: File does not have .iso extension: $ISO" >&2
+            echo "Continuing anyway, but this may not be an ISO file" >&2
+            ;;
+    esac
+fi
+
 mkdir -p "$VMDIR/$NAME"
 cd "$VMDIR/$NAME"
 
