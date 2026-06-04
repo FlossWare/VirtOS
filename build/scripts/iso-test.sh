@@ -149,21 +149,29 @@ phase2_build() {
     # Test 2.1: Run build-all.sh
     echo "Building ISO with profile: $TEST_PROFILE"
 
-    # Create temporary config for test
-    local temp_config=$(mktemp)
+    # Create temporary config for test with secure file creation (fixes #594)
+    local temp_config
+    temp_config=$(mktemp /tmp/virtos-build-XXXXXX.conf)
     trap "rm -f $temp_config" EXIT
+
+    # Validate build.conf before sourcing (fixes #596)
+    if [ ! -f "$BUILD_DIR/build.conf" ]; then
+        log_test "build.conf validation" "FAIL" "Configuration file not found"
+        return 1
+    fi
+
+    # Check for suspicious content in build.conf
+    if grep -qE '`|\$\(|;|&&|\|\|' "$BUILD_DIR/build.conf"; then
+        log_test "build.conf validation" "FAIL" "Configuration contains potentially unsafe commands"
+        return 1
+    fi
 
     cp "$BUILD_DIR/build.conf" "$temp_config"
     echo "PROFILE=\"$TEST_PROFILE\"" >> "$temp_config"
 
-    # Run build (suppress user interaction)
-    if BUILD_CONF="$temp_config" PROFILE="$TEST_PROFILE" \
-        bash "$SCRIPT_DIR/build-all.sh" >/tmp/virtos-build.log 2>&1 <<EOF
-
-y
-y
-EOF
-    then
+    # Run build non-interactively (fixes #592)
+    if BUILD_CONF="$temp_config" PROFILE="$TEST_PROFILE" NON_INTERACTIVE=1 \
+        bash "$SCRIPT_DIR/build-all.sh" >/tmp/virtos-build.log 2>&1; then
         log_test "ISO build completed" "PASS"
     else
         log_test "ISO build completed" "FAIL" "See /tmp/virtos-build.log for details"
@@ -183,7 +191,20 @@ EOF
 
     # Test 2.3: ISO file size reasonable
     local iso_size=$(du -h "$iso_file" | cut -f1)
-    local iso_size_bytes=$(stat -f%z "$iso_file" 2>/dev/null || stat -c%s "$iso_file" 2>/dev/null)
+
+    # Platform-agnostic file size detection (fixes #595)
+    local iso_size_bytes
+    if stat --version 2>/dev/null | grep -q "GNU"; then
+        # GNU stat (Linux)
+        iso_size_bytes=$(stat -c%s "$iso_file" 2>/dev/null)
+    elif stat -f%z "$iso_file" 2>/dev/null; then
+        # BSD stat (macOS)
+        iso_size_bytes=$(stat -f%z "$iso_file" 2>/dev/null)
+    else
+        # Fallback using ls -l
+        iso_size_bytes=$(ls -l "$iso_file" | awk '{print $5}')
+    fi
+
     local iso_size_mb=$((iso_size_bytes / 1048576))
 
     if [ "$iso_size_mb" -gt 50 ] && [ "$iso_size_mb" -lt 1000 ]; then
@@ -203,18 +224,28 @@ EOF
         log_test "Checksums exist" "FAIL" "MD5/SHA256 files not found"
     fi
 
-    # Test 2.5: Checksum verification
+    # Test 2.5: Checksum verification (fixes #593 - directory context)
     if [ -f "${iso_file}.md5" ]; then
         local iso_dir
         iso_dir=$(dirname "$iso_file")
         local iso_basename
         iso_basename=$(basename "$iso_file")
 
-        # Verify checksum - md5sum -c expects format "hash  filename"
+        # Verify checksum in correct directory context
+        # md5sum -c expects format "hash  filename" and must run in same directory
         if (cd "$iso_dir" && md5sum -c "${iso_basename}.md5" >/dev/null 2>&1); then
-            log_test "Checksum verification" "PASS"
+            log_test "Checksum verification (MD5)" "PASS"
         else
-            log_test "Checksum verification" "FAIL" "Checksum mismatch"
+            log_test "Checksum verification (MD5)" "FAIL" "MD5 checksum mismatch"
+        fi
+
+        # Also verify SHA256 if available
+        if [ -f "${iso_file}.sha256" ]; then
+            if (cd "$iso_dir" && sha256sum -c "${iso_basename}.sha256" >/dev/null 2>&1); then
+                log_test "Checksum verification (SHA256)" "PASS"
+            else
+                log_test "Checksum verification (SHA256)" "FAIL" "SHA256 checksum mismatch"
+            fi
         fi
     else
         log_test "Checksum verification" "SKIP" "MD5 file not available"

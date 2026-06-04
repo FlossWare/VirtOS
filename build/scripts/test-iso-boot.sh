@@ -43,6 +43,18 @@ find_latest_iso() {
         log_error "No ISO found in $BUILD_DIR/output/"
         exit 1
     fi
+
+    # Validate ISO file path to prevent command injection
+    if [[ ! "$ISO_FILE" =~ ^[a-zA-Z0-9/_.-]+$ ]]; then
+        log_error "Invalid ISO filename: contains unsafe characters"
+        exit 1
+    fi
+
+    if [ ! -f "$ISO_FILE" ]; then
+        log_error "ISO file does not exist: $ISO_FILE"
+        exit 1
+    fi
+
     echo "$ISO_FILE"
 }
 
@@ -76,27 +88,32 @@ run_boot_test() {
     log_info "Timeout: ${BOOT_TIMEOUT}s"
     echo ""
 
-    SERIAL_FILE="/tmp/virtos-boot-serial-$$.log"
+    # Use mktemp for secure temporary file creation (fixes #597)
+    SERIAL_FILE=$(mktemp /tmp/virtos-boot-serial-XXXXXX.log)
+    trap 'rm -f "$SERIAL_FILE"' EXIT
 
-    QEMU_CMD="qemu-system-x86_64"
-    QEMU_CMD="$QEMU_CMD -m $QEMU_MEMORY"
-    QEMU_CMD="$QEMU_CMD -smp $QEMU_CPUS"
-    QEMU_CMD="$QEMU_CMD -cdrom $ISO_FILE"
-    QEMU_CMD="$QEMU_CMD -boot d"
+    # Build QEMU command as array to avoid eval and command injection (fixes #578, #581)
+    QEMU_ARGS=(
+        -m "$QEMU_MEMORY"
+        -smp "$QEMU_CPUS"
+        -cdrom "$ISO_FILE"
+        -boot d
+    )
 
     if [ "$USE_KVM" = "1" ]; then
-        QEMU_CMD="$QEMU_CMD -enable-kvm"
+        QEMU_ARGS+=(-enable-kvm)
     fi
 
     if [ "$HEADLESS" = "1" ]; then
-        QEMU_CMD="$QEMU_CMD -display none"
+        QEMU_ARGS+=(-display none)
     else
-        QEMU_CMD="$QEMU_CMD -vnc :99"
+        QEMU_ARGS+=(-vnc :99)
     fi
 
-    QEMU_CMD="$QEMU_CMD -serial file:$SERIAL_FILE"
+    QEMU_ARGS+=(-serial "file:$SERIAL_FILE")
 
-    eval "$QEMU_CMD" &
+    # Execute QEMU directly without eval to prevent command injection
+    qemu-system-x86_64 "${QEMU_ARGS[@]}" &
     QEMU_PID=$!
 
     BOOT_SUCCESS=0
@@ -126,11 +143,21 @@ run_boot_test() {
 
     echo ""
 
-    # Terminate QEMU
+    # Terminate QEMU gracefully (fixes #594 - race condition)
     if [ -n "$QEMU_PID" ] && kill -0 "$QEMU_PID" 2>/dev/null; then
         kill -TERM "$QEMU_PID" 2>/dev/null || true
-        sleep 2
-        kill -KILL "$QEMU_PID" 2>/dev/null || true
+        # Wait up to 5 seconds for graceful shutdown
+        for i in {1..50}; do
+            if ! kill -0 "$QEMU_PID" 2>/dev/null; then
+                break
+            fi
+            sleep 0.1
+        done
+        # Force kill if still running
+        if kill -0 "$QEMU_PID" 2>/dev/null; then
+            kill -KILL "$QEMU_PID" 2>/dev/null || true
+            sleep 0.5
+        fi
     fi
 
     # Print results
