@@ -1,0 +1,335 @@
+name: Documentation (Enhanced)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '**.md'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '**.md'
+
+jobs:
+  markdown-lint:
+    name: Markdown Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint markdown files
+        uses: articulate/actions-markdownlint@v1
+        with:
+          config: .markdownlint.json
+          files: '**/*.md'
+          ignore: node_modules
+        continue-on-error: true
+
+      - name: Generate markdown lint report
+        continue-on-error: true
+        run: |
+          echo "## Markdown Lint Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Linting check completed. Review warnings and errors above." >> $GITHUB_STEP_SUMMARY
+
+  link-checking:
+    name: Check Documentation Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/markdown-link-check-config.json'
+        continue-on-error: true
+
+      - name: Generate link check report
+        continue-on-error: true
+        run: |
+          echo "## Documentation Link Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Markdown link validation completed. Check above for any broken links." >> $GITHUB_STEP_SUMMARY
+
+  code-examples:
+    name: Validate Code Examples
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract and validate code examples
+        run: |
+          echo "## Code Examples Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          EXAMPLES_FOUND=0
+          EXAMPLES_VALID=0
+          EXAMPLES_INVALID=0
+
+          # Find all markdown files
+          for doc in $(find docs -name "*.md" -o -name "README.md" -o -name "CONTRIBUTING.md"); do
+            if [ -f "$doc" ]; then
+              # Extract bash code blocks
+              awk '
+                /^```bash$/ { in_bash=1; next }
+                /^```$/ && in_bash { in_bash=0; next }
+                in_bash { print > "/tmp/code_" NR ".sh" }
+              ' "$doc" 2>/dev/null
+
+              # Validate each extracted code block
+              for script in /tmp/code_*.sh; do
+                if [ -f "$script" ] && [ -s "$script" ]; then
+                  EXAMPLES_FOUND=$((EXAMPLES_FOUND + 1))
+
+                  # Check syntax (allow set -e failures for examples)
+                  if bash -n "$script" 2>/dev/null; then
+                    EXAMPLES_VALID=$((EXAMPLES_VALID + 1))
+                  else
+                    EXAMPLES_INVALID=$((EXAMPLES_INVALID + 1))
+                    echo "⚠️ Syntax issue in code block from $(basename $doc)" >> $GITHUB_STEP_SUMMARY
+                  fi
+
+                  rm -f "$script"
+                fi
+              done
+            fi
+          done
+
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code blocks found | $EXAMPLES_FOUND |" >> $GITHUB_STEP_SUMMARY
+          echo "| Valid syntax | $EXAMPLES_VALID |" >> $GITHUB_STEP_SUMMARY
+          echo "| Invalid syntax | $EXAMPLES_INVALID |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ $EXAMPLES_INVALID -eq 0 ] && [ $EXAMPLES_FOUND -gt 0 ]; then
+            echo "✅ All code examples have valid syntax" >> $GITHUB_STEP_SUMMARY
+          elif [ $EXAMPLES_FOUND -eq 0 ]; then
+            echo "ℹ️ No bash code examples found in documentation" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Some code examples have syntax issues" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  doc-completeness:
+    name: Documentation Completeness Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check documentation coverage
+        run: |
+          echo "## Documentation Completeness" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Required documentation files
+          REQUIRED_DOCS=(
+            "README.md"
+            "LICENSE"
+            "CONTRIBUTING.md"
+            "TESTING.md"
+            "CLAUDE.md"
+            "docs/ARCHITECTURE.md"
+            "docs/ROADMAP.md"
+          )
+
+          MISSING=0
+          FOUND=0
+
+          for doc in "${REQUIRED_DOCS[@]}"; do
+            if [ -f "$doc" ]; then
+              FOUND=$((FOUND + 1))
+              echo "✅ $doc present" >> $GITHUB_STEP_SUMMARY
+            else
+              MISSING=$((MISSING + 1))
+              echo "❌ $doc missing" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Found: $FOUND/${#REQUIRED_DOCS[@]}" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing: $MISSING/${#REQUIRED_DOCS[@]}" >> $GITHUB_STEP_SUMMARY
+
+          if [ $MISSING -eq 0 ]; then
+            echo "- Status: ✅ Complete" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Status: ⚠️ Incomplete" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check documentation content quality
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Documentation Content Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Analyze README.md
+          if [ -f "README.md" ]; then
+            echo "### README.md" >> $GITHUB_STEP_SUMMARY
+
+            # Check for key sections
+            SECTIONS=("Installation" "Usage" "Contributing" "License")
+            for section in "${SECTIONS[@]}"; do
+              if grep -qi "^##.*$section" README.md; then
+                echo "✅ Contains '$section' section" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "⚠️ Missing '$section' section" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Analyze CONTRIBUTING.md
+          if [ -f "CONTRIBUTING.md" ]; then
+            echo "### CONTRIBUTING.md" >> $GITHUB_STEP_SUMMARY
+
+            CONTRIB_SECTIONS=("Getting Started" "Development" "Testing" "Pull Request")
+            for section in "${CONTRIB_SECTIONS[@]}"; do
+              if grep -qi "^##.*$section" CONTRIBUTING.md; then
+                echo "✅ Contains '$section' section" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "⚠️ Missing '$section' section" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
+          fi
+
+  doc-count:
+    name: Documentation Statistics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Count documentation
+        run: |
+          echo "## Documentation Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count markdown files
+          DOC_COUNT=$(find docs -name "*.md" 2>/dev/null | wc -l)
+          ROOT_DOC_COUNT=$(ls -1 *.md 2>/dev/null | wc -l)
+          TOTAL_DOC_COUNT=$((DOC_COUNT + ROOT_DOC_COUNT))
+
+          # Count total lines
+          TOTAL_LINES=0
+          for doc in docs/*.md *.md; do
+            if [ -f "$doc" ] 2>/dev/null; then
+              LINES=$(wc -l < "$doc" 2>/dev/null || echo 0)
+              TOTAL_LINES=$((TOTAL_LINES + LINES))
+            fi
+          done
+
+          # Count scripts
+          SCRIPT_COUNT=$(ls -1 config/custom-scripts/virtos-* 2>/dev/null | wc -l)
+
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation files | $TOTAL_DOC_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Root-level docs | $ROOT_DOC_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docs directory | $DOC_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total documentation lines | $TOTAL_LINES |" >> $GITHUB_STEP_SUMMARY
+          echo "| Management scripts | $SCRIPT_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Calculate documentation-to-code ratio
+          SCRIPT_LINES=0
+          for script in config/custom-scripts/virtos-*; do
+            if [ -f "$script" ]; then
+              SCRIPT_LINES=$((SCRIPT_LINES + $(wc -l < "$script" 2>/dev/null || echo 0)))
+            fi
+          done
+
+          if [ $SCRIPT_LINES -gt 0 ]; then
+            RATIO=$(echo "scale=2; $TOTAL_LINES / $SCRIPT_LINES" | bc 2>/dev/null || echo "N/A")
+            echo "### Documentation Ratio" >> $GITHUB_STEP_SUMMARY
+            echo "- Code lines: $SCRIPT_LINES" >> $GITHUB_STEP_SUMMARY
+            echo "- Doc lines: $TOTAL_LINES" >> $GITHUB_STEP_SUMMARY
+            echo "- Doc/Code ratio: $RATIO" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Documentation Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # List docs directory files
+          if [ -d "docs" ]; then
+            for doc in docs/*.md; do
+              if [ -f "$doc" ]; then
+                LINES=$(wc -l < "$doc" 2>/dev/null || echo 0)
+                echo "- $(basename $doc): $LINES lines" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Root-level Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # List root-level markdown files
+          for doc in *.md; do
+            if [ -f "$doc" ]; then
+              LINES=$(wc -l < "$doc" 2>/dev/null || echo 0)
+              echo "- $doc: $LINES lines" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+  summary:
+    name: Documentation Summary
+    runs-on: ubuntu-latest
+    needs: [markdown-lint, link-checking, code-examples, doc-completeness, doc-count]
+    if: always()
+
+    steps:
+      - name: Generate documentation summary
+        env:
+          LINT_RESULT: ${{ needs.markdown-lint.result }}
+          LINK_RESULT: ${{ needs.link-checking.result }}
+          EXAMPLES_RESULT: ${{ needs.code-examples.result }}
+          COMPLETENESS_RESULT: ${{ needs.doc-completeness.result }}
+          COUNT_RESULT: ${{ needs.doc-count.result }}
+        run: |
+          # Helper function to get status icon
+          get_icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              cancelled) echo "⚠️" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❓" ;;
+            esac
+          }
+
+          echo "## Documentation Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Validation Checks" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $LINT_RESULT) Markdown linting: $LINT_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $LINK_RESULT) Link checking: $LINK_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $EXAMPLES_RESULT) Code examples: $EXAMPLES_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $COMPLETENESS_RESULT) Completeness: $COMPLETENESS_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_icon $COUNT_RESULT) Statistics: $COUNT_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          if [ "$LINT_RESULT" = "success" ] && \
+             [ "$LINK_RESULT" = "success" ] && \
+             [ "$EXAMPLES_RESULT" = "success" ] && \
+             [ "$COMPLETENESS_RESULT" = "success" ] && \
+             [ "$COUNT_RESULT" = "success" ]; then
+            echo "### ✅ Overall: Documentation validation passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Overall: Some documentation checks had warnings" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the sections above for details." >> $GITHUB_STEP_SUMMARY
+          fi

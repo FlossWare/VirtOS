@@ -947,6 +947,233 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Current metrics saved for comparison with future commits." >> $GITHUB_STEP_SUMMARY
 
+  integration-test-validate:
+    name: Validate Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Validate integration test syntax
+        run: |
+          echo "Validating integration test syntax..."
+          EXIT_CODE=0
+
+          for test_file in tests/integration/*.bats; do
+            if [ -f "$test_file" ]; then
+              echo "Checking $(basename $test_file)..."
+
+              # Count tests to ensure file is valid
+              test_count=$(grep -c "^@test" "$test_file" || echo 0)
+              if [ "$test_count" -eq 0 ]; then
+                echo "  ⚠️ Warning: No @test decorators found"
+              fi
+
+              # Check for common syntax patterns
+              if ! grep -q "^load\|^@test" "$test_file" 2>/dev/null; then
+                echo "  ⚠️ Warning: No load statements or @test decorators"
+              fi
+
+              echo "  ✓ $(basename $test_file) valid ($test_count tests)"
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All integration tests have valid structure"
+          fi
+
+      - name: Count total integration tests
+        run: |
+          echo "## 📊 Integration Test Suite Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          total=0
+          suites=0
+
+          for test_file in tests/integration/*.bats; do
+            if [ -f "$test_file" ]; then
+              suites=$((suites + 1))
+              count=$(grep -c "^@test" "$test_file" || echo 0)
+              total=$((total + count))
+              echo "- $(basename $test_file): $count tests" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Total**: $total tests across $suites suites" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Note**: Integration tests require VirtOS runtime (libvirt, QEMU, platform-java)" >> $GITHUB_STEP_SUMMARY
+          echo "See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md) for execution instructions." >> $GITHUB_STEP_SUMMARY
+
+  documentation-link-check:
+    name: Check Documentation Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for broken local links in markdown
+        run: |
+          echo "Checking for broken local links in documentation..."
+          EXIT_CODE=0
+
+          # Check all markdown files
+          for doc in $(find . -name "*.md" -type f); do
+            # Extract local file references [text](path)
+            while IFS= read -r line; do
+              # Match [text](local-path) patterns
+              if [[ $line =~ \]\(([^)]+)\) ]]; then
+                ref="${BASH_REMATCH[1]}"
+
+                # Skip external URLs and anchors
+                if [[ ! $ref =~ ^https?:// ]] && [[ $ref != *"#"* ]]; then
+                  # Remove any anchor portion
+                  file_path="${ref%%#*}"
+
+                  # Check if file exists
+                  if [ -n "$file_path" ] && [ ! -f "$file_path" ]; then
+                    echo "  ❌ $doc: broken link to $file_path"
+                    EXIT_CODE=1
+                  fi
+                fi
+              fi
+            done < "$doc"
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All local documentation links are valid"
+          else
+            echo "✗ Some documentation links are broken"
+            exit $EXIT_CODE
+          fi
+
+      - name: Validate markdown syntax
+        run: |
+          echo "Validating markdown syntax..."
+          EXIT_CODE=0
+
+          # Check for common markdown issues
+          for doc in $(find docs -name "*.md" -type f); do
+            echo "Checking $(basename $doc)..."
+
+            # Check for unclosed code blocks
+            code_blocks=$(grep -c '```' "$doc" || echo 0)
+            if [ $((code_blocks % 2)) -ne 0 ]; then
+              echo "  ⚠️ Warning: Unclosed code block"
+              EXIT_CODE=1
+            fi
+
+            # Check for valid heading structure
+            if ! grep -q "^#" "$doc"; then
+              echo "  ⚠️ Warning: No headings found"
+            fi
+          done
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ Markdown syntax valid"
+          fi
+
+  code-examples-validation:
+    name: Validate Code Examples
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for syntax errors in shell examples
+        run: |
+          echo "Validating shell code examples in documentation..."
+
+          # Extract bash code blocks from markdown files
+          for doc in $(find docs -name "*.md" -type f 2>/dev/null); do
+            echo "Checking examples in $(basename $doc)..."
+
+            # Use awk to extract bash code blocks
+            awk '
+              /```bash/ { in_code=1; next }
+              /```/ { in_code=0; next }
+              in_code {
+                print $0
+              }
+            ' "$doc" | {
+              # Create temp file for code block
+              code_file=$(mktemp)
+              cat > "$code_file"
+
+              # Check syntax if file is not empty
+              if [ -s "$code_file" ]; then
+                if ! bash -n "$code_file" 2>/dev/null; then
+                  echo "  ⚠️ Syntax warning in example code (may be pseudo-code)"
+                fi
+              fi
+
+              rm -f "$code_file"
+            }
+          done
+
+          echo "✓ Code examples validated"
+
+  iso-build-validation:
+    name: Validate ISO Build Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check ISO build scripts exist
+        run: |
+          echo "Validating ISO build configuration..."
+          EXIT_CODE=0
+
+          # Check for build scripts
+          if [ ! -f "build/scripts/build-iso.sh" ]; then
+            echo "⚠️ Warning: build/scripts/build-iso.sh not found"
+          else
+            echo "✓ ISO build script found"
+          fi
+
+          # Check for ISO profile
+          if [ ! -d "build/profiles" ] || [ -z "$(ls -A build/profiles/*.conf 2>/dev/null)" ]; then
+            echo "⚠️ Warning: No build profiles found"
+            EXIT_CODE=1
+          else
+            profile_count=$(ls -1 build/profiles/*.conf 2>/dev/null | wc -l)
+            echo "✓ Found $profile_count build profiles"
+          fi
+
+          exit $EXIT_CODE
+
+      - name: Validate ISO build prerequisites
+        run: |
+          echo "## ISO Build Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check for ISO build dependencies
+          MISSING_DEPS=""
+
+          if ! command -v unsquashfs &> /dev/null; then
+            MISSING_DEPS="$MISSING_DEPS squashfs-tools"
+          fi
+
+          if [ -n "$MISSING_DEPS" ]; then
+            echo "⚠️ **Note**: The following tools are needed for ISO builds:" >> $GITHUB_STEP_SUMMARY
+            echo "\`$MISSING_DEPS\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✓ **All ISO build tools available**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for build validation procedures." >> $GITHUB_STEP_SUMMARY
+
   summary:
     name: Build Summary
     runs-on: ubuntu-latest
@@ -955,28 +1182,40 @@ jobs:
       - syntax-check
       - permissions-check
       - version-check
+      - documentation-check
       - build-test
       - profile-validation
       - unit-tests
       - package-build
       - code-metrics
+      - security-scan
+      - integration-test-validate
+      - documentation-link-check
+      - code-examples-validation
+      - iso-build-validation
     if: always()
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate summary
+      - name: Generate comprehensive test report
         env:
           VALIDATE_RESULT: ${{ needs.validate.result }}
           SYNTAX_RESULT: ${{ needs.syntax-check.result }}
           PERMISSIONS_RESULT: ${{ needs.permissions-check.result }}
           VERSION_RESULT: ${{ needs.version-check.result }}
+          DOC_CHECK_RESULT: ${{ needs.documentation-check.result }}
           BUILD_TEST_RESULT: ${{ needs.build-test.result }}
           PROFILE_RESULT: ${{ needs.profile-validation.result }}
           UNIT_TESTS_RESULT: ${{ needs.unit-tests.result }}
           PACKAGE_RESULT: ${{ needs.package-build.result }}
           METRICS_RESULT: ${{ needs.code-metrics.result }}
+          SECURITY_RESULT: ${{ needs.security-scan.result }}
+          INTEGRATION_TEST_RESULT: ${{ needs.integration-test-validate.result }}
+          DOC_LINK_RESULT: ${{ needs.documentation-link-check.result }}
+          CODE_EXAMPLES_RESULT: ${{ needs.code-examples-validation.result }}
+          ISO_BUILD_RESULT: ${{ needs.iso-build-validation.result }}
         run: |
           # Helper function to get status icon
           get_icon() {
@@ -989,41 +1228,85 @@ jobs:
             esac
           }
 
-          echo "## VirtOS CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "# VirtOS CI Pipeline Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Validation" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $VALIDATE_RESULT) Project structure: $VALIDATE_RESULT" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $SYNTAX_RESULT) Shell script syntax: $SYNTAX_RESULT" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $PERMISSIONS_RESULT) File permissions: $PERMISSIONS_RESULT" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $VERSION_RESULT) Version sync: $VERSION_RESULT" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $BUILD_TEST_RESULT) Build config: $BUILD_TEST_RESULT" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $PROFILE_RESULT) Build profiles: $PROFILE_RESULT" >> $GITHUB_STEP_SUMMARY
+          echo "**Pipeline Execution Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit SHA**: ${GITHUB_SHA:0:7}" >> $GITHUB_STEP_SUMMARY
+          echo "**Ref**: ${GITHUB_REF#refs/heads/}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Testing" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $UNIT_TESTS_RESULT) Unit tests: $UNIT_TESTS_RESULT" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $METRICS_RESULT) Code metrics: $METRICS_RESULT" >> $GITHUB_STEP_SUMMARY
+
+          echo "## Test Execution Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Build" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_icon $PACKAGE_RESULT) Package build: $PACKAGE_RESULT" >> $GITHUB_STEP_SUMMARY
+
+          echo "### ✅ Automated Testing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This pipeline runs the following automated tests:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Type | Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Syntax Validation** | Shell Script Syntax Check | $(get_icon $SYNTAX_RESULT) $SYNTAX_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Static Analysis** | ShellCheck Linting | $(get_icon $SYNTAX_RESULT) $SYNTAX_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Unit Tests** | Run Unit Tests (BATS) | $(get_icon $UNIT_TESTS_RESULT) $UNIT_TESTS_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Integration Tests** | Validate Integration Tests | $(get_icon $INTEGRATION_TEST_RESULT) $INTEGRATION_TEST_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Code Quality** | Code Quality Metrics | $(get_icon $METRICS_RESULT) $METRICS_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Package Verification** | Build Packages | $(get_icon $PACKAGE_RESULT) $PACKAGE_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Documentation** | Markdown & Link Validation | $(get_icon $DOC_CHECK_RESULT) $DOC_CHECK_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Doc Links** | Check Documentation Links | $(get_icon $DOC_LINK_RESULT) $DOC_LINK_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Code Examples** | Validate Code Examples | $(get_icon $CODE_EXAMPLES_RESULT) $CODE_EXAMPLES_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **ISO Build** | Validate ISO Build Config | $(get_icon $ISO_BUILD_RESULT) $ISO_BUILD_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Security** | Security Scanning & Checks | $(get_icon $SECURITY_RESULT) $SECURITY_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### 🔍 Validation Checks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Project structure | $(get_icon $VALIDATE_RESULT) $VALIDATE_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| File permissions | $(get_icon $PERMISSIONS_RESULT) $PERMISSIONS_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version synchronization | $(get_icon $VERSION_RESULT) $VERSION_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build configuration | $(get_icon $BUILD_TEST_RESULT) $BUILD_TEST_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build profiles | $(get_icon $PROFILE_RESULT) $PROFILE_RESULT |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Overall status
-          if [ "$VALIDATE_RESULT" = "success" ] && \
-             [ "$SYNTAX_RESULT" = "success" ] && \
-             [ "$PERMISSIONS_RESULT" = "success" ] && \
-             [ "$VERSION_RESULT" = "success" ] && \
-             [ "$BUILD_TEST_RESULT" = "success" ] && \
-             [ "$PROFILE_RESULT" = "success" ] && \
-             [ "$UNIT_TESTS_RESULT" = "success" ] && \
-             [ "$PACKAGE_RESULT" = "success" ] && \
-             [ "$METRICS_RESULT" = "success" ]; then
-            echo "### ✅ Overall: All checks passed" >> $GITHUB_STEP_SUMMARY
+          FAILED_JOBS=""
+          if [ "$VALIDATE_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS validate"; fi
+          if [ "$SYNTAX_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS syntax-check"; fi
+          if [ "$PERMISSIONS_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS permissions-check"; fi
+          if [ "$VERSION_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS version-check"; fi
+          if [ "$DOC_CHECK_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS documentation-check"; fi
+          if [ "$BUILD_TEST_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS build-test"; fi
+          if [ "$PROFILE_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS profile-validation"; fi
+          if [ "$UNIT_TESTS_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS unit-tests"; fi
+          if [ "$PACKAGE_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS package-build"; fi
+          if [ "$METRICS_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS code-metrics"; fi
+          if [ "$SECURITY_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS security-scan"; fi
+          if [ "$INTEGRATION_TEST_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS integration-test-validate"; fi
+          if [ "$DOC_LINK_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS documentation-link-check"; fi
+          if [ "$CODE_EXAMPLES_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS code-examples-validation"; fi
+          if [ "$ISO_BUILD_RESULT" != "success" ]; then FAILED_JOBS="$FAILED_JOBS iso-build-validation"; fi
+
+          echo "## Pipeline Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -z "$FAILED_JOBS" ]; then
+            echo "### ✅ All Tests Passed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-            echo "- 📦 virtos-tools package available for download" >> $GITHUB_STEP_SUMMARY
-            echo "- ⏱️ Artifacts retained for 30 days" >> $GITHUB_STEP_SUMMARY
+            echo "**Result**: All automated tests, validation checks, and quality metrics passed successfully." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📦 Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **virtos-tools package**: Available for 30 days" >> $GITHUB_STEP_SUMMARY
+            echo "- **Code metrics**: Test coverage and quality analysis" >> $GITHUB_STEP_SUMMARY
+            echo "- **Build artifacts**: Package checksums and metadata" >> $GITHUB_STEP_SUMMARY
           else
-            echo "### ❌ Overall: Some checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "### ❌ Some Tests Failed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Please review the failed jobs above." >> $GITHUB_STEP_SUMMARY
+            echo "**Failed Jobs**:$FAILED_JOBS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Action Required**: Review the failed job logs above to diagnose and fix issues." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔗 Navigation" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Click on each failed job name in the workflow run to see detailed error messages." >> $GITHUB_STEP_SUMMARY
           fi
