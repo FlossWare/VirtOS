@@ -10,7 +10,7 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION=$(get_version 2>/dev/null || echo "0.22")
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 TEMPLATE_DIR="${TEMPLATE_DIR:-/var/lib/virtos/templates}"
 
 usage() {

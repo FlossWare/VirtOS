@@ -9,7 +9,7 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION=$(get_version 2>/dev/null || echo "0.21")
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 usage() {
     cat << EOF
@@ -414,6 +414,10 @@ while [ $# -gt 0 ]; do
             ;;
         --keep)
             KEEP_COUNT="$2"
+            if ! validate_number "$KEEP_COUNT" 2>/dev/null; then
+                echo "Error: --keep requires a positive integer, got: $KEEP_COUNT" >&2
+                exit 1
+            fi
             shift 2
             ;;
         *)

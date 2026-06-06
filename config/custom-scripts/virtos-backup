@@ -10,7 +10,7 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION=$(get_version 2>/dev/null || echo "0.21")
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 # Handle --help and --version early (before any filesystem operations)
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
@@ -600,6 +600,13 @@ EOF
 cleanup_backups() {
     log "Cleaning up backups older than $RETENTION_DAYS days..."
 
+    # SECURITY: Validate BACKUP_DIR before any rm operations
+    if ! validate_backup_path "$BACKUP_DIR" 2>/dev/null; then
+        error "Invalid or unsafe BACKUP_DIR: $BACKUP_DIR"
+        error "BACKUP_DIR must be within /var/lib/virtos/backups or similar safe location"
+        return 1
+    fi
+
     local removed=0
 
     for vm_dir in "$BACKUP_DIR"/*; do
@@ -611,6 +618,12 @@ cleanup_backups() {
 
         for backup in "$vm_dir"/*; do
             if [ ! -e "$backup" ]; then
+                continue
+            fi
+
+            # SECURITY: Validate backup path before rm -rf
+            if ! validate_backup_path "$backup" "$BACKUP_DIR" 2>/dev/null; then
+                warn "Skipping invalid backup path: $backup"
                 continue
             fi
 

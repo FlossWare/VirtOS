@@ -4,12 +4,21 @@ set -e
 # VirtOS Migrate - Live VM migration with and without shared storage
 # Enhanced migration capabilities including block migration
 
-# Load common library
-if [ -f /usr/local/lib/virtos-common.sh ]; then
-    . /usr/local/lib/virtos-common.sh
+# Load common library - try multiple paths for dev/production compatibility
+VIRTOS_COMMON=""
+for lib_path in \
+    "${VIRTOS_LIB:-}" \
+    "$(dirname "$0")/lib/virtos-common.sh" \
+    "/usr/local/lib/virtos-common.sh" \
+    "$(git rev-parse --show-toplevel 2>/dev/null)/config/custom-scripts/lib/virtos-common.sh"; do
+    [ -n "$lib_path" ] && [ -f "$lib_path" ] && VIRTOS_COMMON="$lib_path" && break
+done
+
+if [ -n "$VIRTOS_COMMON" ]; then
+    . "$VIRTOS_COMMON"
 fi
 
-VERSION=$(get_version 2>/dev/null || echo "0.17")
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 usage() {
     cat << EOF
@@ -295,6 +304,10 @@ while [ $# -gt 0 ]; do
             ;;
         --bandwidth)
             BANDWIDTH="$2"
+            if ! validate_number "$BANDWIDTH" 2>/dev/null; then
+                echo "Error: --bandwidth requires a positive integer (mbps), got: $BANDWIDTH" >&2
+                exit 1
+            fi
             shift 2
             ;;
         --compressed)

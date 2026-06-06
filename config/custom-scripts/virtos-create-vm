@@ -29,7 +29,7 @@ else
     fi
 fi
 
-VERSION=$(get_version 2>/dev/null || echo "0.17")
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 usage() {
     cat << EOF
@@ -171,6 +171,12 @@ else
     esac
 fi
 
+# Validate CPU is greater than zero
+if [ "$CPU" -le 0 ]; then
+    echo "${RED}Error: CPU count must be greater than 0: $CPU${NC}" >&2
+    exit 1
+fi
+
 # Validate RAM is a positive number
 if command -v validate_number >/dev/null 2>&1; then
     if ! validate_number "$RAM"; then
@@ -185,6 +191,12 @@ else
             exit 1
             ;;
     esac
+fi
+
+# Validate RAM is greater than zero
+if [ "$RAM" -le 0 ]; then
+    echo "${RED}Error: RAM must be greater than 0 MB: $RAM${NC}" >&2
+    exit 1
 fi
 
 # Validate disk size format
@@ -206,6 +218,13 @@ else
             exit 1
             ;;
     esac
+fi
+
+# Validate disk size is greater than zero
+DISK_NUM=$(echo "$DISK" | sed 's/[^0-9]*//g')
+if [ -n "$DISK_NUM" ] && [ "$DISK_NUM" -le 0 ]; then
+    echo "${RED}Error: Disk size must be greater than 0: $DISK${NC}" >&2
+    exit 1
 fi
 
 # Validate network mode

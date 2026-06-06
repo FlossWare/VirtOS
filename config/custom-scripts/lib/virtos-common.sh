@@ -117,8 +117,22 @@ validate_ip() {
     if [ -z "$ip" ]; then
         return 1
     fi
-    # Basic IPv4 validation
-    echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+    # Basic IPv4 validation - check format first
+    if ! echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+        return 1
+    fi
+
+    # Validate each octet is in range 0-255
+    local octet1 octet2 octet3 octet4
+    IFS='.' read -r octet1 octet2 octet3 octet4 <<EOF
+$ip
+EOF
+
+    if [ "$octet1" -gt 255 ] || [ "$octet2" -gt 255 ] || [ "$octet3" -gt 255 ] || [ "$octet4" -gt 255 ]; then
+        return 1
+    fi
+
+    return 0
 }
 
 # Validate number (positive integer)
@@ -192,7 +206,7 @@ validate_backup_path() {
 
     # Enforce that backup path must start with BACKUP_DIR prefix
     # This prevents accessing paths outside the backup directory
-    if ! echo "$path" | grep -q "^$(printf '%s\n' "$backup_dir" | sed 's/[[\.*^$/]/\\&/g')"; then
+    if ! echo "$path" | grep -q "^$(printf '%s\n' "$backup_dir" | sed 's/[]\.\*^$[]/\\&/g')"; then
         return 1
     fi
 
@@ -208,7 +222,7 @@ validate_backup_path() {
 sanitize_input() {
     local input="$1"
     # Remove dangerous characters
-    echo "$input" | tr -d ';|&$`<>(){}[]!\\\"'"'"
+    echo "$input" | tr -d ';|&`<>(){}[]!$\\\"'"'"
 }
 
 #==============================================================================
