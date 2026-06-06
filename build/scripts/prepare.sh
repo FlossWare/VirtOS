@@ -224,7 +224,7 @@ esac
 mkdir -p "$EXTRACT_DIR"
 if [ -d "$CONTENTS_DIR" ]; then
     echo "  Cleaning old extraction..."
-    rm -rf "$CONTENTS_DIR"
+    sudo rm -rf "$CONTENTS_DIR"
 fi
 mkdir -p "$CONTENTS_DIR"
 
@@ -279,9 +279,9 @@ fi
 echo "  Unmounting ISO..."
 sudo umount "$EXTRACT_DIR"
 
-# Extract initrd (core.gz)
+# Extract initrd (core.gz or corepure64.gz depending on TC version)
 echo ""
-echo "Extracting initrd (core.gz)..."
+echo "Extracting initrd..."
 INITRD_DIR="$WORKSPACE_DIR/initrd"
 
 # Validate initrd directory path
@@ -304,19 +304,23 @@ case "$INITRD_DIR" in
 esac
 
 if [ -d "$INITRD_DIR" ]; then
-    rm -rf "$INITRD_DIR"
+    sudo rm -rf "$INITRD_DIR"
 fi
 mkdir -p "$INITRD_DIR"
 
-# Validate core.gz path
-CORE_GZ_PATH="$CONTENTS_DIR/boot/core.gz"
-if ! validate_safe_path "$CORE_GZ_PATH"; then
-    echo "ERROR: Invalid core.gz path: $CORE_GZ_PATH"
+# Detect initrd name (core.gz for older versions, corepure64.gz for 15.x+)
+if [ -f "$CONTENTS_DIR/boot/corepure64.gz" ]; then
+    CORE_GZ_PATH="$CONTENTS_DIR/boot/corepure64.gz"
+elif [ -f "$CONTENTS_DIR/boot/core.gz" ]; then
+    CORE_GZ_PATH="$CONTENTS_DIR/boot/core.gz"
+else
+    echo "ERROR: No initrd found at $CONTENTS_DIR/boot/ (expected core.gz or corepure64.gz)"
     exit 1
 fi
 
-if [ ! -f "$CORE_GZ_PATH" ]; then
-    echo "ERROR: core.gz not found at: $CORE_GZ_PATH"
+# Validate initrd path
+if ! validate_safe_path "$CORE_GZ_PATH"; then
+    echo "ERROR: Invalid initrd path: $CORE_GZ_PATH"
     exit 1
 fi
 

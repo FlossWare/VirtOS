@@ -110,7 +110,7 @@ cd "$ISO_CONTENTS"
 # Update boot message
 if [ -d "boot/isolinux" ]; then
     echo "Updating boot message..."
-    cat >boot/isolinux/boot.msg <<EOF
+    sudo tee boot/isolinux/boot.msg >/dev/null <<EOF
 
 
   FlossWare VirtOS v${VERSION}

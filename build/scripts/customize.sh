@@ -51,10 +51,20 @@ if [ ! -d "$INITRD_DIR" ]; then
     exit 1
 fi
 
+# Detect initrd filename (core.gz for older versions, corepure64.gz for 15.x+)
+if [ -f "$WORKSPACE_DIR/iso-contents/boot/corepure64.gz" ]; then
+    INITRD_NAME="corepure64.gz"
+elif [ -f "$WORKSPACE_DIR/iso-contents/boot/core.gz" ]; then
+    INITRD_NAME="core.gz"
+else
+    echo "ERROR: No initrd found in $WORKSPACE_DIR/iso-contents/boot/"
+    exit 1
+fi
+
 # Backup original initrd
-if [ ! -f "$WORKSPACE_DIR/core.gz.original" ]; then
-    echo "Backing up original core.gz..."
-    cp "$WORKSPACE_DIR/iso-contents/boot/core.gz" "$WORKSPACE_DIR/core.gz.original"
+if [ ! -f "$WORKSPACE_DIR/${INITRD_NAME}.original" ]; then
+    echo "Backing up original $INITRD_NAME..."
+    cp "$WORKSPACE_DIR/iso-contents/boot/$INITRD_NAME" "$WORKSPACE_DIR/${INITRD_NAME}.original"
 fi
 
 echo "Customizing initrd..."
@@ -328,11 +338,11 @@ sudo chmod +x usr/local/bin/create-vm
 echo ""
 echo "Repacking initrd..."
 cd "$INITRD_DIR"
-sudo find . | sudo cpio -o -H newc | gzip -"${COMPRESSION_LEVEL:-9}" >"$WORKSPACE_DIR/core.gz.custom"
+sudo find . | sudo cpio -o -H newc | gzip -"${COMPRESSION_LEVEL:-9}" >"$WORKSPACE_DIR/${INITRD_NAME}.custom"
 
 # Replace in ISO contents
 echo "Updating ISO contents..."
-sudo cp "$WORKSPACE_DIR/core.gz.custom" "$WORKSPACE_DIR/iso-contents/boot/core.gz"
+sudo cp "$WORKSPACE_DIR/${INITRD_NAME}.custom" "$WORKSPACE_DIR/iso-contents/boot/$INITRD_NAME"
 
 # Create marker
 date >"$WORKSPACE_DIR/.customized"
