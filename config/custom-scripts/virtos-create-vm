@@ -4,9 +4,18 @@
 set -e
 # VirtOS - Automated VM Creation with IaaS Placement
 
-# Load common library
-if [ -f /usr/local/lib/virtos-common.sh ]; then
-    . /usr/local/lib/virtos-common.sh
+# Load common library - try multiple paths for dev/production compatibility
+VIRTOS_COMMON=""
+for lib_path in \
+    "${VIRTOS_LIB:-}" \
+    "$(dirname "$0")/lib/virtos-common.sh" \
+    "/usr/local/lib/virtos-common.sh" \
+    "$(git rev-parse --show-toplevel 2>/dev/null)/config/custom-scripts/lib/virtos-common.sh"; do
+    [ -n "$lib_path" ] && [ -f "$lib_path" ] && VIRTOS_COMMON="$lib_path" && break
+done
+
+if [ -n "$VIRTOS_COMMON" ]; then
+    . "$VIRTOS_COMMON"
 else
     # Fallback color definitions if common lib not available
     if [ -t 1 ]; then
@@ -115,7 +124,7 @@ while [ $# -gt 0 ]; do
         --dry-run) DRY_RUN="yes"; shift ;;
         --verbose) VERBOSE="yes"; shift ;;
         --help|-h) usage; exit 0 ;;
-        --version) echo "virtos-create-vm version $VERSION"; exit 0 ;;
+        --version|-v|version) echo "virtos-create-vm version $VERSION"; exit 0 ;;
         *) echo "Unknown option: $1"; usage; exit 1 ;;
     esac
 done
