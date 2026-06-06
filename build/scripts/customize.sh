@@ -70,11 +70,21 @@ fi
 echo "Customizing initrd..."
 cd "$INITRD_DIR"
 
-# Add bootlocal.sh
-echo "  Adding custom bootlocal.sh..."
+# Add bootsync.sh (runs early, before tc-config)
+echo "  Adding custom bootsync.sh..."
 sudo mkdir -p opt
+sudo cp "$CONFIG_DIR/bootsync.sh" opt/bootsync.sh
+sudo chmod +x opt/bootsync.sh
+
+# Add bootlocal.sh (runs after tc-config)
+echo "  Adding custom bootlocal.sh..."
 sudo cp "$CONFIG_DIR/bootlocal.sh" opt/bootlocal.sh
 sudo chmod +x opt/bootlocal.sh
+
+# CRITICAL FIX: Ensure correct ownership of system files
+# sudoers must be owned by root:root or su/sudo commands fail
+echo "  Fixing system file ownership..."
+sudo chown -R root:root etc/ usr/ opt/ bin/ sbin/ lib/ 2>/dev/null || true
 
 # Add sysctl.conf
 echo "  Adding sysctl.conf..."
@@ -334,15 +344,105 @@ EOF
 sudo mv "$BUILD_TMPDIR/create-vm" usr/local/bin/create-vm
 sudo chmod +x usr/local/bin/create-vm
 
-# Repack initrd
+# CRITICAL: Bundle TCZ packages BEFORE repacking initrd
 echo ""
-echo "Repacking initrd..."
+echo "Bundling TCZ packages..."
+if [ -d "$BUILD_DIR/workspace/tcz" ] && [ "$(ls -1 $BUILD_DIR/workspace/tcz/*.tcz 2>/dev/null | wc -l)" -gt 0 ]; then
+    cd "$INITRD_DIR"
+
+    # Put TCZ files in /tmp/tce/optional/ (where tc-config expects them)
+    sudo mkdir -p tmp/tce/optional
+    sudo cp "$BUILD_DIR"/workspace/tcz/*.tcz tmp/tce/optional/
+    TCZ_COUNT=$(ls -1 "$BUILD_DIR"/workspace/tcz/*.tcz 2>/dev/null | wc -l)
+    echo "  Added $TCZ_COUNT TCZ packages to tmp/tce/optional/"
+
+    # Also keep a copy in /optional/ for reference
+    sudo mkdir -p optional
+    sudo cp "$BUILD_DIR"/workspace/tcz/*.tcz optional/
+    echo "  Backup copy in optional/"
+
+    # Create onboot.lst to auto-load packages
+    cat > "$BUILD_TMPDIR/onboot.lst" <<EOF
+# Auto-load essential packages
+kvm-6.6.8-tinycore64.tcz
+bridge-utils.tcz
+iptables.tcz
+iproute2.tcz
+bash.tcz
+vim.tcz
+dialog.tcz
+openssh.tcz
+qemu.tcz
+libvirt.tcz
+EOF
+    sudo mv "$BUILD_TMPDIR/onboot.lst" tmp/tce/onboot.lst
+    echo "  Created onboot.lst in /tmp/tce/ for auto-loading"
+else
+    echo "  No TCZ packages found, skipping"
+fi
+
+# Configure SSH for automatic login
+echo ""
+echo "Configuring SSH access..."
+cd "$INITRD_DIR"
+
+# Create tc user home directory with SSH config
+sudo mkdir -p home/tc/.ssh
+sudo chmod 700 home/tc/.ssh
+
+# Add authorized_keys (use existing key or generate new one)
+SSH_KEY_FILE="${SSH_KEY_FILE:-$HOME/.ssh/id_rsa_virtos.pub}"
+if [ -f "$SSH_KEY_FILE" ]; then
+    sudo cp "$SSH_KEY_FILE" home/tc/.ssh/authorized_keys
+    sudo chmod 600 home/tc/.ssh/authorized_keys
+    echo "  Added SSH public key from $SSH_KEY_FILE"
+else
+    # Generate a new key pair if none exists
+    echo "  WARNING: No SSH key found at $SSH_KEY_FILE"
+    echo "  Generating new SSH key pair..."
+    ssh-keygen -t rsa -b 2048 -f "$HOME/.ssh/id_rsa_virtos" -N "" -C "virtos-default-key"
+    sudo cp "$HOME/.ssh/id_rsa_virtos.pub" home/tc/.ssh/authorized_keys
+    sudo chmod 600 home/tc/.ssh/authorized_keys
+    echo "  Generated and added new SSH key"
+    echo "  Private key: $HOME/.ssh/id_rsa_virtos"
+fi
+
+# Set ownership to tc user (UID 1001 in Tiny Core)
+sudo chown -R 1001:50 home/tc
+
+# Install pre-configured sshd_config
+sudo mkdir -p usr/local/etc/ssh
+if [ -f "$CONFIG_DIR/sshd_config" ]; then
+    sudo cp "$CONFIG_DIR/sshd_config" usr/local/etc/ssh/sshd_config
+    sudo chmod 600 usr/local/etc/ssh/sshd_config
+    echo "  Installed sshd_config"
+fi
+
+# Pre-generate SSH host keys
+echo "  Pre-generating SSH host keys..."
+sudo mkdir -p usr/local/etc/ssh
+sudo ssh-keygen -t rsa -f "$BUILD_TMPDIR/ssh_host_rsa_key" -N "" >/dev/null 2>&1
+sudo ssh-keygen -t ecdsa -f "$BUILD_TMPDIR/ssh_host_ecdsa_key" -N "" >/dev/null 2>&1
+sudo ssh-keygen -t ed25519 -f "$BUILD_TMPDIR/ssh_host_ed25519_key" -N "" >/dev/null 2>&1
+sudo mv "$BUILD_TMPDIR"/ssh_host_* usr/local/etc/ssh/
+sudo chmod 600 usr/local/etc/ssh/ssh_host_*_key
+sudo chmod 644 usr/local/etc/ssh/ssh_host_*_key.pub
+echo "  Generated host keys"
+
+echo "  SSH configured for passwordless access as 'tc' user"
+
+# Repack initrd (NOW includes TCZ packages)
+echo ""
+echo "Repacking initrd with TCZ packages..."
 cd "$INITRD_DIR"
 sudo find . | sudo cpio -o -H newc | gzip -"${COMPRESSION_LEVEL:-9}" >"$WORKSPACE_DIR/${INITRD_NAME}.custom"
 
 # Replace in ISO contents
 echo "Updating ISO contents..."
 sudo cp "$WORKSPACE_DIR/${INITRD_NAME}.custom" "$WORKSPACE_DIR/iso-contents/boot/$INITRD_NAME"
+
+# Note: Serial console already configured in isolinux.cfg
+# onboot.lst is in /tmp/tce/ and will be auto-loaded by tc-config
 
 # Create marker
 date >"$WORKSPACE_DIR/.customized"
@@ -357,6 +457,7 @@ echo "  - Helper scripts (check-kvm, create-vm)"
 echo "  - VirtOS management scripts and shared libraries"
 echo "  - Documentation"
 echo "  - Custom MOTD"
+echo "  - $TCZ_COUNT TCZ packages bundled in initrd"
 echo ""
 echo "Next step:"
 echo "  Run ./scripts/iso.sh to build bootable ISO"

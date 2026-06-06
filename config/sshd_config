@@ -1,0 +1,36 @@
+# VirtOS SSH Server Configuration
+# Minimal secure configuration for Tiny Core Linux
+
+Port 22
+AddressFamily any
+ListenAddress 0.0.0.0
+
+# Host keys
+HostKey /usr/local/etc/ssh/ssh_host_rsa_key
+HostKey /usr/local/etc/ssh/ssh_host_ecdsa_key
+HostKey /usr/local/etc/ssh/ssh_host_ed25519_key
+
+# Authentication
+PermitRootLogin yes
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+UsePAM no
+
+# Allow tc user
+AllowUsers tc root
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Session settings
+X11Forwarding no
+PrintMotd yes
+PrintLastLog yes
+TCPKeepAlive yes
+AcceptEnv LANG LC_*
+
+# Subsystem
+Subsystem sftp /usr/local/lib/openssh/sftp-server
