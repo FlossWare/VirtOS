@@ -140,10 +140,11 @@ EOF
             log_message "Installing Dynatrace OneAgent..."
 
             # Download and install OneAgent
-            # SECURITY FIX: Use secure temp file instead of /tmp (Issue #300)
-            dynatrace_installer=$(create_temp_file "dynatrace-installer" ".sh")
+            # SECURITY FIX: Use secure temp file instead of /tmp (Issue #325)
+            dynatrace_installer=$(create_secure_temp_file "dynatrace-installer" ".sh")
             wget -O "$dynatrace_installer" "https://YOUR_ENVIRONMENT.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=YOUR_TOKEN"
             sh "$dynatrace_installer" --set-app-log-content-access=true
+            rm -f "$dynatrace_installer"
 
             log_message "Dynatrace OneAgent installed"
             ;;
@@ -216,9 +217,9 @@ EOF
 # Memory Profile for $app_name
 
 # Using valgrind
-# SECURITY FIX: Use secure temp file instead of /tmp (Issue #300)
-    massif_output=$(create_temp_file "massif-$app_name" ".out")
-    valgrind --tool=massif --massif-out-file="$massif_output" $app_name &
+# SECURITY FIX: Use secure temp file instead of /tmp (Issue #325)
+    massif_output=\$(mktemp -t "massif-$app_name-XXXXXX.out")
+    valgrind --tool=massif --massif-out-file="\$massif_output" $app_name &
 VALGRIND_PID=\$!
 
 sleep $duration
@@ -226,7 +227,8 @@ sleep $duration
 kill -INT \$VALGRIND_PID
 
 # Generate report
-ms_print "$massif_output" > $APM_CONFIG_DIR/memory-profile-$app_name.txt
+ms_print "\$massif_output" > $APM_CONFIG_DIR/memory-profile-$app_name.txt
+rm -f "\$massif_output"
 
 echo "Memory profile saved to $APM_CONFIG_DIR/memory-profile-$app_name.txt"
 EOF

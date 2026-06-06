@@ -242,7 +242,7 @@ delete_template() {
     fi
 
     echo "Deleting template: $template_name"
-    rm -rf "$template_path"
+    safe_rm_rf "$template_path"
     echo "Template deleted"
 }
 
@@ -265,7 +265,7 @@ import_cloud_image() {
     if ! wget -O "$template_path/disk-1.qcow2" "$image_url" 2>/dev/null && \
        ! curl -L -o "$template_path/disk-1.qcow2" "$image_url" 2>/dev/null; then
         echo "Error: Failed to download image"
-        rm -rf "$template_path"
+        safe_rm_rf "$template_path"
         return 1
     fi
 

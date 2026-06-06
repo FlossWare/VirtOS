@@ -8,6 +8,8 @@ set -e
 # Load common library
 if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
+elif [ -f "$(dirname "$0")/lib/virtos-common.sh" ]; then
+    . "$(dirname "$0")/lib/virtos-common.sh"
 fi
 
 VERSION=$(get_version 2>/dev/null || echo "0.24")
@@ -43,6 +45,13 @@ setup_replication() {
     local primary_host="$3"
 
     log_message "Setting up $db_type replication ($role)..."
+
+    # Validate primary_host if provided (for replica role)
+    if [ "$role" = "replica" ] && [ -n "$primary_host" ]; then
+        if ! validate_hostname "$primary_host" && ! validate_ip "$primary_host"; then
+            die "Invalid primary host: $primary_host"
+        fi
+    fi
 
     case "$db_type" in
         mysql)
@@ -97,7 +106,12 @@ EOF
 
         mongodb)
             # Configure replica set
-            mongo --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: '$(hostname):27017'}]})"
+            local host
+            host=$(hostname)
+            if ! validate_hostname "$host"; then
+                die "Invalid hostname detected"
+            fi
+            mongo --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: '$host:27017'}]})"
             ;;
     esac
 

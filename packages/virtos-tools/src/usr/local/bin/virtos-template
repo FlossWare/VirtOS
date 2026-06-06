@@ -4,6 +4,11 @@ set -e
 # VirtOS Template - VM template management and cloning
 # Create, manage, and clone from VM templates
 
+# Load common library for safe_rm_rf and other utilities
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
 VERSION="1"
 TEMPLATE_DIR="${TEMPLATE_DIR:-/var/lib/virtos/templates}"
 
@@ -186,10 +191,7 @@ delete_template() {
     fi
 
     echo "Deleting template: $template_name"
-        if [ -z "${backup_path:-${template_path:-$path}}" ] || [ "${backup_path:-${template_path:-$path}}" = "/" ]; then
-            die "Invalid or dangerous path for rm -rf"
-        fi
-    rm -rf "$template_path"
+    safe_rm_rf "$template_path"
     echo "Template deleted"
 }
 
@@ -207,10 +209,12 @@ import_cloud_image() {
     if ! wget -O "$template_path/disk-1.qcow2" "$image_url" 2>/dev/null && \
        ! curl -L -o "$template_path/disk-1.qcow2" "$image_url" 2>/dev/null; then
         echo "Error: Failed to download image"
-        if [ -z "${backup_path:-${template_path:-$path}}" ] || [ "${backup_path:-${template_path:-$path}}" = "/" ]; then
-            die "Invalid or dangerous path for rm -rf"
+        # Safely remove on error with validation
+        if [ -d "$template_path" ]; then
+            safe_rm_rf "$template_path" || {
+                echo "Warning: Failed to cleanup template directory after download error: $template_path"
+            }
         fi
-        rm -rf "$template_path"
         return 1
     fi
 

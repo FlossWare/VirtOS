@@ -103,7 +103,11 @@ generate_report() {
     for script in "$SCRIPTS_DIR"/virtos-*; do
         [ ! -f "$script" ] && continue
         if grep -q 'echo.*[Ee]rror' "$script"; then
-            local count=$(grep -c 'echo.*[Ee]rror' "$script" || echo 0)
+            local count
+            count=$(grep -c 'echo.*[Ee]rror' "$script") || {
+                echo "  - $(basename "$script"): ERROR reading file" >&2
+                continue
+            }
             echo "  - $(basename "$script"): $count error messages"
         fi
     done
@@ -149,9 +153,24 @@ analyze_script() {
     fi
 
     # Count error patterns
-    local echo_errors=$(grep -c 'echo.*[Ee]rror' "$script" 2>/dev/null || echo 0)
-    local echo_warnings=$(grep -c 'echo.*[Ww]arning' "$script" 2>/dev/null || echo 0)
-    local echo_info=$(grep -c 'echo.*[Ii]nfo' "$script" 2>/dev/null || echo 0)
+    local echo_errors
+    local echo_warnings
+    local echo_info
+
+    echo_errors=$(grep -c 'echo.*[Ee]rror' "$script" 2>/dev/null) || {
+        echo -e "${RED}✗${NC} Error reading file for error patterns" >&2
+        return 1
+    }
+
+    echo_warnings=$(grep -c 'echo.*[Ww]arning' "$script" 2>/dev/null) || {
+        echo -e "${RED}✗${NC} Error reading file for warning patterns" >&2
+        return 1
+    }
+
+    echo_info=$(grep -c 'echo.*[Ii]nfo' "$script" 2>/dev/null) || {
+        echo -e "${RED}✗${NC} Error reading file for info patterns" >&2
+        return 1
+    }
 
     echo ""
     echo "Patterns found:"

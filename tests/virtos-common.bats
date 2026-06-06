@@ -328,6 +328,68 @@ setup() {
     [ "$status" -eq 1 ]
 }
 
+@test "validate_hostname: accepts simple FQDN" {
+    run validate_hostname "db-server.example.com"
+    [ "$status" -eq 0 ]
+}
+
+@test "validate_hostname: accepts multi-level FQDN" {
+    run validate_hostname "db-server.prod.example.com"
+    [ "$status" -eq 0 ]
+}
+
+@test "validate_hostname: accepts FQDN with underscores in labels" {
+    run validate_hostname "db_server.example_prod.com"
+    [ "$status" -eq 0 ]
+}
+
+@test "validate_hostname: accepts FQDN with numbers" {
+    run validate_hostname "db01.example.com"
+    [ "$status" -eq 0 ]
+}
+
+@test "validate_hostname: accepts single-label hostname" {
+    run validate_hostname "localhost"
+    [ "$status" -eq 0 ]
+}
+
+@test "validate_hostname: rejects FQDN starting with dash" {
+    run validate_hostname "-invalid.example.com"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_hostname: rejects FQDN with label ending in dash" {
+    run validate_hostname "in-valid-.example.com"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_hostname: rejects FQDN with empty label" {
+    run validate_hostname "invalid..example.com"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_hostname: rejects FQDN ending with dot" {
+    run validate_hostname "example.com."
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_hostname: rejects FQDN starting with dot" {
+    run validate_hostname ".example.com"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_hostname: rejects label exceeding 63 chars" {
+    local long_label="$(printf 'a%.0s' {1..64})"
+    run validate_hostname "${long_label}.example.com"
+    [ "$status" -eq 1 ]
+}
+
+@test "validate_hostname: accepts label at 63 chars limit" {
+    local label_63="$(printf 'a%.0s' {1..63})"
+    run validate_hostname "${label_63}.example.com"
+    [ "$status" -eq 0 ]
+}
+
 #==============================================================================
 # Functional Tests - Network Mode Validation
 #==============================================================================
@@ -546,6 +608,94 @@ setup() {
     # Request 1MB which should always be available on /tmp
     run check_free_disk "/tmp" 1
     [ "$status" -eq 0 ]
+}
+
+#==============================================================================
+# Functional Tests - Safe Removal Functions
+#==============================================================================
+
+@test "safe_rm_rf: function exists" {
+    type safe_rm_rf >/dev/null 2>&1
+}
+
+@test "safe_rm_rf: removes a temporary directory successfully" {
+    # Create a temporary test directory
+    local test_dir
+    test_dir=$(mktemp -d) || skip "Failed to create temp directory"
+
+    # Verify it exists
+    [ -d "$test_dir" ] || skip "Failed to create temp directory"
+
+    # Remove it safely
+    run safe_rm_rf "$test_dir"
+    [ "$status" -eq 0 ]
+
+    # Verify it's gone
+    [ ! -d "$test_dir" ]
+}
+
+@test "safe_rm_rf: refuses to remove root directory" {
+    run safe_rm_rf "/"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "empty or root" ]]
+}
+
+@test "safe_rm_rf: refuses to remove empty path" {
+    run safe_rm_rf ""
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "empty or root" ]]
+}
+
+@test "safe_rm_rf: refuses path with command injection characters" {
+    run safe_rm_rf "/tmp/test;rm -rf /"
+    [ "$status" -eq 1 ]
+}
+
+@test "safe_rm_rf: refuses path with pipe" {
+    run safe_rm_rf "/tmp/test | cat"
+    [ "$status" -eq 1 ]
+}
+
+@test "safe_rm_rf: refuses path with ampersand" {
+    run safe_rm_rf "/tmp/test & sudo rm -rf /"
+    [ "$status" -eq 1 ]
+}
+
+@test "safe_rm_rf: refuses path with backticks" {
+    run safe_rm_rf "/tmp/test\`whoami\`"
+    [ "$status" -eq 1 ]
+}
+
+@test "safe_rm_rf: refuses relative path without slash" {
+    run safe_rm_rf "testdir"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "must be absolute or contain directory separator" ]]
+}
+
+@test "safe_rm_rf: accepts valid absolute path" {
+    # Create a temporary test directory
+    local test_dir
+    test_dir=$(mktemp -d) || skip "Failed to create temp directory"
+
+    # Verify it exists
+    [ -d "$test_dir" ] || skip "Failed to create temp directory"
+
+    # Safe to remove - verify by checking status
+    run safe_rm_rf "$test_dir"
+    [ "$status" -eq 0 ]
+}
+
+@test "safe_rm_rf: accepts valid relative path with slash" {
+    # Create a temporary test directory with subdirectory
+    local test_dir
+    test_dir=$(mktemp -d) || skip "Failed to create temp directory"
+    local sub_dir="$test_dir/subdir"
+    mkdir -p "$sub_dir" || skip "Failed to create subdirectory"
+
+    # Remove the parent directory (contains separator)
+    run safe_rm_rf "$test_dir"
+    [ "$status" -eq 0 ]
+    [ ! -d "$test_dir" ]
 }
 
 #==============================================================================

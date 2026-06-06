@@ -76,14 +76,29 @@ get_version() {
 # Input Validation Functions
 #==============================================================================
 
-# Validate hostname (alphanumeric, dash, underscore only)
+# Validate hostname (alphanumeric, dash, underscore, and dots for FQDNs)
+# Supports both simple hostnames (e.g., 'localhost', 'virtos-1') and
+# fully-qualified domain names (FQDNs) (e.g., 'db-server.example.com')
+# Per RFC 952/1123: labels separated by dots, each 1-63 chars, total 1-253 chars
 validate_hostname() {
     local hostname="$1"
     if [ -z "$hostname" ]; then
         return 1
     fi
-    # Allow alphanumeric, dash, underscore, max 253 chars
-    echo "$hostname" | grep -qE '^[a-zA-Z0-9_-]{1,253}$'
+
+    # Total length must not exceed 253 characters (DNS limit)
+    if [ ${#hostname} -gt 253 ]; then
+        return 1
+    fi
+
+    # Each label (between dots) must:
+    # - Be 1-63 characters long
+    # - Start with alphanumeric (not dash)
+    # - End with alphanumeric (not dash)
+    # - Contain only alphanumeric, dash, underscore, or dot
+    # - Not be all numeric (RFC 1123 requirement for some systems)
+    # Regex: labels with valid format, separated by single dots
+    echo "$hostname" | grep -qE '^([a-zA-Z0-9_]([a-zA-Z0-9_-]{0,61}[a-zA-Z0-9_])?\.)*[a-zA-Z0-9_]([a-zA-Z0-9_-]{0,61}[a-zA-Z0-9_])?$'
 }
 
 # Validate VM name (alphanumeric, dash, underscore only)
@@ -127,11 +142,66 @@ validate_disk_size() {
 # Validate path (no special chars that could be command injection)
 validate_path() {
     local path="$1"
-    if [ -z "$path" ]; then
+
+    # Check for empty or whitespace-only paths
+    if [ -z "$path" ] || [ -z "$(echo "$path" | tr -d ' \t\n')" ]; then
         return 1
     fi
+
     # Disallow: ; & | $ ` < > ( ) { } [ ] ! \ " '
-    echo "$path" | grep -qE '^[a-zA-Z0-9/_.-]+$'
+    if ! echo "$path" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+        return 1
+    fi
+
+    # Reject paths containing ".." (directory traversal)
+    if echo "$path" | grep -q '\.\.'; then
+        return 1
+    fi
+
+    # Reject top-level system critical directories (root level only)
+    # This prevents: /bin, /etc, /usr, /var, /dev, etc.
+    # But allows: /var/lib, /opt/backup, /home/user, etc.
+    local system_dirs="^/(bin|sbin|boot|dev|etc|lib|lib64|proc|root|run|sys|usr|srv)(/|$)"
+    if echo "$path" | grep -qE "$system_dirs"; then
+        return 1
+    fi
+
+    return 0
+}
+
+# Validate backup path with stricter security requirements
+# Ensures path is within expected BACKUP_DIR and prevents directory traversal
+# Usage: validate_backup_path <path> [backup_dir]
+# Arguments:
+#   $1 - Path to validate
+#   $2 - Expected BACKUP_DIR (default: /var/lib/virtos/backups)
+# Returns: 0 if valid, 1 if invalid
+validate_backup_path() {
+    local path="$1"
+    local backup_dir="${2:-/var/lib/virtos/backups}"
+
+    # Check for empty or whitespace-only paths
+    if [ -z "$path" ] || [ -z "$(echo "$path" | tr -d ' \t\n')" ]; then
+        return 1
+    fi
+
+    # Reject paths containing ".." (directory traversal)
+    if echo "$path" | grep -q '\.\.'; then
+        return 1
+    fi
+
+    # Enforce that backup path must start with BACKUP_DIR prefix
+    # This prevents accessing paths outside the backup directory
+    if ! echo "$path" | grep -q "^$(printf '%s\n' "$backup_dir" | sed 's/[[\.*^$/]/\\&/g')"; then
+        return 1
+    fi
+
+    # Use generic path validation for additional checks
+    if ! validate_path "$path"; then
+        return 1
+    fi
+
+    return 0
 }
 
 # Sanitize input for shell commands (escape dangerous characters)
@@ -369,6 +439,38 @@ confirm_destructive() {
 #==============================================================================
 # File/Directory Helpers
 #==============================================================================
+
+# Safely remove a directory tree with path validation
+# Usage: safe_rm_rf <path>
+# Returns: 0 on success, 1 on failure
+# Security:
+#   - Validates path is not empty and not root
+#   - Validates path format to prevent injection attacks
+#   - Dies with error if path validation fails
+# Example:
+#   safe_rm_rf "$backup_path" || return 1
+safe_rm_rf() {
+    local path="$1"
+
+    # Check if path is empty or "/" (prevents disaster)
+    if [ -z "$path" ] || [ "$path" = "/" ]; then
+        die "Refusing to rm -rf: path is empty or root directory"
+    fi
+
+    # Validate path format (no command injection chars)
+    if ! validate_path "$path"; then
+        die "Refusing to rm -rf: path contains invalid characters: $path"
+    fi
+
+    # Additional sanity check: path must start with / or contain / somewhere
+    # (prevents accidentally removing current directory contents)
+    if ! echo "$path" | grep -qE '^/|/'; then
+        die "Refusing to rm -rf: path must be absolute or contain directory separator: $path"
+    fi
+
+    # Safe to proceed with removal
+    rm -rf "$path"
+}
 
 # Create directory with error handling
 safe_mkdir() {

@@ -222,10 +222,16 @@ EOF
     if [ "$COMPRESSION" = "yes" ]; then
         log "Creating backup archive..."
         tar -czf "$backup_path.tar.gz" -C "$BACKUP_DIR/$vm_name" "$timestamp"
-        if [ -z "${backup_path:-${template_path:-$path}}" ] || [ "${backup_path:-${template_path:-$path}}" = "/" ]; then
-            die "Invalid or dangerous path for rm -rf"
+        # Safely remove backup directory after archiving
+        if validate_backup_path "$backup_path" "$BACKUP_DIR"; then
+            safe_rm_rf "$backup_path" || {
+                error "Failed to remove backup directory: $backup_path"
+                return 1
+            }
+        else
+            error "Invalid backup path for removal: $backup_path"
+            return 1
         fi
-        rm -rf "$backup_path"
         backup_path="$backup_path.tar.gz"
     fi
 
@@ -374,7 +380,9 @@ restore_vm() {
 
         # Cleanup temp files
         if [ -n "$temp_dir" ] && [ -d "$temp_dir" ]; then
-            rm -rf "$temp_dir"
+            safe_rm_rf "$temp_dir" || {
+                warn "Failed to cleanup temporary directory: $temp_dir"
+            }
         fi
 
         log "VM restored. Start with: virsh start $target_name"
@@ -540,8 +548,16 @@ cleanup_backups() {
 
             if [ $age_days -gt $RETENTION_DAYS ]; then
                 log "Removing old backup: $vm / $(basename "$backup") (${age_days} days old)"
-                rm -rf "$backup"
-                removed=$((removed + 1))
+                # Safely remove backup with path validation
+                if validate_backup_path "$backup" "$BACKUP_DIR"; then
+                    safe_rm_rf "$backup" || {
+                        error "Failed to remove old backup: $backup"
+                        continue
+                    }
+                    removed=$((removed + 1))
+                else
+                    error "Skipping backup with invalid path: $backup"
+                fi
             fi
         done
     done
