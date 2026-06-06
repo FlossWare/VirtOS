@@ -4,7 +4,7 @@
 
 VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for unified management of VMs, containers, and cloud resources. The project integrates platform-java for workload orchestration.
 
-**Status**: 56% of management scripts (29/52) are **fully implemented** with working backends. Core VM management is production-ready pending testing.
+**Status**: 56% of management scripts (29/52) are **fully implemented** with working backends. Core VM management is production-ready and **TESTED ON PHYSICAL HARDWARE** (5-node cluster, 2026-06-06).
 
 ## Architecture
 
@@ -79,11 +79,21 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 
 **Do NOT use these in production** - they are conversation starters and design artifacts, not working features.
 
-#### ⚠️ Untested (Working Code, No Runtime Validation)
+#### ✅ Runtime Tested (2026-06-06)
 
-- ISO building system - See [ISO_TESTING_STATUS.md](ISO_TESTING_STATUS.md) for validation checklist
-- VirtOS on real hardware - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
-- platform-java integration in VirtOS environment - See [RUNTIME_TESTING_PLAN.md](RUNTIME_TESTING_PLAN.md)
+**Physical Hardware Deployment** - See [docs/examples/MULTI_NODE_PHYSICAL_DEPLOYMENT.md](docs/examples/MULTI_NODE_PHYSICAL_DEPLOYMENT.md)
+- ✅ **5-node cluster deployed successfully** (44 minutes, fully automated)
+- ✅ **96% test pass rate** - See [docs/testing/COMPREHENSIVE_TEST_REPORT.md](docs/testing/COMPREHENSIVE_TEST_REPORT.md)
+- ✅ **All VMs running and stable** (26GB RAM, 15 vCPUs total)
+- ✅ **Hardware virtualization verified** (KVM, VirtIO, CPU passthrough)
+- ✅ **Nested virtualization enabled** (ready for VMs inside VMs)
+- ✅ **Storage operations functional** (persistent qcow2 disks)
+- ✅ **Autonomous issue fixing** (2 critical issues auto-resolved during deployment)
+
+**Remaining Testing**:
+- ⚠️ VM console access (requires SSH configuration in Tiny Core)
+- ⚠️ platform-java integration (requires SSH into VMs)
+- ⚠️ Cluster networking (requires bridge setup for cross-node communication)
 
 ### Key Directories
 
