@@ -44,7 +44,7 @@ Required Options:
   --disk <size>          Disk size (e.g., 20G, 500M)
 
 Optional:
-  --os <template>        OS template (ubuntu-22.04, debian-12, etc.)
+  --os <template>        OS template / cloud image (see Cloud Images below)
   --iso <path>           ISO file to boot from (e.g., VirtOS ISO)
   --ssh-key <path>       SSH public key to install (default: ~/.ssh/id_rsa.pub)
   --network <type>       Network type (bridged, nat, isolated) [default: bridged]
@@ -59,12 +59,34 @@ Optional:
   --dry-run              Show placement decision without creating
   --verbose              Show detailed scheduling information
 
+Cloud Images (--os):
+  ubuntu-24.04           Ubuntu 24.04 LTS (Noble Numbat) cloud image
+  ubuntu-22.04           Ubuntu 22.04 LTS (Jammy Jellyfish) cloud image
+  ubuntu-20.04           Ubuntu 20.04 LTS (Focal Fossa) cloud image
+  debian-12              Debian 12 (Bookworm) cloud image
+  debian-11              Debian 11 (Bullseye) cloud image
+  fedora-40              Fedora 40 cloud image
+  centos-stream-9        CentOS Stream 9 cloud image
+  virtos                 VirtOS (requires --iso, creates blank disk)
+  minimal                Built-in minimal profile (blank disk)
+  performance            Built-in performance profile (blank disk)
+  secure                 Built-in secure profile (blank disk)
+
+  When a cloud image OS is specified, the base image is automatically
+  downloaded (if not cached) and used as a copy-on-write backing file.
+  This means VMs boot with a full OS already installed. Combine with
+  --ssh-key for immediate SSH access.
+
 Examples:
   # Simple VM (auto-placed)
   virtos-create-vm --name web-1 --cpu 2 --ram 4096 --disk 20G
 
-  # With OS template
+  # With cloud image (downloads Ubuntu, ready to SSH)
   virtos-create-vm --name app --cpu 4 --ram 8192 --disk 50G --os ubuntu-22.04
+
+  # Debian cloud image with SSH key
+  virtos-create-vm --name db --cpu 2 --ram 4096 --disk 30G \\
+    --os debian-12 --ssh-key ~/.ssh/id_rsa.pub --auto-start
 
   # High availability (spread across hosts)
   virtos-create-vm --name db-primary --cpu 8 --ram 16384 --disk 200G \\
@@ -561,6 +583,150 @@ EOF
     esac
 }
 
+# Cloud image support
+CLOUD_IMAGE_DIR="${CLOUD_IMAGE_DIR:-/var/lib/virtos/images}"
+
+# Get the download URL for a supported cloud image OS
+get_cloud_image_url() {
+    local os="$1"
+    case "$os" in
+        ubuntu-24.04)
+            echo "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+            ;;
+        ubuntu-22.04)
+            echo "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+            ;;
+        ubuntu-20.04)
+            echo "https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img"
+            ;;
+        debian-12)
+            echo "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+            ;;
+        debian-11)
+            echo "https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2"
+            ;;
+        fedora-40)
+            echo "https://download.fedoraproject.org/pub/fedora/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2"
+            ;;
+        centos-stream-9)
+            echo "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
+
+# Check whether an OS template is a cloud image type
+is_cloud_image_os() {
+    local os="$1"
+    local url
+    url=$(get_cloud_image_url "$os")
+    [ -n "$url" ]
+}
+
+# Download a cloud image if not already cached
+download_cloud_image() {
+    local os="$1"
+    local image_url
+    image_url=$(get_cloud_image_url "$os")
+
+    if [ -z "$image_url" ]; then
+        echo "${RED}Error: No cloud image URL for OS: $os${NC}" >&2
+        return 1
+    fi
+
+    local base_image="$CLOUD_IMAGE_DIR/base-${os}.qcow2"
+
+    # Return cached image if it exists
+    if [ -f "$base_image" ]; then
+        echo "$base_image"
+        return 0
+    fi
+
+    # Create image cache directory
+    mkdir -p "$CLOUD_IMAGE_DIR"
+
+    echo "  Downloading cloud image for $os..."
+    echo "  URL: $image_url"
+
+    # Download to a temporary file first so partial downloads do not leave
+    # a corrupt cached image behind
+    local tmp_image="${base_image}.download"
+
+    if command -v wget >/dev/null 2>&1; then
+        if ! wget -q --show-progress -O "$tmp_image" "$image_url" 2>&1; then
+            rm -f "$tmp_image"
+            echo "${RED}Error: Failed to download cloud image${NC}" >&2
+            echo "  URL: $image_url" >&2
+            echo "  Ensure you have network connectivity and the URL is valid" >&2
+            return 1
+        fi
+    elif command -v curl >/dev/null 2>&1; then
+        if ! curl -fL --progress-bar -o "$tmp_image" "$image_url" 2>&1; then
+            rm -f "$tmp_image"
+            echo "${RED}Error: Failed to download cloud image${NC}" >&2
+            echo "  URL: $image_url" >&2
+            echo "  Ensure you have network connectivity and the URL is valid" >&2
+            return 1
+        fi
+    else
+        echo "${RED}Error: Neither wget nor curl found. Cannot download cloud image.${NC}" >&2
+        echo "  Install wget or curl, then retry." >&2
+        return 1
+    fi
+
+    # Verify the download produced a valid qcow2 (or raw) image
+    if ! qemu-img info "$tmp_image" >/dev/null 2>&1; then
+        rm -f "$tmp_image"
+        echo "${RED}Error: Downloaded file is not a valid disk image${NC}" >&2
+        return 1
+    fi
+
+    # Convert to qcow2 if the source is raw (some Ubuntu images are raw .img)
+    local src_format
+    src_format=$(qemu-img info --output=json "$tmp_image" 2>/dev/null | grep '"format"' | head -1 | sed 's/.*: "//;s/".*//')
+    if [ "$src_format" = "raw" ]; then
+        echo "  Converting raw image to qcow2..."
+        if ! qemu-img convert -f raw -O qcow2 "$tmp_image" "$base_image"; then
+            rm -f "$tmp_image" "$base_image"
+            echo "${RED}Error: Failed to convert image to qcow2${NC}" >&2
+            return 1
+        fi
+        rm -f "$tmp_image"
+    else
+        mv "$tmp_image" "$base_image"
+    fi
+
+    echo "  Cloud image cached: $base_image"
+    echo "$base_image"
+}
+
+# Create a VM disk as a copy-on-write overlay on top of a base cloud image
+create_disk_from_cloud_image() {
+    local base_image="$1"
+    local vm_disk="$2"
+    local size="$3"
+
+    if [ ! -f "$base_image" ]; then
+        echo "${RED}Error: Base image not found: $base_image${NC}" >&2
+        return 1
+    fi
+
+    # Determine the format of the base image (usually qcow2)
+    local base_format
+    base_format=$(qemu-img info --output=json "$base_image" 2>/dev/null | grep '"format"' | head -1 | sed 's/.*: "//;s/".*//')
+    base_format="${base_format:-qcow2}"
+
+    # Create a copy-on-write overlay disk backed by the base image
+    if ! qemu-img create -f qcow2 -F "$base_format" -b "$base_image" "$vm_disk" "$size"; then
+        echo "${RED}Error: Failed to create disk from cloud image${NC}" >&2
+        return 1
+    fi
+
+    echo "  Created CoW disk: $vm_disk (backed by $base_image)"
+}
+
 # Create the VM
 echo "Creating VM on $SELECTED_HOST..."
 
@@ -796,9 +962,22 @@ EOF
         ;;
 esac
 
-# Create disk
+# Create disk - use cloud image if applicable, otherwise create blank
 echo "Creating disk..."
-qemu-img create -f qcow2 "$VM_DIR/$NAME.qcow2" "$DISK"
+if [ -n "$OS_TEMPLATE" ] && is_cloud_image_os "$OS_TEMPLATE"; then
+    echo "  Using cloud image for OS: $OS_TEMPLATE"
+    BASE_IMAGE=$(download_cloud_image "$OS_TEMPLATE") || exit 5
+    # The last line of download_cloud_image output is the path
+    BASE_IMAGE=$(echo "$BASE_IMAGE" | tail -1)
+    create_disk_from_cloud_image "$BASE_IMAGE" "$VM_DIR/$NAME.qcow2" "$DISK" || exit 5
+    echo "${GREEN}  Disk created from $OS_TEMPLATE cloud image${NC}"
+else
+    qemu-img create -f qcow2 "$VM_DIR/$NAME.qcow2" "$DISK"
+    if [ -z "$BOOT_ISO" ] && [ -z "$OS_TEMPLATE" ]; then
+        echo "${YELLOW}  Warning: Creating blank disk with no OS and no --iso specified${NC}" >&2
+        echo "${YELLOW}  The VM will have no bootable media. Consider using --os or --iso.${NC}" >&2
+    fi
+fi
 
 # Generate cloud-init ISO with SSH key if specified
 if [ -n "$SSH_KEY" ] && [ -f "$SSH_KEY" ]; then
