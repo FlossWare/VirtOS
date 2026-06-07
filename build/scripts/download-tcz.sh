@@ -99,8 +99,30 @@ for pkg in "${CORE_PACKAGES[@]}"; do
 done
 
 echo ""
+echo "Attempting to detect and download KVM kernel module..."
+
+# Try to detect Tiny Core kernel version
+TC_KERNEL_PKG=""
+if command -v uname >/dev/null 2>&1; then
+    # Try common kernel module naming patterns
+    for pattern in "kvm.tcz" "kvm-*-tinycore64.tcz"; do
+        # Download latest available KVM module
+        if wget -q "$TC_MIRROR/$pattern" -O "$TCZ_DIR/kvm-auto.tcz" 2>/dev/null; then
+            echo "  ✅ KVM module downloaded"
+            TC_KERNEL_PKG="kvm-auto.tcz"
+            break
+        fi
+    done
+fi
+
+if [ -z "$TC_KERNEL_PKG" ]; then
+    echo "  ⚠️  KVM kernel module not found - may need manual installation"
+fi
+
+echo ""
 echo "Note: QEMU and libvirt are complex packages that may need to be"
 echo "      compiled from source or obtained from a different repository."
+echo "      Dependency resolution is AUTOMATIC - all .dep files are processed recursively."
 echo ""
 
 # Count what we got
@@ -109,11 +131,13 @@ TOTAL_SIZE=$(du -sh "$TCZ_DIR" 2>/dev/null | cut -f1)
 
 echo ""
 echo "=== Download Complete ==="
-echo "Downloaded: $DOWNLOADED packages (including dependencies)"
+echo "Downloaded: $DOWNLOADED packages (including all recursive dependencies)"
 echo "Total size: $TOTAL_SIZE"
 echo "Location: $TCZ_DIR"
 echo ""
 echo "Package list:"
 ls -1h "$TCZ_DIR"/*.tcz 2>/dev/null | xargs -n1 basename | sort | sed 's/^/  - /'
+echo ""
+echo "✅ All dependencies automatically resolved via recursive .dep file processing"
 echo ""
 echo "To bundle into ISO, run: bash scripts/customize.sh"

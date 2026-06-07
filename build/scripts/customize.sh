@@ -361,22 +361,87 @@ if [ -d "$BUILD_DIR/workspace/tcz" ] && [ "$(ls -1 $BUILD_DIR/workspace/tcz/*.tc
     sudo cp "$BUILD_DIR"/workspace/tcz/*.tcz optional/
     echo "  Backup copy in optional/"
 
-    # Create onboot.lst to auto-load packages
+    # Create onboot.lst to auto-load packages (only include what was downloaded)
+    echo "  Generating onboot.lst from downloaded packages..."
+
+    # Detect actual kernel version from Tiny Core
+    TC_KERNEL_VERSION=""
+    if [ -f "$WORKSPACE_DIR/.tc-version" ]; then
+        TC_VERSION=$(cat "$WORKSPACE_DIR/.tc-version")
+        # Try to detect kernel version from vmlinuz filename
+        VMLINUZ=$(ls "$WORKSPACE_DIR/iso-contents/boot/vmlinuz"* 2>/dev/null | head -1)
+        if [ -n "$VMLINUZ" ]; then
+            # Extract version from filename (e.g., vmlinuz64 or vmlinuz-6.6.16-tinycore64)
+            TC_KERNEL_VERSION=$(basename "$VMLINUZ" | sed 's/vmlinuz-//;s/vmlinuz64//')
+        fi
+    fi
+
+    # Candidate packages for onboot.lst (in priority order)
+    DESIRED_PACKAGES=(
+        "bash.tcz"
+        "openssh.tcz"
+        "vim.tcz"
+        "dialog.tcz"
+        "bridge-utils.tcz"
+        "iptables.tcz"
+        "iproute2.tcz"
+        "htop.tcz"
+    )
+
+    # Add kernel module if detected
+    if [ -n "$TC_KERNEL_VERSION" ] && [ -f "$TCZ_DIR/kvm-${TC_KERNEL_VERSION}.tcz" ]; then
+        DESIRED_PACKAGES=("kvm-${TC_KERNEL_VERSION}.tcz" "${DESIRED_PACKAGES[@]}")
+    elif [ -f "$TCZ_DIR/kvm.tcz" ]; then
+        DESIRED_PACKAGES=("kvm.tcz" "${DESIRED_PACKAGES[@]}")
+    fi
+
+    # Generate onboot.lst with ONLY packages that exist
     cat > "$BUILD_TMPDIR/onboot.lst" <<EOF
-# Auto-load essential packages
-kvm-6.6.8-tinycore64.tcz
-bridge-utils.tcz
-iptables.tcz
-iproute2.tcz
-bash.tcz
-vim.tcz
-dialog.tcz
-openssh.tcz
-qemu.tcz
-libvirt.tcz
+# Auto-load essential packages (auto-generated from downloaded packages)
+# Dependencies are resolved recursively by download-tcz.sh
 EOF
+
+    MISSING_PACKAGES=()
+    ADDED_PACKAGES=()
+
+    for pkg in "${DESIRED_PACKAGES[@]}"; do
+        if [ -f "$TCZ_DIR/$pkg" ]; then
+            echo "$pkg" >> "$BUILD_TMPDIR/onboot.lst"
+            ADDED_PACKAGES+=("$pkg")
+            echo "    ✅ $pkg"
+        else
+            MISSING_PACKAGES+=("$pkg")
+            echo "    ⚠️  $pkg (not found, skipping)"
+        fi
+    done
+
+    # Optionally add QEMU/libvirt if available
+    for pkg in "qemu.tcz" "libvirt.tcz"; do
+        if [ -f "$TCZ_DIR/$pkg" ]; then
+            echo "$pkg" >> "$BUILD_TMPDIR/onboot.lst"
+            ADDED_PACKAGES+=("$pkg")
+            echo "    ✅ $pkg (optional)"
+        fi
+    done
+
     sudo mv "$BUILD_TMPDIR/onboot.lst" tmp/tce/onboot.lst
-    echo "  Created onboot.lst in /tmp/tce/ for auto-loading"
+    echo "  Created onboot.lst with ${#ADDED_PACKAGES[@]} packages"
+
+    # Warn about critical missing packages
+    CRITICAL_MISSING=()
+    for pkg in "bash.tcz" "openssh.tcz"; do
+        if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
+            CRITICAL_MISSING+=("$pkg")
+        fi
+    done
+
+    if [ ${#CRITICAL_MISSING[@]} -gt 0 ]; then
+        echo ""
+        echo "  ⚠️  WARNING: Critical packages missing:"
+        printf '    - %s\n' "${CRITICAL_MISSING[@]}"
+        echo "  Run 'bash scripts/download-tcz.sh' to download packages"
+        echo ""
+    fi
 else
     echo "  No TCZ packages found, skipping"
 fi
