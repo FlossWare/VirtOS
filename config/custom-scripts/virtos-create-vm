@@ -45,6 +45,8 @@ Required Options:
 
 Optional:
   --os <template>        OS template (ubuntu-22.04, debian-12, etc.)
+  --iso <path>           ISO file to boot from (e.g., VirtOS ISO)
+  --ssh-key <path>       SSH public key to install (default: ~/.ssh/id_rsa.pub)
   --network <type>       Network type (bridged, nat, isolated) [default: bridged]
   --prefer <host>        Prefer this host (soft constraint)
   --avoid <host>         Avoid this host
@@ -93,6 +95,8 @@ CPU=""
 RAM=""
 DISK=""
 OS_TEMPLATE=""
+BOOT_ISO=""
+SSH_KEY="$HOME/.ssh/id_rsa.pub"
 NETWORK="bridged"
 PREFER=""
 AVOID=""
@@ -112,6 +116,8 @@ while [ $# -gt 0 ]; do
         --ram) RAM="$2"; shift 2 ;;
         --disk) DISK="$2"; shift 2 ;;
         --os) OS_TEMPLATE="$2"; shift 2 ;;
+        --iso) BOOT_ISO="$2"; shift 2 ;;
+        --ssh-key) SSH_KEY="$2"; shift 2 ;;
         --network) NETWORK="$2"; shift 2 ;;
         --prefer) PREFER="$2"; shift 2 ;;
         --avoid) AVOID="$2"; shift 2 ;;
@@ -550,6 +556,7 @@ case "${OS_TEMPLATE:-default}" in
   <vcpu>$CPU</vcpu>
   <os>
     <type arch='x86_64'>hvm</type>
+    <boot dev='cdrom'/>
     <boot dev='hd'/>
   </os>
   <devices>
@@ -558,6 +565,19 @@ case "${OS_TEMPLATE:-default}" in
       <source file='$VM_DIR/$NAME.qcow2'/>
       <target dev='vda' bus='virtio'/>
     </disk>
+EOF
+        # Add CDROM if ISO specified
+        if [ -n "$BOOT_ISO" ]; then
+            cat >> "$VM_DIR/$NAME.xml" << EOF
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='$BOOT_ISO'/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+    </disk>
+EOF
+        fi
+        cat >> "$VM_DIR/$NAME.xml" << EOF
     <interface type='$NETWORK'>
       <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
       <model type='virtio'/>
@@ -583,6 +603,7 @@ EOF
   <cpu mode='host-passthrough' check='none'/>
   <os>
     <type arch='x86_64'>hvm</type>
+    <boot dev='cdrom'/>
     <boot dev='hd'/>
   </os>
   <features>
@@ -595,12 +616,31 @@ EOF
       <source file='$VM_DIR/$NAME.qcow2'/>
       <target dev='vda' bus='virtio'/>
     </disk>
+EOF
+        # Add CDROM if ISO specified
+        if [ -n "$BOOT_ISO" ]; then
+            cat >> "$VM_DIR/$NAME.xml" << EOF
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='$BOOT_ISO'/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+    </disk>
+EOF
+        fi
+        cat >> "$VM_DIR/$NAME.xml" << EOF
     <interface type='$NETWORK'>
       <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
       <model type='virtio'/>
       <driver name='vhost' queues='$CPU'/>
     </interface>
     <graphics type='vnc' port='-1'/>
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
   </devices>
 </domain>
 EOF
@@ -615,6 +655,7 @@ EOF
   <vcpu>$CPU</vcpu>
   <os>
     <type arch='x86_64'>hvm</type>
+    <boot dev='cdrom'/>
     <boot dev='hd'/>
   </os>
   <features>
@@ -632,6 +673,19 @@ EOF
         <secret type='passphrase'/>
       </encryption>
     </disk>
+EOF
+        # Add CDROM if ISO specified
+        if [ -n "$BOOT_ISO" ]; then
+            cat >> "$VM_DIR/$NAME.xml" << EOF
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='$BOOT_ISO'/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+    </disk>
+EOF
+        fi
+        cat >> "$VM_DIR/$NAME.xml" << EOF
     <interface type='$NETWORK'>
       <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
       <model type='virtio'/>
@@ -643,6 +697,12 @@ EOF
     <rng model='virtio'>
       <backend model='random'>/dev/urandom</backend>
     </rng>
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
   </devices>
 </domain>
 EOF
@@ -657,6 +717,7 @@ EOF
   <vcpu>$CPU</vcpu>
   <os>
     <type arch='x86_64'>hvm</type>
+    <boot dev='cdrom'/>
     <boot dev='hd'/>
   </os>
   <devices>
@@ -665,11 +726,30 @@ EOF
       <source file='$VM_DIR/$NAME.qcow2'/>
       <target dev='vda' bus='virtio'/>
     </disk>
+EOF
+        # Add CDROM if ISO specified
+        if [ -n "$BOOT_ISO" ]; then
+            cat >> "$VM_DIR/$NAME.xml" << EOF
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='$BOOT_ISO'/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+    </disk>
+EOF
+        fi
+        cat >> "$VM_DIR/$NAME.xml" << EOF
     <interface type='$NETWORK'>
       <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
       <model type='virtio'/>
     </interface>
     <graphics type='vnc' port='-1'/>
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
   </devices>
 </domain>
 EOF
