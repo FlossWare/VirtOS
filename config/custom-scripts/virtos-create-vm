@@ -517,6 +517,50 @@ if [ "$DRY_RUN" = "yes" ]; then
     exit 0
 fi
 
+# Helper function to generate network interface XML
+generate_network_interface() {
+    local network_mode="$1"
+
+    case "$network_mode" in
+        bridged)
+            # Bridge mode - connect to physical bridge
+            cat <<EOF
+    <interface type='bridge'>
+      <source bridge='br0'/>
+      <model type='virtio'/>
+    </interface>
+EOF
+            ;;
+        nat)
+            # NAT mode - use default network
+            cat <<EOF
+    <interface type='network'>
+      <source network='default'/>
+      <model type='virtio'/>
+    </interface>
+EOF
+            ;;
+        isolated)
+            # Isolated mode - use isolated network
+            cat <<EOF
+    <interface type='network'>
+      <source network='isolated'/>
+      <model type='virtio'/>
+    </interface>
+EOF
+            ;;
+        *)
+            # Default to NAT mode
+            cat <<EOF
+    <interface type='network'>
+      <source network='default'/>
+      <model type='virtio'/>
+    </interface>
+EOF
+            ;;
+    esac
+}
+
 # Create the VM
 echo "Creating VM on $SELECTED_HOST..."
 
@@ -577,11 +621,8 @@ EOF
     </disk>
 EOF
         fi
-        cat >> "$VM_DIR/$NAME.xml" << EOF
-    <interface type='$NETWORK'>
-      <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
-      <model type='virtio'/>
-    </interface>
+        cat >> "$VM_DIR/$NAME.xml" <<EOF
+$(generate_network_interface "$NETWORK")
     <serial type='pty'>
       <target port='0'/>
     </serial>
@@ -628,9 +669,10 @@ EOF
     </disk>
 EOF
         fi
-        cat >> "$VM_DIR/$NAME.xml" << EOF
-    <interface type='$NETWORK'>
-      <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
+        # Network interface with performance optimizations
+        cat >> "$VM_DIR/$NAME.xml" <<EOF
+    <interface type='$([ "$NETWORK" = "bridged" ] && echo "bridge" || echo "network")'>
+      <source $([ "$NETWORK" = "bridged" ] && echo "bridge='br0'" || echo "network='default'")/>
       <model type='virtio'/>
       <driver name='vhost' queues='$CPU'/>
     </interface>
@@ -685,9 +727,10 @@ EOF
     </disk>
 EOF
         fi
-        cat >> "$VM_DIR/$NAME.xml" << EOF
-    <interface type='$NETWORK'>
-      <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
+        # Network interface with security filter
+        cat >> "$VM_DIR/$NAME.xml" <<EOF
+    <interface type='$([ "$NETWORK" = "bridged" ] && echo "bridge" || echo "network")'>
+      <source $([ "$NETWORK" = "bridged" ] && echo "bridge='br0'" || echo "network='default'")/>
       <model type='virtio'/>
       <filterref filter='clean-traffic'/>
     </interface>
@@ -738,11 +781,8 @@ EOF
     </disk>
 EOF
         fi
-        cat >> "$VM_DIR/$NAME.xml" << EOF
-    <interface type='$NETWORK'>
-      <source $([ "$NETWORK" = "bridge" ] && echo "bridge='br0'" || echo "network='default'")/>
-      <model type='virtio'/>
-    </interface>
+        cat >> "$VM_DIR/$NAME.xml" <<EOF
+$(generate_network_interface "$NETWORK")
     <graphics type='vnc' port='-1'/>
     <serial type='pty'>
       <target port='0'/>
@@ -759,6 +799,43 @@ esac
 # Create disk
 echo "Creating disk..."
 qemu-img create -f qcow2 "$VM_DIR/$NAME.qcow2" "$DISK"
+
+# Generate cloud-init ISO with SSH key if specified
+if [ -n "$SSH_KEY" ] && [ -f "$SSH_KEY" ]; then
+    echo "Generating cloud-init ISO with SSH key..."
+
+    # Check if virtos-cloud-init is available
+    if command -v virtos-cloud-init >/dev/null 2>&1; then
+        # Use virtos-cloud-init to generate configuration
+        virtos-cloud-init create "$NAME" \
+            --hostname "$NAME" \
+            --user tc \
+            --ssh-key "$SSH_KEY"
+
+        # Generate the ISO
+        virtos-cloud-init generate "$NAME"
+
+        CLOUD_INIT_ISO="/var/lib/virtos/cloud-init/${NAME}-cloud-init.iso"
+
+        # Add cloud-init ISO as second CDROM if it was generated successfully
+        if [ -f "$CLOUD_INIT_ISO" ]; then
+            echo "  Cloud-init ISO generated: $CLOUD_INIT_ISO"
+
+            # Modify VM XML to include cloud-init ISO as second CDROM
+            # This will be inserted before the closing </devices> tag
+            sed -i "/<\/devices>/i\\    <disk type='file' device='cdrom'>\\n      <driver name='qemu' type='raw'/>\\n      <source file='$CLOUD_INIT_ISO'/>\\n      <target dev='hdd' bus='ide'/>\\n      <readonly/>\\n    </disk>" "$VM_DIR/$NAME.xml"
+
+            echo "  Cloud-init ISO attached as second CDROM"
+        else
+            echo "${YELLOW}Warning: Cloud-init ISO generation failed${NC}" >&2
+        fi
+    else
+        echo "${YELLOW}Warning: virtos-cloud-init not found, SSH key will not be injected${NC}" >&2
+        echo "  Install virtos-cloud-init or manually configure SSH access" >&2
+    fi
+elif [ -n "$SSH_KEY" ] && [ ! -f "$SSH_KEY" ]; then
+    echo "${YELLOW}Warning: SSH key file not found: $SSH_KEY${NC}" >&2
+fi
 
 # Define VM on selected host
 echo "Defining VM on $SELECTED_HOST..."
