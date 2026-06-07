@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**/*)",
+      "Write(.claude/**/*)",
+      "Write(packages/**/*)",
+      "Write(build/**/*)",
+      "Write(config/**/*)",
+      "Write(docs/**/*)",
+      "Write(tests/**/*)",
+      "Edit(.claude/**/*)",
+      "Edit(packages/**/*)",
+      "Edit(build/**/*)",
+      "Edit(config/**/*)",
+      "Edit(docs/**/*)",
+      "Edit(tests/**/*)",
+      "TaskCreate",
+      "TaskUpdate",
+      "TaskList",
+      "TaskGet",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "NotebookEdit(.claude/**/*)",
+      "NotebookEdit(tests/**/*)"
+    ],
+    "defaultMode": "dontAsk"
+  }
+}
