@@ -389,6 +389,8 @@ if [ -d "$BUILD_DIR/workspace/tcz" ] && [ "$(ls -1 $BUILD_DIR/workspace/tcz/*.tc
     )
 
     # Add kernel module if detected
+    # Define TCZ directory
+    TCZ_DIR="$BUILD_DIR/workspace/tcz"
     if [ -n "$TC_KERNEL_VERSION" ] && [ -f "$TCZ_DIR/kvm-${TC_KERNEL_VERSION}.tcz" ]; then
         DESIRED_PACKAGES=("kvm-${TC_KERNEL_VERSION}.tcz" "${DESIRED_PACKAGES[@]}")
     elif [ -f "$TCZ_DIR/kvm.tcz" ]; then
@@ -404,14 +406,13 @@ EOF
     MISSING_PACKAGES=()
     ADDED_PACKAGES=()
 
-    for pkg in "${DESIRED_PACKAGES[@]}"; do
-        if [ -f "$TCZ_DIR/$pkg" ]; then
-            echo "$pkg" >> "$BUILD_TMPDIR/onboot.lst"
-            ADDED_PACKAGES+=("$pkg")
-            echo "    ✅ $pkg"
-        else
-            MISSING_PACKAGES+=("$pkg")
-            echo "    ⚠️  $pkg (not found, skipping)"
+    # Include ALL downloaded TCZ packages in onboot.lst (Tiny Core does not auto-resolve deps from onboot.lst)
+    for pkg in "$TCZ_DIR"/*.tcz; do
+        if [ -f "$pkg" ]; then
+            pkg_name=$(basename "$pkg")
+            echo "$pkg_name" >> "$BUILD_TMPDIR/onboot.lst"
+            ADDED_PACKAGES+=("$pkg_name")
+            echo "    ✅ $pkg_name"
         fi
     done
 
@@ -476,22 +477,23 @@ fi
 sudo chown -R 1001:50 home/tc
 
 # Install pre-configured sshd_config
-sudo mkdir -p usr/local/etc/ssh
+# NOTE: OpenSSH in Tiny Core expects /etc/ssh/, not /usr/local/etc/ssh/
+sudo mkdir -p etc/ssh
 if [ -f "$CONFIG_DIR/sshd_config" ]; then
-    sudo cp "$CONFIG_DIR/sshd_config" usr/local/etc/ssh/sshd_config
-    sudo chmod 600 usr/local/etc/ssh/sshd_config
+    sudo cp "$CONFIG_DIR/sshd_config" etc/ssh/sshd_config
+    sudo chmod 600 etc/ssh/sshd_config
     echo "  Installed sshd_config"
 fi
 
 # Pre-generate SSH host keys
 echo "  Pre-generating SSH host keys..."
-sudo mkdir -p usr/local/etc/ssh
+sudo mkdir -p etc/ssh
 sudo ssh-keygen -t rsa -f "$BUILD_TMPDIR/ssh_host_rsa_key" -N "" >/dev/null 2>&1
 sudo ssh-keygen -t ecdsa -f "$BUILD_TMPDIR/ssh_host_ecdsa_key" -N "" >/dev/null 2>&1
 sudo ssh-keygen -t ed25519 -f "$BUILD_TMPDIR/ssh_host_ed25519_key" -N "" >/dev/null 2>&1
-sudo mv "$BUILD_TMPDIR"/ssh_host_* usr/local/etc/ssh/
-sudo chmod 600 usr/local/etc/ssh/ssh_host_*_key
-sudo chmod 644 usr/local/etc/ssh/ssh_host_*_key.pub
+sudo mv "$BUILD_TMPDIR"/ssh_host_* etc/ssh/
+sudo chmod 600 etc/ssh/ssh_host_*_key
+sudo chmod 644 etc/ssh/ssh_host_*_key.pub
 echo "  Generated host keys"
 
 echo "  SSH configured for passwordless access as 'tc' user"

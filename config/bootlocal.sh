@@ -49,39 +49,8 @@ netstat -ln 2>/dev/null | grep -q ":23 " && echo "✓ Telnet running (port 23)"
 
 echo "=== SSH Setup ==="
 
-# Ensure ssh-users group exists for AllowGroups directive
-if ! grep -q "^ssh-users:" /etc/group 2>/dev/null; then
-    echo "Creating ssh-users group..."
-    if command -v addgroup >/dev/null 2>&1; then
-        addgroup ssh-users 2>/dev/null || true
-    elif command -v groupadd >/dev/null 2>&1; then
-        groupadd ssh-users 2>/dev/null || true
-    else
-        # Fallback: manually add to /etc/group
-        echo "ssh-users:x:$(cat /etc/group | cut -d: -f3 | sort -n | tail -1 | awk '{print $1+1}'):tc" >> /etc/group 2>/dev/null || true
-    fi
-
-    # Add tc user to ssh-users group
-    if command -v addgroup >/dev/null 2>&1; then
-        addgroup tc ssh-users 2>/dev/null || true
-    elif command -v usermod >/dev/null 2>&1; then
-        usermod -a -G ssh-users tc 2>/dev/null || true
-    else
-        # Fallback: manually edit /etc/group
-        sed -i 's/^ssh-users:/&tc/' /etc/group 2>/dev/null || true
-    fi
-    echo "✓ ssh-users group created and tc added"
-else
-    echo "✓ ssh-users group already exists"
-    # Ensure tc is still in the group
-    if ! grep -q "^ssh-users:.*tc" /etc/group 2>/dev/null; then
-        if command -v addgroup >/dev/null 2>&1; then
-            addgroup tc ssh-users 2>/dev/null || true
-        elif command -v usermod >/dev/null 2>&1; then
-            usermod -a -G ssh-users tc 2>/dev/null || true
-        fi
-    fi
-fi
+# SSH is now open to all users (no group restrictions)
+# This simplifies debugging and initial setup
 
 # Step 1: Ensure openssh.tcz is loaded
 if [ ! -x /usr/local/etc/init.d/openssh ]; then
@@ -103,20 +72,33 @@ if [ -x /usr/local/etc/init.d/openssh ]; then
     # Ensure config directory exists
     mkdir -p /usr/local/etc/ssh 2>/dev/null
 
-    # Copy config from .orig if needed
-    if [ -f /usr/local/etc/ssh/sshd_config.orig ]; then
+    # Copy our pre-configured sshd_config from /etc/ssh/ to where OpenSSH expects it
+    if [ -f /etc/ssh/sshd_config ]; then
+        echo "Installing pre-configured sshd_config..."
+        cp /etc/ssh/sshd_config /usr/local/etc/ssh/sshd_config
+        chmod 600 /usr/local/etc/ssh/sshd_config
+        echo "✓ SSH config installed from /etc/ssh/"
+    elif [ -f /usr/local/etc/ssh/sshd_config.orig ]; then
+        # Fallback to .orig if our config not found
         if [ ! -f /usr/local/etc/ssh/sshd_config ]; then
-            echo "Installing sshd_config..."
+            echo "Installing sshd_config from .orig..."
             cp /usr/local/etc/ssh/sshd_config.orig /usr/local/etc/ssh/sshd_config
             chmod 600 /usr/local/etc/ssh/sshd_config
             echo "✓ SSH config installed"
         fi
     else
-        echo "WARNING: sshd_config.orig not found" | tee -a /tmp/ssh-setup.log
+        echo "WARNING: sshd_config not found in /etc/ssh/ or /usr/local/etc/ssh/" | tee -a /tmp/ssh-setup.log
     fi
 
-    # Generate host keys if missing
-    if [ ! -f /usr/local/etc/ssh/ssh_host_rsa_key ]; then
+    # Copy pre-generated host keys from /etc/ssh/ if they exist
+    if [ -f /etc/ssh/ssh_host_rsa_key ]; then
+        echo "Installing pre-generated host keys..."
+        cp /etc/ssh/ssh_host_* /usr/local/etc/ssh/ 2>/dev/null
+        chmod 600 /usr/local/etc/ssh/ssh_host_*_key
+        chmod 644 /usr/local/etc/ssh/ssh_host_*_key.pub
+        echo "✓ Host keys installed from /etc/ssh/"
+    elif [ ! -f /usr/local/etc/ssh/ssh_host_rsa_key ]; then
+        # Generate new keys if none exist
         echo "Generating SSH host keys..."
         if /usr/local/bin/ssh-keygen -A 2>&1 | tee -a /tmp/ssh-setup.log; then
             echo "✓ Host keys generated"

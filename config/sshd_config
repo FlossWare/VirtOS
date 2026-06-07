@@ -1,8 +1,7 @@
 # VirtOS SSH Server Configuration
-# Minimal secure configuration for Tiny Core Linux
+# Minimal configuration for Tiny Core Linux
 
 Port 22
-AddressFamily any
 ListenAddress 0.0.0.0
 
 # Host keys
@@ -10,30 +9,25 @@ HostKey /usr/local/etc/ssh/ssh_host_rsa_key
 HostKey /usr/local/etc/ssh/ssh_host_ecdsa_key
 HostKey /usr/local/etc/ssh/ssh_host_ed25519_key
 
-# Authentication
+# Authentication - VERY permissive for testing
 PermitRootLogin yes
 PubkeyAuthentication yes
 PasswordAuthentication yes
-PermitEmptyPasswords no
-ChallengeResponseAuthentication no
+PermitEmptyPasswords yes
 UsePAM no
+StrictModes no
 
-# SSH access via group membership
-# Users must be members of ssh-users group to login
-# This allows cloud-init and other tools to create users dynamically
-# without needing to update sshd_config each time
-AllowGroups ssh-users
+# Allow all users (no restrictions)
+# AllowGroups removed - was blocking access
 
 # Logging
 SyslogFacility AUTH
-LogLevel INFO
+LogLevel DEBUG3
 
 # Session settings
 X11Forwarding no
 PrintMotd yes
-PrintLastLog yes
 TCPKeepAlive yes
-AcceptEnv LANG LC_*
 
 # Subsystem
 Subsystem sftp /usr/local/lib/openssh/sftp-server
