@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # virtos-security-check - Comprehensive security verification
 #
 # Usage: virtos-security-check [command] [options]

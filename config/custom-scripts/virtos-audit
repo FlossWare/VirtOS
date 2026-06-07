@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # virtos-audit - View and query VirtOS audit logs
 #
 # Usage: virtos-audit [command] [options]

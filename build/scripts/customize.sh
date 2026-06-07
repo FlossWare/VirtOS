@@ -447,6 +447,31 @@ else
     echo "  No TCZ packages found, skipping"
 fi
 
+
+# CRITICAL: Extract essential TCZ packages into initrd
+# This bypasses the broken tc-config TCZ loading system
+echo ""
+echo "Extracting essential TCZ packages into initrd..."
+cd "$INITRD_DIR"
+
+EXTRACT_TEMP=$(mktemp -d)
+for pkg in bash readline ncursesw openssh openssl; do
+    if [ -f "$BUILD_DIR/workspace/tcz/${pkg}.tcz" ]; then
+        echo "  Extracting ${pkg}.tcz..."
+        cd "$EXTRACT_TEMP"
+        unsquashfs -f -d extracted "$BUILD_DIR/workspace/tcz/${pkg}.tcz" >/dev/null 2>&1
+        sudo cp -a extracted/usr/* "$INITRD_DIR/usr/" 2>/dev/null || true
+        rm -rf extracted
+    fi
+done
+rm -rf "$EXTRACT_TEMP"
+
+echo "  ✓ Essential packages extracted into initrd"
+# Create /bin/bash symlink for script compatibility
+sudo ln -sf /usr/local/bin/bash "$INITRD_DIR/bin/bash"
+echo "  ✓ Created /bin/bash symlink"
+echo ""
+
 # Configure SSH for automatic login
 echo ""
 echo "Configuring SSH access..."
