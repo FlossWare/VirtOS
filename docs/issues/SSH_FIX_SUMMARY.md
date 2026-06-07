@@ -290,10 +290,10 @@ Either:
 | **CRITICAL** | #1: Network XML type mismatch | ✅ FIXED | aacb653 |
 | **CRITICAL** | #2: SSH key never used | ✅ FIXED | aacb653 |
 | **CRITICAL** | #3: No cloud-init integration | ✅ FIXED | aacb653 |
-| **CRITICAL** | #4: Blank disk, no OS | ⚠️ PARTIAL | 6d62481 |
-| **HIGH** | #5: Boot script race conditions | ✅ FIXED | TBD |
-| **HIGH** | #6: Missing TCZ dependencies | ❌ NOT FIXED | - |
-| **LOW** | AllowUsers restriction | ❌ NOT FIXED | - |
+| **CRITICAL** | #4: Blank disk, no OS | ✅ FIXED | a098164 |
+| **HIGH** | #5: Boot script race conditions | ✅ FIXED | 6fa40d6 |
+| **HIGH** | #6: Missing TCZ dependencies | ✅ FIXED | ae34201 |
+| **LOW** | AllowUsers restriction | ✅ FIXED | b8fc9ff |
 
 ---
 
@@ -381,12 +381,18 @@ cat /var/log/messages | grep ssh
 
 ## Next Steps
 
-1. ✅ **DONE**: Fix network XML bug
-2. ✅ **DONE**: Fix SSH key injection
-3. ✅ **DONE**: Fix boot script race conditions
-4. ⏳ **TODO**: Add recursive TCZ dependency resolution
-5. ⏳ **TODO**: Add cloud image download support for Ubuntu/Debian
-6. ⏳ **TODO**: Broaden sshd_config AllowUsers
+1. ✅ **DONE**: Fix network XML bug (commit aacb653)
+2. ✅ **DONE**: Fix SSH key injection (commit aacb653)
+3. ✅ **DONE**: Fix boot script race conditions (commit 6fa40d6)
+4. ✅ **DONE**: Add recursive TCZ dependency resolution (commit ae34201, issue #623)
+5. ✅ **DONE**: Add cloud image download support for Ubuntu/Debian (commit a098164, issue #624)
+6. ✅ **DONE**: Broaden sshd_config AllowUsers (commit b8fc9ff, issue #625)
+
+**All SSH issues resolved!** VirtOS now supports:
+- Automatic cloud image downloads (Ubuntu, Debian, Fedora, CentOS)
+- Flexible group-based SSH access (ssh-users group)
+- Reliable TCZ package dependency resolution
+- Race-condition-free SSH startup
 
 ---
 
@@ -420,5 +426,5 @@ cat /var/log/messages | grep ssh
 ---
 
 **Last Updated**: 2026-06-06  
-**Status**: 3 of 6 critical issues fixed, 3 remaining  
-**Priority**: All critical SSH blockers resolved, remaining issues are enhancements
+**Status**: ALL 7 SSH ISSUES RESOLVED (6 root causes + 1 enhancement)  
+**Priority**: Complete - SSH fully functional with cloud image support
