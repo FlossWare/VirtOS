@@ -26,6 +26,10 @@ passwd "$USERNAME"
 echo "Adding $USERNAME to libvirt group..."
 adduser "$USERNAME" libvirt
 
+# Add to ssh-users group for SSH access (required by sshd_config AllowGroups)
+echo "Adding $USERNAME to ssh-users group..."
+adduser "$USERNAME" ssh-users 2>/dev/null || addgroup "$USERNAME" ssh-users 2>/dev/null || true
+
 # Add to wheel/sudo group (optional)
 read -p "Add $USERNAME to sudo/admin group? [y/N] " -n 1 -r
 echo

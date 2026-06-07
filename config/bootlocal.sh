@@ -49,6 +49,40 @@ netstat -ln 2>/dev/null | grep -q ":23 " && echo "✓ Telnet running (port 23)"
 
 echo "=== SSH Setup ==="
 
+# Ensure ssh-users group exists for AllowGroups directive
+if ! grep -q "^ssh-users:" /etc/group 2>/dev/null; then
+    echo "Creating ssh-users group..."
+    if command -v addgroup >/dev/null 2>&1; then
+        addgroup ssh-users 2>/dev/null || true
+    elif command -v groupadd >/dev/null 2>&1; then
+        groupadd ssh-users 2>/dev/null || true
+    else
+        # Fallback: manually add to /etc/group
+        echo "ssh-users:x:$(cat /etc/group | cut -d: -f3 | sort -n | tail -1 | awk '{print $1+1}'):tc" >> /etc/group 2>/dev/null || true
+    fi
+
+    # Add tc user to ssh-users group
+    if command -v addgroup >/dev/null 2>&1; then
+        addgroup tc ssh-users 2>/dev/null || true
+    elif command -v usermod >/dev/null 2>&1; then
+        usermod -a -G ssh-users tc 2>/dev/null || true
+    else
+        # Fallback: manually edit /etc/group
+        sed -i 's/^ssh-users:/&tc/' /etc/group 2>/dev/null || true
+    fi
+    echo "✓ ssh-users group created and tc added"
+else
+    echo "✓ ssh-users group already exists"
+    # Ensure tc is still in the group
+    if ! grep -q "^ssh-users:.*tc" /etc/group 2>/dev/null; then
+        if command -v addgroup >/dev/null 2>&1; then
+            addgroup tc ssh-users 2>/dev/null || true
+        elif command -v usermod >/dev/null 2>&1; then
+            usermod -a -G ssh-users tc 2>/dev/null || true
+        fi
+    fi
+fi
+
 # Step 1: Ensure openssh.tcz is loaded
 if [ ! -x /usr/local/etc/init.d/openssh ]; then
     echo "OpenSSH not found, attempting to load..."

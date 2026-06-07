@@ -18,8 +18,11 @@ PermitEmptyPasswords no
 ChallengeResponseAuthentication no
 UsePAM no
 
-# Allow tc user
-AllowUsers tc root
+# SSH access via group membership
+# Users must be members of ssh-users group to login
+# This allows cloud-init and other tools to create users dynamically
+# without needing to update sshd_config each time
+AllowGroups ssh-users
 
 # Logging
 SyslogFacility AUTH

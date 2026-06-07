@@ -189,7 +189,7 @@ EOF
 users:
   - name: $username
     sudo: ALL=(ALL) NOPASSWD:ALL
-    groups: users, admin
+    groups: users, admin, ssh-users
     shell: /bin/bash
 EOF
 
