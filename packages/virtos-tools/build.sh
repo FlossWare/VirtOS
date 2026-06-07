@@ -119,8 +119,17 @@ cat >"$SCRIPT_DIR/src/usr/local/tce.installed/$PACKAGE" <<'EOF'
 chmod +x /usr/local/bin/virtos-* 2>/dev/null || true
 chmod +x /usr/local/bin/add-user.sh 2>/dev/null || true
 
-# Create config directory
+# Create VirtOS system directories
 mkdir -p /etc/virtos
+mkdir -p /var/lib/virtos/{vms,cloud-init,images,backups,templates}
+mkdir -p /var/run/virtos/{monitor,gpu,usb,cluster}
+mkdir -p /var/log/virtos
+
+# Set proper ownership
+chown -R root:root /etc/virtos
+chown -R root:staff /var/lib/virtos
+chown -R root:staff /var/run/virtos
+chown -R root:staff /var/log/virtos
 
 # Show welcome message
 cat << 'WELCOME'
