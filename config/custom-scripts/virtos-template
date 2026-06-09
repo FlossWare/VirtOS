@@ -10,8 +10,13 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
+# Source path configuration
+if [ -f /usr/local/lib/virtos-paths.conf ]; then
+    . /usr/local/lib/virtos-paths.conf
+fi
+
 VERSION=$(get_version 2>/dev/null || echo "0.89")
-TEMPLATE_DIR="${TEMPLATE_DIR:-/var/lib/virtos/templates}"
+TEMPLATE_DIR="${TEMPLATE_DIR:-$(get_virtos_path STORAGE_TEMPLATES)}"
 
 usage() {
     cat << EOF
@@ -159,7 +164,7 @@ clone_from_template() {
     fi
 
     # Create VM directory
-    local vm_dir="/var/lib/vms/$new_vm_name"
+    local vm_dir="$(get_virtos_path LIB_DIR)/vms/$new_vm_name"
     mkdir -p "$vm_dir"
 
     # Clone disks using copy-on-write

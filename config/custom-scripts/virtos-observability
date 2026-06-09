@@ -12,11 +12,11 @@ fi
 
 VERSION=$(get_version 2>/dev/null || echo "0.89")
 SCRIPT_NAME="virtos-observability"
-LOG_FILE="/var/log/virtos-observability.log"
-CONFIG_FILE="/etc/virtos/observability.conf"
-OBS_DIR="/var/lib/virtos/observability"
-TRACES_DIR="/var/lib/virtos/observability/traces"
-METRICS_DIR="/var/lib/virtos/observability/metrics"
+LOG_FILE="$(get_virtos_path LOG_OBSERVABILITY)"
+CONFIG_FILE="$(get_virtos_path CONF_OBSERVABILITY)"
+OBS_DIR="$(get_virtos_path DATA_OBSERVABILITY)"
+TRACES_DIR="$(get_virtos_path DATA_OBSERVABILITY_TRACES)"
+METRICS_DIR="$(get_virtos_path DATA_OBSERVABILITY_METRICS)"
 
 OBSERVABILITY_ENABLED="yes"
 DISTRIBUTED_TRACING="yes"

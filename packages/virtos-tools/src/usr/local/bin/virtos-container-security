@@ -4,11 +4,16 @@ set -e
 # VirtOS Container Security
 # Container image scanning, runtime security, compliance
 
+# Load common library for path resolution
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
 VERSION="1"
 
 # Configuration
-SECURITY_CONFIG_DIR="/etc/virtos/container-security"
-SECURITY_LOG="/var/log/virtos-container-security.log"
+SECURITY_CONFIG_DIR="$(get_virtos_path CONF_CONTAINER_SECURITY_DIR)"
+SECURITY_LOG="$(get_virtos_path LOG_CONTAINER_SECURITY)"
 
 # Ensure config directory exists
 mkdir -p "$SECURITY_CONFIG_DIR"

@@ -4,21 +4,21 @@ set -e
 # VirtOS Database Management
 # Database replication, optimization, backups
 
-VERSION="1"
-
-# Configuration
-DB_CONFIG_DIR="/etc/virtos/database"
-DB_LOG="/var/log/virtos-database.log"
-
-# Ensure config directory exists
-mkdir -p "$DB_CONFIG_DIR"
-
 # Source common library for validation and error handling
 if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 elif [ -f ./lib/virtos-common.sh ]; then
     . ./lib/virtos-common.sh
 fi
+
+VERSION="1"
+
+# Configuration
+DB_CONFIG_DIR="$(get_virtos_path CONF_DATABASE_DIR)"
+DB_LOG="$(get_virtos_path LOG_DATABASE)"
+
+# Ensure config directory exists
+mkdir -p "$DB_CONFIG_DIR"
 
 # Logging function
 log_message() {

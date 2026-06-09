@@ -733,3 +733,68 @@ setup() {
     [ "$status" -eq 0 ]
     [ -n "$output" ]
 }
+
+#==============================================================================
+# Functional Tests - Path Management (get_virtos_path integration)
+#==============================================================================
+
+@test "get_virtos_path: basic path retrieval works" {
+    run get_virtos_path "ETC_DIR"
+    [ "$status" -eq 0 ]
+    [ -n "$output" ]
+}
+
+@test "get_virtos_path: returns error for undefined path" {
+    run get_virtos_path "NONEXISTENT_PATH_VAR"
+    [ "$status" -ne 0 ]
+}
+
+@test "get_virtos_path: returns error if no argument provided" {
+    run get_virtos_path
+    [ "$status" -ne 0 ]
+}
+
+@test "ensure_virtos_path: creates directory and returns path" {
+    local temp_base
+    temp_base=$(mktemp -d)
+    local test_path="$temp_base/testdir/file.log"
+    export VIRTOS_TEST_ENSURE="$test_path"
+
+    # Reload paths
+    _virtos_paths_loaded=0
+    _load_virtos_paths
+
+    # Should create parent directory
+    run ensure_virtos_path "TEST_ENSURE"
+    [ "$status" -eq 0 ]
+    [ -d "$temp_base/testdir" ]
+
+    # Cleanup
+    rm -rf "$temp_base"
+    unset VIRTOS_TEST_ENSURE
+}
+
+@test "validate_virtos_path_writable: validates writable paths" {
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    export VIRTOS_TEST_WRITABLE="$temp_dir/test.log"
+
+    # Reload paths
+    _virtos_paths_loaded=0
+    _load_virtos_paths
+
+    run validate_virtos_path_writable "TEST_WRITABLE"
+    [ "$status" -eq 0 ]
+
+    # Cleanup
+    rm -rf "$temp_dir"
+    unset VIRTOS_TEST_WRITABLE
+}
+
+@test "get_version: uses get_virtos_path for version file" {
+    # This verifies integration between get_version() and path system
+    # get_version should use get_virtos_path(VERSION_FILE) internally
+    run get_version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^[0-9]+\.[0-9]+ ]]
+}

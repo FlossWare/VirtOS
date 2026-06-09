@@ -23,8 +23,8 @@ fi
 
 
 # Configuration
-DIRECTORY_CONFIG_DIR="/etc/virtos/directory"
-DIRECTORY_LOG="/var/log/virtos-directory.log"
+DIRECTORY_CONFIG_DIR="$(get_virtos_path CONF_DIRECTORY_DIR)"
+DIRECTORY_LOG="$(get_virtos_path LOG_DIRECTORY)"
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then

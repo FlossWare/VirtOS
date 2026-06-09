@@ -23,9 +23,9 @@ fi
 
 
 # Configuration
-BACKUP_CONFIG_DIR="/etc/virtos/backup-orchestration"
-BACKUP_LOG="/var/log/virtos-backup-orchestration.log"
-DEFAULT_BACKUP_DIR="/var/backups/orchestrated"
+BACKUP_CONFIG_DIR="$(get_virtos_path CONF_BACKUP_ORCHESTRATION_DIR)"
+BACKUP_LOG="$(get_virtos_path LOG_BACKUP_ORCHESTRATION)"
+DEFAULT_BACKUP_DIR="$(get_virtos_path BACKUP_ORCHESTRATED)"
 
 # Ensure directories exist
 if [ "${SKIP_INIT:-no}" != "yes" ]; then

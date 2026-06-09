@@ -10,6 +10,11 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
+# Source path configuration
+if [ -f /usr/local/lib/virtos-paths.conf ]; then
+    . /usr/local/lib/virtos-paths.conf
+fi
+
 VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 # Handle --help and --version early (before any filesystem operations)
@@ -21,9 +26,9 @@ elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version"
     exit 0
 fi
 
-TELEMETRY_DIR="/var/lib/virtos/telemetry"
+TELEMETRY_DIR="$(get_virtos_path LIB_DIR)/telemetry"
 STATE_DIR="/var/run/virtos/telemetry"
-LOG_FILE="/var/log/virtos-telemetry.log"
+LOG_FILE="$(get_virtos_path LOG_TELEMETRY)"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
 mkdir -p "$TELEMETRY_DIR" "$STATE_DIR" || true

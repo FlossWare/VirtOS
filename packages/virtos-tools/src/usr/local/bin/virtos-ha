@@ -4,10 +4,20 @@ set -e
 # VirtOS HA - High Availability and automatic failover
 # Detect failures and automatically restart VMs on healthy hosts
 
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+# Load audit library
+if [ -f /usr/local/lib/virtos-audit.sh ]; then
+    . /usr/local/lib/virtos-audit.sh
+fi
+
 VERSION="1"
-CONFIG_DIR="/etc/virtos/ha"
+CONFIG_DIR="$(get_virtos_path CONF_HA_DIR)"
 STATE_DIR="/var/run/virtos/ha"
-LOG_FILE="/var/log/virtos-ha.log"
+LOG_FILE="$(get_virtos_path LOG_HA)"
 
 mkdir -p "$CONFIG_DIR" "$STATE_DIR"
 
@@ -92,7 +102,10 @@ enable_ha() {
     local priority="${2:-normal}"
     local max_restarts="${3:-$DEFAULT_MAX_RESTARTS}"
 
+    audit_log "HA_ENABLE_START" "user=$USER vm=$vm_name priority=$priority max_restarts=$max_restarts"
+
     if ! virsh list --all | grep -q " $vm_name "; then
+        audit_log "HA_ENABLE_FAILURE" "vm=$vm_name error=vm_not_found"
         echo "Error: VM '$vm_name' not found"
         return 1
     fi
@@ -113,6 +126,7 @@ EOF
     # Enable autostart
     virsh autostart "$vm_name" 2>/dev/null
 
+    audit_log "HA_ENABLE_SUCCESS" "vm=$vm_name priority=$priority max_restarts=$max_restarts host=$(hostname)"
     log_message "HA enabled for VM: $vm_name (priority: $priority)"
     echo "HA enabled for VM: $vm_name"
 }
@@ -120,13 +134,17 @@ EOF
 disable_ha() {
     local vm_name="$1"
 
+    audit_log "HA_DISABLE_START" "user=$USER vm=$vm_name"
+
     if [ ! -f "$CONFIG_DIR/vms/${vm_name}.conf" ]; then
+        audit_log "HA_DISABLE_FAILURE" "vm=$vm_name error=not_ha_enabled"
         echo "Error: HA not enabled for VM '$vm_name'"
         return 1
     fi
 
     rm -f "$CONFIG_DIR/vms/${vm_name}.conf"
 
+    audit_log "HA_DISABLE_SUCCESS" "vm=$vm_name"
     log_message "HA disabled for VM: $vm_name"
     echo "HA disabled for VM: $vm_name"
 }
@@ -240,7 +258,10 @@ perform_failover() {
     local target_host="$2"
     local vm_conf="$CONFIG_DIR/vms/${vm_name}.conf"
 
+    audit_log "HA_FAILOVER_START" "user=$USER vm=$vm_name target_host=$target_host source_host=$(hostname)"
+
     if [ ! -f "$vm_conf" ]; then
+        audit_log "HA_FAILOVER_FAILURE" "vm=$vm_name error=not_ha_enabled"
         echo "Error: VM not HA-enabled"
         return 1
     fi
@@ -249,6 +270,7 @@ perform_failover() {
 
     # Check restart count
     if [ "$RESTART_COUNT" -ge "$MAX_RESTARTS" ]; then
+        audit_log "HA_FAILOVER_FAILURE" "vm=$vm_name error=max_restarts_reached count=$RESTART_COUNT max=$MAX_RESTARTS"
         log_message "ERROR: Max restart attempts reached for $vm_name"
         echo "Error: Max restart attempts ($MAX_RESTARTS) reached for $vm_name"
         return 1
@@ -268,10 +290,12 @@ perform_failover() {
             sed -i "s/^RESTART_COUNT=.*/RESTART_COUNT=$((RESTART_COUNT + 1))/" "$vm_conf"
             sed -i "s/^LAST_RESTART=.*/LAST_RESTART=$(date +%s)/" "$vm_conf"
 
+            audit_log "HA_FAILOVER_SUCCESS" "vm=$vm_name target_host=$target_host restart_count=$((RESTART_COUNT + 1))"
             log_message "VM $vm_name restarted on $(hostname)"
             echo "VM $vm_name successfully failed over to $(hostname)"
             return 0
         else
+            audit_log "HA_FAILOVER_FAILURE" "vm=$vm_name target_host=$target_host error=vm_start_failed"
             log_message "ERROR: Failed to start $vm_name on $(hostname)"
             return 1
         fi
@@ -282,6 +306,7 @@ perform_failover() {
         # 3. Start VM on target host
         # For now, just log the attempt
 
+        audit_log "HA_FAILOVER_FAILURE" "vm=$vm_name target_host=$target_host error=remote_failover_not_implemented"
         log_message "Remote failover to $target_host not yet implemented"
         echo "Note: Remote failover requires shared storage or migration"
         echo "VM would be restarted on: $target_host"
@@ -290,6 +315,7 @@ perform_failover() {
 }
 
 monitor_loop() {
+    audit_log "HA_MONITOR_START" "user=$USER host=$(hostname) interval=$CHECK_INTERVAL"
     log_message "HA monitoring daemon started"
 
     while true; do
@@ -312,15 +338,18 @@ monitor_loop() {
 
             # Check VM health
             if ! check_vm_health "$VM_NAME"; then
+                audit_log "HA_VM_FAILURE_DETECTED" "vm=$VM_NAME expected_host=$CURRENT_HOST current_host=$(hostname)"
                 log_message "ALERT: VM $VM_NAME is not running (expected on $(hostname))"
 
                 # Find failover target
                 failover_host=$(find_failover_host "$VM_NAME" "$CURRENT_HOST")
 
                 if [ -n "$failover_host" ]; then
+                    audit_log "HA_AUTO_FAILOVER_INITIATED" "vm=$VM_NAME target_host=$failover_host"
                     log_message "Initiating automatic failover for $VM_NAME to $failover_host"
                     perform_failover "$VM_NAME" "$failover_host"
                 else
+                    audit_log "HA_FAILOVER_NO_TARGET" "vm=$VM_NAME error=no_suitable_host"
                     log_message "ERROR: No suitable failover host found for $VM_NAME"
                 fi
             fi
@@ -331,9 +360,12 @@ monitor_loop() {
 }
 
 start_daemon() {
+    audit_log "HA_DAEMON_START_ATTEMPT" "user=$USER host=$(hostname)"
+
     if [ -f "$STATE_DIR/ha.pid" ]; then
         local pid=$(cat "$STATE_DIR/ha.pid")
         if ps -p "$pid" >/dev/null 2>&1; then
+            audit_log "HA_DAEMON_START_FAILURE" "error=already_running pid=$pid"
             echo "HA daemon already running (PID: $pid)"
             return 1
         fi
@@ -345,12 +377,16 @@ start_daemon() {
     monitor_loop &
 
     echo $! > "$STATE_DIR/ha.pid"
+    audit_log "HA_DAEMON_START_SUCCESS" "pid=$! host=$(hostname)"
     log_message "HA daemon started (PID: $!)"
     echo "HA daemon started (PID: $!)"
 }
 
 stop_daemon() {
+    audit_log "HA_DAEMON_STOP_ATTEMPT" "user=$USER host=$(hostname)"
+
     if [ ! -f "$STATE_DIR/ha.pid" ]; then
+        audit_log "HA_DAEMON_STOP_FAILURE" "error=not_running"
         echo "HA daemon not running"
         return 1
     fi
@@ -360,9 +396,11 @@ stop_daemon() {
     if ps -p "$pid" >/dev/null 2>&1; then
         kill "$pid"
         rm -f "$STATE_DIR/ha.pid"
+        audit_log "HA_DAEMON_STOP_SUCCESS" "pid=$pid host=$(hostname)"
         log_message "HA daemon stopped"
         echo "HA daemon stopped"
     else
+        audit_log "HA_DAEMON_STOP_FAILURE" "error=stale_pid pid=$pid"
         echo "HA daemon not running (stale PID file)"
         rm -f "$STATE_DIR/ha.pid"
     fi
@@ -392,11 +430,13 @@ show_status() {
 fence_host() {
     local host="$1"
 
+    audit_log "HA_FENCE_START" "user=$USER target_host=$host method=network"
     log_message "Fencing host: $host"
 
     # Network-based fencing: block communication
     # In production, this would use STONITH or similar
 
+    audit_log "HA_FENCE_SIMULATED" "target_host=$host method=network note=requires_stonith"
     echo "Host $host would be fenced (network isolation)"
     echo "Note: Fencing requires STONITH or BMC integration"
 }

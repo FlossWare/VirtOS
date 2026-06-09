@@ -4,8 +4,13 @@ set -e
 # VirtOS Cloud-Init - Cloud-init integration for VMs
 # Configure VMs with cloud-init on first boot
 
+# Load common library for path resolution
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
 VERSION="1"
-CLOUD_INIT_DIR="/var/lib/virtos/cloud-init"
+CLOUD_INIT_DIR="$(get_virtos_path DATA_CLOUD_INIT)"
 
 mkdir -p "$CLOUD_INIT_DIR"
 

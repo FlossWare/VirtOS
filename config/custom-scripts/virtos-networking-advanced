@@ -23,8 +23,8 @@ fi
 
 
 # Configuration
-NETWORK_CONFIG_DIR="/etc/virtos/networking-advanced"
-NETWORK_LOG="/var/log/virtos-networking-advanced.log"
+NETWORK_CONFIG_DIR="$(get_virtos_path CONF_NETWORKING_ADVANCED_DIR)"
+NETWORK_LOG="$(get_virtos_path LOG_NETWORKING_ADVANCED)"
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then

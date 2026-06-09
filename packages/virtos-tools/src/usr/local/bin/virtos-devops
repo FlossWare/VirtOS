@@ -4,11 +4,16 @@ set -e
 # VirtOS DevOps Integration
 # GitOps, CI/CD, and Infrastructure as Code tools
 
+# Load common library for path resolution
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
 VERSION="1"
 
 # Configuration
-DEVOPS_CONFIG_DIR="/etc/virtos/devops"
-DEVOPS_LOG="/var/log/virtos-devops.log"
+DEVOPS_CONFIG_DIR="$(get_virtos_path CONF_DEVOPS_DIR)"
+DEVOPS_LOG="$(get_virtos_path LOG_DEVOPS)"
 
 # Ensure config directory exists
 mkdir -p "$DEVOPS_CONFIG_DIR"

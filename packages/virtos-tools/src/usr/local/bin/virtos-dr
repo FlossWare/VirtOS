@@ -9,6 +9,14 @@ DR_DIR="/var/lib/virtos/dr"
 STATE_DIR="/var/run/virtos/dr"
 LOG_FILE="/var/log/virtos-dr.log"
 
+# Source audit logging library
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+if [ -f "${SCRIPT_DIR}/../lib/virtos-audit.sh" ]; then
+    source "${SCRIPT_DIR}/../lib/virtos-audit.sh"
+elif [ -f "/usr/local/lib/virtos-audit.sh" ]; then
+    source "/usr/local/lib/virtos-audit.sh"
+fi
+
 mkdir -p "$DR_DIR" "$STATE_DIR"
 
 usage() {
@@ -103,6 +111,8 @@ create_dr_plan() {
     local rto=120
     local auto_failover="no"
 
+    audit_log "DR_PLAN_CREATE_START" "user=$USER plan=$plan_name"
+
     shift
 
     # Parse options
@@ -147,6 +157,7 @@ STEPS=""
 EOF
 
     log_message "DR plan created: $plan_name"
+    audit_log "DR_PLAN_CREATE_SUCCESS" "plan=$plan_name priority=$priority rpo=$rpo rto=$rto auto_failover=$auto_failover"
     echo "DR plan '$plan_name' created"
     echo "  Priority: $priority"
     echo "  RPO: $rpo minutes"
@@ -206,8 +217,11 @@ execute_dr_plan() {
     local plan_name="$1"
     local plan_file="$DR_DIR/plans/${plan_name}.plan"
 
+    audit_log "DR_PLAN_EXECUTE_START" "user=$USER plan=$plan_name"
+
     if [ ! -f "$plan_file" ]; then
         echo "Error: DR plan '$plan_name' not found"
+        audit_log "DR_PLAN_EXECUTE_FAILURE" "plan=$plan_name error=plan_not_found"
         return 1
     fi
 
@@ -224,11 +238,14 @@ execute_dr_plan() {
     # 4. Verify VM startup
     # 5. Run health checks
 
+    audit_log "DR_PLAN_EXECUTE_SUCCESS" "plan=$plan_name priority=$PRIORITY"
     echo "Plan execution completed (simulation)"
 }
 
 test_dr_plan() {
     local plan_name="$1"
+
+    audit_log "DR_PLAN_TEST_START" "user=$USER plan=$plan_name mode=dry_run"
 
     log_message "Testing DR plan: $plan_name (dry-run)"
     echo "Testing DR Plan: $plan_name (DRY-RUN)"
@@ -236,6 +253,7 @@ test_dr_plan() {
 
     execute_dr_plan "$plan_name"
 
+    audit_log "DR_PLAN_TEST_SUCCESS" "plan=$plan_name mode=dry_run"
     echo ""
     echo "Test completed - no changes made"
 }
@@ -243,6 +261,8 @@ test_dr_plan() {
 start_replication() {
     local vm_name="$1"
     local target_host="$2"
+
+    audit_log "DR_REPLICATION_START" "user=$USER vm=$vm_name target=$target_host"
 
     log_message "Starting replication: $vm_name -> $target_host"
 
@@ -266,14 +286,18 @@ EOF
     # 3. Handle network failures
 
     log_message "Replication started: $vm_name -> $target_host"
+    audit_log "DR_REPLICATION_SUCCESS" "vm=$vm_name target=$target_host"
     echo "Replication started successfully"
 }
 
 stop_replication() {
     local vm_name="$1"
 
+    audit_log "DR_REPLICATION_STOP_START" "user=$USER vm=$vm_name"
+
     if [ ! -f "$DR_DIR/replicas/${vm_name}.replica" ]; then
         echo "Error: No replication configured for $vm_name"
+        audit_log "DR_REPLICATION_STOP_FAILURE" "vm=$vm_name error=not_configured"
         return 1
     fi
 
@@ -281,6 +305,7 @@ stop_replication() {
 
     rm -f "$DR_DIR/replicas/${vm_name}.replica"
 
+    audit_log "DR_REPLICATION_STOP_SUCCESS" "vm=$vm_name"
     echo "Replication stopped for $vm_name"
 }
 
@@ -305,6 +330,8 @@ show_replication_status() {
 perform_failover() {
     local target_site="$1"
 
+    audit_log "DR_FAILOVER_START" "user=$USER target_site=$target_site"
+
     log_message "Initiating failover to: $target_site"
 
     echo "DISASTER RECOVERY FAILOVER"
@@ -322,10 +349,12 @@ perform_failover() {
 
     if [ "$confirm" != "yes" ]; then
         echo "Failover cancelled"
+        audit_log "DR_FAILOVER_CANCELLED" "target_site=$target_site user=$USER"
         return 0
     fi
 
     log_message "Failover confirmed - executing"
+    audit_log "DR_FAILOVER_CONFIRMED" "target_site=$target_site user=$USER"
     echo "Executing failover..."
 
     # In production:
@@ -337,10 +366,13 @@ perform_failover() {
 
     echo "Failover completed (simulation)"
     log_message "Failover completed to: $target_site"
+    audit_log "DR_FAILOVER_SUCCESS" "target_site=$target_site"
 }
 
 perform_failback() {
     local primary_site="$1"
+
+    audit_log "DR_FAILBACK_START" "user=$USER primary_site=$primary_site"
 
     log_message "Initiating failback to: $primary_site"
 
@@ -353,10 +385,12 @@ perform_failback() {
 
     if [ "$confirm" != "yes" ]; then
         echo "Failback cancelled"
+        audit_log "DR_FAILBACK_CANCELLED" "primary_site=$primary_site user=$USER"
         return 0
     fi
 
     log_message "Failback confirmed - executing"
+    audit_log "DR_FAILBACK_CONFIRMED" "primary_site=$primary_site user=$USER"
     echo "Executing failback..."
 
     # In production:
@@ -368,11 +402,14 @@ perform_failback() {
 
     echo "Failback completed (simulation)"
     log_message "Failback completed to: $primary_site"
+    audit_log "DR_FAILBACK_SUCCESS" "primary_site=$primary_site"
 }
 
 cluster_backup() {
     local backup_id="cluster-$(date +%Y%m%d-%H%M%S)"
     local backup_dir="$DR_DIR/backups/$backup_id"
+
+    audit_log "DR_CLUSTER_BACKUP_START" "user=$USER backup_id=$backup_id"
 
     mkdir -p "$backup_dir"
 
@@ -387,10 +424,12 @@ cluster_backup() {
     echo "Backing up VMs..."
     if command -v virsh >/dev/null 2>&1; then
         local vms=$(virsh list --all --name)
+        local vm_count=0
         for vm in $vms; do
             if [ -n "$vm" ]; then
                 echo "  Backing up: $vm"
                 virtos-backup backup "$vm" --destination "$backup_dir" 2>/dev/null || true
+                vm_count=$((vm_count + 1))
             fi
         done
     fi
@@ -408,6 +447,7 @@ VMs: $(echo "$vms" | wc -l)
 EOF
 
     log_message "Cluster backup completed: $backup_id"
+    audit_log "DR_CLUSTER_BACKUP_SUCCESS" "backup_id=$backup_id vm_count=$vm_count destination=$backup_dir"
     echo ""
     echo "Backup completed: $backup_dir"
 }
@@ -416,8 +456,11 @@ cluster_restore() {
     local backup_id="$1"
     local backup_dir="$DR_DIR/backups/$backup_id"
 
+    audit_log "DR_CLUSTER_RESTORE_START" "user=$USER backup_id=$backup_id"
+
     if [ ! -d "$backup_dir" ]; then
         echo "Error: Backup '$backup_id' not found"
+        audit_log "DR_CLUSTER_RESTORE_FAILURE" "backup_id=$backup_id error=backup_not_found"
         return 1
     fi
 
@@ -434,9 +477,11 @@ cluster_restore() {
 
     if [ "$confirm" != "yes" ]; then
         echo "Restore cancelled"
+        audit_log "DR_CLUSTER_RESTORE_CANCELLED" "backup_id=$backup_id user=$USER"
         return 0
     fi
 
+    audit_log "DR_CLUSTER_RESTORE_CONFIRMED" "backup_id=$backup_id user=$USER"
     echo "Restoring cluster..."
 
     # Restore VMs
@@ -450,6 +495,7 @@ cluster_restore() {
     fi
 
     log_message "Cluster restore completed: $backup_id"
+    audit_log "DR_CLUSTER_RESTORE_SUCCESS" "backup_id=$backup_id source=$backup_dir"
     echo "Cluster restore completed"
 }
 

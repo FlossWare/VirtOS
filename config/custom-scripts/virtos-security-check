@@ -14,7 +14,7 @@ fi
 VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 # Configuration
-SECURITY_LOG="/var/log/virtos-security.log"
+SECURITY_LOG="$(get_virtos_path LOG_SECURITY)"
 FIX_MODE=0
 VERBOSE=0
 
@@ -76,14 +76,15 @@ check_permissions() {
 
     # Audit log permissions
     SCORE_TOTAL=$((SCORE_TOTAL + 1))
-    if [ -f /var/log/virtos-audit.log ]; then
-        local perms=$(stat -c '%a' /var/log/virtos-audit.log 2>/dev/null || echo "000")
+    local audit_log="$(get_virtos_path LIB_DIR)/../log/virtos-audit.log"
+    if [ -f "$audit_log" ]; then
+        local perms=$(stat -c '%a' "$audit_log" 2>/dev/null || echo "000")
         if [ "$perms" = "640" ] || [ "$perms" = "600" ]; then
             log_pass "Audit log permissions correct ($perms)"
         else
             log_fail "Audit log permissions incorrect ($perms, expected 640)"
             if [ "$FIX_MODE" -eq 1 ]; then
-                chmod 640 /var/log/virtos-audit.log 2>/dev/null && \
+                chmod 640 "$audit_log" 2>/dev/null && \
                     log_fixed "Audit log permissions set to 640"
             fi
         fi
@@ -163,14 +164,15 @@ check_permissions() {
 
     # Secrets log permissions
     SCORE_TOTAL=$((SCORE_TOTAL + 1))
-    if [ -f /var/log/virtos-secrets.log ]; then
-        local perms=$(stat -c '%a' /var/log/virtos-secrets.log 2>/dev/null || echo "000")
+    local secrets_log="$(get_virtos_path LOG_SECRETS)"
+    if [ -f "$secrets_log" ]; then
+        local perms=$(stat -c '%a' "$secrets_log" 2>/dev/null || echo "000")
         if [ "$perms" = "600" ] || [ "$perms" = "640" ]; then
             log_pass "Secrets log permissions correct ($perms)"
         else
             log_fail "Secrets log permissions incorrect ($perms, expected 600)"
             if [ "$FIX_MODE" -eq 1 ]; then
-                chmod 600 /var/log/virtos-secrets.log 2>/dev/null && \
+                chmod 600 "$secrets_log" 2>/dev/null && \
                     log_fixed "Secrets log permissions set to 600"
             fi
         fi
@@ -317,8 +319,9 @@ check_audit() {
 
     # Check audit log
     SCORE_TOTAL=$((SCORE_TOTAL + 1))
-    if [ -f /var/log/virtos-audit.log ]; then
-        local log_size=$(wc -l < /var/log/virtos-audit.log 2>/dev/null || echo 0)
+    local audit_log="$(get_virtos_path LIB_DIR)/../log/virtos-audit.log"
+    if [ -f "$audit_log" ]; then
+        local log_size=$(wc -l < "$audit_log" 2>/dev/null || echo 0)
         if [ "$log_size" -gt 0 ]; then
             log_pass "Audit log active ($log_size entries)"
         else

@@ -10,6 +10,11 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
+# Source path configuration
+if [ -f /usr/local/lib/virtos-paths.conf ]; then
+    . /usr/local/lib/virtos-paths.conf
+fi
+
 VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 # Handle --help and --version early (before any filesystem operations)
@@ -21,9 +26,9 @@ elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version"
     exit 0
 fi
 
-STORAGE_DIR="/var/lib/virtos/storage"
+STORAGE_DIR="$(get_virtos_path LIB_DIR)/storage"
 STATE_DIR="/var/run/virtos/storage"
-LOG_FILE="/var/log/virtos-storage.log"
+LOG_FILE="$(get_virtos_path LOG_STORAGE)"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
     if ! mkdir -p "$STORAGE_DIR" "$STATE_DIR"; then
@@ -177,7 +182,7 @@ ceph_init() {
     echo ""
 
     # Create directories
-    mkdir -p /var/lib/ceph/mon /var/lib/ceph/osd /var/lib/ceph/mds || true
+    mkdir -p "$(get_virtos_path LIB_DIR)/ceph/mon" "$(get_virtos_path LIB_DIR)/ceph/osd" "$(get_virtos_path LIB_DIR)/ceph/mds" || true
 
     # In production, would:
     # 1. Generate cluster UUID
@@ -397,8 +402,8 @@ gluster_volume_create() {
     # In production, would collect brick paths from cluster nodes
     if [ -z "$bricks" ]; then
         echo "Note: Using local brick for demonstration"
-        mkdir -p "/var/lib/glusterfs/$volume_name" || true
-        bricks="localhost:/var/lib/glusterfs/$volume_name"
+        mkdir -p "$(get_virtos_path GLUSTERFS_DIR)/$volume_name" || true
+        bricks="localhost:$(get_virtos_path GLUSTERFS_DIR)/$volume_name"
     fi
 
     echo "Creating volume with bricks: $bricks"
@@ -476,7 +481,7 @@ nfs_cluster_init() {
         return 1
     fi
 
-    mkdir -p /etc/exports.d || true
+    mkdir -p "$(get_virtos_path NFS_EXPORTS_DIR)" || true
 
     # Configure NFS for cluster use
     if [ ! -f /etc/nfs.conf ]; then
@@ -663,7 +668,7 @@ pool_create() {
         nfs|dir)
             # Create libvirt pool
             if command -v virsh >/dev/null 2>&1; then
-                local pool_path="/var/lib/virtos/pools/$pool_name"
+                local pool_path="$(get_virtos_path LIB_DIR)/pools/$pool_name"
                 mkdir -p "$pool_path" || true
 
                 virsh pool-define-as "$pool_name" "$pool_type" \

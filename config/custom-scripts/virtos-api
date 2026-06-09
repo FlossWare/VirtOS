@@ -4,10 +4,15 @@ set -e
 # VirtOS API - REST API server for VirtOS management
 # Lightweight HTTP API using netcat or socat
 
+# Load common library for path resolution
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
 VERSION="1"
 API_PORT="${API_PORT:-8080}"
 API_DIR="/var/run/virtos/api"
-LOG_FILE="/var/log/virtos-api.log"
+LOG_FILE="$(get_virtos_path LOG_API)"
 
 # Load audit library
 if [ -f /usr/local/lib/virtos-audit.sh ]; then
