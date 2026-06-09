@@ -68,12 +68,21 @@ VirtOS is a minimal virtualization OS based on Tiny Core Linux, designed for uni
 
 **Demonstration/Research** (intentional prototypes - interfaces only, no backends):
 
-- AI: virtos-ai (684 lines), virtos-ai-advanced (959 lines)
-- Quantum: virtos-quantum (594 lines), virtos-quantum-hardware (828 lines)
-- Blockchain: virtos-blockchain (719 lines), virtos-blockchain-advanced (688 lines)
-- Enterprise: virtos-federation (820 lines), virtos-federation-extended (594 lines)
-- Multi-cloud: virtos-multicloud (613 lines), virtos-edge (706 lines)
-- Advanced: virtos-mesh (819 lines), virtos-governance (711 lines), virtos-sre (754 lines), virtos-apm (614 lines)
+- AI: virtos-ai-advanced (959 lines)
+- Blockchain: virtos-blockchain-advanced (688 lines)
+- Multi-cloud: virtos-multicloud (613 lines)
+- Advanced: virtos-sre (754 lines), virtos-apm (614 lines)
+
+**Archived** (moved to archive/experimental/ - 2026-06-09):
+- virtos-ai (684 lines)
+- virtos-quantum (594 lines)
+- virtos-quantum-hardware (828 lines)
+- virtos-blockchain (719 lines)
+- virtos-federation (820 lines)
+- virtos-federation-extended (594 lines)
+- virtos-edge (706 lines)
+- virtos-governance (711 lines)
+- virtos-mesh (819 lines)
 
 **Purpose**: These scripts demonstrate potential future features and serve as interface design examples. They show how VirtOS *could* integrate advanced technologies, but require significant backend implementation to become functional.
 

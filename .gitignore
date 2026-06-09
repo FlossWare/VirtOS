@@ -36,3 +36,4 @@ test-containers/
 Thumbs.db
 packages/output/*.info
 .claude
+.claude/settings.json
