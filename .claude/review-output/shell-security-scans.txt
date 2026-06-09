@@ -1,3 +1,0 @@
-=== Shell Security Patterns ===
-./build/scripts/test-iso-boot.sh:95:    # Build QEMU command as array to avoid eval and command injection (fixes #578, #581)
-./build/scripts/test-iso-boot.sh:115:    # Execute QEMU directly without eval to prevent command injection

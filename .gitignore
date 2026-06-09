@@ -35,3 +35,4 @@ test-containers/
 .DS_Store
 Thumbs.db
 packages/output/*.info
+.claude
