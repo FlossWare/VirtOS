@@ -4,10 +4,10 @@
 
 VirtOS uses a comprehensive testing strategy to ensure code quality, security, and functionality. This document describes our testing approach, coverage metrics, and how to run tests.
 
-**Last Updated**: 2026-05-29  
-**Version**: 0.88  
-**Current Test Count**: 700+ tests (structural + functional)  
-**Coverage**: 100% of management scripts (54/54 scripts + library)
+**Last Updated**: 2026-06-09  
+**Version**: 0.89  
+**Current Test Count**: 1310 tests (1123 unit + 51 functional + 64 integration + 72 archive)  
+**Coverage**: 100% of active management scripts (38/38 scripts + library)
 
 ---
 
@@ -26,12 +26,12 @@ VirtOS testing follows a multi-layered approach:
 
 | Test Level | Status | Coverage | Location |
 |------------|--------|----------|----------|
-| **Structural Tests** | ✅ Complete | 216 tests (100% of scripts) | `tests/*.bats` |
-| **Functional Tests** | 🚧 Enhanced | 400+ tests (priority scripts) | `tests/*.bats` |
-| **Security Tests** | ✅ Complete | 50+ tests (virtos-common.sh) | `tests/virtos-common.bats` |
-| **Integration Tests** | ✅ Framework | 54 tests (awaiting runtime) | `tests/integration/*.bats` |
-| **Syntax Validation** | ✅ Automated | All 52 scripts | CI: `ci.yml` |
-| **ISO Testing** | ⏸️ Pending | 0/47 checks | `ISO_TESTING_STATUS.md` |
+| **Unit Tests** | ✅ Complete | 1123 tests (100% of scripts) | `tests/*.bats` |
+| **Functional Tests** | ✅ Complete | 51 tests (priority scripts) | `tests/functional/*.bats` |
+| **Integration Tests** | ✅ Framework | 64 tests (awaiting runtime) | `tests/integration/*.bats` |
+| **Archive Tests** | ✅ Complete | 72 tests (archived scripts) | `tests/archive/*.bats` |
+| **Syntax Validation** | ✅ Automated | All 38 active scripts | CI: `ci.yml` |
+| **ISO Testing** | ⏸️ Pending | 0/47 checks | `docs/ISO_TESTING_STATUS.md` |
 | **Runtime Testing** | ⏸️ Pending | Awaiting environment | `RUNTIME_TESTING_PLAN.md` |
 
 **Legend**: ✅ Complete | 🚧 In Progress | ⏸️ Pending | ❌ Not Started
@@ -274,8 +274,8 @@ End-to-end workflow tests (require VirtOS runtime environment):
 
 ### Coverage Metrics
 
-- **Total Scripts**: 54 (52 commands + 2 libraries)
-- **Scripts with Tests**: 54 (100%)
+- **Active Scripts**: 41 (29 fully working + 12 partial backends)
+- **Scripts with Tests**: 41 (100%)
 - **Total Test Cases**: 700+
 - **Functional Tests**: 400+ (57%)
 - **Structural Tests**: 216 (31%)

@@ -266,7 +266,7 @@ VirtOS uses Tiny Core Linux's **.tcz (Tiny Core Extension)** package system. Eac
 
 ### virtos-tools.tcz (Always Included)
 
-**Contents**: 54 management scripts
+**Contents**: 41 management scripts
 
 **Dependencies**:
 

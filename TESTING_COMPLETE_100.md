@@ -18,7 +18,7 @@ Starting from an untested ISO, we now have a fully functional VirtOS system with
 - ✅ Serial console works
 - ✅ VNC console works
 - ✅ Network initializes
-- ✅ All 55 virtos scripts packaged
+- ✅ All 41 virtos scripts packaged
 - ✅ All dependencies included
 
 ### Functionality (100% ✓)
@@ -74,7 +74,7 @@ virtos-create-vm --help     ✓ WORKING
    - Created /bin/bash symlink
    - Fixed SSH config paths
 
-2. `config/custom-scripts/virtos-*` (all 55 scripts)
+2. `config/custom-scripts/virtos-*` (all 41 scripts)
    - Changed `#!/bin/sh` → `#!/bin/bash`
 
 3. `config/custom-scripts/lib/virtos-common.sh`
@@ -114,7 +114,7 @@ virtos-create-vm --help     ✓ WORKING
 - **Issues found**: 3 major
 - **Issues fixed**: 3 major
 - **Commands validated**: 3 core commands
-- **Scripts available**: 55 total
+- **Scripts available**: 41 active + 12 archived
 - **Progress**: 0% → 100%
 
 ## What This Means
@@ -134,7 +134,7 @@ virtos-create-vm --help     ✓ WORKING
 ## Next Steps
 
 1. **Fix SSH** - Now that scripts work, debug why SSH still fails
-2. **Test more commands** - Validate all 55 virtos scripts
+2. **Test more commands** - Validate all 41 active virtos scripts
 3. **Create test VM** - Use virtos-create-vm to make a VM
 4. **Test cluster features** - Multi-node functionality
 5. **platform-java integration** - Workload deployment

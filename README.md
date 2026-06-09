@@ -41,9 +41,9 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 
 | Category | Count | Backend Status | Security | What It Means |
 |----------|-------|----------------|----------|---------------|
-| ✅ **Working** | 29/41 | Functional backends | Hardened | Production backends: libvirt, qemu-img, virsh, SSH, Avahi |
-| 🟡 **Partial** | 12/41 | Interface + some backend | Reviewed | CLI complete, backend needs work |
-| ✅ **Quality** | 41/41 | 0 shellcheck issues | 0 critical issues | Paths config, error handling, variable quoting |
+| ✅ **Working** | 29/38 | Functional backends | Hardened | Production backends: libvirt, qemu-img, virsh, SSH, Avahi |
+| 🟡 **Partial** | 9/38 | Interface + some backend | Reviewed | CLI complete, backend needs work |
+| ✅ **Quality** | 38/38 | 0 shellcheck issues | 0 critical issues | Paths config, error handling, variable quoting |
 | 📦 **Archived** | 14 | Moved to archive/ | N/A | Experimental features preserved for reference |
 
 **Recent Improvements (2026-06-09)**:
@@ -59,18 +59,18 @@ A minimal, purpose-built virtualization operating system based on Tiny Core Linu
 
 **Fully Functional with Backends** ✅:
 
-- **29/41 active scripts** with **integrated backends** (libvirt, qemu-img, SSH, Avahi, etc.)
+- **29/38 active scripts** with **integrated backends** (libvirt, qemu-img, SSH, Avahi, etc.)
 - Core VM lifecycle: create, start, stop, migrate, snapshot, backup (all end-to-end)
 - Storage management with libvirt
 - Network configuration with virsh + standard Linux tools
 - Build system and package creation
 - Cloud-init integration
 - **Security hardened**: 0 shellcheck issues, 0 critical security problems
-- **All tested** with 450+ unit tests
+- **All tested** with 1310 BATS tests (1123 unit + 51 functional + 64 integration + 72 archive)
 
 **Partially Complete** 🟡:
 
-- **12/41 scripts** - Interfaces designed, backends in progress (auth, database, secrets, update, etc.)
+- **9/38 scripts** - Interfaces designed, backends in progress (auth, database, secrets, update, etc.)
 
 **Archived for Reference** 📦:
 
@@ -97,14 +97,14 @@ See [Project Status](#project-status) section below for detailed breakdown by ca
 Previous README claimed "✅ Fully Implemented - 52 virtos-* tools (syntax validated)" which misled users into thinking all 52 scripts were functional features.
 
 **WHAT WAS MISLEADING**:
-1. "Fully Implemented" + "syntax validated" implied all 52 scripts work end-to-end
+1. "Fully Implemented" + "syntax validated" implied all scripts work end-to-end
 2. No clear distinction between "passes bash -n" vs "has functional backend"
 3. Experimental/research scripts presented without prominent warnings
 4. Testing gaps (never tested on hardware) not emphasized early
 
 **WHAT'S NOW FIXED**:
 1. ✅ **Prominent early warning** with visual separators making alpha status impossible to miss
-2. ✅ **Clear categorization**: 29 working | 9 partial | 14 experimental | 54 syntax-valid
+2. ✅ **Clear categorization**: 29 working | 12 partial | 12 archived experimental
 3. ✅ **Honest labeling**: "Working Code" means functional backends, not just syntax checks
 4. ✅ **Testing reality**: Explicitly states NEVER tested on real hardware in bold/caps
 5. ✅ **Cross-references**: Links to SCRIPT_IMPLEMENTATION_AUDIT.md for detailed evidence
@@ -229,7 +229,7 @@ cd packages
 ./build-all.sh
 
 # Output: packages/output/virtos-tools.tcz (332KB)
-# Contains: All 54 virtos-* management scripts (29 with functional backends)
+# Contains: 38 active virtos-* management scripts (29 working + 9 partial)
 ```
 
 **Result:** A working Tiny Core Linux package with all VirtOS management tools!
@@ -607,7 +607,7 @@ See [docs/COMPARISON.md](docs/COMPARISON.md) for detailed comparison with 6 majo
 **VirtOS is good for:** Home labs, learning, edge computing, dev/test  
 **VirtOS is NOT ready for:** Production with SLAs, mission-critical workloads, large enterprises
 
-See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for complete implementation details.
+See [docs/SCRIPT-DEPENDENCIES.md](docs/SCRIPT-DEPENDENCIES.md) for complete implementation details.
 
 **Reality Check:** VirtOS has more implemented features than the roadmap suggested, but lacks the **validation and testing** needed for production use. The code works, but hasn't been proven in real environments.
 
@@ -619,21 +619,22 @@ VirtOS now has a **fully functional package build system** that creates real art
 
 **Built & Tested:**
 
-- ✅ **virtos-tools.tcz** - 41 active management scripts packaged (29 working, 12 partial)
+- ✅ **virtos-tools.tcz** - 38 active management scripts packaged (29 working + 9 partial)
 - ✅ Automated package building (`packages/build-all.sh`)
 - ✅ Build validation (`build/scripts/validate-build.sh`)
 - ✅ Quick testing (`build/scripts/quick-test.sh`)
-- ✅ Comprehensive build documentation ([BUILD.md](BUILD.md))
+- ✅ Comprehensive build documentation ([docs/BUILD.md](docs/BUILD.md))
 - ✅ Security hardened: 0 shellcheck issues, paths config-driven, proper error handling
 
 **Test Results:**
 
 ```text
 ✓ Package built successfully
-✓ 41 active scripts: 29 working + 12 partial
+✓ 38 active scripts: 29 working + 9 partial
 ✓ 0 shellcheck issues (100% clean)
 ✓ 0 critical security issues
 ✓ Build configuration valid (7 profiles)
+✓ 1310 BATS tests (1123 unit + 51 functional + 64 integration + 72 archive)
 ✓ ALL TESTS PASSED
 ```
 
@@ -644,23 +645,23 @@ build/scripts/quick-test.sh  # 5-second validation
 cd packages && ./build-all.sh  # Build the package
 ```
 
-See [BUILD.md](BUILD.md) for complete build guide and status.
+See [docs/BUILD.md](docs/BUILD.md) for complete build guide and status.
 
 ## Project Status
 
-**Last Updated**: 2026-06-09 | **Version**: 0.89 | **Status**: Alpha - Validated Infrastructure
+**Last Updated**: 2026-06-09 | **Version**: 0.1 | **Status**: Alpha - Validated Infrastructure
 
 > **✅ INFRASTRUCTURE VALIDATED**: VirtOS infrastructure proven on 5-node physical cluster (96% test pass rate). Feature validation blocked pending console access. See [docs/validation/](docs/validation/) for evidence.
 
 ### 📊 Implementation Status
 
-**Last Audited**: 2026-06-09 | **Active Scripts**: 41 | **Quality**: 0 shellcheck issues, 0 critical security issues
+**Last Audited**: 2026-06-09 | **Active Scripts**: 38 | **Quality**: 0 shellcheck issues, 0 critical security issues
 
 | Category | Scripts | Backend | Security | Status |
 |----------|---------|---------|----------|--------|
 | **Core VM (10)** | ✅ | ✅ | ✅ | **WORKING** |
 | **Advanced (19)** | ✅ | ✅ | ✅ | **WORKING** |
-| **Infrastructure (12)** | ✅ | 🟡 | ✅ | **PARTIAL** |
+| **Infrastructure (9)** | ✅ | 🟡 | ✅ | **PARTIAL** |
 | **Experimental** | 📦 | - | - | **ARCHIVED** |
 | Package building | ✅ | ✅ | ✅ | **WORKING** |
 | platform-java integration | ✅ | ✅ | ✅ | **WORKING** |
@@ -699,9 +700,9 @@ See [BUILD.md](BUILD.md) for complete build guide and status.
 
 - ✅ **Package building**: `build-all.sh` produces valid TCZ packages
 - ✅ **Build validation**: `validate-build.sh` and `quick-test.sh` pass all checks
-- ✅ **Code quality**: 41 active scripts, 0 shellcheck issues
+- ✅ **Code quality**: 38 active scripts, 0 shellcheck issues
 - ✅ **Security**: 0 critical security issues, proper error handling
-- ✅ **Unit tests**: 450+ BATS tests pass
+- ✅ **Unit tests**: 1310 BATS tests (1123 unit + 51 functional + 64 integration + 72 archive)
 - ✅ **CI/CD pipeline**: GitHub Actions runs 11 validation jobs successfully
 
 **Blocked Pending Console Access**:
@@ -713,7 +714,7 @@ See [BUILD.md](BUILD.md) for complete build guide and status.
 
 See [docs/validation/](docs/validation/) for complete validation evidence.
 
-### ✅ Working Features (29/41 active scripts - 71%)
+### ✅ Working Features (29/38 active scripts - 76%)
 
 **Core VM Management** (10 scripts - libvirt/QEMU backends):
 
@@ -742,15 +743,14 @@ See [docs/validation/](docs/validation/) for complete validation evidence.
 
 - ✅ Build system and package validation
 - ✅ CI/CD pipelines (GitHub Actions)
-- ✅ Auto-versioning (v0.89)
+- ✅ Auto-versioning (v0.1)
 - ✅ Security library (virtos-common.sh) - hardened with config-based paths
-- ✅ VERSION standardization (all 41 active scripts use `get_version()`)
+- ✅ VERSION standardization (all 38 active scripts use `get_version()`)
 - ✅ Code quality: 0 shellcheck issues, 0 critical security issues
-- ✅ Unit test coverage (450+ tests across all active scripts)
-- ✅ Integration test framework (54 tests across 5 suites)
+- ✅ Unit test coverage (1310 BATS tests: 1123 unit + 51 functional + 64 integration + 72 archive)
 - ✅ Physical validation: 5-node cluster (96% test pass rate)
 
-### 🟡 Partial Implementation (12/41 scripts - 29%)
+### 🟡 Partial Implementation (9/38 scripts - 24%)
 
 **Infrastructure Components** (interface complete, backend work in progress):
 
@@ -763,7 +763,6 @@ See [docs/validation/](docs/validation/) for complete validation evidence.
 - `virtos-dr-advanced` - DR automation
 - `virtos-networking-advanced` - SDN/OVN integration
 - `virtos-performance` - Performance tuning backends
-- Plus 3 additional infrastructure scripts
 
 All scripts security hardened (proper error handling, path validation, variable quoting).
 
@@ -794,7 +793,7 @@ See [archive/experimental/README.md](archive/experimental/README.md) for details
 
 **Production Requirements Pending**:
 
-- Infrastructure backends in progress (12 scripts)
+- Infrastructure backends in progress (9 scripts)
 - Security audit: External penetration testing needed
 - Stability testing: 90-day validation not started
 - Performance benchmarking: Not performed
@@ -857,7 +856,7 @@ virsh domstats/dominfo
 virsh vcpuinfo/memorystat
 ```
 
-See [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) for detailed per-script analysis.
+See [docs/SCRIPT-DEPENDENCIES.md](docs/SCRIPT-DEPENDENCIES.md) for detailed per-script analysis.
 
 ### 🎯 Development Philosophy
 
@@ -866,14 +865,14 @@ VirtOS focuses on **production-ready features with proven infrastructure**:
 **Current Approach:**
 
 - Infrastructure-first: Validate platform before adding features
-- Quality over quantity: 41 focused scripts vs previous 54
+- Quality over quantity: 38 focused scripts vs previous 54
 - Security hardened: 0 shellcheck issues, 0 critical security problems
 - Evidence-based development: Physical hardware validation
 
 **What It Means Today:**
 
-- **29/41 scripts** have working backends and are functional
-- **12/41 scripts** have complete interfaces, backend work in progress
+- **29/38 scripts** have working backends and are functional
+- **9/38 scripts** have complete interfaces, backend work in progress
 - **14 experimental scripts** archived to `archive/experimental/`
 - **2 shared libraries** (virtos-common.sh, virtos-audit.sh)
 - Infrastructure proven on 5-node physical cluster (96% test pass rate)
@@ -883,14 +882,14 @@ VirtOS focuses on **production-ready features with proven infrastructure**:
 
 - ~~Backend Integration (Issue #7)~~ - 29 scripts connected to libvirt/Docker/LXC
 - ~~Security Review (Issue #6)~~ - virtos-common.sh library (361 lines, 250+ security tests)
-- ~~Unit Tests (Issue #15)~~ - 100% coverage (54 test files, 450+ tests)
-- ~~VERSION Standardization (Issue #37)~~ - All 54 scripts use get_version()
-- ~~Integration Test Framework (Issue #51)~~ - 54 tests across 5 suites
+- ~~Unit Tests (Issue #15)~~ - 100% coverage (38 active scripts + 2 libraries, 1310 BATS tests)
+- ~~VERSION Standardization (Issue #37)~~ - All 38 active scripts use get_version()
+- ~~Integration Test Framework (Issue #51)~~ - 1310 BATS tests (1123 unit + 51 functional + 64 integration + 72 archive)
 
 **Remaining (blocking production readiness):**
 
 1. **Console Access** - Unblock feature validation (virtos-* commands, TCZ packages, cluster testing)
-2. **Infrastructure Backends** - 12 scripts need backend completion
+2. **Infrastructure Backends** - 9 scripts need backend completion
 3. **Security Audit** - External penetration testing needed
 4. **Stability Validation** - 90-day uptime testing not started
 5. **Performance Benchmarking** - Load testing and optimization
@@ -1176,7 +1175,7 @@ A: **29/41 active management scripts** are fully functional:
 Build system, packaging, and infrastructure are working and tested. Feature validation blocked pending console access.
 
 **Q: What happened to the experimental scripts (AI, quantum, blockchain)?**
-A: The 14 experimental scripts were archived to `archive/experimental/` during the June 2026 cleanup. This removed 27,548 lines of bloat and focused the active codebase on production-ready features. They remain available for reference. See [archive/experimental/README.md](archive/experimental/README.md).
+A: The 12 experimental scripts were archived to `archive/experimental/` during the June 2026 cleanup. This removed 27,548 lines of bloat and focused the active codebase on production-ready features. They remain available for reference. See [archive/experimental/README.md](archive/experimental/README.md).
 
 ### Additional Resources
 

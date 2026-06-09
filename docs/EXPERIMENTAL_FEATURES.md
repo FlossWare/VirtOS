@@ -1,13 +1,13 @@
 # VirtOS Experimental Features
 
-**Last Updated**: 2026-05-29  
+**Last Updated**: 2026-06-09  
 **Audience**: Users evaluating VirtOS features
 
 ---
 
 ## Purpose of This Document
 
-VirtOS includes 14 **experimental/demonstration scripts** that showcase potential future capabilities. This document clarifies which features are functional and which are research prototypes to prevent confusion.
+VirtOS included 14 experimental/demonstration scripts. As of 2026-06-09, **12 experimental scripts have been archived** to `archive/experimental/` to reduce confusion and focus on production-ready features. This document clarifies which features are functional and which are research prototypes.
 
 See [GitHub Issue #109](https://github.com/FlossWare/VirtOS/issues/109) for background.
 
@@ -19,25 +19,27 @@ See [GitHub Issue #109](https://github.com/FlossWare/VirtOS/issues/109) for back
 |----------|----------------|---------------------|---------|
 | **Core VM** | 10 scripts | 0 scripts | ✅ Production-ready code |
 | **Advanced Ops** | 19 scripts | 0 scripts | ✅ Fully functional |
-| **Infrastructure** | 0 scripts | 9 scripts | 🟡 Interface complete, backends needed |
-| **Futuristic** | 0 scripts | 14 scripts | 🔬 Research prototypes only |
+| **Infrastructure** | 0 scripts | 12 scripts | 🟡 Interface complete, backends needed |
+| **Futuristic** | 0 scripts | 12 scripts | 📦 Archived to `archive/experimental/` |
 
 ---
 
-## Experimental Scripts (14 total)
+## Experimental Scripts (12 total - ARCHIVED)
 
-### ⚠️ These Are NOT Functional Features
+### ⚠️ These Scripts Have Been Archived
 
-The following scripts demonstrate **interface design** for potential future features. They have complete command-line interfaces and help text, but **do not have working backends**.
+**As of 2026-06-09**, 12 experimental scripts have been moved to `archive/experimental/` to reduce confusion and focus on production-ready features.
 
-**Purpose**:
+The following archived scripts demonstrated **interface design** for potential future features. They had complete command-line interfaces and help text, but **did not have working backends**.
+
+**Original Purpose**:
 
 - Show how VirtOS *could* integrate advanced technologies
 - Serve as conversation starters for future development
 - Provide interface examples for contributors
 - Demonstrate architectural extensibility
 
-**DO NOT use these in production** - they will fail or return placeholder responses.
+**Status**: These scripts are no longer included in active VirtOS packages. They remain available in the repository for reference and future development.
 
 ---
 
@@ -254,7 +256,7 @@ These have working backends:
 
 ---
 
-## Partially Implemented Scripts (9)
+## Partially Implemented Scripts (12)
 
 ### Infrastructure Components 🟡
 
@@ -269,8 +271,10 @@ Interface complete, backend integration needed:
 - `virtos-dr-advanced` (250 lines) - Needs advanced DR features
 - `virtos-networking-advanced` (695 lines) - Needs advanced networking
 - `virtos-performance` (185 lines) - Needs performance profiling
+- `virtos-ai-advanced` (959 lines) - AI/ML framework (archived)
+- `virtos-blockchain-advanced` (688 lines) - Distributed ledger framework (archived)
 
-These scripts have the **command-line interface implemented** but need backend service integration. They are one step away from being functional.
+These scripts have the **command-line interface implemented** but need backend service integration. The last two items are partially-implemented scripts that were archived with experimental features due to lack of backend integration.
 
 ---
 
@@ -338,11 +342,11 @@ Quantum and blockchain features are intentionally far-future. AI/ML integration 
 - Core VM management (10 scripts)
 - Advanced operational features (19 scripts)
 
-**Ignore these 14 experimental scripts** for now:
+**Ignore the archived experimental scripts**:
 
-- They are research prototypes
-- They will not work in production
-- They are not representative of VirtOS quality
+- 12 experimental scripts have been archived to `archive/experimental/`
+- They were research prototypes without working backends
+- They are not representative of VirtOS production quality
 
 **Evaluation criteria should be**:
 
@@ -440,6 +444,7 @@ PROFILE=production ./build-all.sh
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.1  
+**Last Revised**: 2026-06-09 (Updated for post-cleanup status)  
 **Author**: VirtOS Team  
 **License**: Same as VirtOS project (GPL-3.0)

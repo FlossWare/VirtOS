@@ -1,25 +1,24 @@
 # VirtOS Infrastructure Scripts Status
 
-**Last Updated**: 2026-05-25  
-**Total Scripts**: 52  
-**Fully Working**: 29 (56%)  
-**Infrastructure (Partial)**: 9 (17%)  
-**Experimental/Demo**: 14 (27%)
+**Last Updated**: 2026-06-09  
+**Total Scripts**: 41  
+**Fully Working**: 29 (71%)  
+**Infrastructure (Partial)**: 12 (29%)  
+**Archived/Experimental**: 12 (archived)
 
 ---
 
 ## Executive Summary
 
-Of VirtOS's 52 management scripts, **29 are fully functional** with complete backend integration (libvirt, Docker, Avahi, etc.). The remaining **23 scripts fall into two distinct categories**:
+Of VirtOS's 41 active management scripts, **29 are fully functional** with complete backend integration (libvirt, Docker, Avahi, etc.). The remaining **12 scripts** are infrastructure scripts that have interfaces defined but need backend service integration.
 
-1. **Infrastructure Scripts (9)** - Have interfaces defined, need backend service integration
-2. **Experimental/Demo Scripts (14)** - Intentional prototypes for future technologies
+**Note**: 12 experimental/demo scripts were archived to archive/experimental/ during the 2026-06-09 codebase cleanup to reduce confusion and focus on production-ready features.
 
-This document provides detailed status for each of the 23 scripts requiring work.
+This document provides detailed status for each of the 12 infrastructure scripts requiring work.
 
 ---
 
-## Part 1: Infrastructure Scripts (9 scripts)
+## Part 1: Infrastructure Scripts (12 scripts)
 
 These scripts have well-defined interfaces and implementation structure, but require integration with backend services (LDAP, databases, Vault, etc.) that are not typically available in a minimal VirtOS environment.
 
@@ -259,9 +258,9 @@ These scripts have well-defined interfaces and implementation structure, but req
 
 ---
 
-## Part 2: Experimental/Demo Scripts (14 scripts)
+## Part 2: Archived/Experimental Scripts (12 scripts)
 
-These scripts are **intentional prototypes** demonstrating future capabilities or advanced concepts. They serve as proof-of-concept and documentation for potential future development. **These are not bugs** - they're exploratory in nature.
+**Update (2026-06-09)**: These 12 scripts have been **archived to archive/experimental/** to reduce confusion and focus the codebase on production-ready features. They were **intentional prototypes** demonstrating future capabilities or advanced concepts, serving as proof-of-concept and documentation for potential future development. **These are not bugs** - they're exploratory in nature.
 
 ### AI Integration (2 scripts)
 
@@ -489,19 +488,21 @@ These scripts are **intentional prototypes** demonstrating future capabilities o
 
 ## Summary Tables
 
-### Infrastructure Scripts Prioritization
+### Infrastructure Scripts Prioritization (12 scripts)
 
 | Script | Effort | Priority | Dependencies | Production Readiness |
 |--------|--------|----------|--------------|---------------------|
 | virtos-update | Low | **High** | tce-load | 2-3 weeks |
 | virtos-secrets | Medium | **High** | vault | 3-4 weeks |
-| virtos-performance | Medium | Medium | sysctl, numactl | 4-6 weeks |
-| virtos-database | High | Medium | postgres, mysql | 6-8 weeks |
-| virtos-backup-orchestration | High | Medium | cron, notification | 6-8 weeks |
 | virtos-auth | Medium | Low | openldap, pam | 8-10 weeks |
+| virtos-backup-orchestration | High | Medium | cron, notification | 6-8 weeks |
+| virtos-database | High | Medium | postgres, mysql | 6-8 weeks |
 | virtos-directory | Medium | Low | ldap-utils | 8-10 weeks |
 | virtos-dr-advanced | Very High | Low | drbd, ceph | 12-16 weeks |
 | virtos-networking-advanced | Very High | Low | frr, SR-IOV | 12-16 weeks |
+| virtos-performance | Medium | Medium | sysctl, numactl | 4-6 weeks |
+| virtos-ai-advanced | High | Low | ML frameworks | 12+ weeks |
+| virtos-blockchain-advanced | High | Low | blockchain SDKs | 12+ weeks |
 
 **Recommended Implementation Order**:
 
@@ -510,20 +511,24 @@ These scripts are **intentional prototypes** demonstrating future capabilities o
 3. virtos-performance (high-value, medium effort)
 4. virtos-database (developer environments)
 
-### Experimental Scripts - Future Considerations
+### Archived Scripts - Future Considerations
 
-| Category | Scripts | Earliest Production Date | Prerequisite |
-|----------|---------|-------------------------|--------------|
-| AI/ML | 2 | Q3 2027 | GPU support, Kubeflow |
-| Quantum | 2 | 2030+ | Quantum hardware availability |
-| Blockchain | 2 | Q1 2027 | Customer demand, specific chain |
-| Federation | 2 | Q4 2026 | Multi-tenant requirements |
-| Multi-cloud | 1 | Q2 2027 | Cloud provider partnerships |
-| Edge | 1 | Q3 2026 | IoT strategy definition |
-| Service Mesh | 1 | Q4 2026 | Microservices workloads |
-| Governance | 1 | Q2 2027 | Compliance certifications |
-| SRE | 1 | Q1 2027 | Enterprise customer base |
-| APM | 1 | Q2 2027 | APM vendor partnership |
+The following 12 scripts have been archived to archive/experimental/ (2026-06-09 cleanup):
+
+| Category | Scripts | Status | Location |
+|----------|---------|--------|----------|
+| AI/ML | 2 (virtos-ai, virtos-ai-advanced) | Archived | archive/experimental/ |
+| Quantum | 2 (virtos-quantum, virtos-quantum-hardware) | Archived | archive/experimental/ |
+| Blockchain | 2 (virtos-blockchain, virtos-blockchain-advanced) | Archived | archive/experimental/ |
+| Federation | 2 (virtos-federation, virtos-federation-extended) | Archived | archive/experimental/ |
+| Multi-cloud | 1 (virtos-multicloud) | Archived | archive/experimental/ |
+| Edge | 1 (virtos-edge) | Archived | archive/experimental/ |
+| Service Mesh | 1 (virtos-mesh) | Archived | archive/experimental/ |
+| Governance | 1 (virtos-governance) | Archived | archive/experimental/ |
+| SRE | 1 (virtos-sre) | Archived | archive/experimental/ |
+| APM | 1 (virtos-apm) | Archived | archive/experimental/ |
+
+**Reason**: Research prototypes without backend integration. Archived to reduce codebase confusion and focus on the 41 active scripts (29 fully working + 12 infrastructure).
 
 ---
 
@@ -567,14 +572,14 @@ Once infrastructure scripts are implemented:
 
 VirtOS is in excellent shape:
 
-- **56% fully functional** (29/52 scripts with working backends)
-- **17% infrastructure** (9 scripts - clearly defined implementation path)
-- **27% experimental** (14 scripts - intentional future exploration)
+- **71% fully functional** (29/41 active scripts with working backends)
+- **29% infrastructure** (12 scripts - clearly defined implementation path)
+- **Archived**: 12 experimental scripts moved to archive/experimental/ (2026-06-09 cleanup)
 
-The infrastructure scripts represent **clear, achievable work items** with defined backends and integration paths. The experimental scripts serve as **strategic prototypes** and should remain as documentation until business need justifies development.
+The infrastructure scripts represent **clear, achievable work items** with defined backends and integration paths. The archived scripts serve as **strategic prototypes** and remain as documentation in archive/experimental/ for future development if business need justifies it.
 
-**Total implementation effort for all 9 infrastructure scripts**: ~50-70 developer days  
-**Realistic timeline**: 3-6 months (depending on priority and resources)
+**Total implementation effort for all 12 infrastructure scripts**: ~70-100 developer days  
+**Realistic timeline**: 4-8 months (depending on priority and resources)
 
 For questions or to discuss implementation priorities, see:
 

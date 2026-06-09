@@ -1,6 +1,66 @@
-# Building VirtOS from Source
+# VirtOS Build Guide
 
-Complete guide for building VirtOS ISO images from source.
+Complete guide to building VirtOS from source.
+
+## Build Status
+
+### ✅ What Works (Tested & Functional)
+
+**Package Building:**
+
+- ✅ **virtos-tools.tcz** - All 41 active management scripts packaged successfully (332KB)
+- ✅ Package build system (TCZ creation with squashfs)
+- ✅ Automated build-all.sh for batch packaging
+- ✅ MD5/SHA256 checksum generation
+- ✅ Package metadata and dependency tracking
+
+**Build Infrastructure:**
+
+- ✅ Build validation script (checks prerequisites)
+- ✅ Quick test script (rapid validation)
+- ✅ Syntax checking for all scripts
+- ✅ Configuration system (build.conf with 7 profiles)
+- ✅ Automated integration of virtos-* scripts
+- ✅ GitHub Actions CI/CD pipelines (ci.yml, cd.yml)
+
+**Scripts & Configuration:**
+
+- ✅ All 41 active virtos-* management scripts (syntax validated, 0 shellcheck issues)
+- ✅ Custom bootlocal.sh for initialization
+- ✅ Kernel parameters (sysctl.conf)
+- ✅ Helper scripts (check-kvm, create-vm)
+
+### 🟡 Partially Implemented (Framework Ready)
+
+**ISO Building:**
+
+- 🟡 **prepare.sh** - Downloads Tiny Core, extracts ISO (untested)
+- 🟡 **customize.sh** - Adds VirtOS customizations (untested)
+- 🟡 **iso.sh** - Creates bootable ISO (untested)
+- ⚠️ **Missing**: genisoimage (can use mkisofs as alternative)
+
+**Reason**: Framework complete, awaiting validation testing.
+
+### ❌ Not Yet Implemented
+
+**TCZ Packages:**
+
+- ❌ qemu-kvm.tcz - QEMU with KVM support
+- ❌ libvirt.tcz - Virtualization API
+- ❌ docker.tcz - Docker container runtime
+- ❌ lxc.tcz - Linux containers
+- ❌ podman.tcz - Podman container runtime
+- ❌ containerd.tcz - containerd runtime
+
+**Reason**: These require compiling from source or downloading from Tiny Core repos.
+
+**Kernel:**
+
+- ❌ Custom kernel with KVM modules
+- ❌ Kernel configuration testing
+- ❌ Kernel packaging as TCZ
+
+**Reason**: Kernel compilation is complex and time-consuming.
 
 ## Quick Start
 
@@ -18,6 +78,8 @@ make build    # Will prompt for confirmation (downloads ~500MB)
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
 - [Advanced Options](#advanced-options)
+- [Continuous Integration](#continuous-integration)
+- [Build Performance](#build-performance)
 
 ## Prerequisites
 
@@ -158,15 +220,39 @@ Check build output:
 ```bash
 ls -lh build/output/
 # Should show:
-# VirtOS-standard-0.13.iso
-# VirtOS-standard-0.13.iso.md5
+# VirtOS-standard-0.89.iso
+# VirtOS-standard-0.89.iso.md5
+# VirtOS-standard-0.89.iso.sha256
 ```
 
-Verify checksum:
+Verify checksums:
 
 ```bash
 cd build/output
 md5sum -c VirtOS-*.iso.md5
+sha256sum -c VirtOS-*.iso.sha256
+```
+
+## Build Output
+
+### Successfully Built Artifacts ✅
+
+```
+packages/output/
+├── virtos-tools.tcz            # 332KB - Management scripts package
+├── virtos-tools.tcz.dep        # Dependencies
+├── virtos-tools.tcz.info       # Package metadata
+├── virtos-tools.tcz.list       # File listing
+└── virtos-tools.tcz.md5.txt    # Checksum
+```
+
+### Expected ISO Output (Not Yet Tested) 🟡
+
+```
+build/output/
+├── VirtOS-{PROFILE}-{VERSION}.iso        # Bootable ISO
+├── VirtOS-{PROFILE}-{VERSION}.iso.md5    # MD5 checksum
+└── VirtOS-{PROFILE}-{VERSION}.iso.sha256 # SHA256 checksum
 ```
 
 ## Build Profiles
@@ -222,6 +308,22 @@ md5sum -c VirtOS-*.iso.md5
 
 ## Testing
 
+### Test Package Contents
+
+Verify built packages before ISO creation:
+
+```bash
+# Extract and inspect
+cd packages/output
+unsquashfs -l virtos-tools.tcz
+
+# Verify checksums
+md5sum -c virtos-tools.tcz.md5.txt
+
+# View file list
+cat virtos-tools.tcz.list
+```
+
 ### Test in QEMU
 
 Test the ISO before deploying:
@@ -229,7 +331,7 @@ Test the ISO before deploying:
 ```bash
 # Basic boot test
 qemu-system-x86_64 -enable-kvm -m 2048 \
-  -cdrom build/output/VirtOS-standard-0.13.iso
+  -cdrom build/output/VirtOS-standard-0.89.iso
 
 # With network
 qemu-system-x86_64 -enable-kvm -m 2048 \
@@ -321,13 +423,22 @@ See [BUILD_DEPENDENCIES.md](BUILD_DEPENDENCIES.md) for offline builds.
 
 ### "Permission denied" during build
 
-**Solution**: Don't run build as root
+**Causes**:
+
+- Build directory ownership issues
+- Running unnecessarily as root
+
+**Solutions**:
 
 ```bash
-# Build as regular user
+# Don't run build as root (builds as regular user)
 ./build-all.sh
 
-# Only specific operations need sudo (will prompt)
+# Fix ownership if needed
+sudo chown -R $USER:$USER packages/
+
+# Or use sudo only if absolutely necessary
+sudo ./build-all.sh
 ```
 
 ### ISO boots but no VMs can be created
@@ -388,7 +499,7 @@ export MAKE_JOBS=4
 # Edit build/build.conf: PROFILE="minimal"
 ```
 
-### "squashfs-tools not found"
+### "squashfs-tools not found" or "mksquashfs not found"
 
 Some distributions don't include squashfs-tools in base install:
 
@@ -403,9 +514,45 @@ sudo apt install squashfs-tools
 sudo pacman -S squashfs-tools
 ```
 
+### Syntax errors in scripts
+
+Validate script syntax:
+
+```bash
+# Check specific script
+bash -n path/to/script.sh
+
+# Check all virtos-* scripts
+for script in config/custom-scripts/virtos-*; do
+  bash -n "$script" || echo "Error in: $script"
+done
+
+# Use shellcheck for detailed analysis
+shellcheck config/custom-scripts/virtos-setup
+```
+
 ## Advanced Options
 
-### Custom Packages
+### Adding TCZ Packages
+
+To add new packages to VirtOS:
+
+1. Create directory: `packages/package-name/`
+2. Add build.sh, .tcz.info, .tcz.dep
+3. Update `packages/build-all.sh` PACKAGES array
+4. Build: `cd packages && ./build-all.sh`
+
+Example package structure:
+
+```
+packages/qemu-kvm/
+├── build.sh            # Build script
+├── qemu-kvm.tcz.info   # Metadata
+├── qemu-kvm.tcz.dep    # Dependencies
+└── src/                # Source files or compiled binaries
+```
+
+### Custom Packages in ISO
 
 Add your own packages to the ISO:
 
@@ -434,7 +581,7 @@ Version is auto-managed from `VERSION` file:
 cat VERSION
 
 # Update version (example - actual version is auto-managed)
-echo "0.87" > VERSION
+echo "0.89" > VERSION
 
 # Build with new version
 make build
@@ -479,14 +626,65 @@ Currently VirtOS supports x86_64 only. For other architectures:
 - `build/scripts/validate-build.sh` - Validation checks
 - `build/scripts/quick-test.sh` - Quick smoke tests
 
+## Continuous Integration
+
+The project includes GitHub Actions workflows:
+
+- **ci.yml** - Validates scripts, checks syntax, tests package builds
+- **cd.yml** - Auto-version bump and deployment to packagecloud.io
+
+These run automatically on every commit.
+
+## Build Performance
+
+**Tested build times (on Fedora 44, 16 cores, 62GB RAM):**
+
+- Package build (virtos-tools): **~2 seconds**
+- Quick test: **~5 seconds**
+- Validation: **~3 seconds**
+
+**Estimated (untested):**
+
+- Full ISO build (first time): **30-60 minutes** (includes download)
+- Full ISO build (subsequent): **5-10 minutes** (cached)
+
+## Build Checklist
+
+Before building:
+
+- [ ] Validated environment (`./validate-build.sh`)
+- [ ] Quick test passed (`./quick-test.sh`)
+- [ ] Selected profile in `build.conf`
+- [ ] 20GB+ free disk space
+- [ ] Network connectivity for downloads
+
+After building:
+
+- [ ] Verify checksums
+- [ ] Test in QEMU/KVM
+- [ ] Check package contents
+- [ ] Validate boot process
+- [ ] Test basic functionality
+
 ## See Also
 
 - [README.md](../README.md) - Project overview
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
 - [RUNTIME_TESTING_PLAN.md](../RUNTIME_TESTING_PLAN.md) - Comprehensive testing guide
-- [ISO_BUILD_STATUS.md](../ISO_BUILD_STATUS.md) - Build system status
-- [BUILD_DEPENDENCIES.md](BUILD_DEPENDENCIES.md) - Detailed dependency information
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - General troubleshooting
+- [ISO_TESTING_STATUS.md](../ISO_TESTING_STATUS.md) - Build system status
+- [packages/README.md](../packages/README.md) - Package building guide
+
+## Build Support
+
+Issues with building?
+
+1. Check [RUNTIME_TESTING_PLAN.md](../RUNTIME_TESTING_PLAN.md) for validation procedures
+2. Search existing issues: https://github.com/FlossWare/VirtOS/issues
+3. Create new issue with:
+   - Output of `./validate-build.sh`
+   - Build command used
+   - Error messages
+   - OS and version
 
 ## Contributing
 

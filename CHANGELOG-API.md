@@ -232,10 +232,10 @@ All remaining VirtOS management scripts (virtos-template, virtos-gpu, virtos-usb
 **Stability**:
 
 - ✅ Stable: 29 scripts with working backends
-- 🟡 Partial: 9 scripts needing backend integration
-- 🔷 Experimental: 14 scripts (no API stability guarantees)
+- 🟡 Partial: 12 scripts needing backend integration
+- 📦 Archived: 12 scripts (experimental, no API stability guarantees)
 
-See [docs/EXPERIMENTAL_FEATURES.md](docs/EXPERIMENTAL_FEATURES.md) for categorization.
+See [CLAUDE.md](CLAUDE.md) for script categorization details.
 
 ---
 

@@ -1,7 +1,7 @@
 # VirtOS Script-to-Script Dependencies
 
-**Last Updated**: 2026-05-29  
-**Version: 0.89  
+**Last Updated**: 2026-06-09  
+**Version**: 0.1  
 **Status**: Reference Documentation
 
 ## Overview
@@ -97,5 +97,5 @@ virtos-backup create web-01
 
 ---
 
-**Last Updated**: 2026-05-29  
+**Last Updated**: 2026-06-09  
 **Status**: Reference Documentation

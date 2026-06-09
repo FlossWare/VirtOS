@@ -2,6 +2,91 @@
 
 **A comprehensive guide to using Claude Code in 100% autonomous mode for parallel issue resolution and continuous improvement.**
 
+---
+
+## Quick Start (5 Minutes)
+
+**Want to start immediately?** Follow these steps:
+
+### Prerequisites Checklist
+
+Your project MUST have:
+
+- ✅ Comprehensive test suite (unit + integration)
+- ✅ Automated code formatting (Spotless, Prettier, Black, etc.)
+- ✅ Linting/static analysis (Checkstyle, ESLint, pylint)
+- ✅ Well-defined GitHub issues with clear acceptance criteria
+- ✅ CI/CD pipeline that runs tests on every push (recommended)
+
+### Step 1: Activation Prompt
+
+Paste this EXACT prompt into Claude Code:
+
+```
+100% Autonomous Mode - Requirements:
+
+AUTO-ACCEPT EVERYTHING:
+- All bash commands
+- All git commands (add, commit, push)
+- All file operations (mkdir, create, edit, delete)
+- All scripts and complex operations
+- Everything else - just auto-accept
+
+QUALITY REQUIREMENTS (for each issue):
+1. Unit/integration tests written and PASSING
+2. Documentation updated
+3. Code formatted (run formatter automatically)
+4. Linting passing
+5. IMMEDIATELY push to remote (don't batch)
+
+ISSUE MANAGEMENT:
+- Monitor continuously - constantly review issues
+- Close obsolete issues
+- Validate relevance based on refactoring
+- Create new issues if you discover problems
+
+PARALLELIZATION:
+- Work on 2-3 things at once (not more)
+- Use workflows for complex multi-step operations
+
+ZERO QUESTIONS:
+- Work independently without asking for input
+- Make reasonable decisions based on codebase patterns
+- Prioritize everything - I trust you
+- Work in my absence - keep going
+
+CONTINUE WORKING:
+- When one task completes, immediately start the next
+- Always review open issues before asking what to do
+- Use "continue" to keep the loop going
+```
+
+### Step 2: Let It Run
+
+Claude will automatically:
+1. Check open GitHub issues
+2. Pick highest priority
+3. Implement complete solution with tests
+4. Commit + push immediately
+5. Close issue with summary
+6. **Move to next issue automatically**
+
+### Step 3: Continue Between Sessions
+
+When context limit is reached, Claude summarizes progress. To resume:
+
+```
+continue
+```
+
+**Result:** 3-5x faster issue resolution with zero human intervention.
+
+---
+
+**For detailed documentation, continue reading below.**
+
+---
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -13,6 +98,7 @@
 7. [Example Workflows](#example-workflows)
 8. [Best Practices](#best-practices)
 9. [Troubleshooting](#troubleshooting)
+10. [Common Questions](#common-questions)
 
 ---
 
@@ -936,6 +1022,44 @@ const critique = await agent(
 
 // Address each finding before closing the issue
 ```
+
+---
+
+## Common Questions
+
+### Q: Will it work while I'm away?
+
+**A:** Yes! That's the point. Start it before lunch, come back to 5+ issues resolved.
+
+### Q: What if it makes a mistake?
+
+**A:** Every commit is tested before pushing. If tests fail, Claude fixes the issue. You can always review commits and revert if needed.
+
+### Q: Will it ask me questions?
+
+**A:** No. Zero questions. It makes reasonable decisions based on existing code patterns.
+
+### Q: Can it work on multiple issues in parallel?
+
+**A:** Yes, but limited to 2-3 concurrent tasks to maintain quality. Use workflows for parallelization.
+
+### Q: How do I stop it?
+
+**A:** Just interrupt Claude Code (Ctrl+C in CLI) or close the session. It's safe to stop at any point.
+
+### Q: What if I run out of context?
+
+**A:** Claude will summarize and compact. Just say "continue" to resume in a fresh session.
+
+### Q: What makes this "autonomous" vs regular Claude Code?
+
+**A:** It's a **pattern**, not a built-in mode. Key elements:
+
+1. **The Loop:** Automatically moves from issue to issue
+2. **Zero Questions:** Makes all decisions independently
+3. **Immediate Feedback:** Commits + pushes after each issue
+4. **Quality Gates:** Tests/format/lint before every commit
+5. **Continuous Monitoring:** Checks for new issues every 3-5 completions
 
 ---
 

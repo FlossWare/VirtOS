@@ -4,6 +4,8 @@
 
 This guide walks you through installing VirtOS from ISO to a working virtualization host in approximately 30-45 minutes.
 
+**NOTE**: VirtOS infrastructure validated on 5-node physical cluster (2026-06-06), but feature validation blocked pending VM console access. See CLAUDE.md for details.
+
 ## Prerequisites
 
 ### Hardware Requirements
@@ -162,6 +164,8 @@ After boot completes (~30 seconds), you'll see:
 
 ### Step 4: Run VirtOS Setup
 
+**WARNING**: This installation procedure has not been validated on real hardware. Console access blocker prevents testing. Use with caution.
+
 Open a terminal and run the setup wizard:
 
 ```bash
@@ -277,7 +281,7 @@ The wizard will guide you through:
 ```bash
 # Check version
 virtos-version
-# Output: VirtOS 0.89
+# Output: VirtOS 0.1
 
 # Check services
 sudo systemctl status libvirtd
@@ -409,8 +413,8 @@ qemu-system-x86_64 --version
 egrep -c '(vmx|svm)' /proc/cpuinfo
 # Should show number > 0
 
-# 5. Test VM creation (dry run)
-virtos-create-vm --name test-vm --cpu 2 --ram 2048 --disk 10G --dry-run
+# 5. Test VM management tools
+virtos-backup --help
 
 # 6. Check networking
 ip addr show virbr0
@@ -425,11 +429,11 @@ virtos-tui --help
 Expected output:
 
 ```
-✓ VirtOS version: 0.89
+✓ VirtOS version: 0.1
 ✓ libvirt version: 9.0.0
 ✓ QEMU version: 7.2.0
 ✓ Virtualization: enabled (vmx)
-✓ VM creation: would succeed
+✓ VM management: tools available
 ✓ Network bridge: virbr0 present
 ✓ Storage pool: default active
 ✓ Management: virtos-tui available
@@ -437,18 +441,16 @@ Expected output:
 
 ## Create Your First VM
 
-Now you're ready to create your first virtual machine. See [QUICK-START.md](QUICK-START.md) for a step-by-step tutorial.
+Now you're ready to create your first virtual machine. See [QUICKSTART.md](../QUICKSTART.md) for a step-by-step tutorial.
 
-Quick example:
+Quick example using libvirt tools:
 
 ```bash
-# Create Ubuntu VM
-virtos-create-vm \
-    --name ubuntu-01 \
-    --cpu 2 \
-    --ram 4096 \
-    --disk 20G \
-    --os linux
+# Create VM disk
+qemu-img create -f qcow2 /var/lib/libvirt/images/ubuntu-01.qcow2 20G
+
+# Define VM (use virt-install or XML definition)
+virt-install --name ubuntu-01 --memory 4096 --vcpus 2 --disk /var/lib/libvirt/images/ubuntu-01.qcow2 --cdrom /path/to/ubuntu.iso
 
 # Start VM
 virsh start ubuntu-01
@@ -524,7 +526,7 @@ ping -c 3 8.8.8.8
 
 ## Next Steps
 
-- **Quick Start**: [QUICK-START.md](QUICK-START.md) - Create your first VM in 15 minutes
+- **Quick Start**: [QUICKSTART.md](../QUICKSTART.md) - Create your first VM in 15 minutes
 - **Administrator Guide**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Complete administration reference
 - **Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common problems and solutions
 - **Best Practices**: [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Production deployment guidance
@@ -548,6 +550,6 @@ After installation, follow the security hardening checklist:
 
 ---
 
-**Installation Guide Version**: 1.0 (2026-05-26)  
-**Compatible with**: VirtOS 0.80+  
-**Next**: [Quick Start Guide](QUICK-START.md)
+**Installation Guide Version**: 1.1 (2026-06-09)  
+**Compatible with**: VirtOS 0.1+  
+**Next**: [Quick Start Guide](../QUICKSTART.md)

@@ -5,52 +5,35 @@ Complete documentation for FlossWare VirtOS.
 ## Quick Start
 
 - **[README.md](../README.md)** - Project overview and quick start
-- **[GETTING-STARTED.md](GETTING-STARTED.md)** - Build your first VirtOS ISO
 - **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** - Command cheat sheet
 
 ## Business & Planning
 
-- **[EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.md)** - One-page overview for decision makers
-- **[BUSINESS_CASE.md](BUSINESS_CASE.md)** - Complete ROI analysis and cost savings
-  - Cost scenarios (10/50/200 hosts)
-  - 5-year TCO comparison vs VMware/Proxmox/Hyper-V
-  - Time savings analysis (308-358 hours/year)
-  - Elevator pitches (30s/60s/90s)
-  - Target markets and use cases
-  - Risk mitigation strategies
-  - Implementation roadmap
+See [CLAUDE.md](../CLAUDE.md) for business context and project status.
 
 ## Core Documentation
 
 ### System Design
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - 7-layer system design and components
-- **[AI-ARCHITECTURE.md](AI-ARCHITECTURE.md)** - AI capabilities split (VirtOS vs platform-java)
-- **[AI-MODULARITY.md](AI-MODULARITY.md)** - Modular AI design (optional packages, profiles)
 - **[SCRIPT-DEPENDENCIES.md](SCRIPT-DEPENDENCIES.md)** - Script-to-script dependencies and initialization order
 - **[DEPENDENCIES.md](DEPENDENCIES.md)** - External command dependencies
 - **[PACKAGES.md](PACKAGES.md)** - Required packages and size estimates
 - **[TCZ_PACKAGES.md](TCZ_PACKAGES.md)** - Complete TCZ package strategy and profile breakdown
-- **[ROADMAP.md](ROADMAP.md)** - Development phases and status
 
 ### Configuration
 
 - **[CONFIGURATION.md](CONFIGURATION.md)** - 30+ configuration options
 - **[BUILD-CONFIGURATOR.md](BUILD-CONFIGURATOR.md)** - Interactive TUI for build configuration
 - **[BUILD.md](BUILD.md)** - Build system documentation and procedures
-- **[BUILD_DEPENDENCIES.md](BUILD_DEPENDENCIES.md)** - Build-time dependency tracking
 - **[PROFILES.md](PROFILES.md)** - 7 build profiles comparison
-- **[BRANDING.md](BRANDING.md)** - VirtOS naming and branding
 - **[STORAGE.md](STORAGE.md)** - Storage options and filesystems
 
 ## Virtualization Technologies
 
 ### VMs and Containers
 
-- **[CLOUD-INIT.md](CLOUD-INIT.md)** - Automated VM configuration on first boot ☁️
-- **[CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md)** - Docker vs Podman vs containerd
-- **[KUBERNETES.md](KUBERNETES.md)** - K3s orchestration (optional)
-- **[MICROSERVICES.md](MICROSERVICES.md)** - Deploying microservices on VirtOS
+- **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** - Cloud-init, container, and microservice examples
 
 ## Multi-Host Features
 
@@ -58,10 +41,7 @@ Complete documentation for FlossWare VirtOS.
 - **[IAAS.md](IAAS.md)** - Automated VM placement and scheduling
 - **[REMOTE-ACCESS.md](REMOTE-ACCESS.md)** - virt-manager and SSH setup
 - **[LIBVIRT-PERMISSIONS.md](LIBVIRT-PERMISSIONS.md)** - Libvirt authentication and permissions configuration
-- **[API.md](API.md)** - REST API reference (virtos-api endpoints)
-- **[API_REFERENCE.md](API_REFERENCE.md)** - ⭐ NEW: Complete REST API v1 documentation (all endpoints, examples, security)
-- **[API_VERSIONING.md](API_VERSIONING.md)** - API versioning strategy and backward compatibility
-- **[FEDERATION.md](FEDERATION.md)** - Multi-cloud federation and cross-cluster management
+- **[API_REFERENCE.md](API_REFERENCE.md)** - Complete REST API v1 documentation (all endpoints, examples, security)
 - **[COCKPIT-MODULE.md](COCKPIT-MODULE.md)** - Cockpit web UI module design
 
 ## User Interface
@@ -74,28 +54,20 @@ Complete documentation for FlossWare VirtOS.
 
 - **[QUICK-REFERENCE.md](QUICK-REFERENCE.md)** - All commands in one place
 - **[QUICK-START.md](QUICK-START.md)** - Fast-track getting started guide
-- **[COMPARISON.md](COMPARISON.md)** - VirtOS vs similar projects (Proxmox, ESXi, etc.)
-- **[MISSING-FEATURES.md](MISSING-FEATURES.md)** - What VirtOS lacks (honest assessment)
-- **[EXPERIMENTAL_FEATURES.md](EXPERIMENTAL_FEATURES.md)** - ⭐ NEW: Experimental vs functional scripts (comprehensive guide)
-- **[EXPERIMENTAL.md](EXPERIMENTAL.md)** - Research prototypes explained (AI, quantum, blockchain, etc.)
+- **[EXPERIMENTAL_FEATURES.md](EXPERIMENTAL_FEATURES.md)** - Experimental vs functional scripts (comprehensive guide)
 - **[EXAMPLES-INTEGRATION.md](EXAMPLES-INTEGRATION.md)** - VirtOS-Examples repository integration plan
 - **[EXAMPLES.md](EXAMPLES.md)** - Example configurations and use cases
 - **[PLATFORM-JAVA_INTEGRATION.md](PLATFORM-JAVA_INTEGRATION.md)** - platform-java integration and workload orchestration
-- **[MIGRATION-FROM-PROXMOX.md](MIGRATION-FROM-PROXMOX.md)** - Migration guide from Proxmox VE
-- **[COMMUNITY.md](COMMUNITY.md)** - ⭐ NEW: Community resources, discussions, support channels
+- **[COMMUNITY.md](COMMUNITY.md)** - Community resources, discussions, support channels
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - How to contribute
-- **[CODING_STANDARDS.md](CODING_STANDARDS.md)** - ⭐ NEW: Official coding standards (shell, security, testing, git)
-- **[DEPRECATION_POLICY.md](DEPRECATION_POLICY.md)** - ⭐ NEW: Official deprecation policy (6-month timeline, semver)
-- **[PLUGIN_API.md](PLUGIN_API.md)** - ⭐ NEW: Plugin development guide (templates, security, packaging)
-- **[VERSIONING.md](VERSIONING.md)** - Version numbering and release strategy
+- **[CODING_STANDARDS.md](CODING_STANDARDS.md)** - Official coding standards (shell, security, testing, git)
+- **[PLUGIN_API.md](PLUGIN_API.md)** - Plugin development guide (templates, security, packaging)
 
 ## Operations & Security
 
-- **[AUDIT_LOGGING.md](AUDIT_LOGGING.md)** - ⭐ NEW: Audit logging guide (compliance, security, troubleshooting)
-- **[SECURITY-HARDENING.md](SECURITY-HARDENING.md)** - Security best practices and hardening guide (recommended, 709 lines)
-- **[SECURITY_HARDENING.md](SECURITY_HARDENING.md)** - Alternative security hardening guide (939 lines, different content)
-- **[SECURITY_ENHANCEMENTS_SUMMARY.md](SECURITY_ENHANCEMENTS_SUMMARY.md)** - ⭐ NEW: Security improvements summary (Issue #116)
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - ⭐ ENHANCED: Complete troubleshooting (CLI, TUI, Web UI, API)
+- **[AUDIT_LOGGING.md](AUDIT_LOGGING.md)** - Audit logging guide (compliance, security, troubleshooting)
+- **[SECURITY-HARDENING.md](SECURITY-HARDENING.md)** - Security best practices and hardening guide
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Complete troubleshooting (CLI, TUI, Web UI, API)
 - **[MONITORING-SETUP.md](MONITORING-SETUP.md)** - System monitoring configuration and setup
 - **[DR-PROCEDURES.md](DR-PROCEDURES.md)** - Disaster recovery procedures and planning
 - **[UPGRADE-PROCEDURES.md](UPGRADE-PROCEDURES.md)** - System upgrade and update procedures
@@ -105,17 +77,8 @@ Complete documentation for FlossWare VirtOS.
 
 ## Testing & Quality
 
-- **[TESTING_ROADMAP.md](../TESTING_ROADMAP.md)** - ⭐ NEW: Three-phase testing execution plan
-- **[ISO_TESTING_STATUS.md](../ISO_TESTING_STATUS.md)** - ISO validation checklist (47 tests)
-- **[RUNTIME_TESTING_PLAN.md](../RUNTIME_TESTING_PLAN.md)** - Runtime testing procedures
-- **[TESTING.md](../TESTING.md)** - Testing guide
-- **[TESTING_METRICS.md](TESTING_METRICS.md)** - Test metrics
-
-## Roadmap & Planning
-
-- **[ROADMAP.md](ROADMAP.md)** - Development phases and status (already listed above in System Design)
-- **[ROADMAP-v1.0.md](ROADMAP-v1.0.md)** - Detailed v1.0 release planning
-- **[V1_0_ROADMAP.md](V1_0_ROADMAP.md)** - Alternative v1.0 roadmap document
+- **[TESTING.md](../TESTING.md)** - Testing guide and framework
+- See [CLAUDE.md](../CLAUDE.md) for testing roadmap and validation evidence
 
 ## Documentation by Use Case
 
@@ -123,28 +86,26 @@ Complete documentation for FlossWare VirtOS.
 
 #### Build VirtOS
 
-1. [GETTING-STARTED.md](GETTING-STARTED.md) - Initial setup
+1. [README.md](../README.md) - Initial setup and build instructions
 2. [PROFILES.md](PROFILES.md) - Choose a profile
 3. [CONFIGURATION.md](CONFIGURATION.md) - Customize build
 
 #### Run Virtual Machines
 
-1. [GETTING-STARTED.md](GETTING-STARTED.md) - Boot VirtOS
+1. [README.md](../README.md) - Boot VirtOS
 2. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - KVM/QEMU commands
 3. [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - Use virt-manager
 4. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Backup, templates, snapshots
 
 #### Run Containers
 
-1. [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Choose runtime
-2. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Container commands
-3. [KUBERNETES.md](KUBERNETES.md) - Add orchestration (optional)
+1. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Container and container orchestration commands
 
 #### Set Up Multiple Hosts
 
 1. [CLUSTERING.md](CLUSTERING.md) - Multi-host setup
 2. [REMOTE-ACCESS.md](REMOTE-ACCESS.md) - Remote management
-3. [KUBERNETES.md](KUBERNETES.md) - K3s cluster (optional)
+3. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - K3s cluster commands
 
 #### Manage Remotely
 
@@ -154,10 +115,9 @@ Complete documentation for FlossWare VirtOS.
 
 #### Deploy Microservices
 
-1. [MICROSERVICES.md](MICROSERVICES.md) - Complete microservices guide
-2. [CONTAINER-RUNTIMES.md](CONTAINER-RUNTIMES.md) - Choose runtime
-3. [CLUSTERING.md](CLUSTERING.md) - Set up cluster
-4. [KUBERNETES.md](KUBERNETES.md) - Deploy with K3s
+1. [QUICK-REFERENCE.md](QUICK-REFERENCE.md) - Container and microservice deployment commands
+2. [CLUSTERING.md](CLUSTERING.md) - Set up cluster
+3. [PLATFORM-JAVA_INTEGRATION.md](PLATFORM-JAVA_INTEGRATION.md) - Platform-java workload orchestration
 
 #### Use IaaS Automation
 

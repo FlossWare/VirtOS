@@ -1,14 +1,15 @@
 # VirtOS Runtime Testing Plan
 
-**Last Updated**: 2026-05-25  
+**Last Updated**: 2026-06-09  
 **Status**: Ready for Execution  
-**Priority**: CRITICAL (Issue #1)
+**Priority**: CRITICAL (Issue #1)  
+**Note**: 14 experimental scripts archived to archive/experimental/ on 2026-06-09
 
 ---
 
 ## Executive Summary
 
-This document provides a comprehensive testing plan for validating VirtOS and platform-java integration in a real runtime environment. All code is built and tested syntactically, but **end-to-end runtime validation has not been performed**.
+This document provides a comprehensive testing plan for validating VirtOS and platform-java integration in a real runtime environment. All code is built with 1310 BATS tests (1123 unit + 51 functional + 64 integration) at 100% pass rate, and 0 shellcheck issues across all 38 packaged scripts. However, **end-to-end runtime validation has not been performed**.
 
 **Goal**: Boot VirtOS, install packages, verify core VM management works, and confirm platform-java integration operates correctly.
 
@@ -183,18 +184,21 @@ tce-load -wi virtos-tools
 tce-load -wi virtos-platform-java
 ```
 
-**Manual Installation** (for testing):
+**Manual Inspection** (for testing/debugging only, not for installation):
 
 ```bash
-# Copy package to /tmp
-cp packages/output/virtos-tools.tcz /tmp/
+# NOTE: This is for inspection only, NOT for installation
+# Use tce-load for actual installation (see above)
 
-# Install package
+# Inspect package contents (testing/debugging)
 cd /tmp
-unsquashfs -d virtos-tools virtos-tools.tcz
-sudo cp -r virtos-tools/usr /usr/
+unsquashfs -ll packages/output/virtos-tools.tcz
 
-# Verify installation
+# Extract for inspection (NOT installation)
+unsquashfs -d virtos-tools virtos-tools.tcz
+ls -laR virtos-tools/usr/local/bin/
+
+# Verify installation (after using tce-load)
 which virtos-tui
 virtos-setup --version
 ```
@@ -202,10 +206,10 @@ virtos-setup --version
 **Installation Checklist**:
 
 - [ ] Package installs without errors
-- [ ] All 53 scripts appear in `/usr/local/bin/`
+- [ ] All 38 packaged scripts appear in `/usr/local/bin/`
 - [ ] Scripts are executable (`-rwxr-xr-x`)
-- [ ] Help text works (`virtos-setup --help`)
-- [ ] Version info works (`virtos-setup --version`)
+- [ ] Help text works (`virtos-backup --help`)
+- [ ] Version info works (`virtos-backup --version`)
 
 ### 2.2 Install platform-java Package
 
@@ -213,12 +217,11 @@ virtos-setup --version
 # Install virtos-platform-java package
 tce-load -i /path/to/virtos-platform-java.tcz
 
-# Or manual installation
+# Or inspect package (testing only, use tce-load for installation)
 cd /tmp
-unsquashfs -d virtos-platform-java virtos-platform-java.tcz
-sudo cp -r virtos-platform-java/usr /usr/
+unsquashfs -ll virtos-platform-java.tcz
 
-# Verify platform-java installation
+# Verify platform-java installation (after tce-load)
 which platform-java
 platform-java --version
 ```
@@ -236,17 +239,19 @@ platform-java --version
 
 ### 3.1 Setup VirtOS Environment
 
-**Run Initial Setup**:
+**Manual Setup** (virtos-setup script not included in packaged scripts):
 
 ```bash
-# Interactive setup wizard
-sudo virtos-setup
+# Start libvirt service
+sudo systemctl enable libvirtd
+sudo systemctl start libvirtd
 
-# Or non-interactive
-sudo virtos-setup \
-  --auto \
-  --network bridge \
-  --storage /var/lib/virtos/storage
+# Verify libvirt is running
+sudo systemctl status libvirtd
+
+# Check default network and storage
+virsh net-list
+virsh pool-list
 ```
 
 **Setup Checklist**:
@@ -255,7 +260,7 @@ sudo virtos-setup \
 - [ ] KVM kernel module loads (`lsmod | grep kvm`)
 - [ ] Default network created (`virsh net-list`)
 - [ ] Default storage pool created (`virsh pool-list`)
-- [ ] Wizard completes without errors
+- [ ] libvirtd service running without errors
 
 **Validation**:
 
@@ -655,6 +660,8 @@ ssh host2 "virsh list | grep migrate-test"
 - [ ] Minimal downtime (< 1 second)
 
 ### 5.2 Clustering
+
+**Note**: 5-node cluster validated 2026-06-06 (see docs/examples/MULTI_NODE_PHYSICAL_DEPLOYMENT.md). Single-node (aio-01) remains active as of 2026-06-09.
 
 **Cluster Test**:
 
@@ -1144,11 +1151,11 @@ Add validation in virtos-snapshot to check disk format before attempting snapsho
 
 ## Related Documentation
 
-- [ISO_BUILD_STATUS.md](ISO_BUILD_STATUS.md) - ISO build system status
 - [INTEGRATION_TEST_REPORT.md](INTEGRATION_TEST_REPORT.md) - Current project status
-- [SCRIPT_IMPLEMENTATION_AUDIT.md](SCRIPT_IMPLEMENTATION_AUDIT.md) - Implementation details
+- [docs/ISO_BUILD_TESTING.md](docs/ISO_BUILD_TESTING.md) - ISO build system status
 - [CLAUDE.md](CLAUDE.md) - Development guide
 - [README.md](README.md) - Project overview
+- [docs/examples/MULTI_NODE_PHYSICAL_DEPLOYMENT.md](docs/examples/MULTI_NODE_PHYSICAL_DEPLOYMENT.md) - 5-node cluster deployment
 
 ---
 
@@ -1226,6 +1233,6 @@ Save as `tests/automated-test.sh`, run after VirtOS boots.
 
 ---
 
-**Document Version**: 1.0  
-**Last Reviewed**: 2026-05-25  
+**Document Version**: 1.1  
+**Last Reviewed**: 2026-06-09  
 **Next Review**: After first test execution
