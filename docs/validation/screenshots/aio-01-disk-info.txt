@@ -1,0 +1,2 @@
+qemu-img: Could not open '/var/lib/libvirt/images/virtos-node.qcow2': Failed to get shared "write" lock
+Is another process using the image [/var/lib/libvirt/images/virtos-node.qcow2]?

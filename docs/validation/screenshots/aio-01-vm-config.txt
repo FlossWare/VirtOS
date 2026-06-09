@@ -1,0 +1,20 @@
+  <cpu mode='host-passthrough' check='none' migratable='on'/>
+  <clock offset='utc'>
+    <timer name='rtc' tickpolicy='catchup'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+  </clock>
+--
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' discard='unmap'/>
+      <source file='/var/lib/libvirt/images/virtos-node.qcow2' index='2'/>
+      <backingStore/>
+      <target dev='vda' bus='virtio'/>
+      <alias name='virtio-disk0'/>
+--
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='/var/lib/libvirt/images/VirtOS.iso' index='1'/>
+      <backingStore/>
+      <target dev='sda' bus='sata'/>
+      <readonly/>
