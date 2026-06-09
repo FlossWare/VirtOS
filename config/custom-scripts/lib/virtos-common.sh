@@ -43,6 +43,123 @@ else
 fi
 
 #==============================================================================
+# Path Management
+#==============================================================================
+
+# Load VirtOS path configuration if available
+# This sources virtos-paths.conf to set environment variables
+# Tries multiple locations (development and installed)
+_virtos_paths_loaded=0
+_load_virtos_paths() {
+    if [ "$_virtos_paths_loaded" -eq 0 ]; then
+        # Try installed location first
+        if [ -f /usr/local/lib/virtos-paths.conf ]; then
+            # shellcheck source=/dev/null
+            . /usr/local/lib/virtos-paths.conf
+            _virtos_paths_loaded=1
+        # Try same directory as this script (development)
+        elif [ -f "$(dirname "${BASH_SOURCE[0]}")/virtos-paths.conf" ]; then
+            # shellcheck source=/dev/null
+            . "$(dirname "${BASH_SOURCE[0]}")/virtos-paths.conf"
+            _virtos_paths_loaded=1
+        fi
+    fi
+}
+
+# Get a VirtOS path by variable name
+# Usage: path=$(get_virtos_path SSH_CONFIG)
+#        path=$(get_virtos_path LOG_MONITOR writable)
+#
+# Arguments:
+#   $1 - Path variable name (without VIRTOS_ prefix)
+#   $2 - Optional: 'writable' to check if parent directory is writable
+#   $3 - Optional: 'create' to auto-create directory if it doesn't exist
+#
+# Returns: Path string
+# Exit codes: 0 on success, 1 if path variable not found, 2 if validation failed
+get_virtos_path() {
+    local path_var="$1"
+    local require_writable="$2"
+    local auto_create="$3"
+
+    # Validate input
+    if [ -z "$path_var" ]; then
+        warn "get_virtos_path: path variable name required"
+        return 1
+    fi
+
+    # Load paths configuration
+    _load_virtos_paths
+
+    # Construct full variable name
+    local full_var="VIRTOS_${path_var}"
+
+    # Get path value using indirect expansion (portable)
+    local path_value
+    eval "path_value=\${${full_var}}"
+
+    if [ -z "$path_value" ]; then
+        warn "get_virtos_path: path variable '${full_var}' not defined"
+        return 1
+    fi
+
+    # Auto-create directory if requested
+    if [ "$auto_create" = "create" ] || [ "$require_writable" = "create" ]; then
+        # Determine directory to create
+        local dir_to_create
+        if [ -d "$path_value" ] || [[ "$path_value" == */ ]]; then
+            # Path is a directory
+            dir_to_create="$path_value"
+        else
+            # Path is a file, create parent directory
+            dir_to_create="$(dirname "$path_value")"
+        fi
+
+        if [ ! -d "$dir_to_create" ]; then
+            if ! mkdir -p "$dir_to_create" 2>/dev/null; then
+                warn "get_virtos_path: failed to create directory '$dir_to_create'"
+                return 2
+            fi
+        fi
+    fi
+
+    # Check if writable (parent directory for files, directory itself for dirs)
+    if [ "$require_writable" = "writable" ] || [ "$auto_create" = "writable" ]; then
+        local check_dir
+        if [ -d "$path_value" ]; then
+            check_dir="$path_value"
+        else
+            check_dir="$(dirname "$path_value")"
+        fi
+
+        if [ ! -w "$check_dir" ]; then
+            warn "get_virtos_path: directory '$check_dir' is not writable"
+            return 2
+        fi
+    fi
+
+    # Return the path
+    echo "$path_value"
+    return 0
+}
+
+# Get a VirtOS path and create parent directory if needed
+# Convenience wrapper around get_virtos_path with auto-create
+# Usage: log_path=$(ensure_virtos_path LOG_MONITOR)
+ensure_virtos_path() {
+    get_virtos_path "$1" "" "create"
+}
+
+# Validate that a VirtOS path is writable
+# Usage: if validate_virtos_path_writable LOG_MONITOR; then ... fi
+validate_virtos_path_writable() {
+    local path_var="$1"
+    local path
+    path=$(get_virtos_path "$path_var" "writable")
+    return $?
+}
+
+#==============================================================================
 # Version Management
 #==============================================================================
 
@@ -51,14 +168,18 @@ fi
 # Returns: Version string (e.g., "0.13")
 get_version() {
     # Try package metadata first (installed system)
-    if [ -f /usr/local/share/virtos/VERSION ]; then
-        cat /usr/local/share/virtos/VERSION
+    local version_file
+    version_file=$(get_virtos_path VERSION_FILE 2>/dev/null)
+    if [ -n "$version_file" ] && [ -f "$version_file" ]; then
+        cat "$version_file"
         return 0
     fi
 
     # Try system version file
-    if [ -f /etc/virtos/version.txt ]; then
-        grep '^Version:' /etc/virtos/version.txt | awk '{print $2}' | head -1
+    local version_system
+    version_system=$(get_virtos_path VERSION_SYSTEM 2>/dev/null)
+    if [ -n "$version_system" ] && [ -f "$version_system" ]; then
+        grep '^Version:' "$version_system" | awk '{print $2}' | head -1
         return 0
     fi
 

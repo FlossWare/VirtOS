@@ -333,7 +333,9 @@ monitor_loop() {
 
                 if [ -n "$failover_host" ]; then
                     log_message "Initiating automatic failover for $VM_NAME to $failover_host"
-                    perform_failover "$VM_NAME" "$failover_host"
+                    if ! perform_failover "$VM_NAME" "$failover_host"; then
+                        log_message "ERROR: Failover failed for $VM_NAME to $failover_host"
+                    fi
                 else
                     log_message "ERROR: No suitable failover host found for $VM_NAME"
                 fi

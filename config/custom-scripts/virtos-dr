@@ -416,7 +416,10 @@ cluster_backup() {
         for vm in $vms; do
             if [ -n "$vm" ]; then
                 echo "  Backing up: $vm"
-                virtos-backup backup "$vm" --destination "$backup_dir" 2>/dev/null || true
+                if ! virtos-backup backup "$vm" --destination "$backup_dir" 2>/dev/null; then
+                    log_message "WARNING: Backup failed for VM: $vm"
+                    echo "  WARNING: Backup failed for: $vm"
+                fi
             fi
         done
     fi

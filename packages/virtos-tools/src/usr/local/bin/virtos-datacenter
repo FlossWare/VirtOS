@@ -144,11 +144,16 @@ datacenter_list() {
 
     for dc_file in "$DC_DIR"/*.json; do
         if [ -f "$dc_file" ]; then
-            local name=$(jq -r '.name' "$dc_file" 2>/dev/null || echo "unknown")
-            local region=$(jq -r '.region' "$dc_file" 2>/dev/null || echo "unknown")
-            local hostname=$(jq -r '.hostname' "$dc_file" 2>/dev/null || echo "unknown")
-            local status=$(jq -r '.status' "$dc_file" 2>/dev/null || echo "unknown")
-            local remote=$(jq -r '.remote // false' "$dc_file" 2>/dev/null || echo "false")
+            local name
+            name=$(jq -r '.name' "$dc_file" 2>/dev/null || echo "unknown")
+            local region
+            region=$(jq -r '.region' "$dc_file" 2>/dev/null || echo "unknown")
+            local hostname
+            hostname=$(jq -r '.hostname' "$dc_file" 2>/dev/null || echo "unknown")
+            local status
+            status=$(jq -r '.status' "$dc_file" 2>/dev/null || echo "unknown")
+            local remote
+            remote=$(jq -r '.remote // false' "$dc_file" 2>/dev/null || echo "false")
 
             printf "%-15s %-15s %-21s %-11s %-6s\n" \
                 "$name" "$region" "$hostname" "$status" "$remote"
@@ -197,8 +202,10 @@ vm_place() {
 
     for dc_file in "$DC_DIR"/*.json; do
         if [ -f "$dc_file" ]; then
-            local name=$(jq -r '.name' "$dc_file" 2>/dev/null)
-            local status=$(jq -r '.status' "$dc_file" 2>/dev/null)
+            local name
+            name=$(jq -r '.name' "$dc_file" 2>/dev/null)
+            local status
+            status=$(jq -r '.status' "$dc_file" 2>/dev/null)
 
             if [ "$status" = "active" ]; then
                 # Simple scoring: prefer local datacenter
@@ -207,8 +214,8 @@ vm_place() {
                     score=100
                 fi
 
-                if [ $score -gt $best_score ]; then
-                    best_score=$score
+                if [ "$score" -gt "$best_score" ]; then
+                    best_score="$score"
                     best_dc="$name"
                 fi
             fi
@@ -243,7 +250,8 @@ replication_setup() {
         return 1
     fi
 
-    local target_host=$(jq -r '.hostname' "$target_file" 2>/dev/null)
+    local target_host
+    target_host=$(jq -r '.hostname' "$target_file" 2>/dev/null)
 
     # Create replication configuration
     local repl_file="$REPLICATION_DIR/${source_dc}-to-${target_dc}.conf"
@@ -315,7 +323,7 @@ SYNCEOF
 
     # Start replication in background
     nohup "$sync_script" &>/dev/null &
-    local pid=$!
+    local pid="$!"
 
     echo "$pid" > "$REPLICATION_DIR/${source_dc}-to-${target_dc}.pid"
 
@@ -338,7 +346,8 @@ replication_stop() {
     local pid_file="$REPLICATION_DIR/${source_dc}-to-${target_dc}.pid"
 
     if [ -f "$pid_file" ]; then
-        local pid=$(cat "$pid_file")
+        local pid
+        pid=$(cat "$pid_file")
         if kill -0 "$pid" 2>/dev/null; then
             kill "$pid"
             log "Replication stopped (PID: $pid)"
@@ -401,19 +410,26 @@ geo_loadbalance() {
 
     for dc_file in "$DC_DIR"/*.json; do
         if [ -f "$dc_file" ]; then
-            local name=$(jq -r '.name' "$dc_file" 2>/dev/null)
-            local lat=$(jq -r '.latitude // "0"' "$dc_file" 2>/dev/null)
-            local lon=$(jq -r '.longitude // "0"' "$dc_file" 2>/dev/null)
-            local status=$(jq -r '.status' "$dc_file" 2>/dev/null)
+            local name
+            name=$(jq -r '.name' "$dc_file" 2>/dev/null)
+            local lat
+            lat=$(jq -r '.latitude // "0"' "$dc_file" 2>/dev/null)
+            local lon
+            lon=$(jq -r '.longitude // "0"' "$dc_file" 2>/dev/null)
+            local status
+            status=$(jq -r '.status' "$dc_file" 2>/dev/null)
 
             if [ "$status" = "active" ]; then
                 # Simplified Euclidean distance (not accurate for large distances)
-                local dlat=$(echo "$client_lat - $lat" | bc)
-                local dlon=$(echo "$client_lon - $lon" | bc)
-                local distance=$(echo "sqrt($dlat*$dlat + $dlon*$dlon)" | bc -l)
+                local dlat
+                dlat=$(echo "$client_lat - $lat" | bc)
+                local dlon
+                dlon=$(echo "$client_lon - $lon" | bc)
+                local distance
+                distance=$(echo "sqrt($dlat*$dlat + $dlon*$dlon)" | bc -l)
 
-                if [ $(echo "$distance < $min_distance" | bc) -eq 1 ]; then
-                    min_distance=$distance
+                if [ "$(echo "$distance < $min_distance" | bc)" -eq 1 ]; then
+                    min_distance="$distance"
                     best_dc="$name"
                 fi
             fi
@@ -448,7 +464,8 @@ dr_failover() {
         return 1
     fi
 
-    local target_host=$(jq -r '.hostname' "$target_file" 2>/dev/null)
+    local target_host
+    target_host=$(jq -r '.hostname' "$target_file" 2>/dev/null)
 
     log "Target: $target_host"
 
@@ -456,7 +473,8 @@ dr_failover() {
     local failed_file="$DC_DIR/$failed_dc.json"
     if [ -f "$failed_file" ]; then
         # Update status using jq
-        local tmp_file=$(mktemp)
+        local tmp_file
+        tmp_file=$(mktemp)
         jq '.status = "failed"' "$failed_file" > "$tmp_file"
         mv "$tmp_file" "$failed_file"
         log "Marked $failed_dc as failed"
@@ -466,7 +484,7 @@ dr_failover() {
     log "Activating VMs on $target_dc..."
 
     if command -v ssh &>/dev/null; then
-        ssh "vmadmin@$target_host" "virsh list --all --name" 2>/dev/null | while read vm; do
+        ssh "vmadmin@$target_host" "virsh list --all --name" 2>/dev/null | while read -r vm; do
             if [ -n "$vm" ]; then
                 log "Starting VM: $vm on $target_dc"
                 ssh "vmadmin@$target_host" "virsh start $vm" 2>/dev/null || true

@@ -105,7 +105,8 @@ mkdir -p "$BACKUP_DIR"
 backup_vm() {
     local vm_name="$1"
     local backup_type="${2:-full}"
-    local timestamp=$(date +%Y%m%d-%H%M%S)
+    local timestamp
+    timestamp=$(date +%Y%m%d-%H%M%S)
     local backup_path="$BACKUP_DIR/$vm_name/$timestamp"
 
     log "Starting backup of VM: $vm_name"
@@ -120,7 +121,8 @@ backup_vm() {
     mkdir -p "$backup_path"
 
     # Save VM state
-    local vm_state=$(virsh domstate "$vm_name")
+    local vm_state
+    vm_state=$(virsh domstate "$vm_name")
     echo "$vm_state" > "$backup_path/vm-state.txt"
     log "VM state: $vm_state"
 
@@ -129,7 +131,8 @@ backup_vm() {
     virsh dumpxml "$vm_name" > "$backup_path/$vm_name.xml"
 
     # Get disk list
-    local disks=$(virsh domblklist "$vm_name" --details | grep disk | awk '{print $4}')
+    local disks
+    disks=$(virsh domblklist "$vm_name" --details | grep disk | awk '{print $4}')
 
     if [ -z "$disks" ]; then
         error "No disks found for VM '$vm_name'"
@@ -145,7 +148,8 @@ backup_vm() {
         fi
 
         disk_num=$((disk_num + 1))
-        local disk_name=$(basename "$disk")
+        local disk_name
+        disk_name=$(basename "$disk")
         local backup_disk="$backup_path/disk-$disk_num-$disk_name"
 
         log "Backing up disk $disk_num: $disk"
@@ -164,7 +168,7 @@ backup_vm() {
         if [ "$vm_state" = "running" ]; then
             # Create snapshot for consistent backup
             log "Creating temporary snapshot for consistent backup..."
-            if virsh snapshot-create-as "$vm_name" backup-snapshot-$timestamp \
+            if virsh snapshot-create-as "$vm_name" "backup-snapshot-$timestamp" \
                 "Temporary snapshot for backup" --disk-only --atomic 2>/dev/null; then
                 # Copy the backing file (original disk)
                 if copy_disk; then
@@ -175,7 +179,7 @@ backup_vm() {
                 fi
 
                 # Delete snapshot (merges changes back)
-                virsh snapshot-delete "$vm_name" backup-snapshot-$timestamp --metadata
+                virsh snapshot-delete "$vm_name" "backup-snapshot-$timestamp" --metadata
             else
                 warn "Snapshot failed, backing up live disk (may be inconsistent)"
                 if copy_disk; then
@@ -259,10 +263,12 @@ EOF
 
     # Show backup size
     if [ -f "$backup_path" ]; then
-        local size=$(du -h "$backup_path" | cut -f1)
+        local size
+        size=$(du -h "$backup_path" | cut -f1)
         log "Backup size: $size"
     else
-        local size=$(du -sh "$backup_path" | cut -f1)
+        local size
+        size=$(du -sh "$backup_path" | cut -f1)
         log "Backup size: $size"
     fi
 
@@ -290,7 +296,8 @@ restore_vm() {
 
         # Extract
         log "Extracting backup..."
-        local temp_dir=$(mktemp -d)
+        local temp_dir
+        temp_dir=$(mktemp -d)
         tar -xzf "$backup_path" -C "$temp_dir"
         backup_path="$temp_dir/$backup_date"
     elif [ -d "$BACKUP_DIR/$vm_name/$backup_date" ]; then
@@ -336,11 +343,13 @@ restore_vm() {
 
     # If target name is different, update XML
     if [ "$target_name" != "$vm_name" ]; then
-        local temp_xml=$(mktemp) || { error "Failed to create temporary file"; return 1; }
+        local temp_xml
+        temp_xml=$(mktemp) || { error "Failed to create temporary file"; return 1; }
         log "Updating VM name to: $target_name"
         sed "s|<name>$vm_name</name>|<name>$target_name</name>|" "$vm_xml" > "$temp_xml"
         # Generate new UUID
-        local new_uuid=$(uuidgen)
+        local new_uuid
+        new_uuid=$(uuidgen)
         sed -i "s|<uuid>.*</uuid>|<uuid>$new_uuid</uuid>|" "$temp_xml"
         vm_xml="$temp_xml"
     fi
@@ -418,9 +427,11 @@ list_backups() {
                 continue
             fi
 
-            local backup_name=$(basename "$backup")
+            local backup_name
+            backup_name=$(basename "$backup")
             local backup_date="${backup_name%.tar.gz}"
-            local size=$(du -sh "$backup" | cut -f1)
+            local size
+            size=$(du -sh "$backup" | cut -f1)
             local type="full"
 
             if [[ "$backup" == *.tar.gz ]]; then
@@ -438,8 +449,10 @@ list_backups() {
                 continue
             fi
 
-            local vm=$(basename "$vm_dir")
-            local count=$(find "$vm_dir" -maxdepth 1 -type f -o -type d | wc -l)
+            local vm
+            vm=$(basename "$vm_dir")
+            local count
+            count=$(find "$vm_dir" -maxdepth 1 -type f -o -type d | wc -l)
             count=$((count - 1))  # Subtract parent dir
 
             echo "VM: $vm ($count backups)"
@@ -449,9 +462,11 @@ list_backups() {
                     continue
                 fi
 
-                local backup_name=$(basename "$backup")
+                local backup_name
+                backup_name=$(basename "$backup")
                 local backup_date="${backup_name%.tar.gz}"
-                local size=$(du -sh "$backup" | cut -f1)
+                local size
+                size=$(du -sh "$backup" | cut -f1)
 
                 echo "  - $backup_date ($size)"
             done
@@ -476,8 +491,10 @@ schedule_backup() {
     local cron_file="/etc/cron.d/virtos-backup-$vm_name"
 
     if [ "$schedule_type" = "daily" ]; then
-        local hour=$(echo "$schedule_time" | cut -d: -f1)
-        local minute=$(echo "$schedule_time" | cut -d: -f2)
+        local hour
+        hour=$(echo "$schedule_time" | cut -d: -f1)
+        local minute
+        minute=$(echo "$schedule_time" | cut -d: -f2)
 
         cat > "$cron_file" <<EOF
 # VirtOS automated backup for $vm_name
@@ -486,8 +503,10 @@ $minute $hour * * * root /usr/local/bin/virtos-backup backup $vm_name
 EOF
         success "Daily backup scheduled at $schedule_time"
     elif [ "$schedule_type" = "weekly" ]; then
-        local hour=$(echo "$schedule_time" | cut -d: -f1)
-        local minute=$(echo "$schedule_time" | cut -d: -f2)
+        local hour
+        hour=$(echo "$schedule_time" | cut -d: -f1)
+        local minute
+        minute=$(echo "$schedule_time" | cut -d: -f2)
 
         # Convert day name to number (0=Sunday)
         case "$schedule_day" in
@@ -536,7 +555,8 @@ cleanup_backups() {
             continue
         fi
 
-        local vm=$(basename "$vm_dir")
+        local vm
+        vm=$(basename "$vm_dir")
 
         for backup in "$vm_dir"/*; do
             if [ ! -e "$backup" ]; then

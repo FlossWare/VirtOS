@@ -139,14 +139,14 @@ execute_command_safe() {
     while IFS= read -r -n1 char; do
         case "$char" in
             '"'|"'")
-                if [ $in_quote -eq 0 ]; then
+                if [ "$in_quote" -eq 0 ]; then
                     in_quote=1
                 else
                     in_quote=0
                 fi
                 ;;
             ' '|$'\t')
-                if [ $in_quote -eq 0 ]; then
+                if [ "$in_quote" -eq 0 ]; then
                     if [ -n "$current" ]; then
                         cmd_array+=("$current")
                         current=""
@@ -170,13 +170,13 @@ execute_command_safe() {
     local exit_code=0
     "${cmd_array[@]}" 2>&1 | tee -a "$LOG_FILE" || exit_code=$?
 
-    if [ $exit_code -eq 0 ]; then
+    if [ "$exit_code" -eq 0 ]; then
         log_security_event "EXECUTION_SUCCESS" "Success: $command" "INFO"
     else
         log_security_event "EXECUTION_FAILED" "Failed (exit $exit_code): $command" "WARNING"
     fi
 
-    return $exit_code
+    return "$exit_code"
 }
 
 # Validate YAML schema
@@ -199,7 +199,7 @@ validate_yaml_schema() {
     local line_num=0
 
     while IFS= read -r line; do
-        line_num=$((line_num + 1))
+        line_num=$(( line_num + 1 ))
 
         if echo "$line" | grep -q "^steps:"; then
             in_steps=true
@@ -650,7 +650,7 @@ schedule_list() {
     echo "Schedule                     Command"
     echo "---------------------------- --------------------------------------------"
 
-    crontab -l 2>/dev/null | grep "# virtos-automation:" | while read line; do
+    crontab -l 2>/dev/null | grep "# virtos-automation:" | while read -r line; do
         local schedule=$(echo "$line" | awk '{print $1" "$2" "$3" "$4" "$5}')
         local command=$(echo "$line" | sed 's/.* \([^ ]*\) # virtos-automation:.*/\1/')
         printf "%-28s %-44s\n" "$schedule" "$command"
@@ -810,7 +810,7 @@ selfheal_enable() {
 # Auto-generated self-healing monitor for VMs
 
 while true; do
-    virsh list --all | tail -n +3 | while read id name state rest; do
+    virsh list --all | tail -n +3 | while read -r id name state rest; do
         if [ "$state" = "shut" ]; then
             echo "[$(date)] VM $name is down - attempting restart..."
             virsh start "$name"
@@ -826,7 +826,7 @@ EOF
 
 while true; do
     if command -v docker &>/dev/null; then
-        docker ps -a --filter "status=exited" --format "{{.Names}}" | while read container; do
+        docker ps -a --filter "status=exited" --format "{{.Names}}" | while read -r container; do
             echo "[$(date)] Container $container is down - attempting restart..."
             docker start "$container"
         done
@@ -840,7 +840,7 @@ EOF
 
     # Start monitor
     nohup "$monitor_script" &>/dev/null &
-    local pid=$!
+    local pid="$!"
     echo "$pid" > "$AUTOMATION_DIR/selfheal-$resource.pid"
 
     log "Self-healing enabled for $resource (PID: $pid)"
@@ -856,7 +856,8 @@ selfheal_status() {
     for pid_file in "$AUTOMATION_DIR"/selfheal-*.pid; do
         if [ -f "$pid_file" ]; then
             local resource=$(basename "$pid_file" | sed 's/selfheal-\(.*\).pid/\1/')
-            local pid=$(cat "$pid_file")
+            local pid
+            pid=$(cat "$pid_file")
             local status="stopped"
 
             if kill -0 "$pid" 2>/dev/null; then
@@ -1034,7 +1035,7 @@ main() {
             event_trigger "$2" "$3"
             ;;
         *)
-            echo "Unknown command: $1"
+            echo "Unknown command: ${1}"
             echo "Run '$SCRIPT_NAME help' for usage"
             exit 1
             ;;
