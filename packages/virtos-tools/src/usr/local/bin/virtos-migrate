@@ -4,17 +4,21 @@ set -e
 # VirtOS Migrate - Live VM migration with and without shared storage
 # Enhanced migration capabilities including block migration
 
-# Load common library
-if [ -f /usr/local/lib/virtos-common.sh ]; then
-    . /usr/local/lib/virtos-common.sh
+# Load common library - try multiple paths for dev/production compatibility
+VIRTOS_COMMON=""
+for lib_path in \
+    "${VIRTOS_LIB:-}" \
+    "$(dirname "$0")/lib/virtos-common.sh" \
+    "/usr/local/lib/virtos-common.sh" \
+    "$(git rev-parse --show-toplevel 2>/dev/null)/config/custom-scripts/lib/virtos-common.sh"; do
+    [ -n "$lib_path" ] && [ -f "$lib_path" ] && VIRTOS_COMMON="$lib_path" && break
+done
+
+if [ -n "$VIRTOS_COMMON" ]; then
+    . "$VIRTOS_COMMON"
 fi
 
-# Load audit library
-if [ -f /usr/local/lib/virtos-audit.sh ]; then
-    . /usr/local/lib/virtos-audit.sh
-fi
-
-VERSION=$(get_version 2>/dev/null || echo "0.17")
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 usage() {
     cat << EOF
@@ -107,7 +111,6 @@ migrate_live_shared() {
     local dest_host="$2"
 
     log_message "Starting live migration of $vm_name to $dest_host (shared storage)..."
-    audit_log "MIGRATE_LIVE_START" "user=$USER vm=$vm_name dest=$dest_host type=shared_storage"
 
     local migrate_opts="--live --persistent --verbose"
 
@@ -130,12 +133,10 @@ migrate_live_shared() {
     # Perform migration
     if virsh migrate $migrate_opts "$vm_name" "qemu+ssh://root@$dest_host/system"; then
         log_message "Migration completed successfully"
-        audit_log "MIGRATE_LIVE_SUCCESS" "vm=$vm_name dest=$dest_host type=shared_storage"
         echo "VM $vm_name successfully migrated to $dest_host"
         return 0
     else
         log_message "Migration failed"
-        audit_log "MIGRATE_LIVE_FAILURE" "vm=$vm_name dest=$dest_host type=shared_storage error=virsh_migrate_failed"
         echo "Migration failed"
         return 1
     fi
@@ -146,7 +147,6 @@ migrate_block() {
     local dest_host="$2"
 
     log_message "Starting block migration of $vm_name to $dest_host (copying disks)..."
-    audit_log "MIGRATE_BLOCK_START" "user=$USER vm=$vm_name dest=$dest_host type=block_migration"
 
     local migrate_opts="--live --copy-storage-all --persistent --verbose"
 
@@ -169,12 +169,10 @@ migrate_block() {
     # Perform block migration
     if virsh migrate $migrate_opts "$vm_name" "qemu+ssh://root@$dest_host/system"; then
         log_message "Block migration completed successfully"
-        audit_log "MIGRATE_BLOCK_SUCCESS" "vm=$vm_name dest=$dest_host type=block_migration"
         echo "VM $vm_name successfully migrated to $dest_host (with disks)"
         return 0
     else
         log_message "Block migration failed"
-        audit_log "MIGRATE_BLOCK_FAILURE" "vm=$vm_name dest=$dest_host type=block_migration error=virsh_migrate_failed"
         echo "Block migration failed"
         return 1
     fi
@@ -185,13 +183,11 @@ migrate_offline() {
     local dest_host="$2"
 
     log_message "Starting offline migration of $vm_name to $dest_host..."
-    audit_log "MIGRATE_OFFLINE_START" "user=$USER vm=$vm_name dest=$dest_host type=offline"
 
     # Shutdown VM if running
     local state=$(virsh domstate "$vm_name")
     if [ "$state" = "running" ]; then
         echo "Shutting down VM..."
-        audit_log "MIGRATE_OFFLINE_SHUTDOWN" "vm=$vm_name state=$state"
         virsh shutdown "$vm_name"
 
         # Wait for shutdown (max 60 seconds)
@@ -210,7 +206,6 @@ migrate_offline() {
         state=$(virsh domstate "$vm_name")
         if [ "$state" != "shut off" ]; then
             echo "Forcing VM shutdown..."
-            audit_log "MIGRATE_OFFLINE_FORCE_SHUTDOWN" "vm=$vm_name state=$state"
             virsh destroy "$vm_name"
         fi
     fi
@@ -256,7 +251,6 @@ migrate_offline() {
     if ssh "root@$dest_host" "virsh define '$remote_xml' && rm -f '$remote_xml'"; then
         # Undefine on source if requested
         if [ "$UNDEFINE_SOURCE" = "yes" ]; then
-            audit_log "MIGRATE_OFFLINE_UNDEFINE_SOURCE" "vm=$vm_name"
             virsh undefine "$vm_name"
             echo "VM removed from source host"
         fi
@@ -266,7 +260,6 @@ migrate_offline() {
         ssh "root@$dest_host" "virsh start $vm_name"
 
         log_message "Offline migration completed successfully"
-        audit_log "MIGRATE_OFFLINE_SUCCESS" "vm=$vm_name dest=$dest_host type=offline"
         echo "VM $vm_name successfully migrated to $dest_host"
 
         # Cleanup (local temp file - remote already cleaned by trap)
@@ -275,7 +268,6 @@ migrate_offline() {
         return 0
     else
         log_message "Offline migration failed"
-        audit_log "MIGRATE_OFFLINE_FAILURE" "vm=$vm_name dest=$dest_host type=offline error=virsh_define_failed"
         echo "Migration failed"
         rm -f "$vm_xml"
         return 1
@@ -312,6 +304,10 @@ while [ $# -gt 0 ]; do
             ;;
         --bandwidth)
             BANDWIDTH="$2"
+            if ! validate_number "$BANDWIDTH" 2>/dev/null; then
+                echo "Error: --bandwidth requires a positive integer (mbps), got: $BANDWIDTH" >&2
+                exit 1
+            fi
             shift 2
             ;;
         --compressed)

@@ -1,18 +1,31 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Cloud-Init - Cloud-init integration for VMs
 # Configure VMs with cloud-init on first boot
 
-# Load common library for path resolution
+# Load common library
 if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION="1"
-CLOUD_INIT_DIR="$(get_virtos_path DATA_CLOUD_INIT)"
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 
-mkdir -p "$CLOUD_INIT_DIR"
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-cloud-init version $VERSION"
+    exit 0
+fi
+
+CLOUD_INIT_DIR="/var/lib/virtos/cloud-init"
+
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$CLOUD_INIT_DIR" || true
+fi
 
 usage() {
     cat << EOF
@@ -64,6 +77,13 @@ Examples:
   virtos-cloud-init generate web-vm
   virtos-cloud-init attach web-vm /var/lib/virtos/cloud-init/web-vm.iso
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM not found
+    4    ISO generation failed
+
 EOF
 }
 
@@ -75,7 +95,7 @@ create_cloud_init() {
     local vm_name="$1"
     local config_dir="$CLOUD_INIT_DIR/$vm_name"
 
-    mkdir -p "$config_dir"
+    mkdir -p "$config_dir" || true
 
     log_message "Creating cloud-init configuration for $vm_name"
 
@@ -169,7 +189,7 @@ EOF
 users:
   - name: $username
     sudo: ALL=(ALL) NOPASSWD:ALL
-    groups: users, admin
+    groups: users, admin, ssh-users
     shell: /bin/bash
 EOF
 
@@ -420,8 +440,8 @@ EOF
 }
 
 # Main command handler
-COMMAND="$1"
-shift
+COMMAND="${1:-}"
+[ -n "$COMMAND" ] && shift
 
 case "$COMMAND" in
     create)
@@ -438,6 +458,10 @@ case "$COMMAND" in
         ;;
     template-show)
         show_template "$1"
+        ;;
+    --version|-v|version)
+        echo "virtos-cloud-init version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

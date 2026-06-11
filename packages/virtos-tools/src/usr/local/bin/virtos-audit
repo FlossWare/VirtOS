@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # virtos-audit - View and query VirtOS audit logs
 #
 # Usage: virtos-audit [command] [options]
@@ -103,6 +103,14 @@ NOTES:
 SEE ALSO:
     virtos-security, virtos-security-advanced
     /usr/share/doc/virtos/AUDIT_LOGGING.md
+
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Audit log not accessible
+    4    Invalid query parameters
+
 EOF
 }
 

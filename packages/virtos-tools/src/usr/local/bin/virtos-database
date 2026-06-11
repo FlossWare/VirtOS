@@ -1,24 +1,37 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Database Management
 # Database replication, optimization, backups
 
-# Source common library for validation and error handling
+# Load common library
 if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
-elif [ -f ./lib/virtos-common.sh ]; then
-    . ./lib/virtos-common.sh
+elif [ -f "$(dirname "$0")/lib/virtos-common.sh" ]; then
+    . "$(dirname "$0")/lib/virtos-common.sh"
 fi
 
-VERSION="1"
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-database version $VERSION"
+    exit 0
+fi
+
 
 # Configuration
-DB_CONFIG_DIR="$(get_virtos_path CONF_DATABASE_DIR)"
-DB_LOG="$(get_virtos_path LOG_DATABASE)"
+DB_CONFIG_DIR="/etc/virtos/database"
+DB_LOG="/var/log/virtos-database.log"
 
 # Ensure config directory exists
-mkdir -p "$DB_CONFIG_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$DB_CONFIG_DIR" || true
+fi
 
 # Logging function
 log_message() {
@@ -35,9 +48,8 @@ setup_replication() {
 
     # Validate primary_host if provided (for replica role)
     if [ "$role" = "replica" ] && [ -n "$primary_host" ]; then
-        if ! validate_hostname "$primary_host"; then
-            echo "Error: Invalid primary host detected: $primary_host" >&2
-            return 1
+        if ! validate_hostname "$primary_host" && ! validate_ip "$primary_host"; then
+            die "Invalid primary host: $primary_host"
         fi
     fi
 
@@ -69,7 +81,7 @@ EOF
                 systemctl restart mysql
 
                 # Configure replica
-                mysql -e "CHANGE MASTER TO MASTER_HOST=\"$primary_host\", MASTER_USER='repl', MASTER_PASSWORD='repl_password', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=0;" # pragma: allowlist secret
+                mysql -e "CHANGE MASTER TO MASTER_HOST='$primary_host', MASTER_USER='repl', MASTER_PASSWORD='repl_password', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=0;" # pragma: allowlist secret
                 mysql -e "START SLAVE;"
             fi
             ;;
@@ -86,7 +98,7 @@ EOF
 
             else
                 # Create standby
-                pg_basebackup -h "$primary_host" -D /var/lib/postgresql/data -U replication -P --wal-method=stream
+                pg_basebackup -h $primary_host -D /var/lib/postgresql/data -U replication -P --wal-method=stream
                 touch /var/lib/postgresql/data/standby.signal
                 systemctl start postgresql
             fi
@@ -94,11 +106,11 @@ EOF
 
         mongodb)
             # Configure replica set
-        local host
-        host=$(hostname)
-        if ! validate_hostname "$host"; then
-            die "Invalid hostname detected"
-        fi
+            local host
+            host=$(hostname)
+            if ! validate_hostname "$host"; then
+                die "Invalid hostname detected"
+            fi
             mongo --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: '$host:27017'}]})"
             ;;
     esac
@@ -112,7 +124,7 @@ backup_database() {
     local db_name="$2"
     local backup_dir="${3:-/var/backups/databases}"
 
-    mkdir -p "$backup_dir"
+    mkdir -p "$backup_dir" || true
     local backup_file="$backup_dir/${db_name}_$(date +%Y%m%d_%H%M%S).sql"
 
     log_message "Backing up $db_type database: $db_name..."
@@ -371,41 +383,68 @@ database_wizard() {
         --msgbox "Database management complete!" 8 40
 }
 
-# Show usage
-usage() {
+# Show help text
+show_help() {
     cat <<EOF
-VirtOS Database Management - Replication, backups, optimization
+Usage: virtos-database [OPTIONS] <command> [arguments]
 
-Usage: virtos-database <command> [options]
+VirtOS Database Management - Replication, backups, and optimization.
 
-Replication Commands:
-  setup-replication <type> <role> [primary_host]  Setup replication (mysql/postgres/mongodb)
+COMMANDS:
+  Replication:
+    setup-replication <type> <role> [primary_host]
+                                      Setup database replication
+                                      Types: mysql, postgres, mongodb
+                                      Roles: primary, replica
 
-Backup Commands:
-  backup-database <type> <name> [dir]             Backup database
-  restore-database <type> <name> <backup_file>    Restore database
+  Backup/Restore:
+    backup-database <type> <name> [dir]
+                                      Backup database to directory
+    restore-database <type> <name> <backup_file>
+                                      Restore database from backup
 
-Optimization Commands:
-  optimize-database <type> <name>                 Optimize database
-  analyze-queries <type>                          Analyze slow queries
+  Optimization:
+    optimize-database <type> <name>   Optimize database tables/collections
+    analyze-queries <type>            Analyze slow queries for tuning
 
-Configuration Commands:
-  configure-connection-pool <type> <max>          Configure connection pool
-  setup-monitoring <type>                         Setup database monitoring
+  Configuration:
+    configure-connection-pool <type> <max>
+                                      Configure connection pool settings
+    setup-monitoring <type>           Setup database monitoring
 
-Status Commands:
-  status                                          Show database status
-  wizard                                          Interactive wizard
+  Status:
+    status                            Show database status
+    wizard                            Interactive management wizard
 
-Examples:
-  virtos-database setup-replication mysql primary
-  virtos-database setup-replication mysql replica 192.168.1.10
-  virtos-database backup-database postgres mydb /backups
-  virtos-database optimize-database mysql production
-  virtos-database analyze-queries postgres
-  virtos-database wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Setup MySQL primary replication
+    virtos-database setup-replication mysql primary
+
+    # Setup MySQL replica replication
+    virtos-database setup-replication mysql replica 192.168.1.10
+
+    # Backup PostgreSQL database
+    virtos-database backup-database postgres mydb /backups
+
+    # Optimize MySQL database
+    virtos-database optimize-database mysql production
+
+    # Analyze slow PostgreSQL queries
+    virtos-database analyze-queries postgres
+
+    # Interactive wizard
+    virtos-database wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -438,7 +477,16 @@ case "$1" in
     wizard)
         database_wizard
         ;;
+    --version|-v|version)
+        echo "virtos-database version $VERSION"
+        exit 0
+        ;;
+    --help|-h|help|"")
+        show_help
+        exit 0
+        ;;
     *)
-        usage
+        show_help
+        exit 1
         ;;
 esac

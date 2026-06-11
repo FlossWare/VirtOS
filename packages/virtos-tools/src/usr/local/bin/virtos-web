@@ -1,20 +1,43 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Web UI Integration
 # Provides web-based management interfaces (optional)
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+# Source path configuration
+if [ -f /usr/local/lib/virtos-paths.conf ]; then
+    . /usr/local/lib/virtos-paths.conf
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-web version $VERSION"
+    exit 0
+fi
+
 
 # Configuration
-WEB_CONFIG_DIR="/etc/virtos/web"
-WEB_LOG="/var/log/virtos-web.log"
+WEB_CONFIG_DIR="$(get_virtos_path CONF_WEB_DIR)"
+WEB_LOG="$(get_virtos_path LOG_WEB)"
 COCKPIT_PORT=9090
 PORTAINER_PORT=9000
 CUSTOM_UI_PORT=8080
 
 # Ensure config directory exists
-mkdir -p "$WEB_CONFIG_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$WEB_CONFIG_DIR" || true
+fi
 
 # Logging function
 log_message() {
@@ -34,7 +57,7 @@ install_cockpit() {
     }
 
     # Configure Cockpit
-    mkdir -p /etc/cockpit
+    mkdir -p /etc/cockpit || true
     cat > /etc/cockpit/cockpit.conf <<EOF
 [WebService]
 Origins = https://$(hostname):$COCKPIT_PORT wss://$(hostname):$COCKPIT_PORT
@@ -49,7 +72,7 @@ Banner = /etc/virtos/banner.txt
 EOF
 
     # Enable Cockpit modules
-    mkdir -p /etc/cockpit/modules.d
+    mkdir -p /etc/cockpit/modules.d || true
     echo "enabled=true" > /etc/cockpit/modules.d/machines.conf    # VM management
     echo "enabled=true" > /etc/cockpit/modules.d/podman.conf      # Container management
     echo "enabled=true" > /etc/cockpit/modules.d/storaged.conf    # Storage management
@@ -78,7 +101,7 @@ stop_cockpit() {
     log_message "Stopping Cockpit service..."
 
     if [ -f "$WEB_CONFIG_DIR/cockpit.pid" ]; then
-        kill $(cat "$WEB_CONFIG_DIR/cockpit.pid") 2>/dev/null
+        kill $(cat "$WEB_CONFIG_DIR/cockpit.pid") 2>/dev/null || true
         rm "$WEB_CONFIG_DIR/cockpit.pid"
         log_message "Cockpit stopped"
     fi
@@ -138,7 +161,7 @@ install_custom_ui() {
     log_message "Installing custom VirtOS web UI..."
 
     # Create simple web UI directory
-    mkdir -p /opt/virtos-web-ui/{static,templates,api}
+    mkdir -p /opt/virtos-web-ui/{static,templates,api} || true
 
     # Create index.html
     cat > /opt/virtos-web-ui/static/index.html <<'EOF'
@@ -244,7 +267,7 @@ class VirtOSHandler(BaseHTTPRequestHandler):
             stats['containers'] = 0
 
         try:
-            # Storage usage
+            # Storage show_help
             result = subprocess.run(['df', '-BG', '/'], capture_output=True, text=True)
             lines = result.stdout.strip().split('\n')
             if len(lines) > 1:
@@ -287,7 +310,7 @@ stop_custom_ui() {
     log_message "Stopping custom VirtOS web UI..."
 
     if [ -f "$WEB_CONFIG_DIR/custom-ui.pid" ]; then
-        kill $(cat "$WEB_CONFIG_DIR/custom-ui.pid") 2>/dev/null
+        kill $(cat "$WEB_CONFIG_DIR/custom-ui.pid") 2>/dev/null || true
         rm "$WEB_CONFIG_DIR/custom-ui.pid"
         log_message "Custom UI stopped"
     fi
@@ -452,8 +475,8 @@ web_wizard() {
         --msgbox "Web UI setup complete!\n\nRun 'virtos-web status' to see access URLs." 10 50
 }
 
-# Show usage
-usage() {
+# Show show_help
+show_help() {
     cat <<EOF
 VirtOS Web UI Integration - Optional web-based management
 
@@ -481,7 +504,11 @@ Status Commands:
   status                       Show all web UI status
   wizard                       Interactive setup wizard
 
-Examples:
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
+
+EXAMPLES:
   virtos-web install-cockpit
   virtos-web start-cockpit
   virtos-web configure-ssl cockpit /path/to/cert.crt /path/to/key.key
@@ -489,9 +516,15 @@ Examples:
   virtos-web status
   virtos-web wizard
 
-Note: Web UI is optional. VirtOS is designed for text-based operation.
+EXIT CODES:
+    0   Success
+    1   Error
 
-Version: $VERSION
+NOTE:
+    Web UI is optional. VirtOS is designed for text-based operation.
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -539,7 +572,10 @@ case "$1" in
     wizard)
         web_wizard
         ;;
+    version|--version|-v)
+        echo "virtos-web version $VERSION"
+        ;;
     *)
-        usage
+        show_help
         ;;
 esac

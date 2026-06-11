@@ -1,10 +1,16 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # virtos-analytics - Advanced analytics and reporting for VirtOS
 # Part of Phase 11: Multi-Datacenter and Advanced Features
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 SCRIPT_NAME="virtos-analytics"
 LOG_FILE="/var/log/virtos-analytics.log"
 CONFIG_FILE="/etc/virtos/analytics.conf"
@@ -119,10 +125,10 @@ COLLECTEOF
 
     # Start collector
     nohup "$collect_script" &>/dev/null &
-    local pid="$!"
+    local pid=$!
     echo "$pid" > "$DATA_DIR/collector.pid"
 
-    log "Data collection started (PID: \"$pid\")"
+    log "Data collection started (PID: $pid)"
     log "Collection interval: ${COLLECTION_INTERVAL}s"
 }
 
@@ -133,10 +139,10 @@ collection_stop() {
     local pid_file="$DATA_DIR/collector.pid"
 
     if [ -f "$pid_file" ]; then
-        local pid="$(cat "$pid_file")"
+        local pid=$(cat "$pid_file")
         if kill -0 "$pid" 2>/dev/null; then
             kill "$pid"
-            log "Collection stopped (PID: \"$pid\")"
+            log "Collection stopped (PID: $pid)"
         else
             log "Collector not running"
         fi
@@ -155,7 +161,7 @@ collection_status() {
     local pid="-"
 
     if [ -f "$pid_file" ]; then
-        pid="$(cat "$pid_file")"
+        pid=$(cat "$pid_file")
         if kill -0 "$pid" 2>/dev/null; then
             status="running"
         else
@@ -170,30 +176,30 @@ collection_status() {
     echo "Data directory: $DATA_DIR"
 
     # Count data points
-    local count="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | wc -l)"
-    echo "Data points: \"$count\""
+    local count=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | wc -l)
+    echo "Data points: $count"
 }
 
 # Resource utilization trends
 trends_report() {
     local days="${1:-7}"
 
-    log "Generating resource utilization trends (last \"$days\" days)..."
+    log "Generating resource utilization trends (last $days days)..."
 
     local report_file="$REPORT_DIR/trends-$(date +%Y%m%d-%H%M%S).txt"
 
     cat > "$report_file" << EOF
 === VirtOS Resource Utilization Trends ===
 Generated: $(date)
-Period: Last "$days" days
+Period: Last $days days
 
 EOF
 
     # Analyze CPU trends
     echo "CPU Utilization:" >> "$report_file"
-    local cpu_avg="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{sum+=$2; count++} END {print sum/count}')"
-    local cpu_max="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{if($2>max) max=$2} END {print max}')"
-    local cpu_min="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, 'NR==1{min=$2} {if($2<min) min=$2} END {print min}')"
+    local cpu_avg=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{sum+=$2; count++} END {print sum/count}')
+    local cpu_max=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{if($2>max) max=$2} END {print max}')
+    local cpu_min=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, 'NR==1{min=$2} {if($2<min) min=$2} END {print min}')
 
     printf "  Average: %.2f%%\n" "$cpu_avg" >> "$report_file"
     printf "  Maximum: %.2f%%\n" "$cpu_max" >> "$report_file"
@@ -202,8 +208,8 @@ EOF
 
     # Analyze RAM trends
     echo "Memory Utilization:" >> "$report_file"
-    local ram_avg="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{sum+=$3; count++} END {print sum/count}')"
-    local ram_max="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{if($3>max) max=$3} END {print max}')"
+    local ram_avg=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{sum+=$3; count++} END {print sum/count}')
+    local ram_max=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{if($3>max) max=$3} END {print max}')
 
     printf "  Average: %.2f%%\n" "$ram_avg" >> "$report_file"
     printf "  Maximum: %.2f%%\n" "$ram_max" >> "$report_file"
@@ -211,8 +217,8 @@ EOF
 
     # Analyze Disk trends
     echo "Disk Utilization:" >> "$report_file"
-    local disk_avg="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{sum+=$4; count++} END {print sum/count}')"
-    local disk_max="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{if($4>max) max=$4} END {print max}')"
+    local disk_avg=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{sum+=$4; count++} END {print sum/count}')
+    local disk_max=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{if($4>max) max=$4} END {print max}')
 
     printf "  Average: %.2f%%\n" "$disk_avg" >> "$report_file"
     printf "  Maximum: %.2f%%\n" "$disk_max" >> "$report_file"
@@ -220,8 +226,8 @@ EOF
 
     # VM trends
     echo "VM Count:" >> "$report_file"
-    local vm_avg="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{sum+=$5; count++} END {print sum/count}')"
-    local vm_max="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{if($5>max) max=$5} END {print max}')"
+    local vm_avg=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{sum+=$5; count++} END {print sum/count}')
+    local vm_max=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -$((days * 1440)) | awk -F, '{if($5>max) max=$5} END {print max}')
 
     printf "  Average running: %.1f\n" "$vm_avg" >> "$report_file"
     printf "  Maximum running: %.0f\n" "$vm_max" >> "$report_file"
@@ -236,44 +242,44 @@ capacity_predict() {
     local resource="${1:-cpu}"
     local horizon="${2:-30}"  # days
 
-    log "Predicting \"$resource\" capacity (horizon: \"$horizon\" days)..."
+    log "Predicting $resource capacity (horizon: $horizon days)..."
 
     # Simple linear regression prediction
-    local current="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440 | awk -F, -v res="$resource" '
+    local current=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440 | awk -F, -v res="$resource" '
         BEGIN {col=2}
         res=="ram" {col=3}
         res=="disk" {col=4}
         {sum+=$col; count++}
         END {print sum/count}
-    ')"
+    ')
 
-    local week_ago="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -10080 | head -1440 | awk -F, -v res="$resource" '
+    local week_ago=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -10080 | head -1440 | awk -F, -v res="$resource" '
         BEGIN {col=2}
         res=="ram" {col=3}
         res=="disk" {col=4}
         {sum+=$col; count++}
         END {print sum/count}
-    ')"
+    ')
 
     # Calculate daily growth rate
-    local daily_growth="$(echo "scale=4; ($current - $week_ago) / 7" | bc)"
+    local daily_growth=$(echo "scale=4; ($current - $week_ago) / 7" | bc)
 
     # Predict future value
-    local predicted="$(echo "scale=2; $current + ($daily_growth * $horizon)" | bc)"
+    local predicted=$(echo "scale=2; $current + ($daily_growth * $horizon)" | bc)
 
-    echo "=== \"$resource\" Capacity Prediction ==="
+    echo "=== $resource Capacity Prediction ==="
     printf "Current average: %.2f%%\n" "$current"
     printf "Daily growth rate: %.4f%%\n" "$daily_growth"
-    printf "Predicted in \"$horizon\" days: %.2f%%\n" "$predicted"
+    printf "Predicted in $horizon days: %.2f%%\n" "$predicted"
 
     # Warning if approaching limits
-    if [ "$(echo "$predicted > 90" | bc)" -eq 1 ]; then
+    if [ $(echo "$predicted > 90" | bc) -eq 1 ]; then
         echo ""
-        echo "WARNING: Predicted to exceed 90% in \"$horizon\" days!"
+        echo "WARNING: Predicted to exceed 90% in $horizon days!"
         echo "Recommendation: Add capacity or optimize resources"
-    elif [ "$(echo "$predicted > 80" | bc)" -eq 1 ]; then
+    elif [ $(echo "$predicted > 80" | bc) -eq 1 ]; then
         echo ""
-        echo "CAUTION: Predicted to exceed 80% in \"$horizon\" days"
+        echo "CAUTION: Predicted to exceed 80% in $horizon days"
         echo "Recommendation: Monitor closely and plan capacity expansion"
     fi
 }
@@ -291,7 +297,7 @@ Generated: $(date)
 EOF
 
     # Analyze last 24 hours
-    local data="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440)"
+    local data=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440)
 
     # CPU anomalies (values > 90%)
     echo "CPU Anomalies (>90%):" >> "$anomalies_file"
@@ -325,8 +331,8 @@ Generated: $(date)
 EOF
 
     # Analyze resource utilization patterns
-    local cpu_avg="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -10080 | awk -F, '{sum+=$2; count++} END {print sum/count}')"
-    local ram_avg="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -10080 | awk -F, '{sum+=$3; count++} END {print sum/count}')"
+    local cpu_avg=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -10080 | awk -F, '{sum+=$2; count++} END {print sum/count}')
+    local ram_avg=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -10080 | awk -F, '{sum+=$3; count++} END {print sum/count}')
 
     echo "Current Resource Utilization (7-day average):" >> "$report_file"
     printf "  CPU: %.2f%%\n" "$cpu_avg" >> "$report_file"
@@ -336,18 +342,18 @@ EOF
     echo "Recommendations:" >> "$report_file"
 
     # CPU recommendations
-    if [ "$(echo "$cpu_avg < 30" | bc)" -eq 1 ]; then
+    if [ $(echo "$cpu_avg < 30" | bc) -eq 1 ]; then
         echo "  1. CPU Underutilization Detected" >> "$report_file"
-        echo "     - Average CPU usage is only \"${cpu_avg}\"%" >> "$report_file"
+        echo "     - Average CPU usage is only ${cpu_avg}%" >> "$report_file"
         echo "     - Consider consolidating VMs to fewer hosts" >> "$report_file"
         echo "     - Estimated savings: 20-30% on infrastructure costs" >> "$report_file"
         echo "" >> "$report_file"
     fi
 
     # RAM recommendations
-    if [ "$(echo "$ram_avg < 40" | bc)" -eq 1 ]; then
+    if [ $(echo "$ram_avg < 40" | bc) -eq 1 ]; then
         echo "  2. Memory Overprovisioning Detected" >> "$report_file"
-        echo "     - Average RAM usage is only \"${ram_avg}\"%" >> "$report_file"
+        echo "     - Average RAM usage is only ${ram_avg}%" >> "$report_file"
         echo "     - Review VM memory allocations" >> "$report_file"
         echo "     - Reduce VM RAM where possible" >> "$report_file"
         echo "     - Estimated savings: 15-25% on memory costs" >> "$report_file"
@@ -356,7 +362,7 @@ EOF
 
     # Idle VM detection
     if command -v virsh &>/dev/null; then
-        local vms="$(virsh list --name 2>/dev/null)"
+        local vms=$(virsh list --name 2>/dev/null)
         echo "  3. Idle VM Detection" >> "$report_file"
         echo "     - Review VMs with low activity" >> "$report_file"
         echo "     - Consider shutting down unused VMs" >> "$report_file"
@@ -383,7 +389,7 @@ performance_report() {
     if [ -z "$vm_name" ]; then
         log "Generating system-wide performance report..."
     else
-        log "Generating performance report for VM: \"$vm_name\"..."
+        log "Generating performance report for VM: $vm_name..."
     fi
 
     local report_file="$REPORT_DIR/performance-$(date +%Y%m%d-%H%M%S).txt"
@@ -398,23 +404,23 @@ EOF
     # System metrics
     echo "System Metrics (Last 24 hours):" >> "$report_file"
 
-    local cpu_avg="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440 | awk -F, '{sum+=$2} END {print sum/NR}')"
-    local cpu_p95="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440 | awk -F, '{print $2}' | sort -n | awk '{all[NR]=$1} END{print all[int(NR*0.95)]}')"
+    local cpu_avg=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440 | awk -F, '{sum+=$2} END {print sum/NR}')
+    local cpu_p95=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440 | awk -F, '{print $2}' | sort -n | awk '{all[NR]=$1} END{print all[int(NR*0.95)]}')
 
     printf "  CPU Average: %.2f%%\n" "$cpu_avg" >> "$report_file"
     printf "  CPU 95th Percentile: %.2f%%\n" "$cpu_p95" >> "$report_file"
 
-    local ram_avg="$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440 | awk -F, '{sum+=$3} END {print sum/NR}')"
+    local ram_avg=$(cat "$DATA_DIR"/metrics-*.csv 2>/dev/null | tail -1440 | awk -F, '{sum+=$3} END {print sum/NR}')
     printf "  RAM Average: %.2f%%\n" "$ram_avg" >> "$report_file"
 
     echo "" >> "$report_file"
 
     # Performance rating
     echo "Performance Rating:" >> "$report_file"
-    if [ "$(echo "$cpu_p95 < 70 && $ram_avg < 70" | bc)" -eq 1 ]; then
+    if [ $(echo "$cpu_p95 < 70 && $ram_avg < 70" | bc) -eq 1 ]; then
         echo "  Overall: EXCELLENT" >> "$report_file"
         echo "  System has plenty of headroom" >> "$report_file"
-    elif [ "$(echo "$cpu_p95 < 85 && $ram_avg < 85" | bc)" -eq 1 ]; then
+    elif [ $(echo "$cpu_p95 < 85 && $ram_avg < 85" | bc) -eq 1 ]; then
         echo "  Overall: GOOD" >> "$report_file"
         echo "  System performing well" >> "$report_file"
     else
@@ -431,7 +437,7 @@ custom_report() {
     local report_type="$1"
     local params="${2:-}"
 
-    log "Generating custom report: \"$report_type\"..."
+    log "Generating custom report: $report_type..."
 
     local report_file="$REPORT_DIR/custom-$report_type-$(date +%Y%m%d-%H%M%S).txt"
 
@@ -449,7 +455,7 @@ custom_report() {
                 sort >> "$report_file"
             ;;
         *)
-            log "ERROR: Unknown report type: \"$report_type\""
+            log "ERROR: Unknown report type: $report_type"
             return 1
             ;;
     esac
@@ -580,15 +586,35 @@ Examples:
   $SCRIPT_NAME custom-report hourly
   $SCRIPT_NAME custom-report daily
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Data collection not initialized
+    4    Insufficient data for analysis
+
 EOF
 }
 
 # Main
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now init for actual commands
     init_logging
     load_config
 
-    case "${1:-help}" in
+    case "${1}" in
         collection-start)
             collection_start
             ;;
@@ -618,15 +644,8 @@ main() {
             ;;
         wizard)
             analytics_wizard
-            ;;
-        version)
-            echo "$SCRIPT_NAME version $VERSION"
-            ;;
-        help|--help|-h)
-            usage
-            ;;
-        *)
-            echo "Unknown command: \"$1\""
+            ;;        *)
+            echo "Unknown command: $1"
             echo "Run '$SCRIPT_NAME help' for usage"
             exit 1
             ;;

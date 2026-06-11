@@ -1,15 +1,38 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Telemetry - Metrics and monitoring integration
 # Prometheus, Grafana, and metrics exporters
 
-VERSION="1"
-TELEMETRY_DIR="/var/lib/virtos/telemetry"
-STATE_DIR="/var/run/virtos/telemetry"
-LOG_FILE="/var/log/virtos-telemetry.log"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
 
-mkdir -p "$TELEMETRY_DIR" "$STATE_DIR"
+# Source path configuration
+if [ -f /usr/local/lib/virtos-paths.conf ]; then
+    . /usr/local/lib/virtos-paths.conf
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-telemetry version $VERSION"
+    exit 0
+fi
+
+TELEMETRY_DIR="$(get_virtos_path LIB_DIR)/telemetry"
+STATE_DIR="/var/run/virtos/telemetry"
+LOG_FILE="$(get_virtos_path LOG_TELEMETRY)"
+
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$TELEMETRY_DIR" "$STATE_DIR" || true
+fi
 
 usage() {
     cat << EOF
@@ -82,6 +105,14 @@ Examples:
   # Import Grafana dashboard
   virtos-telemetry grafana-dashboard node-exporter
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Prometheus/Grafana not initialized
+    4    Exporter not found
+    5    Service start/stop failed
+
 EOF
 }
 
@@ -133,8 +164,8 @@ prometheus_init() {
         return 1
     fi
 
-    mkdir -p "$TELEMETRY_DIR/prometheus"
-    mkdir -p "$TELEMETRY_DIR/prometheus/data"
+    mkdir -p "$TELEMETRY_DIR/prometheus" || true
+    mkdir -p "$TELEMETRY_DIR/prometheus/data" || true
 
     # Create Prometheus configuration
     cat > "$TELEMETRY_DIR/prometheus/prometheus.yml" <<EOF
@@ -286,10 +317,10 @@ grafana_init() {
         return 1
     fi
 
-    mkdir -p "$TELEMETRY_DIR/grafana/data"
-    mkdir -p "$TELEMETRY_DIR/grafana/dashboards"
-    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/datasources"
-    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/dashboards"
+    mkdir -p "$TELEMETRY_DIR/grafana/data" || true
+    mkdir -p "$TELEMETRY_DIR/grafana/dashboards" || true
+    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/datasources" || true
+    mkdir -p "$TELEMETRY_DIR/grafana/provisioning/dashboards" || true
 
     # Create Grafana config
     cat > "$TELEMETRY_DIR/grafana/grafana.ini" <<EOF
@@ -671,12 +702,14 @@ dashboard_list() {
         grep -o '"title":"[^"]*"' || echo "Grafana not running or no dashboards"
 }
 
-# Initialize
-init_config
+# Initialize (skip for --help/--version)
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+    init_config
+fi
 
 # Main command handler
-COMMAND="$1"
-shift
+COMMAND="${1:-}"
+[ -n "$COMMAND" ] && shift
 
 case "$COMMAND" in
     prometheus-init)
@@ -732,6 +765,10 @@ case "$COMMAND" in
         ;;
     dashboard-list)
         dashboard_list
+        ;;
+    --version|-v|version)
+        echo "virtos-telemetry version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

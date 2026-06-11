@@ -1,6 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Backup - Automated VM backup and restore
 # Supports scheduling, retention, compression, and remote destinations
 
@@ -9,12 +10,17 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-# Load audit library
-if [ -f /usr/local/lib/virtos-audit.sh ]; then
-    . /usr/local/lib/virtos-audit.sh
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-backup version $VERSION"
+    exit 0
 fi
 
-VERSION=$(get_version 2>/dev/null || echo "0.21")
 
 # Configuration
 BACKUP_DIR="${BACKUP_DIR:-/var/lib/virtos/backups}"
@@ -81,6 +87,15 @@ Examples:
   # Cleanup old backups
   virtos-backup cleanup
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM not found
+    4    Backup failed
+    5    Restore failed
+    6    Backup verification failed
+
 EOF
 }
 
@@ -100,8 +115,10 @@ warn() {
     echo -e "${YELLOW}[WARNING]${NC} $*"
 }
 
-# Ensure backup directory exists
-mkdir -p "$BACKUP_DIR"
+# Ensure backup directory exists (skip for --help/--version)
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+    mkdir -p "$BACKUP_DIR" || true
+fi
 
 #==============================================================================
 # Backup Functions
@@ -110,26 +127,34 @@ mkdir -p "$BACKUP_DIR"
 backup_vm() {
     local vm_name="$1"
     local backup_type="${2:-full}"
-    local timestamp
-    timestamp=$(date +%Y%m%d-%H%M%S)
+    local timestamp=$(date +%Y%m%d-%H%M%S)
     local backup_path="$BACKUP_DIR/$vm_name/$timestamp"
 
-    audit_log "BACKUP_START" "user=$USER vm=$vm_name type=$backup_type destination=$BACKUP_DIR"
+    # SECURITY: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        error "Invalid VM name '$vm_name'"
+        return 1
+    fi
+
     log "Starting backup of VM: $vm_name"
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
-        audit_log "BACKUP_FAILED" "user=$USER vm=$vm_name error='VM not found'"
-        error "VM '$vm_name' not found"
+        error "VM '$vm_name' not found" >&2
+        echo "" >&2
+        echo "Available VMs:" >&2
+        virsh list --all --name 2>/dev/null | grep -v '^$' | sed 's/^/  • /' >&2 || echo "  (none)" >&2
+        echo "" >&2
+        echo "To backup a VM, specify an existing VM name:" >&2
+        echo "  virtos-backup backup <vm-name>" >&2
         return 1
     fi
 
     # Create backup directory
-    mkdir -p "$backup_path"
+    mkdir -p "$backup_path" || true
 
     # Save VM state
-    local vm_state
-    vm_state=$(virsh domstate "$vm_name")
+    local vm_state=$(virsh domstate "$vm_name")
     echo "$vm_state" > "$backup_path/vm-state.txt"
     log "VM state: $vm_state"
 
@@ -138,12 +163,20 @@ backup_vm() {
     virsh dumpxml "$vm_name" > "$backup_path/$vm_name.xml"
 
     # Get disk list
-    local disks
-    disks=$(virsh domblklist "$vm_name" --details | grep disk | awk '{print $4}')
+    local disks=$(virsh domblklist "$vm_name" --details | grep disk | awk '{print $4}')
 
     if [ -z "$disks" ]; then
-        audit_log "BACKUP_FAILED" "user=$USER vm=$vm_name error='No disks found'"
-        error "No disks found for VM '$vm_name'"
+        error "No disks found for VM '$vm_name'" >&2
+        echo "" >&2
+        echo "The VM has no attached disk devices to backup." >&2
+        echo "" >&2
+        echo "This could indicate:" >&2
+        echo "  • VM configuration error (no disks defined)" >&2
+        echo "  • Disk devices are not accessible" >&2
+        echo "" >&2
+        echo "Check VM configuration:" >&2
+        echo "  virsh domblklist $vm_name --details" >&2
+        echo "  virsh dumpxml $vm_name | grep -A5 disk" >&2
         return 1
     fi
 
@@ -156,8 +189,7 @@ backup_vm() {
         fi
 
         disk_num=$((disk_num + 1))
-        local disk_name
-        disk_name=$(basename "$disk")
+        local disk_name=$(basename "$disk")
         local backup_disk="$backup_path/disk-$disk_num-$disk_name"
 
         log "Backing up disk $disk_num: $disk"
@@ -176,25 +208,23 @@ backup_vm() {
         if [ "$vm_state" = "running" ]; then
             # Create snapshot for consistent backup
             log "Creating temporary snapshot for consistent backup..."
-            if virsh snapshot-create-as "$vm_name" "backup-snapshot-$timestamp" \
+            if virsh snapshot-create-as "$vm_name" backup-snapshot-$timestamp \
                 "Temporary snapshot for backup" --disk-only --atomic 2>/dev/null; then
                 # Copy the backing file (original disk)
                 if copy_disk; then
                     success "Disk $disk_num backed up successfully"
                 else
-                    audit_log "BACKUP_FAILED" "user=$USER vm=$vm_name disk=$disk_num error='Disk copy failed'"
                     error "Failed to backup disk $disk_num"
                     return 1
                 fi
 
                 # Delete snapshot (merges changes back)
-                virsh snapshot-delete "$vm_name" "backup-snapshot-$timestamp" --metadata
+                virsh snapshot-delete "$vm_name" backup-snapshot-$timestamp --metadata
             else
                 warn "Snapshot failed, backing up live disk (may be inconsistent)"
                 if copy_disk; then
                     success "Disk $disk_num backed up successfully"
                 else
-                    audit_log "BACKUP_FAILED" "user=$USER vm=$vm_name disk=$disk_num error='Disk copy failed'"
                     error "Failed to backup disk $disk_num"
                     return 1
                 fi
@@ -204,7 +234,6 @@ backup_vm() {
             if copy_disk; then
                 success "Disk $disk_num backed up successfully"
             else
-                audit_log "BACKUP_FAILED" "user=$USER vm=$vm_name disk=$disk_num error='Disk copy failed'"
                 error "Failed to backup disk $disk_num"
                 return 1
             fi
@@ -237,42 +266,53 @@ EOF
     if [ "$COMPRESSION" = "yes" ]; then
         log "Creating backup archive..."
         tar -czf "$backup_path.tar.gz" -C "$BACKUP_DIR/$vm_name" "$timestamp"
-        # Safely remove backup directory after archiving
-        if validate_backup_path "$backup_path" "$BACKUP_DIR"; then
-            safe_rm_rf "$backup_path" || {
-                error "Failed to remove backup directory: $backup_path"
-                return 1
-            }
-        else
-            error "Invalid backup path for removal: $backup_path"
-            return 1
-        fi
+        rm -rf "$backup_path"
         backup_path="$backup_path.tar.gz"
     fi
 
     # Copy to remote if specified
     if [ -n "$REMOTE_DEST" ]; then
-        audit_log "BACKUP_REMOTE_START" "user=$USER vm=$vm_name destination=$REMOTE_DEST"
         log "Copying to remote destination: $REMOTE_DEST"
 
         if [[ "$REMOTE_DEST" == s3://* ]]; then
             # S3 destination (requires aws CLI)
-            if aws s3 cp "$backup_path" "$REMOTE_DEST/$vm_name/"; then
-                audit_log "BACKUP_REMOTE_SUCCESS" "user=$USER vm=$vm_name destination=$REMOTE_DEST"
-            else
-                audit_log "BACKUP_REMOTE_FAILED" "user=$USER vm=$vm_name destination=$REMOTE_DEST error='S3 copy failed'"
-                error "Failed to copy to S3"
+            if ! command -v aws >/dev/null 2>&1; then
+                error "AWS CLI not installed (required for S3 destinations)" >&2
+                echo "" >&2
+                echo "To install AWS CLI:" >&2
+                echo "  tce-load -wi awscli" >&2
+                echo "" >&2
+                echo "Or use SCP destination instead:" >&2
+                echo "  virtos-backup backup $vm_name --remote user@host:/backup/path" >&2
                 return 1
             fi
+            aws s3 cp "$backup_path" "$REMOTE_DEST/$vm_name/" || {
+                error "Failed to copy backup to S3: $REMOTE_DEST" >&2
+                echo "" >&2
+                echo "Possible causes:" >&2
+                echo "  • Invalid AWS credentials (check: aws configure)" >&2
+                echo "  • Bucket doesn't exist or lacks write permissions" >&2
+                echo "  • Network connectivity issues" >&2
+                echo "" >&2
+                echo "Local backup saved at: $backup_path" >&2
+                return 1
+            }
         else
             # SCP destination
-            if scp -r "$backup_path" "$REMOTE_DEST/$vm_name/"; then
-                audit_log "BACKUP_REMOTE_SUCCESS" "user=$USER vm=$vm_name destination=$REMOTE_DEST"
-            else
-                audit_log "BACKUP_REMOTE_FAILED" "user=$USER vm=$vm_name destination=$REMOTE_DEST error='SCP copy failed'"
-                error "Failed to copy to remote"
+            scp -r "$backup_path" "$REMOTE_DEST/$vm_name/" || {
+                error "Failed to copy backup to remote: $REMOTE_DEST" >&2
+                echo "" >&2
+                echo "Possible causes:" >&2
+                echo "  • SSH authentication failed (check: ssh-copy-id)" >&2
+                echo "  • Remote path doesn't exist or lacks write permissions" >&2
+                echo "  • Network connectivity issues" >&2
+                echo "" >&2
+                echo "Local backup saved at: $backup_path" >&2
+                echo "" >&2
+                echo "Retry after fixing remote access:" >&2
+                echo "  scp -r $backup_path $REMOTE_DEST/$vm_name/" >&2
                 return 1
-            fi
+            }
         fi
         success "Backup copied to remote successfully"
     fi
@@ -281,15 +321,11 @@ EOF
 
     # Show backup size
     if [ -f "$backup_path" ]; then
-        local size
-        size=$(du -h "$backup_path" | cut -f1)
+        local size=$(du -h "$backup_path" | cut -f1)
         log "Backup size: $size"
-        audit_log "BACKUP_SUCCESS" "user=$USER vm=$vm_name path=$backup_path size=$size disks=$disk_num compression=$COMPRESSION"
     else
-        local size
-        size=$(du -sh "$backup_path" | cut -f1)
+        local size=$(du -sh "$backup_path" | cut -f1)
         log "Backup size: $size"
-        audit_log "BACKUP_SUCCESS" "user=$USER vm=$vm_name path=$backup_path size=$size disks=$disk_num compression=$COMPRESSION"
     fi
 
     return 0
@@ -304,7 +340,16 @@ restore_vm() {
     local backup_date="$2"
     local target_name="${3:-$vm_name}"
 
-    audit_log "RESTORE_START" "user=$USER vm=$vm_name backup_date=$backup_date target=$target_name"
+    # SECURITY: Validate VM names before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        error "Invalid VM name '$vm_name'"
+        return 1
+    fi
+    if ! validate_vm_name "$target_name" 2>/dev/null; then
+        error "Invalid target VM name '$target_name'"
+        return 1
+    fi
+
     log "Starting restore of VM: $vm_name from backup: $backup_date"
 
     # Find backup
@@ -317,14 +362,12 @@ restore_vm() {
 
         # Extract
         log "Extracting backup..."
-        local temp_dir
-        temp_dir=$(mktemp -d)
+        local temp_dir=$(mktemp -d) || die "Failed to create temporary directory"
         tar -xzf "$backup_path" -C "$temp_dir"
         backup_path="$temp_dir/$backup_date"
     elif [ -d "$BACKUP_DIR/$vm_name/$backup_date" ]; then
         backup_path="$BACKUP_DIR/$vm_name/$backup_date"
     else
-        audit_log "RESTORE_FAILED" "user=$USER vm=$vm_name backup_date=$backup_date error='Backup not found'"
         error "Backup not found: $vm_name / $backup_date"
         return 1
     fi
@@ -333,10 +376,8 @@ restore_vm() {
     log "Verifying backup integrity..."
     if [ -f "$backup_path/checksums.sha256" ]; then
         if (cd "$backup_path" && sha256sum -c checksums.sha256 --quiet); then
-            audit_log "RESTORE_VERIFY_SUCCESS" "user=$USER vm=$vm_name backup_date=$backup_date"
             success "Backup integrity verified"
         else
-            audit_log "RESTORE_VERIFY_FAILED" "user=$USER vm=$vm_name backup_date=$backup_date error='Checksum mismatch'"
             error "Backup integrity check failed!"
             return 1
         fi
@@ -352,7 +393,6 @@ restore_vm() {
 
     # Check if target VM already exists
     if virsh list --all | grep -q " $target_name "; then
-        audit_log "RESTORE_FAILED" "user=$USER vm=$vm_name target=$target_name error='Target VM already exists'"
         error "VM '$target_name' already exists. Please remove it first or use --target to restore with different name"
         return 1
     fi
@@ -362,22 +402,20 @@ restore_vm() {
     local vm_xml="$backup_path/$vm_name.xml"
 
     if [ ! -f "$vm_xml" ]; then
-        audit_log "RESTORE_FAILED" "user=$USER vm=$vm_name backup_date=$backup_date error='VM XML not found'"
         error "VM XML not found in backup"
         return 1
     fi
 
     # If target name is different, update XML
     if [ "$target_name" != "$vm_name" ]; then
-        local temp_xml
-        temp_xml=$(mktemp) || { error "Failed to create temporary file"; return 1; }
         log "Updating VM name to: $target_name"
-        sed "s|<name>$vm_name</name>|<name>$target_name</name>|" "$vm_xml" > "$temp_xml"
+        local restore_xml=$(create_secure_temp_file "restore-vm" ".xml")
+        register_cleanup_trap "$restore_xml" ${temp_dir:+"$temp_dir"}
+        sed "s|<name>$vm_name</name>|<name>$target_name</name>|" "$vm_xml" > "$restore_xml"
         # Generate new UUID
-        local new_uuid
-        new_uuid=$(uuidgen)
-        sed -i "s|<uuid>.*</uuid>|<uuid>$new_uuid</uuid>|" "$temp_xml"
-        vm_xml="$temp_xml"
+        local new_uuid=$(uuidgen)
+        sed -i "s|<uuid>.*</uuid>|<uuid>$new_uuid</uuid>|" "$restore_xml"
+        vm_xml="$restore_xml"
     fi
 
     # Restore disks
@@ -391,7 +429,7 @@ restore_vm() {
 
         # Determine restore location
         local restore_disk="/var/lib/vms/$target_name-disk-$disk_num.qcow2"
-        mkdir -p "$(dirname "$restore_disk")"
+        mkdir -p "$(dirname "$restore_disk")" || true
 
         log "Restoring disk $disk_num to: $restore_disk"
 
@@ -403,7 +441,6 @@ restore_vm() {
             # This is simplified - in production would need proper XML parsing
             sed -i "s|source file='[^']*disk-${disk_num}[^']*'|source file='$restore_disk'|" "$vm_xml"
         else
-            audit_log "RESTORE_FAILED" "user=$USER vm=$vm_name disk=$disk_num error='Disk restore failed'"
             error "Failed to restore disk $disk_num"
             return 1
         fi
@@ -412,20 +449,16 @@ restore_vm() {
     # Define VM
     log "Defining VM in libvirt..."
     if virsh define "$vm_xml"; then
-        audit_log "RESTORE_SUCCESS" "user=$USER vm=$vm_name target=$target_name backup_date=$backup_date disks=$disk_num"
         success "VM '$target_name' restored successfully"
 
         # Cleanup temp files
         if [ -n "$temp_dir" ] && [ -d "$temp_dir" ]; then
-            safe_rm_rf "$temp_dir" || {
-                warn "Failed to cleanup temporary directory: $temp_dir"
-            }
+            rm -rf "$temp_dir"
         fi
 
         log "VM restored. Start with: virsh start $target_name"
         return 0
     else
-        audit_log "RESTORE_FAILED" "user=$USER vm=$vm_name target=$target_name error='Failed to define VM in libvirt'"
         error "Failed to define VM"
         return 1
     fi
@@ -437,8 +470,6 @@ restore_vm() {
 
 list_backups() {
     local vm_name="$1"
-
-    audit_log "BACKUP_LIST" "user=$USER vm=${vm_name:-all}"
 
     if [ -n "$vm_name" ]; then
         log "Backups for VM: $vm_name"
@@ -458,11 +489,9 @@ list_backups() {
                 continue
             fi
 
-            local backup_name
-            backup_name=$(basename "$backup")
+            local backup_name=$(basename "$backup")
             local backup_date="${backup_name%.tar.gz}"
-            local size
-            size=$(du -sh "$backup" | cut -f1)
+            local size=$(du -sh "$backup" | cut -f1)
             local type="full"
 
             if [[ "$backup" == *.tar.gz ]]; then
@@ -480,10 +509,8 @@ list_backups() {
                 continue
             fi
 
-            local vm
-            vm=$(basename "$vm_dir")
-            local count
-            count=$(find "$vm_dir" -maxdepth 1 -type f -o -type d | wc -l)
+            local vm=$(basename "$vm_dir")
+            local count=$(find "$vm_dir" -maxdepth 1 -type f -o -type d | wc -l)
             count=$((count - 1))  # Subtract parent dir
 
             echo "VM: $vm ($count backups)"
@@ -493,11 +520,9 @@ list_backups() {
                     continue
                 fi
 
-                local backup_name
-                backup_name=$(basename "$backup")
+                local backup_name=$(basename "$backup")
                 local backup_date="${backup_name%.tar.gz}"
-                local size
-                size=$(du -sh "$backup" | cut -f1)
+                local size=$(du -sh "$backup" | cut -f1)
 
                 echo "  - $backup_date ($size)"
             done
@@ -516,30 +541,24 @@ schedule_backup() {
     local schedule_time="$3"
     local schedule_day="$4"   # for weekly
 
-    audit_log "BACKUP_SCHEDULE_START" "user=$USER vm=$vm_name type=$schedule_type time=$schedule_time day=$schedule_day"
     log "Scheduling backup for VM: $vm_name"
 
     # Create cron job
     local cron_file="/etc/cron.d/virtos-backup-$vm_name"
 
     if [ "$schedule_type" = "daily" ]; then
-        local hour
-        hour=$(echo "$schedule_time" | cut -d: -f1)
-        local minute
-        minute=$(echo "$schedule_time" | cut -d: -f2)
+        local hour=$(echo "$schedule_time" | cut -d: -f1)
+        local minute=$(echo "$schedule_time" | cut -d: -f2)
 
         cat > "$cron_file" <<EOF
 # VirtOS automated backup for $vm_name
 # Runs daily at $schedule_time
 $minute $hour * * * root /usr/local/bin/virtos-backup backup $vm_name
 EOF
-        audit_log "BACKUP_SCHEDULE_SUCCESS" "user=$USER vm=$vm_name type=daily time=$schedule_time"
         success "Daily backup scheduled at $schedule_time"
     elif [ "$schedule_type" = "weekly" ]; then
-        local hour
-        hour=$(echo "$schedule_time" | cut -d: -f1)
-        local minute
-        minute=$(echo "$schedule_time" | cut -d: -f2)
+        local hour=$(echo "$schedule_time" | cut -d: -f1)
+        local minute=$(echo "$schedule_time" | cut -d: -f2)
 
         # Convert day name to number (0=Sunday)
         case "$schedule_day" in
@@ -558,7 +577,6 @@ EOF
 # Runs weekly on $schedule_day at $schedule_time
 $minute $hour * * $day_num root /usr/local/bin/virtos-backup backup $vm_name
 EOF
-        audit_log "BACKUP_SCHEDULE_SUCCESS" "user=$USER vm=$vm_name type=weekly day=$schedule_day time=$schedule_time"
         success "Weekly backup scheduled for $schedule_day at $schedule_time"
     fi
 
@@ -580,8 +598,14 @@ EOF
 #==============================================================================
 
 cleanup_backups() {
-    audit_log "BACKUP_CLEANUP_START" "user=$USER retention_days=$RETENTION_DAYS"
     log "Cleaning up backups older than $RETENTION_DAYS days..."
+
+    # SECURITY: Validate BACKUP_DIR before any rm operations
+    if ! validate_backup_path "$BACKUP_DIR" 2>/dev/null; then
+        error "Invalid or unsafe BACKUP_DIR: $BACKUP_DIR"
+        error "BACKUP_DIR must be within /var/lib/virtos/backups or similar safe location"
+        return 1
+    fi
 
     local removed=0
 
@@ -590,11 +614,16 @@ cleanup_backups() {
             continue
         fi
 
-        local vm
-        vm=$(basename "$vm_dir")
+        local vm=$(basename "$vm_dir")
 
         for backup in "$vm_dir"/*; do
             if [ ! -e "$backup" ]; then
+                continue
+            fi
+
+            # SECURITY: Validate backup path before rm -rf
+            if ! validate_backup_path "$backup" "$BACKUP_DIR" 2>/dev/null; then
+                warn "Skipping invalid backup path: $backup"
                 continue
             fi
 
@@ -603,25 +632,15 @@ cleanup_backups() {
 
             if [ $age_days -gt $RETENTION_DAYS ]; then
                 log "Removing old backup: $vm / $(basename "$backup") (${age_days} days old)"
-                # Safely remove backup with path validation
-                if validate_backup_path "$backup" "$BACKUP_DIR"; then
-                    safe_rm_rf "$backup" || {
-                        error "Failed to remove old backup: $backup"
-                        continue
-                    }
-                    removed=$((removed + 1))
-                else
-                    error "Skipping backup with invalid path: $backup"
-                fi
+                rm -rf "$backup"
+                removed=$((removed + 1))
             fi
         done
     done
 
     if [ $removed -gt 0 ]; then
-        audit_log "BACKUP_CLEANUP_SUCCESS" "user=$USER removed=$removed retention_days=$RETENTION_DAYS"
         success "Removed $removed old backups"
     else
-        audit_log "BACKUP_CLEANUP_SUCCESS" "user=$USER removed=0 retention_days=$RETENTION_DAYS"
         log "No old backups to remove"
     fi
 }
@@ -630,8 +649,8 @@ cleanup_backups() {
 # Main Command Handler
 #==============================================================================
 
-COMMAND="$1"
-shift
+COMMAND="${1:-}"
+[ -n "$COMMAND" ] && shift
 
 case "$COMMAND" in
     backup)

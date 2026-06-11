@@ -1,6 +1,6 @@
 #!/bin/bash
-set -e
-
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 # VirtOS Snapshot - Automated VM snapshot management
 # Create, manage, schedule, and cleanup VM snapshots
 
@@ -9,12 +9,7 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-# Load audit library
-if [ -f /usr/local/lib/virtos-audit.sh ]; then
-    . /usr/local/lib/virtos-audit.sh
-fi
-
-VERSION=$(get_version 2>/dev/null || echo "0.21")
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 usage() {
     cat << EOF
@@ -58,6 +53,15 @@ Examples:
   # Cleanup old snapshots
   virtos-snapshot cleanup web-server-1
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM not found
+    4    Snapshot creation failed
+    5    Snapshot not found
+    6    Revert failed
+
 EOF
 }
 
@@ -66,21 +70,24 @@ create_snapshot() {
     local description="${2:-Snapshot created at $(date)}"
     local snapshot_type="${3:-disk-only}"
 
-    # Security: Validate VM name before using in commands
-    if ! validate_vm_name "$vm_name"; then
-        echo "Error: Invalid VM name '$vm_name'"
-        echo "VM names must contain only alphanumeric characters, dashes, and underscores (max 64 chars)"
-        audit_log "SNAPSHOT_CREATE_FAILED" "user=$USER vm=$vm_name reason=invalid_vm_name" "virtos-snapshot"
+    # SECURITY: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        echo "Error: Invalid VM name '$vm_name'" >&2
+        echo "VM names must contain only alphanumeric characters, hyphens, and underscores (max 64 chars)" >&2
         return 1
     fi
 
-    audit_log "SNAPSHOT_CREATE_START" "user=$USER vm=$vm_name type=$snapshot_type description='$description'" "virtos-snapshot"
     echo "Creating snapshot for VM: $vm_name"
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
-        echo "Error: VM '$vm_name' not found"
-        audit_log "SNAPSHOT_CREATE_FAILED" "user=$USER vm=$vm_name reason=vm_not_found" "virtos-snapshot"
+        echo "Error: VM '$vm_name' not found" >&2
+        echo "" >&2
+        echo "Available VMs:" >&2
+        virsh list --all --name 2>/dev/null | grep -v '^$' | sed 's/^/  • /' >&2 || echo "  (none)" >&2
+        echo "" >&2
+        echo "Create a snapshot for an existing VM:" >&2
+        echo "  virtos-snapshot create <vm-name> \"Description\"" >&2
         return 1
     fi
 
@@ -103,11 +110,24 @@ create_snapshot() {
 
     if [ "$snapshot_cmd_ok" = "true" ]; then
         echo "Snapshot created: $snapshot_name"
-        audit_log "SNAPSHOT_CREATE_SUCCESS" "user=$USER vm=$vm_name snapshot=$snapshot_name type=$snapshot_type" "virtos-snapshot"
         return 0
     else
-        echo "Error: Failed to create snapshot"
-        audit_log "SNAPSHOT_CREATE_FAILED" "user=$USER vm=$vm_name reason=virsh_command_failed" "virtos-snapshot"
+        echo "Error: Failed to create snapshot" >&2
+        echo "" >&2
+        echo "Possible causes:" >&2
+        echo "  • Insufficient disk space for snapshot" >&2
+        echo "  • VM disk format doesn't support snapshots (must be qcow2)" >&2
+        echo "  • Disk is on read-only storage" >&2
+        if [ "$snapshot_type" = "memory" ]; then
+            echo "  • VM is not running (memory snapshots require running VM)" >&2
+        fi
+        echo "" >&2
+        echo "Check VM disk format:" >&2
+        echo "  virsh domblklist $vm_name --details" >&2
+        echo "  qemu-img info /path/to/disk.img" >&2
+        echo "" >&2
+        echo "Check available disk space:" >&2
+        echo "  df -h /var/lib/libvirt/images/" >&2
         return 1
     fi
 }
@@ -115,21 +135,18 @@ create_snapshot() {
 list_snapshots() {
     local vm_name="$1"
 
-    # Security: Validate VM name before using in commands
-    if ! validate_vm_name "$vm_name"; then
-        echo "Error: Invalid VM name '$vm_name'"
-        audit_log "SNAPSHOT_LIST_FAILED" "user=$USER vm=$vm_name reason=invalid_vm_name" "virtos-snapshot"
+    # SECURITY: Validate VM name before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        echo "Error: Invalid VM name '$vm_name'" >&2
         return 1
     fi
 
-    audit_log "SNAPSHOT_LIST" "user=$USER vm=$vm_name" "virtos-snapshot"
     echo "Snapshots for VM: $vm_name"
     echo ""
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
         echo "Error: VM '$vm_name' not found"
-        audit_log "SNAPSHOT_LIST_FAILED" "user=$USER vm=$vm_name reason=vm_not_found" "virtos-snapshot"
         return 1
     fi
 
@@ -151,43 +168,47 @@ revert_snapshot() {
     local vm_name="$1"
     local snapshot_name="$2"
 
-    # Security: Validate inputs before using in commands
-    if ! validate_vm_name "$vm_name"; then
-        echo "Error: Invalid VM name '$vm_name'"
-        audit_log "SNAPSHOT_REVERT_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=invalid_vm_name" "virtos-snapshot"
+    # SECURITY: Validate inputs before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        echo "Error: Invalid VM name '$vm_name'" >&2
         return 1
     fi
-    if ! validate_vm_name "$snapshot_name"; then
-        echo "Error: Invalid snapshot name '$snapshot_name'"
-        audit_log "SNAPSHOT_REVERT_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=invalid_snapshot_name" "virtos-snapshot"
+    if ! validate_vm_name "$snapshot_name" 2>/dev/null; then
+        echo "Error: Invalid snapshot name '$snapshot_name'" >&2
         return 1
     fi
 
-    audit_log "SNAPSHOT_REVERT_START" "user=$USER vm=$vm_name snapshot=$snapshot_name" "virtos-snapshot"
     echo "Reverting VM '$vm_name' to snapshot '$snapshot_name'..."
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
         echo "Error: VM '$vm_name' not found"
-        audit_log "SNAPSHOT_REVERT_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=vm_not_found" "virtos-snapshot"
         return 1
     fi
 
     # Check if snapshot exists
     if ! virsh snapshot-list "$vm_name" --name | grep -q "^$snapshot_name$"; then
-        echo "Error: Snapshot '$snapshot_name' not found"
-        audit_log "SNAPSHOT_REVERT_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=snapshot_not_found" "virtos-snapshot"
+        echo "Error: Snapshot '$snapshot_name' not found for VM '$vm_name'" >&2
+        echo "" >&2
+        echo "Available snapshots for $vm_name:" >&2
+        local snapshots=$(virsh snapshot-list "$vm_name" --name 2>/dev/null | grep -v '^$')
+        if [ -n "$snapshots" ]; then
+            echo "$snapshots" | sed 's/^/  • /' >&2
+        else
+            echo "  (none)" >&2
+        fi
+        echo "" >&2
+        echo "To see snapshot details:" >&2
+        echo "  virtos-snapshot list $vm_name" >&2
         return 1
     fi
 
     # Revert
     if virsh snapshot-revert "$vm_name" "$snapshot_name"; then
         echo "VM reverted to snapshot: $snapshot_name"
-        audit_log "SNAPSHOT_REVERT_SUCCESS" "user=$USER vm=$vm_name snapshot=$snapshot_name" "virtos-snapshot"
         return 0
     else
         echo "Error: Failed to revert snapshot"
-        audit_log "SNAPSHOT_REVERT_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=virsh_command_failed" "virtos-snapshot"
         return 1
     fi
 }
@@ -196,36 +217,30 @@ delete_snapshot() {
     local vm_name="$1"
     local snapshot_name="$2"
 
-    # Security: Validate inputs before using in commands
-    if ! validate_vm_name "$vm_name"; then
-        echo "Error: Invalid VM name '$vm_name'"
-        audit_log "SNAPSHOT_DELETE_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=invalid_vm_name" "virtos-snapshot"
+    # SECURITY: Validate inputs before using in commands
+    if ! validate_vm_name "$vm_name" 2>/dev/null; then
+        echo "Error: Invalid VM name '$vm_name'" >&2
         return 1
     fi
-    if ! validate_vm_name "$snapshot_name"; then
-        echo "Error: Invalid snapshot name '$snapshot_name'"
-        audit_log "SNAPSHOT_DELETE_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=invalid_snapshot_name" "virtos-snapshot"
+    if ! validate_vm_name "$snapshot_name" 2>/dev/null; then
+        echo "Error: Invalid snapshot name '$snapshot_name'" >&2
         return 1
     fi
 
-    audit_log "SNAPSHOT_DELETE_START" "user=$USER vm=$vm_name snapshot=$snapshot_name" "virtos-snapshot"
     echo "Deleting snapshot '$snapshot_name' for VM '$vm_name'..."
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
         echo "Error: VM '$vm_name' not found"
-        audit_log "SNAPSHOT_DELETE_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=vm_not_found" "virtos-snapshot"
         return 1
     fi
 
     # Delete snapshot
     if virsh snapshot-delete "$vm_name" "$snapshot_name" --metadata; then
         echo "Snapshot deleted: $snapshot_name"
-        audit_log "SNAPSHOT_DELETE_SUCCESS" "user=$USER vm=$vm_name snapshot=$snapshot_name" "virtos-snapshot"
         return 0
     else
         echo "Error: Failed to delete snapshot"
-        audit_log "SNAPSHOT_DELETE_FAILED" "user=$USER vm=$vm_name snapshot=$snapshot_name reason=virsh_command_failed" "virtos-snapshot"
         return 1
     fi
 }
@@ -236,7 +251,6 @@ schedule_snapshots() {
     local schedule_time="$3"
     local keep_count="${4:-7}"
 
-    audit_log "SNAPSHOT_SCHEDULE_START" "user=$USER vm=$vm_name type=$schedule_type time=$schedule_time keep=$keep_count" "virtos-snapshot"
     echo "Scheduling snapshots for VM: $vm_name"
 
     # Create cron job
@@ -267,20 +281,17 @@ EOF
 
     echo "Cleanup scheduled to keep last $keep_count snapshots"
     echo "Cron job created: $cron_file"
-    audit_log "SNAPSHOT_SCHEDULE_SUCCESS" "user=$USER vm=$vm_name type=$schedule_type time=$schedule_time keep=$keep_count cron=$cron_file" "virtos-snapshot"
 }
 
 cleanup_snapshots() {
     local vm_name="$1"
     local keep_count="${2:-7}"
 
-    audit_log "SNAPSHOT_CLEANUP_START" "user=$USER vm=$vm_name keep=$keep_count" "virtos-snapshot"
     echo "Cleaning up snapshots for VM: $vm_name (keeping last $keep_count)..."
 
     # Check if VM exists
     if ! virsh list --all | grep -q " $vm_name "; then
         echo "Error: VM '$vm_name' not found"
-        audit_log "SNAPSHOT_CLEANUP_FAILED" "user=$USER vm=$vm_name reason=vm_not_found" "virtos-snapshot"
         return 1
     fi
 
@@ -290,7 +301,6 @@ cleanup_snapshots() {
 
     if [ $total -le $keep_count ]; then
         echo "Total snapshots ($total) <= keep count ($keep_count), nothing to delete"
-        audit_log "SNAPSHOT_CLEANUP_SUCCESS" "user=$USER vm=$vm_name total=$total keep=$keep_count deleted=0" "virtos-snapshot"
         return 0
     fi
 
@@ -307,7 +317,6 @@ cleanup_snapshots() {
     done
 
     echo "Deleted $deleted snapshots"
-    audit_log "SNAPSHOT_CLEANUP_SUCCESS" "user=$USER vm=$vm_name total=$total keep=$keep_count deleted=$deleted" "virtos-snapshot"
 }
 
 # Storage-specific snapshot functions
@@ -329,11 +338,7 @@ btrfs_snapshot() {
             if [ "$fs_type" = "btrfs" ]; then
                 local snapshot_name="$disk.snapshot-$(date +%Y%m%d-%H%M%S)"
                 echo "Creating Btrfs snapshot: $snapshot_name"
-                if btrfs subvolume snapshot "$disk" "$snapshot_name"; then
-                    audit_log "SNAPSHOT_BTRFS_SUCCESS" "user=$USER vm=$vm_name disk=$disk snapshot=$snapshot_name" "virtos-snapshot"
-                else
-                    audit_log "SNAPSHOT_BTRFS_FAILED" "user=$USER vm=$vm_name disk=$disk reason=btrfs_command_failed" "virtos-snapshot"
-                fi
+                btrfs subvolume snapshot "$disk" "$snapshot_name"
             fi
         fi
     done
@@ -343,7 +348,6 @@ zfs_snapshot() {
     local vm_name="$1"
     local description="$2"
 
-    audit_log "SNAPSHOT_ZFS_START" "user=$USER vm=$vm_name" "virtos-snapshot"
     echo "Creating ZFS snapshot for VM: $vm_name"
 
     # Find VM disks on ZFS
@@ -355,11 +359,7 @@ zfs_snapshot() {
             local snapshot_name="$zvol_name@snapshot-$(date +%Y%m%d-%H%M%S)"
 
             echo "Creating ZFS snapshot: $snapshot_name"
-            if zfs snapshot "$snapshot_name"; then
-                audit_log "SNAPSHOT_ZFS_SUCCESS" "user=$USER vm=$vm_name zvol=$zvol_name snapshot=$snapshot_name" "virtos-snapshot"
-            else
-                audit_log "SNAPSHOT_ZFS_FAILED" "user=$USER vm=$vm_name zvol=$zvol_name reason=zfs_command_failed" "virtos-snapshot"
-            fi
+            zfs snapshot "$snapshot_name"
         fi
     done
 }
@@ -368,7 +368,6 @@ lvm_snapshot() {
     local vm_name="$1"
     local description="$2"
 
-    audit_log "SNAPSHOT_LVM_START" "user=$USER vm=$vm_name" "virtos-snapshot"
     echo "Creating LVM snapshot for VM: $vm_name"
 
     # Find VM disks on LVM
@@ -379,11 +378,7 @@ lvm_snapshot() {
             local snapshot_name="$disk-snapshot-$(date +%Y%m%d-%H%M%S)"
 
             echo "Creating LVM snapshot: $snapshot_name"
-            if lvcreate -L 10G -s -n "$(basename "$snapshot_name")" "$disk"; then
-                audit_log "SNAPSHOT_LVM_SUCCESS" "user=$USER vm=$vm_name disk=$disk snapshot=$snapshot_name" "virtos-snapshot"
-            else
-                audit_log "SNAPSHOT_LVM_FAILED" "user=$USER vm=$vm_name disk=$disk reason=lvcreate_command_failed" "virtos-snapshot"
-            fi
+            lvcreate -L 10G -s -n "$(basename "$snapshot_name")" "$disk"
         fi
     done
 }
@@ -419,6 +414,10 @@ while [ $# -gt 0 ]; do
             ;;
         --keep)
             KEEP_COUNT="$2"
+            if ! validate_number "$KEEP_COUNT" 2>/dev/null; then
+                echo "Error: --keep requires a positive integer, got: $KEEP_COUNT" >&2
+                exit 1
+            fi
             shift 2
             ;;
         *)

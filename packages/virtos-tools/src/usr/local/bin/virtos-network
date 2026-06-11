@@ -10,7 +10,7 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION=$(get_version 2>/dev/null || echo "0.21")
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 
 # Handle --help and --version early (before any filesystem operations)
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
@@ -21,12 +21,18 @@ elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version"
     exit 0
 fi
 
-NETWORK_DIR="$(get_virtos_path DATA_NETWORK)"
+NETWORK_DIR="/var/lib/virtos/network"
 STATE_DIR="/var/run/virtos/network"
-LOG_FILE="$(get_virtos_path LOG_NETWORK)"
+LOG_FILE="/var/log/virtos-network.log"
 
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$NETWORK_DIR" "$STATE_DIR" || true
+    if ! mkdir -p "$NETWORK_DIR" "$STATE_DIR"; then
+        echo "WARNING: Failed to create network directories" >&2
+    fi
+    # Verify directories are writable
+    if [ ! -w "$NETWORK_DIR" ] || [ ! -w "$STATE_DIR" ]; then
+        echo "WARNING: Network directories not writable - some operations may fail" >&2
+    fi
 fi
 
 usage() {
@@ -117,6 +123,19 @@ log_message() {
 
 init_config() {
     if [ ! -f "$NETWORK_DIR/config.conf" ]; then
+        # Ensure directory exists and is writable before creating config
+        if [ ! -d "$NETWORK_DIR" ]; then
+            mkdir -p "$NETWORK_DIR" 2>/dev/null || {
+                echo "Error: Cannot create network directory $NETWORK_DIR" >&2
+                return 1
+            }
+        fi
+
+        if [ ! -w "$NETWORK_DIR" ]; then
+            echo "Error: Network directory $NETWORK_DIR is not writable" >&2
+            return 1
+        fi
+
         cat > "$NETWORK_DIR/config.conf" <<EOF
 # VirtOS Network Configuration
 
@@ -771,6 +790,14 @@ qos_set() {
     if [ -z "$vm_name" ] || [ -z "$rate" ]; then
         echo "Error: VM name and rate required"
         echo "Rate format: <number> (Mbps)"
+        return 1
+    fi
+
+    # SECURITY: Validate rate is a positive number
+    if ! validate_number "$rate" 2>/dev/null; then
+        echo "Error: Invalid rate '$rate' (must be a positive integer)" >&2
+        echo "Rate format: <number> (Mbps)" >&2
+        echo "Example: virtos-network qos-set my-vm 100" >&2
         return 1
     fi
 

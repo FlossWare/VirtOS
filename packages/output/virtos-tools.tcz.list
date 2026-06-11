@@ -5,6 +5,7 @@
 /usr/local/bin/virtos-analytics
 /usr/local/bin/virtos-api
 /usr/local/bin/virtos-apm
+/usr/local/bin/virtos-audit
 /usr/local/bin/virtos-auth
 /usr/local/bin/virtos-automation
 /usr/local/bin/virtos-backup
@@ -42,6 +43,7 @@
 /usr/local/bin/virtos-secrets
 /usr/local/bin/virtos-security
 /usr/local/bin/virtos-security-advanced
+/usr/local/bin/virtos-security-check
 /usr/local/bin/virtos-setup
 /usr/local/bin/virtos-snapshot
 /usr/local/bin/virtos-sre
@@ -51,10 +53,20 @@
 /usr/local/bin/virtos-tui
 /usr/local/bin/virtos-update
 /usr/local/bin/virtos-usb
+/usr/local/bin/virtos-version
 /usr/local/bin/virtos-web
+/usr/local/lib
+/usr/local/lib/virtos-audit.sh
+/usr/local/lib/virtos-common.sh
+/usr/local/lib/virtos-keyring.sh
+/usr/local/lib/virtos-paths.conf
 /usr/local/share
 /usr/local/share/doc
 /usr/local/share/doc/virtos
 /usr/local/share/doc/virtos/README
+/usr/local/share/virtos
+/usr/local/share/virtos/BUILD_DATE
+/usr/local/share/virtos/GIT_COMMIT
+/usr/local/share/virtos/VERSION
 /usr/local/tce.installed
 /usr/local/tce.installed/virtos-tools

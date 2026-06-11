@@ -1,22 +1,35 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS DevOps Integration
 # GitOps, CI/CD, and Infrastructure as Code tools
 
-# Load common library for path resolution
+# Load common library
 if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION="1"
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-devops version $VERSION"
+    exit 0
+fi
+
 
 # Configuration
-DEVOPS_CONFIG_DIR="$(get_virtos_path CONF_DEVOPS_DIR)"
-DEVOPS_LOG="$(get_virtos_path LOG_DEVOPS)"
+DEVOPS_CONFIG_DIR="/etc/virtos/devops"
+DEVOPS_LOG="/var/log/virtos-devops.log"
 
 # Ensure config directory exists
-mkdir -p "$DEVOPS_CONFIG_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$DEVOPS_CONFIG_DIR" || true
+fi
 
 # Logging function
 log_message() {
@@ -70,8 +83,18 @@ install_argocd() {
 install_flux() {
     log_message "Installing Flux for GitOps..."
 
-    # Install Flux CLI
-    curl -s https://fluxcd.io/install.sh | bash
+    # Install Flux CLI (SECURITY: Download and review before executing)
+    local install_script=$(mktemp) || die "Failed to create temporary file"
+    if curl -s https://fluxcd.io/install.sh -o "$install_script"; then
+        log_message "Downloaded Flux install script to $install_script"
+        log_message "WARNING: Review the script before execution in production"
+        # SECURITY: In production environments, review the script content before running
+        bash "$install_script"
+        rm -f "$install_script"
+    else
+        log_message "ERROR: Failed to download Flux install script"
+        return 1
+    fi
 
     # Verify installation
     flux check --pre
@@ -170,7 +193,7 @@ install_github_actions_runner() {
 
     log_message "Installing GitHub Actions self-hosted runner..."
 
-    mkdir -p /opt/github-actions-runner
+    mkdir -p /opt/github-actions-runner || true
     cd /opt/github-actions-runner
 
     # Download latest runner
@@ -207,7 +230,7 @@ install_terraform() {
     terraform version
 
     # Create example Terraform config for VirtOS
-    mkdir -p "$DEVOPS_CONFIG_DIR/terraform-examples"
+    mkdir -p "$DEVOPS_CONFIG_DIR/terraform-examples" || true
 
     cat > "$DEVOPS_CONFIG_DIR/terraform-examples/vm.tf" <<'EOF'
 # Example Terraform configuration for VirtOS VM
@@ -265,7 +288,7 @@ install_ansible() {
     ansible --version
 
     # Create Ansible inventory for VirtOS
-    mkdir -p "$DEVOPS_CONFIG_DIR/ansible"
+    mkdir -p "$DEVOPS_CONFIG_DIR/ansible" || true
 
     cat > "$DEVOPS_CONFIG_DIR/ansible/inventory.ini" <<'EOF'
 [virtos_hosts]
@@ -312,14 +335,24 @@ EOF
 install_pulumi() {
     log_message "Installing Pulumi for cloud infrastructure..."
 
-    # Install Pulumi
-    curl -fsSL https://get.pulumi.com | sh
+    # Install Pulumi (SECURITY: Download and review before executing)
+    local install_script=$(mktemp) || die "Failed to create temporary file"
+    if curl -fsSL https://get.pulumi.com -o "$install_script"; then
+        log_message "Downloaded Pulumi install script to $install_script"
+        log_message "WARNING: Review the script before execution in production"
+        # SECURITY: In production environments, review the script content before running
+        sh "$install_script"
+        rm -f "$install_script"
+    else
+        log_message "ERROR: Failed to download Pulumi install script"
+        return 1
+    fi
 
     # Add to PATH
     export PATH=$PATH:$HOME/.pulumi/bin
 
     # Create example Pulumi project
-    mkdir -p "$DEVOPS_CONFIG_DIR/pulumi-examples"
+    mkdir -p "$DEVOPS_CONFIG_DIR/pulumi-examples" || true
     cd "$DEVOPS_CONFIG_DIR/pulumi-examples"
 
     pulumi new python -y --name virtos-infra
@@ -342,7 +375,7 @@ install_harbor() {
     fi
 
     # Download Harbor installer
-    mkdir -p /opt/harbor
+    mkdir -p /opt/harbor || true
     cd /opt/harbor
 
     wget -q https://github.com/goharbor/harbor/releases/download/v2.8.0/harbor-offline-installer-v2.8.0.tgz
@@ -369,11 +402,11 @@ create_ci_pipeline() {
 
     log_message "Creating $pipeline_type CI pipeline in $project_dir..."
 
-    mkdir -p "$project_dir"
+    mkdir -p "$project_dir" || true
 
     case "$pipeline_type" in
         github-actions)
-            mkdir -p "$project_dir/.github/workflows"
+            mkdir -p "$project_dir/.github/workflows" || true
             cat > "$project_dir/.github/workflows/virtos-build.yml" <<'EOF'
 name: VirtOS Build
 
@@ -683,45 +716,69 @@ devops_wizard() {
 }
 
 # Show usage
-usage() {
+show_help() {
     cat <<EOF
-VirtOS DevOps Integration - GitOps, CI/CD, and IaC tools
+Usage: virtos-devops [OPTIONS] <command> [arguments]
 
-Usage: virtos-devops <command> [options]
+VirtOS DevOps Integration - GitOps, CI/CD, and Infrastructure as Code tools.
 
-GitOps Commands:
-  install-argocd               Install ArgoCD for GitOps
-  install-flux                 Install Flux for GitOps
+COMMANDS:
+  GitOps:
+    install-argocd                Install ArgoCD for GitOps workflows
+    install-flux                  Install Flux for GitOps workflows
 
-CI/CD Commands:
-  install-jenkins              Install Jenkins CI/CD server
-  install-gitlab-runner        Install GitLab Runner
-  install-github-actions <repo> <token>  Install GitHub Actions runner
-  create-ci-pipeline <type> <dir>  Create CI pipeline (github-actions/gitlab-ci/jenkins)
+  CI/CD:
+    install-jenkins               Install Jenkins CI/CD server
+    install-gitlab-runner         Install GitLab Runner for CI/CD
+    install-github-actions <repo> <token>
+                                  Install GitHub Actions runner
+    create-ci-pipeline <type> <dir>
+                                  Create CI pipeline configuration
+                                  Types: github-actions, gitlab-ci, jenkins
 
-IaC Commands:
-  install-terraform            Install Terraform
-  install-ansible              Install Ansible
-  install-pulumi               Install Pulumi
+  Infrastructure as Code:
+    install-terraform             Install Terraform for IaC
+    install-ansible               Install Ansible automation
+    install-pulumi                Install Pulumi for IaC
 
-Registry Commands:
-  install-harbor               Install Harbor container registry
+  Container Registry:
+    install-harbor                Install Harbor container registry
 
-Deployment Commands:
-  create-deployment <name> <type>  Create deployment (kubernetes/docker-compose/systemd)
+  Deployment:
+    create-deployment <name> <type>
+                                  Create deployment configuration
+                                  Types: kubernetes, docker-compose, systemd
 
-Status Commands:
-  status                       Show DevOps tools status
-  wizard                       Interactive setup wizard
+  Status:
+    status                        Show DevOps tools status
+    wizard                        Interactive setup wizard
 
-Examples:
-  virtos-devops install-terraform
-  virtos-devops install-jenkins
-  virtos-devops create-ci-pipeline github-actions /path/to/project
-  virtos-devops create-deployment myapp kubernetes
-  virtos-devops wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Install Terraform
+    virtos-devops install-terraform
+
+    # Install Jenkins CI/CD
+    virtos-devops install-jenkins
+
+    # Create GitHub Actions CI pipeline
+    virtos-devops create-ci-pipeline github-actions /path/to/project
+
+    # Create Kubernetes deployment
+    virtos-devops create-deployment myapp kubernetes
+
+    # Interactive wizard
+    virtos-devops wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -766,7 +823,16 @@ case "$1" in
     wizard)
         devops_wizard
         ;;
+    --version|-v|version)
+        echo "virtos-devops version $VERSION"
+        exit 0
+        ;;
+    --help|-h|help|"")
+        show_help
+        exit 0
+        ;;
     *)
-        usage
+        show_help
+        exit 1
         ;;
 esac

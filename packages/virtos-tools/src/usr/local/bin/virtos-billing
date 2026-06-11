@@ -1,10 +1,16 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # virtos-billing - Cost tracking and billing management for VirtOS
 # Part of Phase 10: Metrics, Telemetry, and Advanced Features
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 SCRIPT_NAME="virtos-billing"
 LOG_FILE="/var/log/virtos-billing.log"
 CONFIG_FILE="/etc/virtos/billing.conf"
@@ -143,6 +149,13 @@ track_usage() {
         return 1
     fi
 
+    # SECURITY: Validate VM name to prevent SQL injection and command injection
+    if ! echo "$vm_name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        log "SECURITY: Invalid VM name in track usage: $vm_name"
+        echo "Error: Invalid VM name format (alphanumeric, underscore, hyphen only)" >&2
+        return 1
+    fi
+
     log "Tracking usage for VM: $vm_name..."
 
     # Get VM info
@@ -174,13 +187,13 @@ track_usage() {
     local now=$(date +%s)
 
     # Record CPU usage
-    sqlite3 "$db_file" "INSERT INTO resources (vm_name, resource_type, amount, start_time) VALUES ('$vm_name', 'cpu', '$cpu_count', '$now');"
+    sqlite3 "$db_file" "INSERT INTO resources (vm_name, resource_type, amount, start_time) VALUES ('$vm_name', 'cpu', $cpu_count, $now);"
 
     # Record RAM usage
-    sqlite3 "$db_file" "INSERT INTO resources (vm_name, resource_type, amount, start_time) VALUES ('$vm_name', 'ram', '$ram_gb', '$now');"
+    sqlite3 "$db_file" "INSERT INTO resources (vm_name, resource_type, amount, start_time) VALUES ('$vm_name', 'ram', $ram_gb, $now);"
 
     # Record disk usage
-    sqlite3 "$db_file" "INSERT INTO resources (vm_name, resource_type, amount, start_time) VALUES ('$vm_name', 'disk', '$disk_gb', '$now');"
+    sqlite3 "$db_file" "INSERT INTO resources (vm_name, resource_type, amount, start_time) VALUES ('$vm_name', 'disk', $disk_gb, $now);"
 
     log "Usage tracked for $vm_name: ${cpu_count}vCPU, ${ram_gb}GB RAM, ${disk_gb}GB disk"
 }
@@ -202,12 +215,12 @@ calculate_costs() {
 
     if [ -n "$start_date" ]; then
         local start_ts=$(date -d "$start_date" +%s 2>/dev/null || echo "0")
-        where_clause="$where_clause AND start_time >= '$start_ts'"
+        where_clause="$where_clause AND start_time >= $start_ts"
     fi
 
     if [ -n "$end_date" ]; then
         local end_ts=$(date -d "$end_date" +%s 2>/dev/null || echo "999999999999")
-        where_clause="$where_clause AND start_time <= '$end_ts'"
+        where_clause="$where_clause AND start_time <= $end_ts"
     fi
 
     # Calculate costs for each resource type
@@ -221,7 +234,7 @@ calculate_costs() {
             hours=$(echo "scale=2; ($end_time - $start_time) / 3600" | bc)
         fi
         local cost=$(echo "scale=4; $amount * $hours * $PRICE_CPU_HOUR" | bc)
-        sqlite3 "$db_file" "UPDATE resources SET cost = '$cost' WHERE id = '$id';"
+        sqlite3 "$db_file" "UPDATE resources SET cost = $cost WHERE id = $id;"
         total_cost=$(echo "scale=2; $total_cost + $cost" | bc)
     done <<< "$cpu_records"
 
@@ -233,7 +246,7 @@ calculate_costs() {
             hours=$(echo "scale=2; ($end_time - $start_time) / 3600" | bc)
         fi
         local cost=$(echo "scale=4; $amount * $hours * $PRICE_RAM_GB_HOUR" | bc)
-        sqlite3 "$db_file" "UPDATE resources SET cost = '$cost' WHERE id = '$id';"
+        sqlite3 "$db_file" "UPDATE resources SET cost = $cost WHERE id = $id;"
         total_cost=$(echo "scale=2; $total_cost + $cost" | bc)
     done <<< "$ram_records"
 
@@ -241,7 +254,7 @@ calculate_costs() {
     local disk_records=$(sqlite3 "$db_file" "SELECT id, amount FROM resources $where_clause AND resource_type = 'disk';")
     while IFS='|' read -r id amount; do
         local cost=$(echo "scale=4; $amount * $PRICE_DISK_GB_MONTH" | bc)
-        sqlite3 "$db_file" "UPDATE resources SET cost = '$cost' WHERE id = '$id';"
+        sqlite3 "$db_file" "UPDATE resources SET cost = $cost WHERE id = $id;"
         total_cost=$(echo "scale=2; $total_cost + $cost" | bc)
     done <<< "$disk_records"
 
@@ -255,8 +268,25 @@ generate_invoice() {
     local period_start="${2:-}"
     local period_end="${3:-}"
 
+    # SECURITY: Validate customer name to prevent SQL injection
+    if ! echo "$customer" | grep -qE '^[a-zA-Z0-9_@. -]+$'; then
+        log "SECURITY: Invalid customer name: $customer"
+        echo "Error: Invalid customer name format (alphanumeric, @, ., space, hyphen, underscore only)" >&2
+        return 1
+    fi
+
     if [ -z "$period_start" ] || [ -z "$period_end" ]; then
         log "ERROR: Period start and end dates required"
+        return 1
+    fi
+
+    # SECURITY: Validate date format to prevent SQL injection
+    if ! date -d "$period_start" +%s >/dev/null 2>&1; then
+        echo "Error: Invalid period_start date format: $period_start" >&2
+        return 1
+    fi
+    if ! date -d "$period_end" +%s >/dev/null 2>&1; then
+        echo "Error: Invalid period_end date format: $period_end" >&2
         return 1
     fi
 
@@ -280,22 +310,22 @@ generate_invoice() {
     local total=$(echo "scale=2; $subtotal + $tax" | bc)
 
     # Create invoice record
-    sqlite3 "$db_file" "INSERT INTO invoices (invoice_number, customer, period_start, period_end, subtotal, tax, total, created_at) VALUES ('$invoice_number', '$customer', '$start_ts', '$end_ts', '$subtotal', '$tax', '$total', '$now');"
+    sqlite3 "$db_file" "INSERT INTO invoices (invoice_number, customer, period_start, period_end, subtotal, tax, total, created_at) VALUES ('$invoice_number', '$customer', $start_ts, $end_ts, $subtotal, $tax, $total, $now);"
 
     local invoice_id=$(sqlite3 "$db_file" "SELECT id FROM invoices WHERE invoice_number = '$invoice_number';")
 
     # Add line items from unbilled resources
-    local resources=$(sqlite3 "$db_file" "SELECT vm_name, resource_type, SUM(amount), SUM(cost) FROM resources WHERE billed = 0 AND start_time >= '$start_ts' AND start_time <= '$end_ts' GROUP BY vm_name, resource_type;")
+    local resources=$(sqlite3 "$db_file" "SELECT vm_name, resource_type, SUM(amount), SUM(cost) FROM resources WHERE billed = 0 AND start_time >= $start_ts AND start_time <= $end_ts GROUP BY vm_name, resource_type;")
 
     while IFS='|' read -r vm_name resource_type quantity amount; do
         local description="$vm_name - $resource_type"
         local unit_price=$(echo "scale=4; $amount / $quantity" | bc)
 
-        sqlite3 "$db_file" "INSERT INTO line_items (invoice_id, description, quantity, unit_price, amount) VALUES ('$invoice_id', '$description', '$quantity', '$unit_price', '$amount');"
+        sqlite3 "$db_file" "INSERT INTO line_items (invoice_id, description, quantity, unit_price, amount) VALUES ($invoice_id, '$description', $quantity, $unit_price, $amount);"
     done <<< "$resources"
 
     # Mark resources as billed
-    sqlite3 "$db_file" "UPDATE resources SET billed = 1 WHERE start_time >= '$start_ts' AND start_time <= '$end_ts';"
+    sqlite3 "$db_file" "UPDATE resources SET billed = 1 WHERE start_time >= $start_ts AND start_time <= $end_ts;"
 
     # Generate invoice PDF/text file
     local invoice_file="$INVOICE_DIR/$invoice_number.txt"
@@ -317,7 +347,7 @@ DESCRIPTION                              QTY      UNIT PRICE      AMOUNT
 EOF
 
     # Add line items
-    sqlite3 "$db_file" "SELECT description, quantity, unit_price, amount FROM line_items WHERE invoice_id = '$invoice_id';" | \
+    sqlite3 "$db_file" "SELECT description, quantity, unit_price, amount FROM line_items WHERE invoice_id = $invoice_id;" | \
     while IFS='|' read -r description quantity unit_price amount; do
         printf "%-40s %8.2f %12.4f %12.2f\n" "$description" "$quantity" "$unit_price" "$amount" >> "$invoice_file"
     done
@@ -400,7 +430,7 @@ mark_paid() {
     local db_file="$BILLING_DIR/billing.db"
     local now=$(date +%s)
 
-    if sqlite3 "$db_file" "UPDATE invoices SET status = 'paid', paid_at = '$now' WHERE invoice_number = '$invoice_number';"; then
+    if sqlite3 "$db_file" "UPDATE invoices SET status = 'paid', paid_at = $now WHERE invoice_number = '$invoice_number';"; then
         log "Invoice marked as paid"
     else
         log "ERROR: Failed to update invoice"
@@ -440,7 +470,7 @@ cost_report() {
     echo "=== Cost Report (Last $period) ==="
     echo ""
 
-    local where_clause="WHERE start_time >= '$start_ts'"
+    local where_clause="WHERE start_time >= $start_ts"
     if [ -n "$vm_name" ]; then
         where_clause="$where_clause AND vm_name = '$vm_name'"
     fi
@@ -629,11 +659,31 @@ Examples:
   $SCRIPT_NAME set-pricing cpu 0.10
   $SCRIPT_NAME show-pricing
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Resource not found
+    4    Invoice generation failed
+
 EOF
 }
 
 # Main
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now init for actual commands
     init_logging
     load_config
 
@@ -643,7 +693,7 @@ main() {
         tce-load -wi sqlite3
     fi
 
-    case "${1:-help}" in
+    case "${1}" in
         init)
             billing_init
             ;;
@@ -676,14 +726,7 @@ main() {
             ;;
         show-pricing)
             show_pricing
-            ;;
-        version)
-            echo "$SCRIPT_NAME version $VERSION"
-            ;;
-        help|--help|-h)
-            usage
-            ;;
-        *)
+            ;;        *)
             echo "Unknown command: $1"
             echo "Run '$SCRIPT_NAME help' for usage"
             exit 1

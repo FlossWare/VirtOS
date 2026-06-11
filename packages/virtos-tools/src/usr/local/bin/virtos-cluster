@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright (c) 2026 FlossWare
 # Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
@@ -9,10 +9,11 @@ if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION=$(get_version 2>/dev/null || echo "0.21")
-CLUSTER_CONF="$(get_virtos_path CLUSTER_CONF)"
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+CLUSTER_CONF="/etc/virtos/cluster.conf"
 CACHE_DIR="/var/run/virtos"
 CLUSTER_CACHE="$CACHE_DIR/cluster-members"
+KNOWN_HOSTS="/etc/virtos/cluster-known_hosts"
 
 # Load configuration
 if [ -f "$CLUSTER_CONF" ]; then
@@ -37,6 +38,41 @@ else
     BLUE=''
     NC=''
 fi
+
+# Ensure host key is in known_hosts
+ensure_host_key() {
+    local ip="$1"
+
+    # Create known_hosts file if it doesn't exist
+    mkdir -p "$(dirname "$KNOWN_HOSTS")"
+    touch "$KNOWN_HOSTS"
+    chmod 644 "$KNOWN_HOSTS"
+
+    # Check if host key already exists
+    if ! ssh-keygen -F "$ip" -f "$KNOWN_HOSTS" >/dev/null 2>&1; then
+        # Fetch and add host key
+        if ! ssh-keyscan -T 2 "$ip" >> "$KNOWN_HOSTS" 2>/dev/null; then
+            echo "${YELLOW}Warning: Could not fetch SSH host key for $ip${NC}" >&2
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# SSH wrapper with proper host key verification
+cluster_ssh() {
+    local ip="$1"
+    shift
+
+    # Ensure host key is known
+    ensure_host_key "$ip" || return 1
+
+    # Use cluster-specific known_hosts with strict checking
+    ssh -o UserKnownHostsFile="$KNOWN_HOSTS" \
+        -o StrictHostKeyChecking=yes \
+        -o ConnectTimeout=2 \
+        "root@$ip" "$@"
+}
 
 usage() {
     cat << EOF
@@ -94,7 +130,10 @@ discover_members() {
                     host="virtos-$i"
                     if ping -c 1 -W 1 "${host}.local" >/dev/null 2>&1; then
                         ip=$(getent hosts "${host}.local" | awk '{print $1}')
-                        echo "$host $ip" >> "$CLUSTER_CACHE.new"
+                        # Validate IP before using it
+                        if validate_ip "$ip" 2>/dev/null; then
+                            echo "$host $ip" >> "$CLUSTER_CACHE.new"
+                        fi
                     fi
                 done
 
@@ -120,9 +159,8 @@ discover_members() {
             ;;
         static)
             # Read from static configuration
-            local cluster_members_conf="$(get_virtos_path CLUSTER_MEMBERS)"
-            if [ -f "$cluster_members_conf" ]; then
-                cat "$cluster_members_conf" > "$CLUSTER_CACHE"
+            if [ -f "/etc/virtos/cluster-members.conf" ]; then
+                cat "/etc/virtos/cluster-members.conf" > "$CLUSTER_CACHE"
             fi
             ;;
         multicast)
@@ -215,9 +253,12 @@ discover_members() {
                     nmap -sn -T4 "$local_net" -oG - 2>/dev/null | \
                     grep "Up" | awk '{print $2}' | while read -r ip; do
                         # Quick check if it's a VirtOS host
-                        if ssh -o ConnectTimeout=1 -o StrictHostKeyChecking=no \
+                        ensure_host_key "$ip" 2>/dev/null
+                        if ssh -o UserKnownHostsFile="$KNOWN_HOSTS" \
+                            -o StrictHostKeyChecking=yes \
+                            -o ConnectTimeout=1 \
                             "root@$ip" "test -f /etc/virtos/cluster.conf" 2>/dev/null; then
-                            local host=$(ssh -o ConnectTimeout=1 "root@$ip" "hostname" 2>/dev/null)
+                            local host=$(cluster_ssh "$ip" "hostname" 2>/dev/null)
                             echo "$host $ip" >> "$CLUSTER_CACHE.new"
                         fi
                     done
@@ -268,21 +309,24 @@ list_members() {
         "Hostname" "IP" "Status" "Uptime" "VMs" "CPU" "RAM"
 
     while read -r hostname ip; do
+        # Validate IP before use
+        if ! validate_ip "$ip" 2>/dev/null; then
+            continue
+        fi
+
         # Check if host is reachable
         if ping -c 1 -W 1 "$ip" >/dev/null 2>&1; then
             status="${GREEN}up${NC}"
 
             # Try to get VM count via SSH (if accessible)
             vms="-"
-            if ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
-                "root@$ip" "command -v virsh" >/dev/null 2>&1; then
-                vms=$(ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
-                    "root@$ip" "virsh list --all --name 2>/dev/null | wc -l" 2>/dev/null || echo "-")
+            ensure_host_key "$ip" 2>/dev/null
+            if cluster_ssh "$ip" "command -v virsh" >/dev/null 2>&1; then
+                vms=$(cluster_ssh "$ip" "virsh list --all --name 2>/dev/null | wc -l" 2>/dev/null || echo "-")
             fi
 
             # Get uptime
-            uptime=$(ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
-                "root@$ip" "uptime -p 2>/dev/null | sed 's/up //'" 2>/dev/null || echo "-")
+            uptime=$(cluster_ssh "$ip" "uptime -p 2>/dev/null | sed 's/up //'" 2>/dev/null || echo "-")
 
             cpu="-"
             ram="-"
@@ -322,7 +366,8 @@ show_info() {
 
     ip=$(grep "^$node " "$CLUSTER_CACHE" | awk '{print $2}')
 
-    if [ -z "$ip" ]; then
+    # Validate IP before use
+    if [ -z "$ip" ] || ! validate_ip "$ip" 2>/dev/null; then
         echo "${RED}Error: Node '$node' not found in cluster${NC}" >&2
         echo "" >&2
         echo "Available cluster nodes:" >&2
@@ -351,26 +396,26 @@ show_info() {
     echo "Status:      ${GREEN}UP${NC}"
 
     # Get detailed info via SSH (if accessible)
-    if ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
-        "root@$ip" "echo" >/dev/null 2>&1; then
+    ensure_host_key "$ip" 2>/dev/null
+    if cluster_ssh "$ip" "echo" >/dev/null 2>&1; then
 
         echo ""
         echo "System:"
-        ssh -o ConnectTimeout=2 "root@$ip" "uname -sr" 2>/dev/null
+        cluster_ssh "$ip" "uname -sr" 2>/dev/null
 
         echo ""
         echo "Uptime:"
-        ssh -o ConnectTimeout=2 "root@$ip" "uptime" 2>/dev/null
+        cluster_ssh "$ip" "uptime" 2>/dev/null
 
         echo ""
         echo "Resources:"
-        ssh -o ConnectTimeout=2 "root@$ip" "free -h | grep Mem" 2>/dev/null
-        ssh -o ConnectTimeout=2 "root@$ip" "nproc" 2>/dev/null | \
+        cluster_ssh "$ip" "free -h | grep Mem" 2>/dev/null
+        cluster_ssh "$ip" "nproc" 2>/dev/null | \
             awk '{print "CPU Cores: " $1}'
 
         echo ""
         echo "VMs:"
-        ssh -o ConnectTimeout=2 "root@$ip" "virsh list --all" 2>/dev/null
+        cluster_ssh "$ip" "virsh list --all" 2>/dev/null
     else
         echo "${YELLOW}Cannot get detailed info (SSH not available)${NC}"
     fi
@@ -401,6 +446,10 @@ show_resources() {
     up_nodes=0
 
     while read -r hostname ip; do
+        # Validate IP before use
+        if ! validate_ip "$ip" 2>/dev/null; then
+            continue
+        fi
         total_nodes=$((total_nodes + 1))
         if ping -c 1 -W 1 "$ip" >/dev/null 2>&1; then
             up_nodes=$((up_nodes + 1))
@@ -413,21 +462,26 @@ show_resources() {
     echo ""
 
     while read -r hostname ip; do
+        # Validate IP before use
+        if ! validate_ip "$ip" 2>/dev/null; then
+            continue
+        fi
+
         if ping -c 1 -W 1 "$ip" >/dev/null 2>&1; then
             echo "  ${GREEN}●${NC} $hostname ($ip)"
 
-            if ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no \
-                "root@$ip" "echo" >/dev/null 2>&1; then
+            ensure_host_key "$ip" 2>/dev/null
+            if cluster_ssh "$ip" "echo" >/dev/null 2>&1; then
 
                 # Get CPU count
-                cpus=$(ssh -o ConnectTimeout=2 "root@$ip" "nproc" 2>/dev/null)
+                cpus=$(cluster_ssh "$ip" "nproc" 2>/dev/null)
 
                 # Get RAM
-                ram=$(ssh -o ConnectTimeout=2 "root@$ip" \
+                ram=$(cluster_ssh "$ip" \
                     "free -h | grep Mem | awk '{print \$2}'" 2>/dev/null)
 
                 # Get VM count
-                vms=$(ssh -o ConnectTimeout=2 "root@$ip" \
+                vms=$(cluster_ssh "$ip" \
                     "virsh list --name 2>/dev/null | grep -v '^$' | wc -l" 2>/dev/null)
 
                 echo "    CPUs: ${cpus:-?}"
@@ -472,8 +526,7 @@ case "${1:-help}" in
             echo "Usage: virtos-cluster add <hostname> <ip>"
             exit 1
         fi
-        local cluster_members_conf="$(get_virtos_path CLUSTER_MEMBERS)"
-        echo "$2 $3" >> "$cluster_members_conf"
+        echo "$2 $3" >> /etc/virtos/cluster-members.conf
         echo "${GREEN}Added $2 ($3) to static cluster members${NC}"
         ;;
     remove|rm)
@@ -481,9 +534,8 @@ case "${1:-help}" in
             echo "Usage: virtos-cluster remove <hostname>"
             exit 1
         fi
-        local cluster_members_conf="$(get_virtos_path CLUSTER_MEMBERS)"
-        if [ -f "$cluster_members_conf" ]; then
-            sed -i "/^$2 /d" "$cluster_members_conf"
+        if [ -f /etc/virtos/cluster-members.conf ]; then
+            sed -i "/^$2 /d" /etc/virtos/cluster-members.conf
             echo "${GREEN}Removed $2 from static cluster members${NC}"
         fi
         ;;

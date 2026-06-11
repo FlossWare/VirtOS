@@ -1,0 +1,5 @@
+# VirtOS TUI Python Dependencies
+# Install with: pip3 install -r requirements.txt
+
+# FlossWare curses-themes - Professional theme support for Python curses
+curses-themes>=0.1

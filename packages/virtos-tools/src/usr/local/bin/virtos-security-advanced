@@ -1,17 +1,23 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # virtos-security-advanced - Advanced security features for VirtOS
 # Part of Phase 14: Advanced Security, Performance, Observability, DR
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 SCRIPT_NAME="virtos-security-advanced"
-LOG_FILE="/var/log/virtos-security-advanced.log"
-CONFIG_FILE="/etc/virtos/security-advanced.conf"
-SECURITY_ADV_DIR="/var/lib/virtos/security-advanced"
-SCANS_DIR="/var/lib/virtos/security-advanced/scans"
-COMPLIANCE_DIR="/var/lib/virtos/security-advanced/compliance"
-IDS_DIR="/var/lib/virtos/security-advanced/ids"
+LOG_FILE="$(get_virtos_path LOG_SECURITY_ADVANCED)"
+CONFIG_FILE="$(get_virtos_path CONF_SECURITY_ADVANCED)"
+SECURITY_ADV_DIR="$(get_virtos_path LIB_DIR)/security-advanced"
+SCANS_DIR="${SECURITY_ADV_DIR}/scans"
+COMPLIANCE_DIR="${SECURITY_ADV_DIR}/compliance"
+IDS_DIR="${SECURITY_ADV_DIR}/ids"
 
 # Advanced security configuration defaults
 SECURITY_ADV_ENABLED="yes"
@@ -622,15 +628,36 @@ Examples:
   # Status
   $SCRIPT_NAME security-adv-status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Security component not available
+    4    Scan/test failed
+    5    Compliance check failed
+
 EOF
 }
 
 # Main
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now init for actual commands
     init_logging
     load_config
 
-    case "${1:-help}" in
+    case "${1}" in
         security-adv-init)
             security_adv_init
             ;;
@@ -660,14 +687,7 @@ main() {
             ;;
         wizard)
             security_adv_wizard
-            ;;
-        version)
-            echo "$SCRIPT_NAME version $VERSION"
-            ;;
-        help|--help|-h)
-            usage
-            ;;
-        *)
+            ;;        *)
             echo "Unknown command: $1"
             echo "Run '$SCRIPT_NAME help' for usage"
             exit 1

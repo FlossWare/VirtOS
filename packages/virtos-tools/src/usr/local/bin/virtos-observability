@@ -1,16 +1,22 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # virtos-observability - Advanced observability for VirtOS
 # Part of Phase 14: Advanced Security, Performance, Observability, DR
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 SCRIPT_NAME="virtos-observability"
-LOG_FILE="/var/log/virtos-observability.log"
-CONFIG_FILE="/etc/virtos/observability.conf"
-OBS_DIR="/var/lib/virtos/observability"
-TRACES_DIR="/var/lib/virtos/observability/traces"
-METRICS_DIR="/var/lib/virtos/observability/metrics"
+LOG_FILE="$(get_virtos_path LOG_OBSERVABILITY)"
+CONFIG_FILE="$(get_virtos_path CONF_OBSERVABILITY)"
+OBS_DIR="$(get_virtos_path DATA_OBSERVABILITY)"
+TRACES_DIR="$(get_virtos_path DATA_OBSERVABILITY_TRACES)"
+METRICS_DIR="$(get_virtos_path DATA_OBSERVABILITY_METRICS)"
 
 OBSERVABILITY_ENABLED="yes"
 DISTRIBUTED_TRACING="yes"
@@ -176,13 +182,35 @@ Examples:
   $SCRIPT_NAME metrics-dashboard
   $SCRIPT_NAME create-alert cpu_usage 90
   $SCRIPT_NAME observability-status
+
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Tracing not configured
+    4    Log aggregation failed
+    5    Query failed
+
 EOF
 }
 
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now init for actual commands
     init_logging
 
-    case "${1:-help}" in
+    case "${1}" in
         setup-tracing) setup_tracing ;;
         view-traces) view_traces ;;
         setup-log-aggregation) setup_log_aggregation ;;
@@ -190,7 +218,7 @@ main() {
         metrics-dashboard) metrics_dashboard ;;
         create-alert) create_alert "$2" "$3" ;;
         observability-status) observability_status ;;
-        version) echo "$SCRIPT_NAME version $VERSION" ;;
+        version|--version|-v) echo "$SCRIPT_NAME version $VERSION" ;;
         help|--help|-h) usage ;;
         *) echo "Unknown command: $1"; echo "Run '$SCRIPT_NAME help' for usage"; exit 1 ;;
     esac

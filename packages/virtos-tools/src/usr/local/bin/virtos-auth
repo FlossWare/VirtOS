@@ -1,15 +1,33 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Auth - User authentication and RBAC
 # Manage users, roles, and permissions for VirtOS resources
 
-VERSION="1"
-CONFIG_DIR="/etc/virtos/auth"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-auth version $VERSION"
+    exit 0
+fi
+
+CONFIG_DIR="$(get_virtos_path CONF_AUTH_DIR)"
 STATE_DIR="/var/run/virtos/auth"
 
-mkdir -p "$CONFIG_DIR" "$STATE_DIR"
-mkdir -p "$CONFIG_DIR/users" "$CONFIG_DIR/roles"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+    mkdir -p "$CONFIG_DIR" "$STATE_DIR" || true
+    mkdir -p "$CONFIG_DIR/users" "$CONFIG_DIR/roles" || true
+fi
 
 usage() {
     cat << EOF
@@ -71,11 +89,19 @@ Examples:
   # List all users
   virtos-auth user-list
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    User/role not found
+    4    Permission denied
+    5    User/role already exists
+
 EOF
 }
 
 log_message() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> /var/log/virtos-auth.log
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$(get_virtos_path LOG_AUTH)"
 }
 
 init_config() {
@@ -465,12 +491,14 @@ check_permission() {
     return 1
 }
 
-# Initialize
-init_config
+# Initialize (skip for --help/--version)
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+    init_config
+fi
 
 # Main command handler
-COMMAND="$1"
-shift
+COMMAND="${1:-}"
+[ -n "$COMMAND" ] && shift
 
 case "$COMMAND" in
     user-add)
@@ -536,6 +564,10 @@ case "$COMMAND" in
         ;;
     check)
         check_permission "$1" "$2"
+        ;;
+    --version|-v|version)
+        echo "virtos-auth version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

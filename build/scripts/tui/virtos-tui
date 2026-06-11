@@ -1,0 +1,189 @@
+#!/bin/bash
+#
+# virtos-tui - VirtOS Text User Interface launcher
+#
+# Launches the Python-based TUI with FlossWare curses-themes support
+#
+# Copyright (C) 2024 FlossWare
+# License: GPLv3
+
+set -euo pipefail
+
+# Source common functions if available
+if [[ -f "/opt/virtos/lib/common.sh" ]]; then
+    source "/opt/virtos/lib/common.sh"
+fi
+
+# Configuration
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly TUI_SCRIPT="${SCRIPT_DIR}/virtos_tui.py"
+readonly CONFIG_DIR="${HOME}/.config/virtos"
+readonly THEME_CONFIG="${CONFIG_DIR}/theme.conf"
+
+# Colors for status messages
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly NC='\033[0m' # No Color
+
+# Error handling
+error() {
+    echo -e "${RED}ERROR: $*${NC}" >&2
+    exit 1
+}
+
+warning() {
+    echo -e "${YELLOW}WARNING: $*${NC}" >&2
+}
+
+info() {
+    echo -e "${GREEN}INFO: $*${NC}" >&2
+}
+
+# Check dependencies
+check_dependencies() {
+    local missing_deps=()
+
+    # Check for Python 3
+    if ! command -v python3 &>/dev/null; then
+        missing_deps+=("python3")
+    fi
+
+    # Check for pip3
+    if ! command -v pip3 &>/dev/null; then
+        missing_deps+=("python3-pip")
+    fi
+
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        error "Missing required dependencies: ${missing_deps[*]}"
+    fi
+
+    # Check for curses-themes Python package
+    if ! python3 -c "import curses_themes" 2>/dev/null; then
+        warning "curses-themes not installed"
+        info "Installing curses-themes..."
+
+        if pip3 install curses-themes; then
+            info "curses-themes installed successfully"
+        else
+            error "Failed to install curses-themes. Install manually with: pip3 install curses-themes"
+        fi
+    fi
+}
+
+# Create config directory
+initialize_config() {
+    if [[ ! -d "${CONFIG_DIR}" ]]; then
+        mkdir -p "${CONFIG_DIR}" || error "Failed to create config directory: ${CONFIG_DIR}"
+    fi
+
+    # Create default theme config if it doesn't exist
+    if [[ ! -f "${THEME_CONFIG}" ]]; then
+        echo 'THEME="default"' > "${THEME_CONFIG}"
+        info "Created default theme configuration"
+    fi
+}
+
+# Show help
+show_help() {
+    cat <<EOF
+Usage: virtos-tui [OPTIONS]
+
+VirtOS Text User Interface with FlossWare curses-themes support
+
+OPTIONS:
+    -t, --theme THEME    Use specified theme (default, dark, light, etc.)
+    -l, --list-themes    List available themes
+    -h, --help           Show this help message
+
+THEMES:
+    default    Classic terminal aesthetic
+    dark       Professional dark mode
+    light      High contrast light mode
+    ti994a     TI-99/4A retro computer
+    trs80      TRS-80 monochrome
+    dos        Classic MS-DOS
+    dbase3     dBASE III database interface
+    dbase4     dBASE IV windowed interface
+    borland3d  Borland Turbo Vision 3D (if available)
+
+EXAMPLES:
+    virtos-tui                 # Launch with saved theme
+    virtos-tui -t dark         # Launch with dark theme
+    virtos-tui --list-themes   # Show available themes
+
+CONFIGURATION:
+    Theme settings are saved in: ${THEME_CONFIG}
+    You can also change themes from within the TUI (press 't')
+
+EOF
+}
+
+# List available themes
+list_themes() {
+    cat <<EOF
+Available Themes:
+  default    - Classic terminal aesthetic (timeless)
+  dark       - Professional dark mode (modern)
+  light      - High contrast light mode (modern)
+  ti994a     - TI-99/4A retro computer (1981-1984)
+  trs80      - TRS-80 monochrome (1980-1983)
+  dos        - Classic MS-DOS interface (1981-1995)
+  dbase3     - dBASE III database interface (1984-1985)
+  dbase4     - dBASE IV windowed interface (1988-1993)
+
+Note: Additional themes may be available if curses-themes has been updated.
+EOF
+}
+
+# Main function
+main() {
+    local theme_arg=""
+
+    # Parse command-line arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -l|--list-themes)
+                list_themes
+                exit 0
+                ;;
+            -t|--theme)
+                if [[ -z "${2:-}" ]]; then
+                    error "Theme name required for --theme option"
+                fi
+                theme_arg="$2"
+                shift 2
+                ;;
+            *)
+                error "Unknown option: $1. Use --help for usage information."
+                ;;
+        esac
+    done
+
+    # Check dependencies
+    check_dependencies
+
+    # Initialize configuration
+    initialize_config
+
+    # Verify TUI script exists
+    if [[ ! -f "${TUI_SCRIPT}" ]]; then
+        error "TUI script not found: ${TUI_SCRIPT}"
+    fi
+
+    # Make TUI script executable
+    chmod +x "${TUI_SCRIPT}" 2>/dev/null || true
+
+    # Launch TUI
+    if [[ -n "${theme_arg}" ]]; then
+        exec python3 "${TUI_SCRIPT}" --theme "${theme_arg}"
+    else
+        exec python3 "${TUI_SCRIPT}"
+    fi
+}
+
+main "$@"

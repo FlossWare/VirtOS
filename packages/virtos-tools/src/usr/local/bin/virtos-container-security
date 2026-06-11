@@ -1,22 +1,35 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Container Security
 # Container image scanning, runtime security, compliance
 
-# Load common library for path resolution
+# Load common library
 if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION="1"
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-container-security version $VERSION"
+    exit 0
+fi
+
 
 # Configuration
-SECURITY_CONFIG_DIR="$(get_virtos_path CONF_CONTAINER_SECURITY_DIR)"
-SECURITY_LOG="$(get_virtos_path LOG_CONTAINER_SECURITY)"
+SECURITY_CONFIG_DIR="/etc/virtos/container-security"
+SECURITY_LOG="/var/log/virtos-container-security.log"
 
 # Ensure config directory exists
-mkdir -p "$SECURITY_CONFIG_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$SECURITY_CONFIG_DIR" || true
+fi
 
 # Logging function
 log_message() {
@@ -32,12 +45,29 @@ setup_image_scanner() {
     case "$scanner" in
         trivy)
             # Install Trivy
+            # NOTE: Package manager installations (apt/yum) include built-in signature verification
             wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
             echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
             apt-get update && apt-get install -y trivy || {
-                # Fallback to binary install
-                wget -q https://github.com/aquasecurity/trivy/releases/download/v0.40.0/trivy_0.40.0_Linux-64bit.tar.gz
-                tar -xzf trivy_0.40.0_Linux-64bit.tar.gz -C /usr/local/bin/
+                # Fallback to binary install with checksum verification
+                log_message "Installing Trivy from binary with checksum verification"
+                local TRIVY_VERSION="0.40.0"
+                local TRIVY_TAR="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+                local TRIVY_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
+
+                wget -q "${TRIVY_URL}/${TRIVY_TAR}"
+                wget -q "${TRIVY_URL}/trivy_${TRIVY_VERSION}_checksums.txt"
+
+                # Verify checksum
+                sha256sum -c trivy_${TRIVY_VERSION}_checksums.txt --ignore-missing || {
+                    log_message "ERROR: Checksum verification failed for Trivy"
+                    rm -f "${TRIVY_TAR}" trivy_${TRIVY_VERSION}_checksums.txt
+                    return 1
+                }
+
+                log_message "Trivy checksum verified successfully"
+                tar -xzf "${TRIVY_TAR}" -C /usr/local/bin/
+                rm -f "${TRIVY_TAR}" trivy_${TRIVY_VERSION}_checksums.txt
             }
 
             cat > "$SECURITY_CONFIG_DIR/trivy-config.yaml" <<EOF
@@ -88,9 +118,27 @@ EOF
 
         snyk)
             # Install Snyk CLI
+            # NOTE: npm install includes package signature verification
             npm install -g snyk || {
-                wget -q https://static.snyk.io/cli/latest/snyk-linux -O /usr/local/bin/snyk
+                log_message "Installing Snyk from binary with checksum verification"
+                # Note: Snyk doesn't provide checksums for the 'latest' link
+                # Using versioned release for checksum verification
+                local SNYK_VERSION="v1.1064.0"
+                local SNYK_URL="https://github.com/snyk/cli/releases/download/${SNYK_VERSION}"
+
+                wget -q "${SNYK_URL}/snyk-linux" -O /usr/local/bin/snyk
+                wget -q "${SNYK_URL}/snyk-linux.sha256" -O snyk.sha256
+
+                # Verify checksum
+                echo "$(cat snyk.sha256)  /usr/local/bin/snyk" | sha256sum -c - || {
+                    log_message "ERROR: Checksum verification failed for Snyk"
+                    rm -f /usr/local/bin/snyk snyk.sha256
+                    return 1
+                }
+
+                log_message "Snyk checksum verified successfully"
                 chmod +x /usr/local/bin/snyk
+                rm -f snyk.sha256
             }
 
             log_message "Snyk CLI installed. Run 'snyk auth' to authenticate"
@@ -142,12 +190,28 @@ setup_runtime_security() {
     case "$tool" in
         falco)
             # Install Falco
+            # NOTE: Package manager installations (apt/yum) include built-in signature verification
             curl -s https://falco.org/repo/falcosecurity-3672BA8F.asc | apt-key add -
             echo "deb https://download.falco.org/packages/deb stable main" | tee -a /etc/apt/sources.list.d/falcosecurity.list
             apt-get update && apt-get install -y linux-headers-$(uname -r) falco || {
-                log_message "Installing Falco manually..."
-                wget -q https://download.falco.org/packages/bin/x86_64/falco-0.34.0-x86_64.tar.gz
-                tar -xzf falco-0.34.0-x86_64.tar.gz -C /usr/local
+                log_message "Installing Falco from binary with checksum verification"
+                local FALCO_VERSION="0.34.0"
+                local FALCO_TAR="falco-${FALCO_VERSION}-x86_64.tar.gz"
+                local FALCO_URL="https://download.falco.org/packages/bin/x86_64"
+
+                wget -q "${FALCO_URL}/${FALCO_TAR}"
+                wget -q "${FALCO_URL}/${FALCO_TAR}.sha256"
+
+                # Verify checksum
+                sha256sum -c "${FALCO_TAR}.sha256" || {
+                    log_message "ERROR: Checksum verification failed for Falco"
+                    rm -f "${FALCO_TAR}" "${FALCO_TAR}.sha256"
+                    return 1
+                }
+
+                log_message "Falco checksum verified successfully"
+                tar -xzf "${FALCO_TAR}" -C /usr/local
+                rm -f "${FALCO_TAR}" "${FALCO_TAR}.sha256"
             }
 
             # Configure Falco rules
@@ -530,46 +594,73 @@ security_wizard() {
         --msgbox "Container security configured!" 8 40
 }
 
-# Show usage
-usage() {
+# Show help text
+show_help() {
     cat <<EOF
-VirtOS Container Security - Image scanning, runtime security, compliance
+Usage: virtos-container-security [OPTIONS] <command> [arguments]
 
-Usage: virtos-container-security <command> [options]
+VirtOS Container Security - Image scanning, runtime security, and compliance.
 
-Image Scanning Commands:
-  setup-scanner <tool>                         Setup image scanner (trivy/clair/anchore/snyk)
-  scan-image <image>                           Scan container image
+COMMANDS:
+  Image Scanning:
+    setup-scanner <tool>              Setup image scanner
+                                      Tools: trivy, clair, anchore, snyk
+    scan-image <image>                Scan container image for vulnerabilities
 
-Runtime Security Commands:
-  setup-runtime <tool>                         Setup runtime security (falco/sysdig/aqua)
+  Runtime Security:
+    setup-runtime <tool>              Setup runtime security monitoring
+                                      Tools: falco, sysdig, aqua
 
-Compliance Commands:
-  compliance-check <framework>                 Check compliance (cis/pci-dss/hipaa)
+  Compliance:
+    compliance-check <framework>      Check compliance against framework
+                                      Frameworks: cis, pci-dss, hipaa
 
-Secrets Commands:
-  scan-secrets <target>                        Scan for hardcoded secrets
+  Secrets Management:
+    scan-secrets <target>             Scan for hardcoded secrets
+                                      Target: image name or directory
 
-Policy Commands:
-  enforce-policy <name>                        Enforce security policy
+  Policy Enforcement:
+    enforce-policy <name>             Create and enforce security policy
 
-Reporting Commands:
-  security-report                              Generate security report
+  Reporting:
+    security-report                   Generate comprehensive security report
 
-Status Commands:
-  status                                       Show security status
-  wizard                                       Interactive setup wizard
+  Status:
+    status                            Show security status
+    wizard                            Interactive setup wizard
 
-Examples:
-  virtos-container-security setup-scanner trivy
-  virtos-container-security scan-image nginx:latest
-  virtos-container-security setup-runtime falco
-  virtos-container-security compliance-check cis
-  virtos-container-security scan-secrets myapp:latest
-  virtos-container-security security-report
-  virtos-container-security wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Setup Trivy image scanner
+    virtos-container-security setup-scanner trivy
+
+    # Scan container image
+    virtos-container-security scan-image nginx:latest
+
+    # Setup Falco runtime security
+    virtos-container-security setup-runtime falco
+
+    # Check CIS Docker Benchmark compliance
+    virtos-container-security compliance-check cis
+
+    # Scan for hardcoded secrets
+    virtos-container-security scan-secrets myapp:latest
+
+    # Generate security report
+    virtos-container-security security-report
+
+    # Interactive wizard
+    virtos-container-security wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -602,7 +693,16 @@ case "$1" in
     wizard)
         security_wizard
         ;;
+    --version|-v|version)
+        echo "virtos-container-security version $VERSION"
+        exit 0
+        ;;
+    --help|-h|help|"")
+        show_help
+        exit 0
+        ;;
     *)
-        usage
+        show_help
+        exit 1
         ;;
 esac

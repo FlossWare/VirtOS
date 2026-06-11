@@ -1,17 +1,35 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Advanced Networking
 # SDN, NFV, service discovery, advanced load balancing
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-networking-advanced version $VERSION"
+    exit 0
+fi
+
 
 # Configuration
-NETWORK_CONFIG_DIR="/etc/virtos/networking-advanced"
-NETWORK_LOG="/var/log/virtos-networking-advanced.log"
+NETWORK_CONFIG_DIR="$(get_virtos_path CONF_NETWORKING_ADVANCED_DIR)"
+NETWORK_LOG="$(get_virtos_path LOG_NETWORKING_ADVANCED)"
 
 # Ensure config directory exists
-mkdir -p "$NETWORK_CONFIG_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$NETWORK_CONFIG_DIR" || true
+fi
 
 # Logging function
 log_message() {
@@ -215,7 +233,7 @@ setup_service_discovery() {
             chmod +x /usr/local/bin/consul
 
             # Create Consul config
-            mkdir -p /etc/consul.d
+            mkdir -p /etc/consul.d || true
 
             cat > /etc/consul.d/config.json <<EOF
 {
@@ -618,8 +636,8 @@ network_wizard() {
         --msgbox "Advanced networking configured!" 8 40
 }
 
-# Show usage
-usage() {
+# Show show_help
+show_help() {
     cat <<EOF
 VirtOS Advanced Networking - SDN, NFV, service discovery, load balancing
 
@@ -648,7 +666,11 @@ Status Commands:
   status                                       Show networking status
   wizard                                       Interactive setup wizard
 
-Examples:
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
+
+EXAMPLES:
   virtos-networking-advanced setup-sdn ovs
   virtos-networking-advanced setup-nfv firewall
   virtos-networking-advanced setup-service-discovery consul
@@ -658,7 +680,12 @@ Examples:
   virtos-networking-advanced setup-traffic-shaping eth0 100mbit
   virtos-networking-advanced wizard
 
-Version: $VERSION
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -691,7 +718,10 @@ case "$1" in
     wizard)
         network_wizard
         ;;
+    version|--version|-v)
+        echo "virtos-networking-advanced version $VERSION"
+        ;;
     *)
-        usage
+        show_help
         ;;
 esac

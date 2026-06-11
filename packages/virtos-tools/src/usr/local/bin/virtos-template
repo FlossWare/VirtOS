@@ -1,16 +1,22 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Template - VM template management and cloning
 # Create, manage, and clone from VM templates
 
-# Load common library for safe_rm_rf and other utilities
+# Load common library
 if [ -f /usr/local/lib/virtos-common.sh ]; then
     . /usr/local/lib/virtos-common.sh
 fi
 
-VERSION="1"
-TEMPLATE_DIR="${TEMPLATE_DIR:-/var/lib/virtos/templates}"
+# Source path configuration
+if [ -f /usr/local/lib/virtos-paths.conf ]; then
+    . /usr/local/lib/virtos-paths.conf
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+TEMPLATE_DIR="${TEMPLATE_DIR:-$(get_virtos_path STORAGE_TEMPLATES)}"
 
 usage() {
     cat << EOF
@@ -40,14 +46,53 @@ Examples:
   # List templates
   virtos-template list
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    VM/template not found
+    4    Template creation failed
+    5    Clone operation failed
+
 EOF
 }
 
 mkdir -p "$TEMPLATE_DIR"
 
+# Validate template name to prevent path traversal attacks
+validate_template_name() {
+    local name="$1"
+
+    if [ -z "$name" ]; then
+        echo "ERROR: Template name cannot be empty" >&2
+        return 1
+    fi
+
+    # SECURITY: Prevent path traversal
+    if echo "$name" | grep -qE '\.\.|/'; then
+        echo "ERROR: Invalid template name '$name'" >&2
+        echo "Template names cannot contain '..' or '/' characters" >&2
+        return 1
+    fi
+
+    # Must be alphanumeric with hyphens/underscores only
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "ERROR: Invalid template name '$name'" >&2
+        echo "Template names must contain only letters, numbers, hyphens, and underscores" >&2
+        return 1
+    fi
+
+    return 0
+}
+
 create_template() {
     local vm_name="$1"
     local template_name="$2"
+
+    # SECURITY: Validate template name
+    if ! validate_template_name "$template_name"; then
+        return 1
+    fi
 
     echo "Creating template '$template_name' from VM '$vm_name'..."
 
@@ -98,6 +143,11 @@ clone_from_template() {
     local template_name="$1"
     local new_vm_name="$2"
 
+    # SECURITY: Validate template name
+    if ! validate_template_name "$template_name"; then
+        return 1
+    fi
+
     echo "Cloning VM '$new_vm_name' from template '$template_name'..."
 
     local template_path="$TEMPLATE_DIR/$template_name"
@@ -114,7 +164,7 @@ clone_from_template() {
     fi
 
     # Create VM directory
-    local vm_dir="/var/lib/vms/$new_vm_name"
+    local vm_dir="$(get_virtos_path LIB_DIR)/vms/$new_vm_name"
     mkdir -p "$vm_dir"
 
     # Clone disks using copy-on-write
@@ -130,7 +180,8 @@ clone_from_template() {
     done
 
     # Update XML
-    local new_xml="/tmp/$new_vm_name.xml"
+    local new_xml=$(create_secure_temp_file "vm-config-${new_vm_name}" ".xml")
+    register_cleanup_trap "$new_xml"
     cp "$template_path/template.xml" "$new_xml"
 
     # Update name and UUID
@@ -146,7 +197,6 @@ clone_from_template() {
 
     # Define VM
     virsh define "$new_xml"
-    rm "$new_xml"
 
     echo "VM '$new_vm_name' cloned successfully"
     echo "Start with: virsh start $new_vm_name"
@@ -183,6 +233,12 @@ list_templates() {
 
 delete_template() {
     local template_name="$1"
+
+    # SECURITY: Validate template name
+    if ! validate_template_name "$template_name"; then
+        return 1
+    fi
+
     local template_path="$TEMPLATE_DIR/$template_name"
 
     if [ ! -d "$template_path" ]; then
@@ -199,6 +255,11 @@ import_cloud_image() {
     local image_url="$1"
     local template_name="$2"
 
+    # SECURITY: Validate template name
+    if ! validate_template_name "$template_name"; then
+        return 1
+    fi
+
     echo "Importing cloud image as template '$template_name'..."
 
     local template_path="$TEMPLATE_DIR/$template_name"
@@ -209,12 +270,7 @@ import_cloud_image() {
     if ! wget -O "$template_path/disk-1.qcow2" "$image_url" 2>/dev/null && \
        ! curl -L -o "$template_path/disk-1.qcow2" "$image_url" 2>/dev/null; then
         echo "Error: Failed to download image"
-        # Safely remove on error with validation
-        if [ -d "$template_path" ]; then
-            safe_rm_rf "$template_path" || {
-                echo "Warning: Failed to cleanup template directory after download error: $template_path"
-            }
-        fi
+        safe_rm_rf "$template_path"
         return 1
     fi
 
@@ -275,6 +331,10 @@ case "$COMMAND" in
         ;;
     import)
         import_cloud_image "$1" "$2"
+        ;;
+    --version|-v|version)
+        echo "virtos-template version $VERSION"
+        exit 0
         ;;
     --help|-h|help|"")
         usage

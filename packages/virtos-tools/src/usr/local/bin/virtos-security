@@ -1,10 +1,16 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # virtos-security - Security hardening and policy management for VirtOS
 # Part of Phase 10: Metrics, Telemetry, and Advanced Features
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 SCRIPT_NAME="virtos-security"
 LOG_FILE="/var/log/virtos-security.log"
 CONFIG_FILE="/etc/virtos/security.conf"
@@ -734,15 +740,36 @@ Examples:
   # Check status
   $SCRIPT_NAME status
 
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    SELinux/AppArmor not available
+    4    Scan failed
+    5    Compliance check failed
+
 EOF
 }
 
 # Main
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now init for actual commands
     init_logging
     load_config
 
-    case "${1:-help}" in
+    case "${1}" in
         selinux-init)
             selinux_init "$2"
             ;;
@@ -787,14 +814,7 @@ main() {
             ;;
         wizard)
             security_wizard
-            ;;
-        version)
-            echo "$SCRIPT_NAME version $VERSION"
-            ;;
-        help|--help|-h)
-            usage
-            ;;
-        *)
+            ;;        *)
             echo "Unknown command: $1"
             echo "Run '$SCRIPT_NAME help' for usage"
             exit 1

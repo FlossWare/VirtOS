@@ -1,18 +1,36 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # VirtOS Backup Orchestration
 # Automated backup workflows, retention, verification
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
+
+# Handle --help and --version early (before any filesystem operations)
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ] || [ "${1:-}" = "" ]; then
+    # Skip mkdir - will show usage at end
+    SKIP_INIT=yes
+elif [ "${1:-}" = "--version" ] || [ "${1:-}" = "-v" ] || [ "${1:-}" = "version" ]; then
+    echo "virtos-backup-orchestration version $VERSION"
+    exit 0
+fi
+
 
 # Configuration
-BACKUP_CONFIG_DIR="/etc/virtos/backup-orchestration"
-BACKUP_LOG="/var/log/virtos-backup-orchestration.log"
-DEFAULT_BACKUP_DIR="/var/backups/orchestrated"
+BACKUP_CONFIG_DIR="$(get_virtos_path CONF_BACKUP_ORCHESTRATION_DIR)"
+BACKUP_LOG="$(get_virtos_path LOG_BACKUP_ORCHESTRATION)"
+DEFAULT_BACKUP_DIR="$(get_virtos_path BACKUP_ORCHESTRATED)"
 
 # Ensure directories exist
-mkdir -p "$BACKUP_CONFIG_DIR" "$DEFAULT_BACKUP_DIR"
+if [ "${SKIP_INIT:-no}" != "yes" ]; then
+mkdir -p "$BACKUP_CONFIG_DIR" "$DEFAULT_BACKUP_DIR" || true
+fi
 
 # Logging function
 log_message() {
@@ -384,41 +402,68 @@ orchestration_wizard() {
         --msgbox "Backup orchestration complete!" 8 40
 }
 
-# Show usage
-usage() {
+# Show help text
+show_help() {
     cat <<EOF
-VirtOS Backup Orchestration - Automated workflows, retention, verification
+Usage: virtos-backup-orchestration [OPTIONS] <command> [arguments]
 
-Usage: virtos-backup-orchestration <command> [options]
+VirtOS Backup Orchestration - Automated backup workflows, retention, and verification.
 
-Policy Commands:
-  create-policy <name> <frequency> <retention_days>  Create backup policy
+COMMANDS:
+  Policy Management:
+    create-policy <name> <frequency> <retention_days>
+                                      Create backup policy
+                                      Frequency: hourly, daily, weekly, monthly
 
-Backup Commands:
-  execute-backup <policy>                            Execute backup workflow
-  verify-backup <backup_id>                          Verify backup integrity
-  list-backups                                       List all backups
+  Backup Operations:
+    execute-backup <policy>           Execute backup workflow for policy
+    verify-backup <backup_id>         Verify backup integrity
+    list-backups                      List all backups in catalog
 
-Restore Commands:
-  restore-backup <backup_id> <target> <destination>  Restore from backup
+  Restore Operations:
+    restore-backup <backup_id> <target> <destination>
+                                      Restore from backup
+                                      Target: vm, database, file
 
-Retention Commands:
-  apply-retention <policy>                           Apply retention policy
+  Retention Management:
+    apply-retention <policy>          Apply retention policy and cleanup
 
-Status Commands:
-  status                                             Show orchestration status
-  wizard                                             Interactive wizard
+  Status:
+    status                            Show orchestration status
+    wizard                            Interactive setup wizard
 
-Examples:
-  virtos-backup-orchestration create-policy daily-full daily 30
-  virtos-backup-orchestration execute-backup daily-full
-  virtos-backup-orchestration verify-backup BKP-20260522-020000
-  virtos-backup-orchestration restore-backup BKP-20260522-020000 vm vm-web-01
-  virtos-backup-orchestration apply-retention daily-full
-  virtos-backup-orchestration list-backups
-  virtos-backup-orchestration wizard
+OPTIONS:
+    -h, --help      Show this help message
+    -v, --version   Show version information
 
-Version: $VERSION
+EXAMPLES:
+    # Create daily backup policy with 30-day retention
+    virtos-backup-orchestration create-policy daily-full daily 30
+
+    # Execute backup workflow
+    virtos-backup-orchestration execute-backup daily-full
+
+    # Verify backup integrity
+    virtos-backup-orchestration verify-backup BKP-20260522-020000
+
+    # Restore VM from backup
+    virtos-backup-orchestration restore-backup BKP-20260522-020000 vm vm-web-01
+
+    # Apply retention policy
+    virtos-backup-orchestration apply-retention daily-full
+
+    # List all backups
+    virtos-backup-orchestration list-backups
+
+    # Interactive wizard
+    virtos-backup-orchestration wizard
+
+EXIT CODES:
+    0   Success
+    1   Error
+
+VERSION:
+    $VERSION
 EOF
 }
 
@@ -448,7 +493,15 @@ case "$1" in
     wizard)
         orchestration_wizard
         ;;
+    version|--version|-v)
+        echo "virtos-backup-orchestration version $VERSION"
+        ;;
+    --help|-h|help|"")
+        show_help
+        exit 0
+        ;;
     *)
-        usage
+        show_help
+        exit 1
         ;;
 esac

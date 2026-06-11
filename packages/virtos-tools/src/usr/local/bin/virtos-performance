@@ -1,16 +1,22 @@
 #!/bin/bash
+# Copyright (c) 2026 FlossWare
+# Licensed under the GNU General Public License v3.0. See LICENSE file in the project root.
 set -e
-
 # virtos-performance - Performance optimization for VirtOS
 # Part of Phase 14: Advanced Security, Performance, Observability, DR
 
-VERSION="1"
+# Load common library
+if [ -f /usr/local/lib/virtos-common.sh ]; then
+    . /usr/local/lib/virtos-common.sh
+fi
+
+VERSION=$(get_version 2>/dev/null || echo "0.89")
 SCRIPT_NAME="virtos-performance"
-LOG_FILE="/var/log/virtos-performance.log"
-CONFIG_FILE="/etc/virtos/performance.conf"
-PERF_DIR="/var/lib/virtos/performance"
-BENCHMARKS_DIR="/var/lib/virtos/performance/benchmarks"
-PROFILES_DIR="/var/lib/virtos/performance/profiles"
+LOG_FILE="$(get_virtos_path LOG_PERFORMANCE)"
+CONFIG_FILE="$(get_virtos_path CONF_PERFORMANCE)"
+PERF_DIR="$(get_virtos_path DATA_PERFORMANCE)"
+BENCHMARKS_DIR="$(get_virtos_path DATA_PERFORMANCE_BENCHMARKS)"
+PROFILES_DIR="${PERF_DIR}/profiles"
 
 PERFORMANCE_ENABLED="yes"
 AUTO_TUNING="yes"
@@ -165,20 +171,42 @@ Examples:
   $SCRIPT_NAME bottleneck-detect
   $SCRIPT_NAME profile-application qemu
   $SCRIPT_NAME performance-status
+
+EXIT CODES:
+    0    Success
+    1    General error
+    2    Invalid arguments
+    3    Benchmark failed
+    4    Profiling failed
+    5    Auto-tune failed
+
 EOF
 }
 
 main() {
+    # Handle help/version first (before init to avoid permission issues in tests)
+    case "${1:-}" in
+        version|--version|-v)
+            echo "$SCRIPT_NAME version $VERSION"
+            exit 0
+            ;;
+        help|--help|-h|"")
+            usage
+            exit 0
+            ;;
+    esac
+
+    # Now init for actual commands
     init_logging
     load_config
 
-    case "${1:-help}" in
+    case "${1}" in
         system-benchmark) system_benchmark ;;
         auto-tune) auto_tune ;;
         bottleneck-detect) bottleneck_detect ;;
         profile-application) profile_application "$2" ;;
         performance-status) performance_status ;;
-        version) echo "$SCRIPT_NAME version $VERSION" ;;
+        version|--version|-v) echo "$SCRIPT_NAME version $VERSION" ;;
         help|--help|-h) usage ;;
         *) echo "Unknown command: $1"; echo "Run '$SCRIPT_NAME help' for usage"; exit 1 ;;
     esac
