@@ -1,8 +1,0 @@
- Name      State    Autostart   Persistent
---------------------------------------------
- default   active   no          yes
-
- Expiry Time           MAC address         Protocol   IP address           Hostname   Client ID or DUID
-------------------------------------------------------------------------------------------------------------
- 2026-06-09 03:57:57   52:54:00:14:2b:ee   ipv4       192.168.122.172/24   box        01:52:54:00:14:2b:ee
-
