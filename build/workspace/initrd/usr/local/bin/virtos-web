@@ -283,23 +283,53 @@ class VirtOSHandler(BaseHTTPRequestHandler):
             self.end_headers()
             stats = self.get_stats()
             self.wfile.write(json.dumps(stats).encode())
+        elif self.path in ('/vms', '/containers', '/storage', '/network'):
+            self.serve_management_page(self.path)
         else:
             self.send_response(404)
             self.end_headers()
+
+    def serve_management_page(self, path):
+        pages = {
+            '/vms': ('Virtual Machines', ['virsh', 'list', '--all']),
+            '/containers': ('Containers', ['docker', 'ps', '-a']),
+            '/storage': ('Storage', ['df', '-h']),
+            '/network': ('Network', ['ip', 'addr']),
+        }
+        title, cmd = pages[path]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            output = result.stdout if result.returncode == 0 else 'No data available'
+        except Exception:
+            output = 'No data available'
+        html = ('<!DOCTYPE html><html><head><meta charset="UTF-8">'
+                '<title>VirtOS - %s</title><style>'
+                'body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#1e1e1e;color:#fff}'
+                '.header{background:#2d2d2d;padding:20px;border-radius:5px;margin-bottom:20px}'
+                '.btn{background:#4a9eff;color:white;padding:10px 20px;border:none;border-radius:3px;'
+                'cursor:pointer;text-decoration:none}'
+                'pre{background:#2d2d2d;padding:20px;border-radius:5px;overflow-x:auto}'
+                '</style></head><body><div class="header"><h1>%s</h1>'
+                '<a class="btn" href="/">Back to Dashboard</a></div>'
+                '<pre>%s</pre></body></html>') % (title, title, output)
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(html.encode())
 
     def get_stats(self):
         stats = {}
         try:
             # VM count
             result = subprocess.run(['virsh', 'list', '--all'], capture_output=True, text=True)
-            stats['vms'] = len(result.stdout.strip().split('\n')) - 2 if result.returncode == 0 else 0
+            stats['vms'] = max(0, len(result.stdout.strip().split('\n')) - 2) if result.returncode == 0 else 0
         except:
             stats['vms'] = 0
 
         try:
             # Container count
             result = subprocess.run(['docker', 'ps', '-a'], capture_output=True, text=True)
-            stats['containers'] = len(result.stdout.strip().split('\n')) - 1 if result.returncode == 0 else 0
+            stats['containers'] = max(0, len(result.stdout.strip().split('\n')) - 1) if result.returncode == 0 else 0
         except:
             stats['containers'] = 0
 

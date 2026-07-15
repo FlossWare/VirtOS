@@ -228,12 +228,49 @@ EOF
     # Create simple API server (Python)
     cat > /opt/virtos-web-ui/api/server.py <<'EOF'
 #!/usr/bin/env python3
+import base64
+import crypt
 import json
+import os
 import subprocess
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+HTPASSWD_FILE = os.path.join(
+    os.environ.get('VIRTOS_WEB_CONFIG_DIR', '/etc/virtos/web'),
+    'custom-ui-htpasswd'
+)
+
 class VirtOSHandler(BaseHTTPRequestHandler):
+    def check_auth(self):
+        if not os.path.exists(HTPASSWD_FILE):
+            return True
+        auth_header = self.headers.get('Authorization', '')
+        if not auth_header.startswith('Basic '):
+            return False
+        try:
+            decoded = base64.b64decode(auth_header[6:]).decode('utf-8')
+            username, password = decoded.split(':', 1)
+            with open(HTPASSWD_FILE, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if ':' in line:
+                        file_user, file_hash = line.split(':', 1)
+                        if file_user == username:
+                            if crypt.crypt(password, file_hash) == file_hash:
+                                return True
+            return False
+        except Exception:
+            return False
+
+    def send_auth_required(self):
+        self.send_response(401)
+        self.send_header('WWW-Authenticate', 'Basic realm="VirtOS"')
+        self.end_headers()
+
     def do_GET(self):
+        if not self.check_auth():
+            self.send_auth_required()
+            return
         if self.path == '/':
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -280,8 +317,9 @@ class VirtOSHandler(BaseHTTPRequestHandler):
         return stats
 
 if __name__ == '__main__':
-    server = HTTPServer(('0.0.0.0', 8080), VirtOSHandler)
-    print('VirtOS Web UI running on http://0.0.0.0:8080')
+    bind_addr = os.environ.get('VIRTOS_WEB_BIND_ADDR', '127.0.0.1')
+    server = HTTPServer((bind_addr, 8080), VirtOSHandler)
+    print('VirtOS Web UI running on http://{}:8080'.format(bind_addr))
     server.serve_forever()
 EOF
 
