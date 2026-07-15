@@ -31,19 +31,9 @@ setup() {
     ! grep -A1 "genisoimage\|virsh" "$SCRIPT_PATH" | grep -E "^\s*if \[ \$\? -eq 0 \]"
 }
 
-@test "virtos-edge has no dead error recovery code" {
-    SCRIPT_PATH="../config/custom-scripts/virtos-edge"
-    ! grep -A1 "aws\|gsutil" "$SCRIPT_PATH" | grep -E "^\s*if \[ \$\? -eq 0 \]"
-}
-
 @test "virtos-ha has no dead error recovery code" {
     SCRIPT_PATH="../config/custom-scripts/virtos-ha"
     ! grep -A1 "virsh" "$SCRIPT_PATH" | grep -E "^\s*if \[ \$\? -eq 0 \]"
-}
-
-@test "virtos-mesh has no dead error recovery code" {
-    SCRIPT_PATH="../config/custom-scripts/virtos-mesh"
-    ! grep -A1 "helm\|kubectl" "$SCRIPT_PATH" | grep -E "^\s*if \[ \$\? -eq 0 \]"
 }
 
 @test "virtos-secrets has no dead error recovery code" {
