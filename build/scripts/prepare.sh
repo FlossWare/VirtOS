@@ -77,6 +77,11 @@ DOWNLOAD_DIR="$BUILD_DIR/downloads"
 WORKSPACE_DIR="$BUILD_DIR/workspace"
 TCZ_DIR="$WORKSPACE_DIR/tcz"
 
+# Pinned checksums file for reproducible builds
+# (verify_pinned_checksum() is provided by virtos-common.sh sourced above)
+# shellcheck disable=SC2034  # Used by verify_pinned_checksum() from sourced library
+PINNED_CHECKSUMS="$BUILD_DIR/pinned-checksums.sha256"
+
 # Validate critical directory paths to prevent attacks
 if ! validate_safe_path "$DOWNLOAD_DIR"; then
     echo "ERROR: Invalid download directory path: $DOWNLOAD_DIR"
@@ -163,18 +168,27 @@ else
     fi
 fi
 
-# Download checksums
+# Verify ISO integrity
 echo ""
-echo "Downloading checksums..."
-if [ ! -f "CorePure64-current.iso.md5.txt" ]; then
-    wget -c "$TC_MIRROR/$TC_VERSION/$TC_ARCH/release/CorePure64-current.iso.md5.txt" || echo "Warning: Checksum not available"
+echo "Verifying ISO integrity..."
+
+# First: check against pinned SHA256 checksums (reproducible builds)
+if ! verify_pinned_checksum "$DOWNLOAD_DIR/$TC_ISO"; then
+    echo "ERROR: Pinned checksum verification failed!"
+    echo "Delete $DOWNLOAD_DIR/$TC_ISO and re-download, or update pins."
+    exit 1
 fi
 
-# Verify checksum if available
+# Second: also verify server-provided MD5 as a secondary check
+echo "Downloading server-provided MD5 checksum..."
+if [ ! -f "CorePure64-current.iso.md5.txt" ]; then
+    wget -c "$TC_MIRROR/$TC_VERSION/$TC_ARCH/release/CorePure64-current.iso.md5.txt" || echo "Warning: Server MD5 checksum not available"
+fi
+
 if [ -f "CorePure64-current.iso.md5.txt" ]; then
-    echo "Verifying checksum..."
+    echo "Verifying server MD5 checksum..."
     md5sum -c CorePure64-current.iso.md5.txt || {
-        echo "ERROR: Checksum verification failed!"
+        echo "ERROR: Server MD5 checksum verification failed!"
         exit 1
     }
 fi

@@ -8,8 +8,27 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$(dirname "$SCRIPT_DIR")"
 TCZ_DIR="$BUILD_DIR/workspace/tcz"
 
-# Tiny Core 15.x repository
-TC_MIRROR="http://tinycorelinux.net/15.x/x86_64/tcz"
+# Source security library for shared verify_pinned_checksum()
+COMMON_LIB="${BUILD_DIR}/../config/custom-scripts/lib/virtos-common.sh"
+if [ -f "$COMMON_LIB" ]; then
+    # shellcheck disable=SC1090
+    source "$COMMON_LIB"
+fi
+
+# Pinned checksums file for reproducible builds
+# (verify_pinned_checksum() is provided by virtos-common.sh sourced above)
+# shellcheck disable=SC2034  # Used by verify_pinned_checksum() from sourced library
+PINNED_CHECKSUMS="$BUILD_DIR/pinned-checksums.sha256"
+
+# Tiny Core 15.x repository (override with TC_TCZ_MIRROR env var for offline/mirror use)
+TC_MIRROR="${TC_TCZ_MIRROR:-http://tinycorelinux.net/15.x/x86_64/tcz}"
+
+# Validate TC_TCZ_MIRROR URL to prevent command injection
+if echo "$TC_MIRROR" | grep -qE '[;&|$`<>(){}[\]!\\"]'; then
+    echo "ERROR: TC_TCZ_MIRROR contains invalid characters: $TC_MIRROR" >&2
+    echo "Check build/build.conf and ensure TC_TCZ_MIRROR is a valid URL" >&2
+    exit 1
+fi
 
 echo "=== Downloading TCZ Packages ==="
 echo "Repository: $TC_MIRROR"
@@ -40,7 +59,7 @@ download_tcz() {
     local indent=""
 
     # Create indent for nested dependencies
-    for ((i=0; i<depth; i++)); do
+    for ((i = 0; i < depth; i++)); do
         indent="  $indent"
     done
 
@@ -57,11 +76,19 @@ download_tcz() {
         DOWNLOADED_PACKAGES[$pkg]=1
         echo "${indent}  ✅ $pkg ($(du -h "$TCZ_DIR/$pkg" | cut -f1))"
 
-        # Download .md5.txt for verification
+        # Verify against pinned SHA256 checksum (reproducible builds)
+        # Abort on mismatch -- do not use unverified packages
+        if ! verify_pinned_checksum "$TCZ_DIR/$pkg"; then
+            echo "${indent}  Removing unverified package: $pkg" >&2
+            rm -f "$TCZ_DIR/$pkg"
+            return 1
+        fi
+
+        # Also verify server-provided MD5 as secondary check
         if wget -q "$TC_MIRROR/${pkg}.md5.txt" -O "$TCZ_DIR/${pkg}.md5.txt" 2>/dev/null; then
             # Verify checksum
             if (cd "$TCZ_DIR" && md5sum -c "${pkg}.md5.txt" >/dev/null 2>&1); then
-                echo "${indent}  🔒 Checksum verified"
+                echo "${indent}  MD5 server checksum verified"
             fi
         fi
 
@@ -69,7 +96,8 @@ download_tcz() {
         local dep_file="$TCZ_DIR/${pkg}.dep"
         if wget -q "$TC_MIRROR/${pkg}.dep" -O "$dep_file" 2>/dev/null; then
             # Count dependencies
-            local dep_count=$(grep -c "^[^#]" "$dep_file" 2>/dev/null || echo 0)
+            local dep_count
+            dep_count=$(grep -c "^[^#]" "$dep_file" 2>/dev/null || echo 0)
             if [ "$dep_count" -gt 0 ]; then
                 echo "${indent}  📦 $dep_count dependencies found"
 
@@ -81,7 +109,7 @@ download_tcz() {
 
                     # Recursively download dependency
                     download_tcz "$dep_pkg" $((depth + 1))
-                done < "$dep_file"
+                done <"$dep_file"
             fi
         fi
 
@@ -136,7 +164,7 @@ echo "Total size: $TOTAL_SIZE"
 echo "Location: $TCZ_DIR"
 echo ""
 echo "Package list:"
-ls -1h "$TCZ_DIR"/*.tcz 2>/dev/null | xargs -n1 basename | sort | sed 's/^/  - /'
+find "$TCZ_DIR" -maxdepth 1 -name '*.tcz' -printf '%f\n' 2>/dev/null | sort | sed 's/^/  - /'
 echo ""
 echo "✅ All dependencies automatically resolved via recursive .dep file processing"
 echo ""

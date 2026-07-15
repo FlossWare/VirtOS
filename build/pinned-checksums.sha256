@@ -1,0 +1,27 @@
+# VirtOS Pinned Checksums (SHA256)
+# =================================
+# This file pins SHA256 hashes for all external downloads used in the build.
+# It ensures build reproducibility and supply-chain integrity by verifying
+# downloads against known-good hashes stored in version control.
+#
+# Format: <sha256hash>  <filename>
+#
+# To update after verifying a new download is legitimate:
+#   sha256sum <file> >> build/pinned-checksums.sha256
+#
+# To regenerate all checksums from a known-good build:
+#   build/scripts/pin-checksums.sh
+#
+# IMPORTANT: Only update these hashes after manually verifying the
+# authenticity of new downloads (e.g., checking GPG signatures,
+# comparing hashes from multiple mirrors, reviewing release notes).
+
+# --- Tiny Core Linux Base ISO ---
+# Source: http://tinycorelinux.net/15.x/x86_64/release/CorePure64-current.iso
+# Update this hash when upgrading TC_VERSION in build.conf.
+# Verify at: http://tinycorelinux.net/15.x/x86_64/release/
+# (no hash pinned yet -- run 'build/scripts/pin-checksums.sh' after first verified download)
+
+# --- Core TCZ Packages (15.x/x86_64) ---
+# These are pinned after first successful verified download.
+# Run 'build/scripts/pin-checksums.sh' to populate from workspace/tcz/

@@ -1,7 +1,7 @@
 # VirtOS Makefile
 # Convenience targets for common build operations
 
-.PHONY: help validate test quick-test packages clean clean-all build iso check
+.PHONY: help validate test quick-test packages clean clean-all build iso check pin-checksums verify-checksums
 
 # Default target
 all: packages
@@ -17,6 +17,10 @@ help:
 	@echo "  make build       - Build complete ISO (downloads ~500MB)"
 	@echo "  make check       - Check script syntax"
 	@echo "  make clean       - Clean build artifacts"
+	@echo ""
+	@echo "Reproducibility:"
+	@echo "  make pin-checksums     - Pin SHA256 hashes for downloaded artifacts"
+	@echo "  make verify-checksums  - Verify downloads against pinned hashes"
 	@echo ""
 	@echo "Detailed Commands:"
 	@echo "  make validate    - Check prerequisites and configuration"
@@ -155,6 +159,16 @@ dev-setup:
 	@echo "  - shellcheck (shell script linter)"
 	@echo "  - qemu-kvm (for testing ISOs)"
 	@echo "  - docker (for container testing)"
+
+# Pin checksums for reproducible builds
+pin-checksums:
+	@echo "Pinning SHA256 checksums for downloaded artifacts..."
+	@build/scripts/pin-checksums.sh
+
+# Verify downloads against pinned checksums
+verify-checksums:
+	@echo "Verifying downloads against pinned checksums..."
+	@build/scripts/pin-checksums.sh --verify-only
 
 # Run all validation checks
 verify: check test

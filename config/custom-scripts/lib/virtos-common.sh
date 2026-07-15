@@ -327,7 +327,7 @@ validate_backup_path() {
 
     # Enforce that backup path must start with BACKUP_DIR prefix
     # This prevents accessing paths outside the backup directory
-    if ! echo "$path" | grep -q "^$(printf '%s\n' "$backup_dir" | sed 's/[]\.\*^$[]/\\&/g')"; then
+    if ! echo "$path" | grep -q "^$(printf '%s\n' "$backup_dir" | sed 's/[][.*^$\\]/\\&/g')"; then
         return 1
     fi
 
@@ -862,6 +862,65 @@ get_config_value() {
     value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
 
     echo "$value"
+}
+
+#==============================================================================
+# Build Artifact Verification
+#==============================================================================
+
+# Verify a downloaded file against pinned SHA256 checksums.
+# Requires PINNED_CHECKSUMS variable to be set to the path of the checksums file.
+#
+# Usage: verify_pinned_checksum "/path/to/downloaded/file"
+#
+# Returns:
+#   0 - Checksum matches pinned hash, or no pinned checksums available (with warning)
+#   1 - Checksum MISMATCH (caller should abort)
+verify_pinned_checksum() {
+    local file="$1"
+    local filename
+    filename="$(basename "$file")"
+
+    if [ ! -f "$file" ]; then
+        echo "  ERROR: File not found for verification: $file" >&2
+        return 1
+    fi
+
+    if [ -f "${PINNED_CHECKSUMS:-}" ]; then
+        # Look up the expected hash by filename (ignore comments and blank lines)
+        local expected_hash
+        expected_hash=$(grep -v '^#' "$PINNED_CHECKSUMS" | grep -v '^$' | grep "  ${filename}$" | awk '{print $1}' | head -1)
+
+        if [ -n "$expected_hash" ]; then
+            local actual_hash
+            actual_hash=$(sha256sum "$file" | awk '{print $1}')
+
+            if [ "$actual_hash" = "$expected_hash" ]; then
+                echo "  SHA256 pinned checksum verified: $filename"
+                return 0
+            else
+                echo "  ERROR: SHA256 checksum mismatch for $filename!" >&2
+                echo "    Expected: $expected_hash" >&2
+                echo "    Actual:   $actual_hash" >&2
+                echo "" >&2
+                echo "  This could indicate:" >&2
+                echo "    - Upstream released a new version (re-pin after verification)" >&2
+                echo "    - Download was corrupted (delete and re-download)" >&2
+                echo "    - Supply chain compromise (investigate before proceeding)" >&2
+                echo "" >&2
+                echo "  To update pins: build/scripts/pin-checksums.sh" >&2
+                return 1
+            fi
+        else
+            echo "  WARNING: No pinned SHA256 hash for $filename"
+            echo "  Run 'build/scripts/pin-checksums.sh' after verifying this download"
+            return 0 # Allow build to continue, but warn
+        fi
+    else
+        echo "  WARNING: No pinned checksums file found at ${PINNED_CHECKSUMS:-<not set>}"
+        echo "  Run 'build/scripts/pin-checksums.sh' to enable reproducible builds"
+        return 0 # Allow build to continue, but warn
+    fi
 }
 
 #==============================================================================
