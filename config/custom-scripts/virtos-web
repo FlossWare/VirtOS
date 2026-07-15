@@ -36,7 +36,13 @@ CUSTOM_UI_PORT=8080
 
 # Ensure config directory exists
 if [ "${SKIP_INIT:-no}" != "yes" ]; then
-mkdir -p "$WEB_CONFIG_DIR" || true
+    # Check for root privileges (most commands write to system paths)
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "ERROR: Most virtos-web commands require root privileges." >&2
+        echo "Try: sudo virtos-web $*" >&2
+        exit 1
+    fi
+    mkdir -p "$WEB_CONFIG_DIR" || true
 fi
 
 # Logging function
@@ -560,6 +566,7 @@ EXIT CODES:
 
 NOTE:
     Web UI is optional. VirtOS is designed for text-based operation.
+    Most commands require root privileges. Use: sudo virtos-web <command>
 
 VERSION:
     $VERSION
