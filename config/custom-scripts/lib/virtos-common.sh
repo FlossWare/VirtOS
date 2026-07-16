@@ -404,8 +404,11 @@ safe_source_config() {
     fi
 
     # Content validation: Check for dangerous patterns before sourcing
-    # Look for command substitution, pipes, redirects, etc.
-    if grep -qE '`|\$\(.*\)|;\s*rm|;\s*dd|>\s*/dev|<\s*\(|>\s*\(' "$config_file" 2>/dev/null; then
+    # Scans for: command substitution ($() and backticks), eval, exec,
+    # destructive commands (rm, dd), network tools (curl, wget), pipes,
+    # redirects, and process substitution
+    # See: https://github.com/FlossWare/VirtOS/issues/296
+    if grep -qE '`|\$\(|[|]|\beval\b|\bexec\b|\brm\b|\bcurl\b|\bwget\b|;\s*dd|>\s*/dev|<\s*\(|>\s*\(' "$config_file" 2>/dev/null; then
         warn "Configuration file contains potentially dangerous commands: $config_file"
         return 1
     fi
