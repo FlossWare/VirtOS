@@ -38,3 +38,8 @@ packages/output/*.info
 .claude
 .claude/settings.json
 packages/*/squashfs-root/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
