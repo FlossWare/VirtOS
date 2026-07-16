@@ -236,6 +236,7 @@ EOF
 #!/usr/bin/env python3
 import base64
 import crypt
+import html
 import json
 import os
 import subprocess
@@ -273,6 +274,66 @@ class VirtOSHandler(BaseHTTPRequestHandler):
         self.send_header('WWW-Authenticate', 'Basic realm="VirtOS"')
         self.end_headers()
 
+    def _run_command(self, cmd):
+        """Run a command safely and return its output as a string."""
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=10
+            )
+            if result.returncode == 0:
+                return result.stdout if result.stdout.strip() else '(no output)'
+            output = ''
+            if result.stdout.strip():
+                output += result.stdout
+            if result.stderr.strip():
+                output += result.stderr
+            return output if output.strip() else (
+                '(command returned exit code {})'.format(result.returncode)
+            )
+        except FileNotFoundError:
+            return 'Command not found: {}'.format(cmd[0])
+        except subprocess.TimeoutExpired:
+            return 'Command timed out after 10 seconds'
+        except Exception as e:
+            return 'Error: {}'.format(e)
+
+    def _render_page(self, title, output):
+        """Render a management page with HTML-escaped command output."""
+        escaped_title = html.escape(title)
+        escaped_output = html.escape(output)
+        return (
+            '<!DOCTYPE html><html lang="en"><head>'
+            '<meta charset="UTF-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+            '<title>VirtOS - {title}</title>'
+            '<style>'
+            'body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; '
+            'background: #1e1e1e; color: #fff; }}'
+            '.header {{ background: #2d2d2d; padding: 20px; border-radius: 5px; '
+            'margin-bottom: 20px; }}'
+            '.content {{ background: #2d2d2d; padding: 20px; border-radius: 5px; }}'
+            'pre {{ white-space: pre-wrap; word-wrap: break-word; '
+            'background: #1a1a1a; padding: 15px; border-radius: 3px; }}'
+            '.btn {{ background: #4a9eff; color: white; padding: 10px 20px; '
+            'border: none; border-radius: 3px; cursor: pointer; '
+            'text-decoration: none; display: inline-block; margin-top: 10px; }}'
+            '.btn:hover {{ background: #357abd; }}'
+            '</style></head><body>'
+            '<div class="header"><h1>{title}</h1>'
+            '<a class="btn" href="/">Back to Dashboard</a></div>'
+            '<div class="content"><pre>{output}</pre></div>'
+            '</body></html>'
+        ).format(title=escaped_title, output=escaped_output)
+
+    def _send_management_page(self, title, cmd):
+        """Handle a management page route: run command and send response."""
+        output = self._run_command(cmd)
+        page = self._render_page(title, output)
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(page.encode())
+
     def do_GET(self):
         if not self.check_auth():
             self.send_auth_required()
@@ -289,6 +350,20 @@ class VirtOSHandler(BaseHTTPRequestHandler):
             self.end_headers()
             stats = self.get_stats()
             self.wfile.write(json.dumps(stats).encode())
+        elif self.path == '/vms':
+            self._send_management_page(
+                'Virtual Machines', ['virsh', 'list', '--all']
+            )
+        elif self.path == '/containers':
+            self._send_management_page(
+                'Containers', ['docker', 'ps', '-a']
+            )
+        elif self.path == '/storage':
+            self._send_management_page('Storage', ['df', '-h'])
+        elif self.path == '/network':
+            self._send_management_page(
+                'Network', ['ip', 'addr', 'show']
+            )
         else:
             self.send_response(404)
             self.end_headers()
