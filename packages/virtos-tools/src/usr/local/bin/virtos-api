@@ -14,6 +14,9 @@ API_PORT="${API_PORT:-8080}"
 API_DIR="/var/run/virtos/api"
 LOG_FILE="$(get_virtos_path LOG_API)"
 
+# Authentication configuration (htpasswd file, same pattern as virtos-web)
+VIRTOS_API_AUTH_FILE="${VIRTOS_API_AUTH_FILE:-/etc/virtos/api-htpasswd}"
+
 # Load audit library
 if [ -f /usr/local/lib/virtos-audit.sh ]; then
     . /usr/local/lib/virtos-audit.sh
@@ -95,10 +98,78 @@ $body
 EOF
 }
 
+# Check HTTP Basic Auth credentials against htpasswd file
+# Returns 0 if authenticated, 1 if not
+# If no auth file exists, allow unauthenticated access (graceful fallback)
+check_auth() {
+    local auth_header="$1"
+
+    # No auth file = no auth required (same fallback as virtos-web)
+    [ ! -f "$VIRTOS_API_AUTH_FILE" ] && return 0
+
+    # Require Basic auth header
+    case "$auth_header" in
+        Basic\ *) ;;
+        *) return 1 ;;
+    esac
+
+    # Decode base64 credentials
+    local decoded username password
+    decoded=$(echo "${auth_header#Basic }" | base64 -d 2>/dev/null) || return 1
+    username="${decoded%%:*}"
+    password="${decoded#*:}"
+    [ -z "$username" ] && return 1
+
+    # Verify with htpasswd command if available
+    if command -v htpasswd >/dev/null 2>&1; then
+        htpasswd -vb "$VIRTOS_API_AUTH_FILE" "$username" "$password" >/dev/null 2>&1
+        return $?
+    fi
+
+    # Fallback: use Python crypt (same method as virtos-web)
+    python3 -c "
+import crypt, sys
+u, pw = sys.argv[1], sys.argv[2]
+with open(sys.argv[3]) as f:
+    for line in f:
+        line = line.strip()
+        if ':' in line:
+            fu, fh = line.split(':', 1)
+            if fu == u and crypt.crypt(pw, fh) == fh:
+                sys.exit(0)
+sys.exit(1)
+" "$username" "$password" "$VIRTOS_API_AUTH_FILE" 2>/dev/null
+}
+
+# Send 401 Unauthorized response
+http_response_auth_required() {
+    local body='{"error":"Authentication required"}'
+    cat <<EOF
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Basic realm="VirtOS API"
+Content-Type: application/json
+Content-Length: ${#body}
+Connection: close
+
+$body
+EOF
+}
+
 handle_request() {
     local method="$1"
     local path="$2"
     local client_ip="${3:-unknown}"
+    local auth_header="${4:-}"
+
+    # Check authentication before processing request
+    if ! check_auth "$auth_header"; then
+        log_message "AUTH FAILED: $method $path from $client_ip"
+        if command -v audit_deny >/dev/null 2>&1; then
+            audit_deny "api.auth" "authentication failed" "client_ip=$client_ip"
+        fi
+        http_response_auth_required
+        return
+    fi
 
     log_message "$method $path from $client_ip"
 
@@ -289,12 +360,19 @@ start_server() {
                         method=$(echo "$request_line" | awk '{print $1}')
                         path=$(echo "$request_line" | awk '{print $2}')
 
-                        # Read and discard headers
+                        # Read headers, capture Authorization
+                        auth_header=""
                         while read -r header; do
                             [ "$header" = $'\r' ] && break
+                            case "$header" in
+                                Authorization:*)
+                                    auth_header="${header#Authorization: }"
+                                    auth_header="${auth_header%$'\r'}"
+                                    ;;
+                            esac
                         done
 
-                        handle_request "$method" "$path"
+                        handle_request "$method" "$path" "" "$auth_header"
                     } | nc -l -p "$port" -q 1
                 done
             elif command -v socat >/dev/null 2>&1; then
@@ -303,10 +381,17 @@ start_server() {
                     read -r request_line
                     method=$(echo "$request_line" | awk "{print \$1}")
                     path=$(echo "$request_line" | awk "{print \$2}")
+                    auth_header=""
                     while read -r header; do
                         [ "$header" = $'"'"'\r'"'"' ] && break
+                        case "$header" in
+                            Authorization:*)
+                                auth_header="${header#Authorization: }"
+                                auth_header=$(echo "$auth_header" | tr -d $'"'"'\r'"'"')
+                                ;;
+                        esac
                     done
-                    /usr/local/bin/virtos-api handle "$method" "$path"
+                    /usr/local/bin/virtos-api handle "$method" "$path" "" "$auth_header"
                 '
             else
                 echo "Error: netcat or socat required"
@@ -410,7 +495,7 @@ case "$COMMAND" in
         ;;
     handle)
         # Internal use for socat backend
-        handle_request "$1" "$2"
+        handle_request "$1" "$2" "${3:-}" "${4:-}"
         ;;
     --help|-h|help|"")
         usage
