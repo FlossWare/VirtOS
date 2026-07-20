@@ -471,7 +471,7 @@ jobs:
           echo "✓ Package size acceptable ($SIZE bytes)"
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: virtos-tools-package
           path: |
@@ -933,7 +933,7 @@ jobs:
           fi
 
       - name: Save metrics artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: code-metrics
           path: |
